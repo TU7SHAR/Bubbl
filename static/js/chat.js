@@ -1,4 +1,73 @@
-// static/js/chat.js
+let messageCount = 0;
+let leadCaptured = false;
+
+async function submitLeadForm() {
+  const name = document.getElementById("lead-name").value.trim();
+  const email = document.getElementById("lead-email").value.trim();
+  const phone = document.getElementById("lead-phone").value.trim();
+  const botId = window.EMBEDDED_BOT_ID;
+
+  if (!name || !email) {
+    alert("Name and email are required.");
+    return;
+  }
+
+  const payload = { bot_id: botId, name: name, email: email, phone: phone };
+
+  try {
+    const response = await fetch("/api/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      leadCaptured = true;
+      document.getElementById("lead-capture-box").remove();
+      document.getElementById("user-input").disabled = false;
+
+      const sendButton = document.getElementById("send-btn-icon");
+      if (sendButton) {
+        sendButton.disabled = false;
+        sendButton.style.opacity = "1";
+      }
+
+      const display = document.getElementById("chat-display");
+      const botDiv = document.createElement("div");
+      botDiv.className = "msg bot";
+      botDiv.innerText = "Thanks! How can I help you today?";
+      display.appendChild(botDiv);
+      display.scrollTop = display.scrollHeight;
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function triggerLeadCapture() {
+  const display = document.getElementById("chat-display");
+
+  const formBox = document.createElement("div");
+  formBox.id = "lead-capture-box";
+  formBox.className = "msg bot";
+  formBox.innerHTML = `
+    <p style="margin-top:0;">Before we continue, please provide your details:</p>
+    <input type="text" id="lead-name" placeholder="Name" style="width:100%; margin-bottom:8px; padding:6px; border-radius:4px; border:1px solid #ccc;">
+    <input type="email" id="lead-email" placeholder="Email" style="width:100%; margin-bottom:8px; padding:6px; border-radius:4px; border:1px solid #ccc;">
+    <input type="text" id="lead-phone" placeholder="Phone (Optional)" style="width:100%; margin-bottom:8px; padding:6px; border-radius:4px; border:1px solid #ccc;">
+    <button onclick="submitLeadForm()" style="width:100%; padding:8px; background:var(--theme-color, #E8722A); color:#fff; border:none; border-radius:4px; cursor:pointer;">Submit</button>
+  `;
+
+  display.appendChild(formBox);
+  display.scrollTop = display.scrollHeight;
+
+  document.getElementById("user-input").disabled = true;
+  const sendButton = document.getElementById("send-btn-icon");
+  if (sendButton) {
+    sendButton.disabled = true;
+    sendButton.style.opacity = "0.5";
+  }
+}
 
 function toggleChat() {
   const chatPopup = document.getElementById("chat-window-popup");
@@ -14,13 +83,24 @@ function toggleChat() {
 }
 
 async function sendMessage() {
+  if (window.LEAD_TIMING === "start" && !leadCaptured && messageCount === 0) {
+    triggerLeadCapture();
+    return;
+  }
+  if (window.LEAD_TIMING === "middle" && !leadCaptured && messageCount === 2) {
+    triggerLeadCapture();
+    return;
+  }
+
   const input = document.getElementById("user-input");
   const display = document.getElementById("chat-display");
-  const sendButton = document.getElementById("send-btn-icon"); // Updated to match your HTML ID
+  const sendButton = document.getElementById("send-btn-icon");
 
   const msg = input.value.trim();
 
   if (!msg) return;
+
+  messageCount++;
 
   input.disabled = true;
   if (sendButton) {
@@ -46,7 +126,6 @@ async function sendMessage() {
   try {
     const payload = { message: msg };
 
-    //for widgets
     if (window.EMBEDDED_BOT_ID) {
       payload.bot_id = window.EMBEDDED_BOT_ID;
     }
@@ -58,7 +137,6 @@ async function sendMessage() {
     });
 
     const data = await response.json();
-    console.log("SERVER SENT THIS:", data);
 
     if (document.getElementById("typing")) {
       document.getElementById("typing").remove();

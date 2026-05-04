@@ -41,6 +41,7 @@
     {% include 'chat.html' %}
     <script>
       window.EMBEDDED_BOT_ID = "{{ bot.id }}";
+      window.LEAD_TIMING = "{{ bot.lead_capture_timing }}";
     </script>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
   </body>

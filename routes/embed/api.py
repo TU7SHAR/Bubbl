@@ -1,9 +1,30 @@
 from flask import Blueprint, request, jsonify, session
 from bot.chat import get_response_from_gemini
-from models.models import Bot
+from models.models import Bot, Lead, db
 import logging 
 
 api_bp = Blueprint('api_bp', __name__)
+
+@api_bp.route('/api/lead', methods=['POST'])
+def capture_lead():
+    data = request.json
+    bot_id = data.get('bot_id')
+    name = data.get('name')
+    email = data.get('email')
+    phone = data.get('phone', '')
+
+    if not bot_id or not name or not email:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    try:
+        new_lead = Lead(bot_id=bot_id, name=name, email=email, phone=phone)
+        db.session.add(new_lead)
+        db.session.commit()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Lead Capture Database Error: {str(e)}")
+        return jsonify({"error": "Internal server error while saving lead."}), 500
 
 @api_bp.route('/api/chat', methods=['POST'])
 def chat():

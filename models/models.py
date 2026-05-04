@@ -33,7 +33,9 @@ class Bot(db.Model):
     bot_type = db.Column(db.String(50), default='general') # 'sales', 'support', 'general', 'custom'
     theme_color = db.Column(db.String(20), default='#10b981') # Default to a nice green or your #8a6535 brown
     system_prompt = db.Column(db.Text, nullable=True)
+    lead_capture_timing = db.Column(db.String(20), default='disabled')
     ui_settings = db.relationship('BotUI', backref='bot', uselist=False, cascade="all, delete-orphan")
+    leads = db.relationship('Lead', backref='bot_ref', lazy=True, cascade="all, delete-orphan")
 
 class BotUI(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -61,3 +63,11 @@ class ScrapeJob(db.Model):
     logs = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = db.Column(db.DateTime, nullable=True)
+
+class Lead(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), nullable=True)
+    captured_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

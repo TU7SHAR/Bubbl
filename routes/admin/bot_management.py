@@ -26,6 +26,7 @@ def create_pipeline():
     glass_blur = request.form.get('glass_blur', 25, type=int)
     
     theme_color = request.form.get('theme_color', '#E8722A')
+    lead_capture_timing = request.form.get('lead_capture_timing', 'disabled')
     header_color = request.form.get('header_color', '#FFFFFF')
     theme_mode = request.form.get('theme_mode', 'light')
     
@@ -45,7 +46,8 @@ def create_pipeline():
         created_by=session.get('user_id'),
         org_id=session.get('org_id'), 
         store_id=store_id,
-        access_key=access_key
+        access_key=access_key,
+        lead_capture_timing=lead_capture_timing
     )
     db.session.add(new_bot)
     db.session.flush()
@@ -244,6 +246,7 @@ def update_bot(bot_id):
     bot.visibility = request.form.get('visibility', bot.visibility)
     bot.system_prompt = request.form.get('system_prompt', bot.system_prompt)
     bot.access_key = request.form.get('access_key', bot.access_key)
+    bot.lead_capture_timing = request.form.get('lead_capture_timing', bot.lead_capture_timing)
 
     if not bot.ui_settings:
         bot.ui_settings = BotUI(bot_id=bot.id)
