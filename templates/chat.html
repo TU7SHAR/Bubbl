@@ -80,6 +80,7 @@
 <script>
   window.LEAD_TIMING = "{{ bot.lead_capture_timing if bot else session.get('lead_capture_timing', 'disabled') }}";
   window.EMBEDDED_BOT_ID = "{{ bot.id if bot else session.get('active_bot_id', '') }}";
+  window.CUSTOM_FIELDS = "{{ bot.custom_form_fields if bot else session.get('custom_form_fields', '') }}";
 </script>
 <div id="chat-widget-container">
   <div id="sprite-ask-container" onclick="toggleChat()">

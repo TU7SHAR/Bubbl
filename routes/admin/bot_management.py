@@ -29,6 +29,7 @@ def create_pipeline():
     lead_capture_timing = request.form.get('lead_capture_timing', 'disabled')
     header_color = request.form.get('header_color', '#FFFFFF')
     theme_mode = request.form.get('theme_mode', 'light')
+    custom_form_fields = request.form.get('custom_form_fields', '')
     
     store_id = create_dynamic_store(bot_name)
     if not store_id:
@@ -47,7 +48,9 @@ def create_pipeline():
         org_id=session.get('org_id'), 
         store_id=store_id,
         access_key=access_key,
-        lead_capture_timing=lead_capture_timing
+        lead_capture_timing=lead_capture_timing,
+        custom_form_fields=custom_form_fields
+        
     )
     db.session.add(new_bot)
     db.session.flush()
@@ -158,6 +161,7 @@ def create_pipeline():
     session['theme_mode'] = new_ui.theme_mode
     session['glass_opacity'] = new_ui.glass_opacity
     session['glass_blur'] = new_ui.glass_blur
+    session['custom_form_fields'] = new_bot.custom_form_fields
 
     return jsonify({"success": True, "bot_id": new_bot.id, "logs": pipeline_logs})
 
@@ -248,6 +252,7 @@ def update_bot(bot_id):
     bot.system_prompt = request.form.get('system_prompt', bot.system_prompt)
     bot.access_key = request.form.get('access_key', bot.access_key)
     bot.lead_capture_timing = request.form.get('lead_capture_timing', bot.lead_capture_timing)
+    bot.custom_form_fields = request.form.get('custom_form_fields', bot.custom_form_fields)
 
     if not bot.ui_settings:
         bot.ui_settings = BotUI(bot_id=bot.id)
@@ -275,6 +280,7 @@ def update_bot(bot_id):
         session['theme_mode'] = bot.ui_settings.theme_mode
         session['glass_opacity'] = bot.ui_settings.glass_opacity
         session['glass_blur'] = bot.ui_settings.glass_blur
+        session['custom_form_fields'] = bot.custom_form_fields
 
     flash("Bot configurations updated successfully!", "success")
     return redirect(url_for('admin_bp.edit_bot', bot_id=bot.id))

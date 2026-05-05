@@ -36,6 +36,7 @@ class Bot(db.Model):
     lead_capture_timing = db.Column(db.String(20), default='disabled')
     ui_settings = db.relationship('BotUI', backref='bot', uselist=False, cascade="all, delete-orphan")
     leads = db.relationship('Lead', backref='bot_ref', lazy=True, cascade="all, delete-orphan")
+    custom_form_fields = db.Column(db.String(500), default="")
 
 class BotUI(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -70,4 +71,5 @@ class Lead(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(20), nullable=True)
+    custom_data = db.Column(db.JSON, default={})
     captured_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

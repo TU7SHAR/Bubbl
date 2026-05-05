@@ -8,6 +8,81 @@
   let permanentLogs = [];
   let currentScrapeLogs = "";
   let isPromptManuallyEdited = false;
+  let customFieldsState = [];
+
+  document.addEventListener("DOMContentLoaded", function() {
+      const hiddenInput = document.getElementById('custom_form_fields_json');
+      if(hiddenInput && hiddenInput.value) {
+          try {
+              // Try parsing existing JSON data
+              customFieldsState = JSON.parse(hiddenInput.value);
+              if(!Array.isArray(customFieldsState)) customFieldsState = [];
+          } catch(e) {
+              // Backward compatibility: If it was the old comma-separated string, convert it to JSON
+              if (typeof hiddenInput.value === 'string' && hiddenInput.value.trim() !== '') {
+                  customFieldsState = hiddenInput.value.split(',').map(f => ({
+                      name: f.trim(), type: 'text', required: false
+                  })).filter(f => f.name);
+              }
+          }
+      }
+      renderCustomFields();
+  });
+
+  function renderCustomFields() {
+      const container = document.getElementById('custom-fields-container');
+      const hiddenInput = document.getElementById('custom_form_fields_json');
+      if(!container) return;
+
+      hiddenInput.value = JSON.stringify(customFieldsState);
+      container.innerHTML = '';
+
+      if(customFieldsState.length === 0) {
+          container.innerHTML = '<div style="font-size: 12px; color: #9ca3af; font-style: italic; text-align: center; padding: 10px; background: #fff; border-radius: 8px; border: 1px dashed rgba(0,0,0,0.1);">No extra fields. Only Name and Email will be collected.</div>';
+          return;
+      }
+
+      customFieldsState.forEach((field, index) => {
+          const row = document.createElement('div');
+          row.style.cssText = "display: flex; gap: 10px; align-items: center; background: #fff; padding: 10px; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
+          
+          row.innerHTML = `
+              <div style="flex: 2;">
+                  <input type="text" style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none;" placeholder="Field Name (e.g. Company)" value="${field.name}" onchange="updateCustomField(${index}, 'name', this.value)">
+              </div>
+              <div style="flex: 1;">
+                  <select style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none; background: #fff;" onchange="updateCustomField(${index}, 'type', this.value)">
+                      <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text</option>
+                      <option value="email" ${field.type === 'email' ? 'selected' : ''}>Email</option>
+                      <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
+                  </select>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 10px;">
+                  <input type="checkbox" id="req_${index}" ${field.required ? 'checked' : ''} onchange="updateCustomField(${index}, 'required', this.checked)" style="accent-color: var(--orange); cursor: pointer; width: 14px; height: 14px;">
+                  <label for="req_${index}" style="font-size: 12px; color: #4b5563; cursor: pointer; margin: 0; font-weight: 500;">Required</label>
+              </div>
+              <button type="button" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center;" onclick="removeCustomField(${index})" title="Delete Field">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+          `;
+          container.appendChild(row);
+      });
+  }
+
+  function addCustomField() {
+      customFieldsState.push({ name: '', type: 'text', required: false });
+      renderCustomFields();
+  }
+
+  function updateCustomField(index, key, value) {
+      customFieldsState[index][key] = value;
+      document.getElementById('custom_form_fields_json').value = JSON.stringify(customFieldsState);
+  }
+
+  function removeCustomField(index) {
+      customFieldsState.splice(index, 1);
+      renderCustomFields();
+  }  
 
   function toggleLcDropdown() {
       document.getElementById('pd-options').classList.toggle('show');

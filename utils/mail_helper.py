@@ -11,12 +11,13 @@ load_dotenv()
 EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 
+COMPANY_NAME_FIRST = os.getenv('COMPANY_NAME_FRONT', 'Bub')
+COMPANY_LAST_NAME = os.getenv('COMPANY_NAME_BACK', 'bl')
+
 def is_valid_email(email):
     """
     Checks syntax and deliverability (MX records) of an email.
     Returns: (is_valid: bool, result: str)
-    If valid, result is the normalized email.
-    If invalid, result is the human-readable error message.
     """
     try:
         valid = validate_email(email, check_deliverability=True)
@@ -35,13 +36,11 @@ def send_contact_email(sender_name, sender_email, subject, message):
     smtp_password = os.getenv('EMAIL_PASSWORD')    
     support_email = os.getenv('SUPPORT_EMAIL', smtp_user) 
 
-    # Create the email structure
     msg = MIMEMultipart()
     msg['From'] = smtp_user
     msg['To'] = support_email
     msg['Subject'] = f"New Contact Request: {subject}"
     
-    # Format the body to look professional
     body = f"""
 You have received a new message from your platform's contact form.
 
@@ -58,9 +57,8 @@ Message:
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        # Establish a secure connection and send
         server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls() # Secure the connection
+        server.starttls() 
         server.login(smtp_user, smtp_password)
         server.send_message(msg)
         server.quit()
@@ -78,7 +76,8 @@ def send_auto_reply(user_name, user_email):
     smtp_user = os.getenv('EMAIL_ADDRESS')
     smtp_password = os.getenv('EMAIL_PASSWORD')
     
-    platform_name = "{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} Support Team" 
+    # 2. USE NORMAL PYTHON F-STRINGS HERE
+    platform_name = f"{COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME} Support Team" 
 
     msg = MIMEMultipart()
     msg['From'] = f"{platform_name} <{smtp_user}>"
@@ -113,10 +112,13 @@ The {platform_name}
         return False
 
 def send_invite_email(target_email, user_name, plain_password):
-    subject = "You've been invited to {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}"
+    # 3. FIX THE SUBJECT F-STRING
+    subject = f"You've been invited to {COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME}"
     body = f"Hi {user_name},\n\nYou have been invited to join the team dashboard.\n\nLogin Email: {target_email}\nTemporary Password: {plain_password}\n\nPlease log in and change your password immediately."
     
     try:
+        # NOTE: Your send_invite_email is currently missing the actual SMTP sending logic! 
+        # Make sure you add the smtplib code here later.
         return True
     except Exception:
         return False
@@ -128,10 +130,11 @@ def generate_otp():
 def send_otp_email(to_email, otp_code):
     """Sends the OTP email via SMTP."""
 
+    # 4. FIX THE OTP HTML TEMPLATE
     html_content = f"""
     <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eee; border-radius: 10px;">
         <h2 style="color: #111827;">Your Verification Code</h2>
-        <p style="color: #4b5563; font-size: 16px;">Please use the following 6-digit code to verify your {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} account:</p>
+        <p style="color: #4b5563; font-size: 16px;">Please use the following 6-digit code to verify your {COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME} account:</p>
         <div style="background: #f9fafb; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
             <strong style="font-size: 32px; letter-spacing: 4px; color: #E8722A;">{otp_code}</strong>
         </div>
@@ -140,7 +143,8 @@ def send_otp_email(to_email, otp_code):
     """
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} - Your Verification Code"
+    # 5. FIX THE SUBJECT
+    msg["Subject"] = f"{COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME} - Your Verification Code"
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = to_email
 

@@ -2,6 +2,41 @@ let chatHistory = [];
 let leadCaptured = false;
 let pendingMessage = "";
 
+// Helper to generate dynamic custom fields from JSON
+function getCustomFieldsHTML(prefix) {
+  if (
+    !window.CUSTOM_FIELDS ||
+    window.CUSTOM_FIELDS === "[]" ||
+    window.CUSTOM_FIELDS === ""
+  )
+    return "";
+
+  try {
+    const fields = JSON.parse(window.CUSTOM_FIELDS);
+    return fields
+      .map((f) => {
+        if (!f.name.trim()) return "";
+        const isReq = f.required ? "required" : "";
+        const star = f.required ? "* " : "";
+        const safeId = f.name.replace(/[^a-zA-Z0-9]/g, ""); // Removes spaces/symbols for HTML IDs
+
+        return `
+                <input 
+                    type="${f.type}" 
+                    id="${prefix}-custom-${safeId}" 
+                    data-name="${f.name}" 
+                    data-required="${f.required}"
+                    class="lead-input dynamic-custom-field" 
+                    placeholder="${star}${f.name}">
+            `;
+      })
+      .join("");
+  } catch (e) {
+    console.error("Error parsing custom fields:", e);
+    return "";
+  }
+}
+
 function toggleChat() {
   const chatPopup = document.getElementById("chat-window-popup");
   const spriteContainer = document.getElementById("sprite-ask-container");
@@ -29,12 +64,15 @@ function renderGatekeeperForm() {
   overlay.className = "lead-overlay-container";
 
   overlay.innerHTML = `
-        <div class="lead-form-card">
+        <div class="lead-form-card" id="gk-form-wrapper">
             <h3 style="margin-top:0; color:#111827; text-align:center; font-family:'Bricolage Grotesque', sans-serif;">Welcome!</h3>
-            <p style="font-size:13px; color:#6b7280; text-align:center; margin-bottom:20px;">Please share the following details to continue</p>
-            <input type="text" id="gk-name" class="lead-input" placeholder="Your full name">
-            <input type="email" id="gk-email" class="lead-input" placeholder="Email address">
+            <p style="font-size:13px; color:#6b7280; text-align:center; margin-bottom:20px;">Please share your details to continue</p>
+            <input type="text" id="gk-name" class="lead-input" placeholder="* Your full name">
+            <input type="email" id="gk-email" class="lead-input" placeholder="* Email address">
             <input type="text" id="gk-phone" class="lead-input" placeholder="Mobile number (Optional)">
+            
+            ${getCustomFieldsHTML("gk")} <!-- Injects custom fields here -->
+            
             <button id="gk-btn" class="lead-submit-btn" onclick="submitLeadForm('gk')">Continue</button>
         </div>
     `;
@@ -53,6 +91,9 @@ function renderInChatForm() {
         <input type="text" id="ic-name" class="lead-input" placeholder="* Name">
         <input type="email" id="ic-email" class="lead-input" placeholder="* Email">
         <input type="text" id="ic-phone" class="lead-input" placeholder="Phone (Optional)">
+        
+        ${getCustomFieldsHTML("ic")} <!-- Injects custom fields here -->
+        
         <button id="ic-btn" class="lead-submit-btn" onclick="submitLeadForm('ic')">Submit</button>
     `;
   display.appendChild(formDiv);
@@ -72,7 +113,28 @@ async function submitLeadForm(prefix) {
     return;
   }
 
-  const payload = { bot_id: botId, name: name, email: email, phone: phone };
+  // Gather Custom Data dynamically
+  let customData = {};
+  const wrapperId =
+    prefix === "gk" ? "gk-form-wrapper" : "in-chat-form-wrapper";
+  const wrapper = document.getElementById(wrapperId);
+
+  if (wrapper) {
+    wrapper.querySelectorAll(".dynamic-custom-field").forEach((input) => {
+      if (input.value.trim()) {
+        customData[input.dataset.name] = input.value.trim();
+      }
+    });
+  }
+
+  const payload = {
+    bot_id: botId,
+    name: name,
+    email: email,
+    phone: phone,
+    custom_data: customData, // Send dynamic data to Python
+  };
+
   const btn = document.getElementById(`${prefix}-btn`);
   btn.innerText = "Saving...";
   btn.disabled = true;
