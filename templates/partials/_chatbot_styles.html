@@ -88,3 +88,8 @@
 .log-line { margin-bottom: 8px; }
 .log-time { color: #64748b; margin-right: 10px; }
 </style>
+<script>
+  // Robust bridge: Checks for embed object first, falls back to dashboard session
+  window.LEAD_TIMING = "{{ bot.lead_capture_timing if bot else session.get('lead_capture_timing', 'disabled') }}";
+  window.EMBEDDED_BOT_ID = "{{ bot.id if bot else session.get('active_bot_id', '') }}";
+</script>

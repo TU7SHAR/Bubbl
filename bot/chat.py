@@ -27,7 +27,7 @@ PUBLIC_BOT_INSTRUCTIONS = (
     "If they ask some out of context question, respond with 'I'm here to help with questions about our platform and services. For other inquiries, please contact our support team.'"
 )
 
-def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=None):
+def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=None, history=None):
     try:
         if custom_prompt:
             system_instruction = BASE_GUARDRAILS + "SPECIFIC BOT INSTRUCTIONS:\n" + custom_prompt
@@ -35,23 +35,31 @@ def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=Non
             system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_INSTRUCTIONS
             
         tools = []
-        
         if target_store_id:
             tools.append(types.Tool(
-                file_search=types.FileSearch(
-                    file_search_store_names=[target_store_id] 
-                )
+                file_search=types.FileSearch(file_search_store_names=[target_store_id])
             ))
 
         config_args = {"system_instruction": system_instruction}
         if tools:
             config_args["tools"] = tools
-
         config = types.GenerateContentConfig(**config_args)
+
+        contents = []
+        if history:
+            for msg in history:
+                role = "model" if msg.get("role") == "bot" else "user"
+                contents.append(
+                    types.Content(role=role, parts=[types.Part.from_text(text=msg.get("text", ""))])
+                )
+        
+        contents.append(
+            types.Content(role="user", parts=[types.Part.from_text(text=user_query)])
+        )
 
         response = client.models.generate_content(
             model="gemini-3.1-flash-lite-preview",
-            contents=user_query,
+            contents=contents,
             config=config
         )
         
