@@ -85,6 +85,19 @@
   .edit-modal-footer { padding: 15px 20px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: flex-end; gap: 10px; }
   .code-textarea { width: 100%; height: 400px; font-family: 'Fira Code', monospace; font-size: 13px; padding: 15px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); resize: none; }
   .code-textarea:focus { outline: none; border-color: var(--orange); }
+
+  /* DROPDOWN & FORM STYLES */
+  .pretty-dropdown { position: relative; width: 100%; user-select: none; }
+  .pd-selected { background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 14px; color: #111827; transition: all 0.2s; }
+  .pd-selected:hover { border-color: var(--orange); }
+  .pd-options { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 50; display: none; max-height: 280px; overflow-y: auto; }
+  .pd-options.show { display: block; animation: pdFadeIn 0.2s ease; }
+  @keyframes pdFadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+  .pd-option { padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: background 0.2s; }
+  .pd-option:last-child { border-bottom: none; }
+  .pd-option:hover { background: rgba(232, 114, 42, 0.05); }
+  .pd-option strong { display: block; font-size: 14px; color: #111827; margin-bottom: 2px; }
+  .pd-option span { display: block; font-size: 12px; color: #6b7280; }
 </style>
 
 <div class="cb-container">
@@ -104,7 +117,7 @@
         <button type="button" class="cb-tab active" onclick="switchCbTab('tab-files')"> Knowledge Base</button>
         <button type="button" class="cb-tab" onclick="switchCbTab('tab-website')"> Website Scraper</button>
         <button type="button" class="cb-tab" onclick="switchCbTab('tab-ui')"> User Interface</button>
-        <button type="button" class="cb-tab" onclick="switchCbTab('tab-settings')"> Personality</button>
+        <button type="button" class="cb-tab" onclick="switchCbTab('tab-settings')"> Lead Conventions</button>
       </div>
 
       <div class="cb-content">
@@ -199,8 +212,21 @@
                   <label class="cb-label">Agent Name</label>
                   <input type="text" name="bot_name" id="bot_name" class="dash-input" value="{{ bot.bot_name }}" oninput="updateLivePreview()" style="width: 100%;" />
 
-                  <label class="cb-label" style="margin-top: 15px;">Bot Avatar Image</label>
-                  <input type="file" name="bot_avatar" id="bot_avatar" class="dash-input" accept="image/*" onchange="previewAvatarEdit(event)" style="padding: 10px; width: 100%; margin-bottom: 20px;">
+                 <label class="cb-label" style="margin-top: 15px;">Bot Avatar Image</label>
+<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);">
+    <div id="preview-avatar-setting" class="mock-avatar" style="width: 45px; height: 45px; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"
+         {% if bot.ui_settings and bot.ui_settings.avatar_base64 %}
+         style="background-image: url('{{ bot.ui_settings.avatar_base64 }}'); background-size: cover; background-position: center; background-color: transparent; color: transparent;"
+         {% endif %}>
+        {% if not (bot.ui_settings and bot.ui_settings.avatar_base64) %}
+            {{ bot.bot_name[0] | upper }}
+        {% endif %}
+    </div>
+    <label class="btn btn-outline btn-sm" style="cursor: pointer; margin: 0;">
+        Upload Image
+        <input type="file" name="bot_avatar" id="bot_avatar" accept="image/*" onchange="previewAvatarEdit(event)" style="display: none;">
+    </label>
+</div>
 
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
                     <div><label class="cb-label">Appearance</label><button type="button" id="btn-theme-light" class="btn btn-outline btn-sm" onclick="setPreviewTheme('light')">☀️</button> <button type="button" id="btn-theme-dark" class="btn btn-ghost btn-sm" onclick="setPreviewTheme('dark')">🌙</button></div>
@@ -236,36 +262,69 @@
             </div>
 
             <div id="tab-settings" class="cb-pane">
-              <h2 class="cb-content-title bricolage">Personality</h2>
-              <p class="cb-content-subtitle">Define instructions and model behavior.</p>
+              <h2 class="cb-content-title bricolage">Lead Conventions & Personality</h2>
+              <p class="cb-content-subtitle">Define how this agent captures leads and behaves.</p>
 
-              <div style="display: flex; flex-direction: column; gap: 25px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div style="width: 100%;">
-                        <label class="cb-label">Model Engine</label>
-                        <select name="bot_type" class="dash-input" style="width: 100%; height: 45px;">
-                            <option value="general" {% if bot.bot_type == 'general' %}selected{% endif %}>General (Default)</option>
-                            <option value="sales" {% if bot.bot_type == 'sales' %}selected{% endif %}>Sales Agent</option>
-                        </select>
-                    </div>
-                    <div style="width: 100%;">
-                        <label class="cb-label">Visibility</label>
-                        <select name="visibility" class="dash-input" style="width: 100%; height: 45px;">
-                            <option value="private" {% if bot.visibility == 'private' %}selected{% endif %}>Private (Restricted)</option>
-                            <option value="public" {% if bot.visibility == 'public' %}selected{% endif %}>Public (Shared)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="width: 100%;">
-                    <label class="cb-label">Base Prompt (System Instructions)</label>
-                    <p style="font-size: 11px; color: #888; margin-bottom: 10px;">This defines how your agent responds to users. Be specific about its role and knowledge.</p>
-                    <textarea name="system_prompt" class="dash-input" rows="12" style="width: 100%; resize: vertical; padding: 20px; line-height: 1.6; font-family: 'Inter', sans-serif;">{{ bot.system_prompt }}</textarea>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+              
+                
+                <div>
+                  <label class="cb-label">Lead Capture Timing</label>
+                  <div class="pretty-dropdown" id="lc-dropdown">
+                      <div class="pd-selected" onclick="toggleLcDropdown()">
+                          <div class="pd-text" id="pd-display-text">
+                              {% if bot.lead_capture_timing == 'disabled' %}Disabled
+                              {% elif bot.lead_capture_timing == 'gatekeeper' %}Gatekeeper Overlay
+                              {% elif bot.lead_capture_timing == 'form_start' %}In-Chat Form (Start)
+                              {% elif bot.lead_capture_timing == 'form_middle' %}In-Chat Form (Middle)
+                              {% elif bot.lead_capture_timing == 'form_end' %}In-Chat Form (End)
+                              {% elif bot.lead_capture_timing == 'conv_start' %}Conversational (Start)
+                              {% elif bot.lead_capture_timing == 'conv_middle' %}Conversational (Middle)
+                              {% elif bot.lead_capture_timing == 'conv_end' %}Conversational (End)
+                              {% else %}Disabled{% endif %}
+                          </div>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </div>
+                      <div class="pd-options" id="pd-options">
+                          <div class="pd-option" onclick="selectLc('disabled', 'Disabled')"><strong>Disabled</strong><span>No lead capture.</span></div>
+                          <div class="pd-option" onclick="selectLc('gatekeeper', 'Gatekeeper (Before Chat)')"><strong>Gatekeeper Overlay</strong><span>Form blocks chat until filled.</span></div>
+                          <div class="pd-option" onclick="selectLc('form_start', 'In-Chat Form (Start)')"><strong>In-Chat Form (Start)</strong><span>AI drops a UI form immediately.</span></div>
+                          <div class="pd-option" onclick="selectLc('form_middle', 'In-Chat Form (Middle)')"><strong>In-Chat Form (Middle)</strong><span>AI drops a UI form after 1-2 questions.</span></div>
+                          <div class="pd-option" onclick="selectLc('form_end', 'In-Chat Form (End)')"><strong>In-Chat Form (End)</strong><span>AI drops a UI form at the end of chat.</span></div>
+                          <div class="pd-option" onclick="selectLc('conv_start', 'Conversational (Start)')"><strong>Conversational (Start)</strong><span>AI asks for details immediately.</span></div>
+                          <div class="pd-option" onclick="selectLc('conv_middle', 'Conversational (Middle)')"><strong>Conversational (Middle)</strong><span>AI asks for details after 1-2 questions.</span></div>
+                          <div class="pd-option" onclick="selectLc('conv_end', 'Conversational (End)')"><strong>Conversational (End)</strong><span>AI asks for details at the end.</span></div>
+                      </div>
+                  </div>
+                  <input type="hidden" name="lead_capture_timing" id="lead_capture_timing" value="{{ bot.lead_capture_timing or 'disabled' }}">
                 </div>
               </div>
 
+              <!-- DYNAMIC FORM BUILDER UI -->
+              <div style="margin-bottom: 24px; background: #fdfaf8; border: 1px solid rgba(232,114,42,0.15); padding: 20px; border-radius: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                      <div>
+                        <label class="cb-label" style="margin: 0; color: var(--orange);">Custom Lead Fields</label>
+                        <p style="font-size: 11px; color: var(--text-muted); margin: 4px 0 0 0;">Name and Email are always required. Add extra fields below.</p>
+                      </div>
+                      <button type="button" style="background: #fff; border: 1px solid rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;" onclick="addCustomField()">+ Add Field</button>
+                  </div>
+                  
+                  <div id="custom-fields-container" style="display: flex; flex-direction: column; gap: 10px;">
+                      <!-- JS will populate rows here -->
+                  </div>
+                  
+                  <input type="hidden" name="custom_form_fields" id="custom_form_fields_json" value="{{ bot.custom_form_fields or '[]' }}">
+              </div>
+
+              <div style="width: 100%;">
+                  <label class="cb-label">Base Prompt (System Instructions)</label>
+                  <p style="font-size: 11px; color: #888; margin-bottom: 10px;">This defines how your agent responds to users. Be specific about its role and knowledge.</p>
+                  <textarea name="system_prompt" class="dash-input" rows="12" style="width: 100%; resize: vertical; padding: 20px; line-height: 1.6; font-family: 'Inter', sans-serif;">{{ bot.system_prompt }}</textarea>
+              </div>
+
               <div class="cb-bottom-bar">
-                <button type="submit" class="btn btn-solid" style="padding: 14px 40px;">Update Agent Personality</button>
+                <button type="submit" class="btn btn-solid" style="padding: 14px 40px;">Update Agent</button>
               </div>
             </div>
 
@@ -276,6 +335,7 @@
   </form>
 </div>
 
+<!-- TEXT EDITOR MODAL -->
 <div class="edit-modal-overlay" id="textEditorModal">
     <div class="edit-modal-box">
         <div class="edit-modal-header">
@@ -303,6 +363,98 @@
     if(targetBtn) targetBtn.classList.add('active');
     document.getElementById(tabId).classList.add('active');
   }
+
+  // --- CUSTOM FORM BUILDER LOGIC ---
+  let customFieldsState = [];
+
+  document.addEventListener("DOMContentLoaded", function() {
+      const hiddenInput = document.getElementById('custom_form_fields_json');
+      if(hiddenInput && hiddenInput.value) {
+          try {
+              customFieldsState = JSON.parse(hiddenInput.value);
+              if(!Array.isArray(customFieldsState)) customFieldsState = [];
+          } catch(e) {
+              if (typeof hiddenInput.value === 'string' && hiddenInput.value.trim() !== '') {
+                  customFieldsState = hiddenInput.value.split(',').map(f => ({
+                      name: f.trim(), type: 'text', required: false
+                  })).filter(f => f.name);
+              }
+          }
+      }
+      renderCustomFields();
+  });
+
+  function renderCustomFields() {
+      const container = document.getElementById('custom-fields-container');
+      const hiddenInput = document.getElementById('custom_form_fields_json');
+      if(!container) return;
+
+      hiddenInput.value = JSON.stringify(customFieldsState);
+      container.innerHTML = '';
+
+      if(customFieldsState.length === 0) {
+          container.innerHTML = '<div style="font-size: 12px; color: #9ca3af; font-style: italic; text-align: center; padding: 10px; background: #fff; border-radius: 8px; border: 1px dashed rgba(0,0,0,0.1);">No extra fields. Only Name and Email will be collected.</div>';
+          return;
+      }
+
+      customFieldsState.forEach((field, index) => {
+          const row = document.createElement('div');
+          row.style.cssText = "display: flex; gap: 10px; align-items: center; background: #fff; padding: 10px; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
+          
+          row.innerHTML = `
+              <div style="flex: 2;">
+                  <input type="text" style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none;" placeholder="Field Name (e.g. Company)" value="${field.name}" onchange="updateCustomField(${index}, 'name', this.value)">
+              </div>
+              <div style="flex: 1;">
+                  <select style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none; background: #fff;" onchange="updateCustomField(${index}, 'type', this.value)">
+                      <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text</option>
+                      <option value="email" ${field.type === 'email' ? 'selected' : ''}>Email</option>
+                      <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
+                  </select>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; padding: 0 10px;">
+                  <input type="checkbox" id="req_${index}" ${field.required ? 'checked' : ''} onchange="updateCustomField(${index}, 'required', this.checked)" style="accent-color: var(--orange); cursor: pointer; width: 14px; height: 14px;">
+                  <label for="req_${index}" style="font-size: 12px; color: #4b5563; cursor: pointer; margin: 0; font-weight: 500;">Required</label>
+              </div>
+              <button type="button" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center;" onclick="removeCustomField(${index})" title="Delete Field">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+          `;
+          container.appendChild(row);
+      });
+  }
+
+  function addCustomField() {
+      customFieldsState.push({ name: '', type: 'text', required: false });
+      renderCustomFields();
+  }
+
+  function updateCustomField(index, key, value) {
+      customFieldsState[index][key] = value;
+      document.getElementById('custom_form_fields_json').value = JSON.stringify(customFieldsState);
+  }
+
+  function removeCustomField(index) {
+      customFieldsState.splice(index, 1);
+      renderCustomFields();
+  }
+
+  // --- DROPDOWN LOGIC ---
+  function toggleLcDropdown() {
+      document.getElementById('pd-options').classList.toggle('show');
+  }
+  function selectLc(value, text) {
+      document.getElementById('lead_capture_timing').value = value;
+      document.getElementById('pd-display-text').innerText = text;
+      document.getElementById('pd-options').classList.remove('show');
+  }
+  document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('lc-dropdown');
+      if (dropdown && !dropdown.contains(event.target)) {
+          const options = document.getElementById('pd-options');
+          if(options) options.classList.remove('show');
+      }
+  });
 
   // --- FILE STAGING LOGIC ---
   let stagedFiles = [];
@@ -401,7 +553,6 @@
       const newContent = document.getElementById('editor-textarea').value;
       const oldFile = stagedFiles[currentlyEditingIndex];
       
-      // Create a brand new File object with the edited text, matching the old file's metadata
       const updatedFile = new File([newContent], oldFile.name, {
           type: oldFile.type,
           lastModified: Date.now()
@@ -413,19 +564,23 @@
       closeTextEditor();
   }
 
-  // --- UI PREVIEW LOGIC ---
+
   function previewAvatarEdit(event) {
       const file = event.target.files[0];
       if (file) {
           const reader = new FileReader();
           reader.onload = function(e) {
               const imgUrl = e.target.result;
-              const avatarPreview = document.getElementById('preview-avatar');
-              avatarPreview.style.backgroundColor = 'transparent';
-              avatarPreview.style.backgroundImage = `url(${imgUrl})`;
-              avatarPreview.style.backgroundSize = 'cover';
-              avatarPreview.style.backgroundPosition = 'center';
-              avatarPreview.innerText = '';
+              const avatars = [document.getElementById('preview-avatar'), document.getElementById('preview-avatar-setting')];
+              avatars.forEach(av => {
+                  if(av) {
+                      av.style.backgroundColor = 'transparent';
+                      av.style.backgroundImage = `url(${imgUrl})`;
+                      av.style.backgroundSize = 'cover';
+                      av.style.backgroundPosition = 'center';
+                      av.innerText = '';
+                  }
+              });
           }
           reader.readAsDataURL(file);
       }

@@ -1,9 +1,9 @@
+import json
 import re
+import logging
 from flask import Blueprint, request, jsonify, session
 from bot.chat import get_response_from_gemini
 from models.models import Bot, Lead, db
-import logging 
-import json
 
 api_bp = Blueprint('api_bp', __name__)
 
@@ -27,23 +27,31 @@ def chat():
         timing = bot_record.lead_capture_timing
         custom_fields = getattr(bot_record, 'custom_form_fields', '').strip()
 
-        # --- DYNAMIC PROMPT INJECTION ---
         if timing and timing != 'disabled' and timing != 'gatekeeper':
             ai_prompt += "\n\n--- LEAD CAPTURE INSTRUCTIONS ---\n"
             
-            # Extract just the field names from the JSON format (if present)
             custom_field_names = []
+            formatting_rules = ""
+            
             if custom_fields:
                 try:
                     fields_list = json.loads(custom_fields)
-                    custom_field_names = [f.get('name') for f in fields_list if f.get('name')]
-                except:
+                    for f in fields_list:
+                        name = f.get('name')
+                        f_type = f.get('type', 'text')
+                        
+                        if name:
+                            custom_field_names.append(name)
+                            if f_type == 'number':
+                                formatting_rules += f"  * {name}: MUST be a pure mathematical integer (digits only). Convert Indian/Global terms like '1 crore' to 10000000. Strip commas, text, and currency symbols (INR, $, Rs). If a range is given, use the lower bound. If undecided or unknown, output 0.\n"
+                            elif f_type == 'email':
+                                formatting_rules += f"  * {name}: MUST be formatted as a valid, standard email address.\n"
+                except Exception:
                     pass
 
             custom_text_str = ", ".join(custom_field_names)
             custom_text = f", and these extra details: {custom_text_str}" if custom_text_str else ""
             
-            # RULES FOR CONVERSATIONAL MODE
             if timing.startswith('conv_'):
                 ai_prompt += f"Your goal is to collect the user's Name, Email, Phone Number{custom_text} conversationally. Ask for the information naturally.\n"
                 
@@ -54,18 +62,23 @@ def chat():
                 elif 'end' in timing:
                     ai_prompt += f"When concluding the chat, politely ask for their name, email, phone number{custom_text}.\n"
 
-                # NEW STRICT VALIDATION & SCORING RULES
+                # STRICT VALIDATION & SCORING RULES
+                ai_prompt += "CRITICAL VALIDATION & SCORING:\n"
+                ai_prompt += "1. STRICT DATA ENFORCEMENT: Be ruthless against fake data. Do NOT accept gibberish ('asdf'), placeholder emails ('email@gmail.com', 'test@test.com'), placeholder names ('user', 'test'), or fake sequential phone numbers ('1234567890', '0000000000'). If the user provides fake or lazy data, politely reject it, state that it appears to be a placeholder, and ask for their real details to proceed.\n"
+                
+                if formatting_rules:
+                    ai_prompt += f"2. CUSTOM FIELD FORMATTING RULES:\n{formatting_rules}"
+                    ai_prompt += "3. LEAD SCORING: You must secretly evaluate this user's intent. Score them 'High', 'Medium', or 'Low' based on interaction quality.\n\n"
+                else:
+                    ai_prompt += "2. LEAD SCORING: You must secretly evaluate this user's intent. Score them 'High', 'Medium', or 'Low' based on interaction quality.\n\n"
+                
                 ai_prompt += (
-                    "CRITICAL VALIDATION & SCORING:\n"
-                    "1. STRICT DATA ENFORCEMENT: Do NOT accept gibberish (e.g., 'asdf', 'test'), fake short emails ('a@m.com'), or impossibly short phone numbers (e.g., '978'). If the user provides fake or lazy data, politely tell them it seems invalid and ask for their real details to proceed.\n"
-                    "2. LEAD SCORING: You must secretly evaluate this user's intent. Score them 'High' (asking deep questions, providing full details), 'Medium' (normal interaction), or 'Low' (giving short, dismissive, or borderline fake answers).\n\n"
-                    "CRITICAL INSTRUCTION: Once the user provides ALL valid details, you MUST append this exact hidden tag at the VERY END of your response: "
-                    "[[LEAD: Name | Email | Phone | JSON_Custom_Data]]\n"
+                    "CRITICAL INSTRUCTION: You MUST output the exact hidden tag ONLY ONCE during the entire conversation, immediately after the user provides their final missing detail. Do NOT output it again in subsequent messages.\n"
+                    "The tag format is: [[LEAD: Name | Email | Phone | JSON_Custom_Data]]\n"
                     "Replace JSON_Custom_Data with a valid JSON object containing any extra details AND your Lead Quality Score under the key 'Priority' (e.g. {\"Company\": \"Google\", \"Priority\": \"High\"}). If there are no extra details, just put {\"Priority\": \"Low/Medium/High\"}. "
                     "DO NOT acknowledge this tag in your conversational text. Just append it secretly."
                 )
                 
-            # RULES FOR IN-CHAT FORM MODE
             elif timing.startswith('form_'):
                 ai_prompt += "You need to trigger a secure visual lead capture form.\n"
                 if 'start' in timing:
@@ -81,7 +94,6 @@ def chat():
                     "and the system will display the visual form."
                 )
 
-        # Send to Gemini
         reply = get_response_from_gemini(
             user_query=user_message, 
             target_store_id=bot_record.store_id, 
@@ -89,7 +101,6 @@ def chat():
             history=history
         )
 
-        # --- BACKEND INTERCEPTION ---
         if timing and timing.startswith('conv_'):
             lead_match = re.search(r'\[\[LEAD:(.*?)\]\]', reply)
             if lead_match:
@@ -111,14 +122,22 @@ def chat():
                     if extracted_custom_raw and extracted_custom_raw != '{}':
                         custom_data_dict = {"Extracted Data": extracted_custom_raw}
 
-                new_lead = Lead(
-                    bot_id=bot_id, 
-                    name=extracted_name, 
-                    email=extracted_email, 
-                    phone=extracted_phone,
-                    custom_data=custom_data_dict
-                )
-                db.session.add(new_lead)
+                existing_lead = Lead.query.filter_by(bot_id=bot_id, email=extracted_email).first()
+
+                if existing_lead:
+                    existing_lead.name = extracted_name
+                    existing_lead.phone = extracted_phone
+                    existing_lead.custom_data = custom_data_dict
+                else:
+                    new_lead = Lead(
+                        bot_id=bot_id, 
+                        name=extracted_name, 
+                        email=extracted_email, 
+                        phone=extracted_phone,
+                        custom_data=custom_data_dict
+                    )
+                    db.session.add(new_lead)
+                
                 db.session.commit()
 
                 reply = re.sub(r'\s*\[\[LEAD:.*?\]\]\s*', '', reply).strip()
@@ -129,7 +148,7 @@ def chat():
         db.session.rollback()
         logging.error(f"API Crash: {str(e)}")
         return jsonify({"error": "The AI is currently experiencing high demand. Please try again in a few seconds."})
-       
+
 @api_bp.route('/api/lead', methods=['POST'])
 def capture_lead():
     data = request.json
@@ -143,16 +162,61 @@ def capture_lead():
         return jsonify({"error": "Missing required fields"}), 400
 
     try:
-        new_lead = Lead(
-            bot_id=bot_id, 
-            name=name, 
-            email=email, 
-            phone=phone, 
-            custom_data=custom_data 
-        )
-        db.session.add(new_lead)
+        # --- 1. AI BACKGROUND VALIDATION & SCORING ---
+        validation_prompt = f"""
+        You are a strict data validator for a lead capture form.
+        Evaluate this form submission:
+        Name: {name}
+        Email: {email}
+        Phone: {phone}
+        Custom Data: {custom_data}
+        
+        1. Check for obvious fakes, gibberish, or placeholders ('asdf', 'email@gmail.com', '1234567890', 'test', 'user').
+        2. Score the intent. High (real, professional), Medium (standard data), Low (lazy/placeholder).
+        
+        You MUST output ONLY a valid JSON object. No markdown, no backticks, no other text:
+        {{"Priority": "High", "is_fake": false}}
+        """
+        
+        # Send to Gemini
+        ai_eval = get_response_from_gemini(user_query="Validate Form", custom_prompt=validation_prompt)
+        
+        # Clean and parse the JSON
+        try:
+            clean_eval = ai_eval.replace('```json', '').replace('```', '').strip()
+            score_data = json.loads(clean_eval)
+            priority = score_data.get("Priority", "Medium")
+            is_fake = score_data.get("is_fake", False)
+        except Exception:
+            priority = "Medium"
+            is_fake = False
+            
+        if is_fake:
+            return jsonify({"error": "Please provide valid, real contact details. Placeholders are not accepted."}), 400
+            
+        # Inject the AI's score into the data
+        custom_data['Priority'] = priority
+
+        # --- 2. UPSERT LOGIC TO PREVENT DUPLICATES ---
+        existing_lead = Lead.query.filter_by(bot_id=bot_id, email=email).first()
+
+        if existing_lead:
+            existing_lead.name = name
+            existing_lead.phone = phone
+            existing_lead.custom_data = custom_data
+        else:
+            new_lead = Lead(
+                bot_id=bot_id, 
+                name=name, 
+                email=email, 
+                phone=phone, 
+                custom_data=custom_data 
+            )
+            db.session.add(new_lead)
+            
         db.session.commit()
         return jsonify({"success": True}), 200
+
     except Exception as e:
         db.session.rollback()
         logging.error(f"Lead Capture Database Error: {str(e)}")

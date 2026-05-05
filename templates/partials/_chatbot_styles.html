@@ -110,7 +110,15 @@
   .pd-option span { display: block; font-size: 12px; color: #6b7280; }
 </style>
 <script>
-  // Robust bridge: Checks for embed object first, falls back to dashboard session
-  window.LEAD_TIMING = "{{ bot.lead_capture_timing if bot else session.get('lead_capture_timing', 'disabled') }}";
+  window.LEAD_TIMING = "{{ bot.lead_capture_timing if bot and bot.lead_capture_timing else session.get('lead_capture_timing', 'disabled') }}";
   window.EMBEDDED_BOT_ID = "{{ bot.id if bot else session.get('active_bot_id', '') }}";
+  
+  // Safely extract the JSON, fallback to empty array, and prevent HTML encoding
+  {% set fields_json = bot.custom_form_fields if bot and bot.custom_form_fields else session.get('custom_form_fields', '[]') %}
+  window.CUSTOM_FIELDS = `{{ fields_json | safe }}`;
+  
+  // Extra failsafe in case Python passes an empty string
+  if (!window.CUSTOM_FIELDS || window.CUSTOM_FIELDS.trim() === "None" || window.CUSTOM_FIELDS.trim() === "") {
+      window.CUSTOM_FIELDS = "[]";
+  }
 </script>

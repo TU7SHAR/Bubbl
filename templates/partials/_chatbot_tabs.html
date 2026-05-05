@@ -101,7 +101,7 @@
                   </div>
               </div>
           </div>
-          <div style="background: rgba(232,114,42,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(232,114,42,0.1); margin-bottom: 20px;">
+          <!-- <div style="background: rgba(232,114,42,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(232,114,42,0.1); margin-bottom: 20px;">
               <label class="cb-label" style="color: var(--orange);">Glassmorphism Settings</label>
               <div style="margin-bottom: 15px;">
                   <div style="display:flex; justify-content: space-between;"><label class="cb-label">Opacity</label><span id="val-opacity" style="font-size:10px; font-weight:800;">35%</span></div>
@@ -111,7 +111,7 @@
                   <div style="display:flex; justify-content: space-between;"><label class="cb-label">Blur Radius</label><span id="val-blur" style="font-size:10px; font-weight:800;">25px</span></div>
                   <input type="range" name="glass_blur" id="glass_blur" min="0" max="50" value="25" style="width:100%; accent-color: var(--orange);" oninput="updateLivePreview()">
               </div>
-          </div>
+          </div> -->
           <label class="cb-label">Profile Picture</label>
           <div style="display: flex; align-items: center; gap: 15px;">
               <div id="preview-avatar-setting" class="mock-avatar" style="width: 40px; height: 40px;">Y</div>
@@ -161,10 +161,10 @@
               <div class="pd-option" onclick="selectLc('disabled', 'Disabled')"><strong>Disabled</strong><span>No lead capture.</span></div>
               <div class="pd-option" onclick="selectLc('conv_start', 'Conversational (Start)')"><strong>Conversational (Start)</strong><span>AI asks for details immediately while talking to bot.</span></div>
               <div class="pd-option" onclick="selectLc('conv_middle', 'Conversational (Middle)')"><strong>Conversational (Middle)</strong><span>AI asks for details after 1-2 questions.</span></div>
-              <div class="pd-option" onclick="selectLc('gatekeeper', 'Gatekeeper (Before Chat)')"><strong>Gatekeeper Overlay</strong><span>Form blocks chat until filled.</span></div>
-              <div class="pd-option" onclick="selectLc('form_start', 'In-Chat Form (Start)')"><strong>In-Chat Form (Start)</strong><span>AI drops a UI form immediately.</span></div>
+              <!-- <div class="pd-option" onclick="selectLc('form_start', 'In-Chat Form (Start)')"><strong>In-Chat Form (Start)</strong><span>AI drops a UI form immediately.</span></div>
               <div class="pd-option" onclick="selectLc('form_middle', 'In-Chat Form (Middle)')"><strong>In-Chat Form (Middle)</strong><span>AI drops a UI form after 1-2 questions.</span></div>
               <div class="pd-option" onclick="selectLc('form_end', 'In-Chat Form (End)')"><strong>In-Chat Form (End)</strong><span>AI drops a UI form at the end of chat.</span></div>
+              <div class="pd-option" onclick="selectLc('gatekeeper', 'Gatekeeper (Before Chat)')"><strong>Gatekeeper Overlay</strong><span>Form blocks chat until filled.</span></div> -->
           </div>
       </div>
       <input type="hidden" name="lead_capture_timing" id="lead_capture_timing" value="disabled">

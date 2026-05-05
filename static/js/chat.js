@@ -146,6 +146,9 @@ async function submitLeadForm(prefix) {
       body: JSON.stringify(payload),
     });
 
+    // Read the JSON response to grab the exact AI error message
+    const data = await response.json();
+
     if (response.ok) {
       leadCaptured = true;
       if (prefix === "gk") {
@@ -162,7 +165,8 @@ async function submitLeadForm(prefix) {
         setInputState(false);
       }
     } else {
-      alert("There was an error saving your details.");
+      // Show the dynamic AI rejection message
+      alert(data.error || "There was an error saving your details.");
       btn.innerText = "Submit";
       btn.disabled = false;
     }
