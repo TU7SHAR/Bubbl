@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}chat.bot vs Intercom — AI Chatbot Comparison 2026{% endblock %}
+{% block title %}{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} vs Intercom — AI Chatbot Comparison 2026{% endblock %}
 
 {% block content %}
 <style>
@@ -15,11 +15,11 @@
   .section-title { text-align: center; width: 100%; margin-top: 4rem; }
 </style>
 
-<div class="page-header reveal"><p class="section-label">Comparison</p><h1>chat.bot vs Intercom</h1><p>Avoid per-resolution fees and high seat costs by switching to chat.bot.</p></div>
+<div class="page-header reveal"><p class="section-label">Comparison</p><h1>{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} vs Intercom</h1><p>Avoid per-resolution fees and high seat costs by switching to {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}.</p></div>
 
 <section>
   <div class="lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c">
-    <table class="compare-table"><thead><tr><th>Feature</th><th>Intercom</th><th class="bubbl-col">chat.bot</th></tr></thead><tbody>
+    <table class="compare-table"><thead><tr><th>Feature</th><th>Intercom</th><th class="bubbl-col">{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</th></tr></thead><tbody>
     <tr><td>No per-chat fees</td><td class="cross">✗ Charges $0.99/res</td><td class="check bubbl-col">✓ Included in plan</td></tr>
     <tr><td>WhatsApp-Native</td><td class="partial">Add-on cost</td><td class="check bubbl-col">✓ Core focus</td></tr>
     <tr><td>Starting Price</td><td>$74/mo+</td><td class="bubbl-col"><strong>₹0 (Free)</strong></td></tr>
@@ -28,10 +28,10 @@
 
   <h2 class="section-title reveal">Where Intercom falls short</h2>
   <div class="lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c">
-    <table class="compare-table"><thead><tr><th>Limitation</th><th>Intercom</th><th class="bubbl-col">chat.bot</th></tr></thead><tbody>
-    <tr><td>Very expensive for SMBs</td><td class="cross">✗ Intercom</td><td class="check">✓ chat.bot</td></tr>
-    <tr><td>Complex pricing model</td><td class="cross">✗ Intercom</td><td class="check">✓ chat.bot</td></tr>
-    <tr><td>Overkill for simple tasks</td><td class="cross">✗ Intercom</td><td class="check">✓ chat.bot</td></tr>
+    <table class="compare-table"><thead><tr><th>Limitation</th><th>Intercom</th><th class="bubbl-col">{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</th></tr></thead><tbody>
+    <tr><td>Very expensive for SMBs</td><td class="cross">✗ Intercom</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
+    <tr><td>Complex pricing model</td><td class="cross">✗ Intercom</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
+    <tr><td>Overkill for simple tasks</td><td class="cross">✗ Intercom</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
     </tbody></table>
   </div></div>
 </section>

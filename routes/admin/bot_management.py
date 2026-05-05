@@ -152,6 +152,7 @@ def create_pipeline():
     
     session['active_bot_id'] = new_bot.id
     session['active_bot_name'] = new_bot.bot_name
+    session['lead_capture_timing'] = new_bot.lead_capture_timing
     session['theme_color'] = new_ui.theme_color
     session['header_color'] = new_ui.header_color
     session['theme_mode'] = new_ui.theme_mode
@@ -268,6 +269,7 @@ def update_bot(bot_id):
     
     if session.get('active_bot_id') == bot.id:
         session['active_bot_name'] = bot.bot_name
+        session['lead_capture_timing'] = bot.lead_capture_timing
         session['theme_color'] = bot.ui_settings.theme_color
         session['header_color'] = bot.ui_settings.header_color
         session['theme_mode'] = bot.ui_settings.theme_mode

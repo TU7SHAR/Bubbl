@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}chat.bot vs Chatbase — AI Chatbot Comparison 2026{% endblock %}
+{% block title %}{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} vs Chatbase — AI Chatbot Comparison 2026{% endblock %}
 
 {% block content %}
 <style>
@@ -26,11 +26,11 @@
   .feature-card { padding: 2rem; border-radius: 20px; }
 </style>
 
-<div class="page-header reveal"><p class="section-label">Comparison</p><h1>chat.bot vs Chatbase</h1><p>See why businesses are switching from Chatbase to chat.bot. Here's a detailed comparison.</p></div>
+<div class="page-header reveal"><p class="section-label">Comparison</p><h1>{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} vs Chatbase</h1><p>See why businesses are switching from Chatbase to {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}. Here's a detailed comparison.</p></div>
 
 <section>
   <div class="lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c">
-    <table class="compare-table"><thead><tr><th>Feature</th><th>Chatbase</th><th class="bubbl-col">chat.bot</th></tr></thead><tbody>
+    <table class="compare-table"><thead><tr><th>Feature</th><th>Chatbase</th><th class="bubbl-col">{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</th></tr></thead><tbody>
     <tr><td>WhatsApp-Native</td><td class="partial">Limited</td><td class="check bubbl-col">✓ Deep API integration</td></tr>
     <tr><td>Website Widget</td><td class="check">✓</td><td class="check bubbl-col">✓</td></tr>
     <tr><td>AI Training (Docs/URLs)</td><td class="check">✓</td><td class="check bubbl-col">✓ + Auto-refresh</td></tr>
@@ -45,15 +45,15 @@
 
   <h2 class="section-title reveal">Where Chatbase falls short</h2>
   <div class="lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c">
-    <table class="compare-table"><thead><tr><th>Limitation</th><th>Chatbase</th><th class="bubbl-col">chat.bot</th></tr></thead><tbody>
-    <tr><td>No visual flow builder</td><td class="cross">✗ Chatbase</td><td class="check">✓ chat.bot</td></tr>
-    <tr><td>No native live chat handoff</td><td class="cross">✗ Chatbase</td><td class="check">✓ chat.bot</td></tr>
-    <tr><td>Expensive white-labeling</td><td class="cross">✗ Chatbase</td><td class="check">✓ chat.bot</td></tr>
-    <tr><td>Weak WhatsApp integration</td><td class="cross">✗ Chatbase</td><td class="check">✓ chat.bot</td></tr>
+    <table class="compare-table"><thead><tr><th>Limitation</th><th>Chatbase</th><th class="bubbl-col">{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</th></tr></thead><tbody>
+    <tr><td>No visual flow builder</td><td class="cross">✗ Chatbase</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
+    <tr><td>No native live chat handoff</td><td class="cross">✗ Chatbase</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
+    <tr><td>Expensive white-labeling</td><td class="cross">✗ Chatbase</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
+    <tr><td>Weak WhatsApp integration</td><td class="cross">✗ Chatbase</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
     </tbody></table>
   </div></div>
 
-  <h2 class="section-title reveal">Why switch to chat.bot?</h2>
+  <h2 class="section-title reveal">Why switch to {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}?</h2>
   <div class="features-grid reveal">
     <div class="feature-card lg"><div class="lg-c"><h3>WhatsApp-First</h3><p>Built for India's WhatsApp economy. Not an afterthought.</p></div></div>
     <div class="feature-card lg"><div class="lg-c"><h3>India Pricing</h3><p>Plans from ₹0 with UPI/Razorpay billing.</p></div></div>

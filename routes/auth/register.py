@@ -1,5 +1,5 @@
 import bcrypt
-from flask import render_template, request, redirect, url_for, session, flash
+from flask import config, render_template, request, redirect, url_for, session, flash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms.validators import DataRequired, Email
@@ -85,7 +85,7 @@ def verify_otp():
             session['role'] = user.role
             session.pop('verify_email', None)
 
-            flash("Account verified successfully! Welcome to chat.bot.", "success")
+            flash(f"Account verified successfully! Welcome to {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}", "success")
             return redirect(url_for('views_bp.dashboard'))
         else:
             flash("Invalid or expired verification code.", "error")

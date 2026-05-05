@@ -78,7 +78,7 @@ def send_auto_reply(user_name, user_email):
     smtp_user = os.getenv('EMAIL_ADDRESS')
     smtp_password = os.getenv('EMAIL_PASSWORD')
     
-    platform_name = "Chat.bot Support Team" 
+    platform_name = "{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} Support Team" 
 
     msg = MIMEMultipart()
     msg['From'] = f"{platform_name} <{smtp_user}>"
@@ -113,7 +113,7 @@ The {platform_name}
         return False
 
 def send_invite_email(target_email, user_name, plain_password):
-    subject = "You've been invited to chat.bot"
+    subject = "You've been invited to {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}"
     body = f"Hi {user_name},\n\nYou have been invited to join the team dashboard.\n\nLogin Email: {target_email}\nTemporary Password: {plain_password}\n\nPlease log in and change your password immediately."
     
     try:
@@ -131,7 +131,7 @@ def send_otp_email(to_email, otp_code):
     html_content = f"""
     <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eee; border-radius: 10px;">
         <h2 style="color: #111827;">Your Verification Code</h2>
-        <p style="color: #4b5563; font-size: 16px;">Please use the following 6-digit code to verify your chat.bot account:</p>
+        <p style="color: #4b5563; font-size: 16px;">Please use the following 6-digit code to verify your {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} account:</p>
         <div style="background: #f9fafb; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
             <strong style="font-size: 32px; letter-spacing: 4px; color: #E8722A;">{otp_code}</strong>
         </div>
@@ -140,7 +140,7 @@ def send_otp_email(to_email, otp_code):
     """
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "chat.bot - Your Verification Code"
+    msg["Subject"] = "{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} - Your Verification Code"
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = to_email
 

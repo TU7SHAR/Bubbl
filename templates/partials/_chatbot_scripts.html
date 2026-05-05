@@ -1,4 +1,5 @@
 <script>
+  
   let globalAttachedFiles = [], tempAttachedFiles = [], selectedFileIndices = new Set();
   let globalTextSnippets = [], tempTextSnippets = [], editingTextIndex = -1;
   let globalLinks = [], tempLinks = [], selectedLinkIndices = new Set(), editingLinkIndex = -1;
@@ -7,6 +8,22 @@
   let permanentLogs = [];
   let currentScrapeLogs = "";
   let isPromptManuallyEdited = false;
+
+  function toggleLcDropdown() {
+      document.getElementById('pd-options').classList.toggle('show');
+  }
+  function selectLc(value, text) {
+      document.getElementById('lead_capture_timing').value = value;
+      document.getElementById('pd-display-text').innerText = text;
+      document.getElementById('pd-options').classList.remove('show');
+  }
+  document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('lc-dropdown');
+      if (dropdown && !dropdown.contains(event.target)) {
+          const options = document.getElementById('pd-options');
+          if(options) options.classList.remove('show');
+      }
+  });
 
 
   function formatBytes(bytes) {

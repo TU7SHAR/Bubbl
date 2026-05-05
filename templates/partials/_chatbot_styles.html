@@ -87,6 +87,27 @@
 .cb-bottom-bar { margin-top: 40px; padding-top: 20px; border-top: 2px solid rgba(232, 114, 42, 0.15); display: flex; justify-content: flex-end; align-items: center; }
 .log-line { margin-bottom: 8px; }
 .log-time { color: #64748b; margin-right: 10px; }
+/* --- CUSTOM PRETTY DROPDOWN --- */
+  .pretty-dropdown { position: relative; width: 100%; user-select: none; }
+  .pd-selected {
+      background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;
+      padding: 12px 16px; display: flex; justify-content: space-between;
+      align-items: center; cursor: pointer; font-size: 14px; color: #111827; transition: all 0.2s;
+  }
+  .pd-selected:hover { border-color: var(--orange); }
+  .pd-options {
+      position: absolute; top: 100%; left: 0; right: 0; background: #fff;
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; margin-top: 4px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 50; display: none;
+      max-height: 280px; overflow-y: auto;
+  }
+  .pd-options.show { display: block; animation: pdFadeIn 0.2s ease; }
+  @keyframes pdFadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+  .pd-option { padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: background 0.2s; }
+  .pd-option:last-child { border-bottom: none; }
+  .pd-option:hover { background: rgba(232, 114, 42, 0.05); }
+  .pd-option strong { display: block; font-size: 14px; color: #111827; margin-bottom: 2px; }
+  .pd-option span { display: block; font-size: 12px; color: #6b7280; }
 </style>
 <script>
   // Robust bridge: Checks for embed object first, falls back to dashboard session

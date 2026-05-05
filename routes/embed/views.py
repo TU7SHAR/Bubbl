@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, make_response, jsonify
-from models.models import Bot, User, db
+from models.models import Bot, User, Lead, db
 from utils.mail_helper import is_valid_email, send_contact_email, send_auto_reply
+import csv
+import io
 
 views_bp = Blueprint('views_bp', __name__)
 
@@ -11,6 +13,58 @@ def index():
 @views_bp.route('/pricing')
 def pricing():
     return render_template('pricing.html')
+
+@views_bp.route('/export_leads')
+def export_leads():
+    if not session.get('user_id'): 
+        return redirect(url_for('auth.login'))
+        
+    # Find all bots belonging to the user's organization
+    org_bots = Bot.query.filter_by(org_id=session.get('org_id')).all()
+    bot_ids = [bot.id for bot in org_bots]
+    
+    # Fetch all leads
+    leads = Lead.query.filter(Lead.bot_id.in_(bot_ids)).order_by(Lead.captured_at.desc()).all()
+
+    # Generate the CSV in memory
+    si = io.StringIO()
+    cw = csv.writer(si)
+    
+    # Write the Header Row
+    cw.writerow(['Name', 'Email', 'Phone', 'Source Bot', 'Captured At'])
+    
+    # Write the Data Rows
+    for lead in leads:
+        captured_time = lead.captured_at.strftime('%Y-%m-%d %H:%M:%S') if lead.captured_at else 'Unknown'
+        bot_name = lead.bot_ref.bot_name if lead.bot_ref else 'Unknown'
+        cw.writerow([
+            lead.name, 
+            lead.email, 
+            lead.phone or 'N/A', 
+            bot_name, 
+            captured_time
+        ])
+
+    # Create the response and tell the browser it's a file download
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=bubbl_leads_export.csv"
+    output.headers["Content-type"] = "text/csv"
+    
+    return output
+
+@views_bp.route('/leads')
+def leads_dashboard():
+    if not session.get('user_id'): 
+        return redirect(url_for('auth.login'))
+        
+    # Find all bots belonging to the user's organization
+    org_bots = Bot.query.filter_by(org_id=session.get('org_id')).all()
+    bot_ids = [bot.id for bot in org_bots]
+    
+    # Fetch all leads captured by these bots, newest first
+    leads = Lead.query.filter(Lead.bot_id.in_(bot_ids)).order_by(Lead.captured_at.desc()).all()
+
+    return render_template('leads.html', leads=leads)
 
 @views_bp.route('/compare')
 @views_bp.route('/compare/<competitor>')
@@ -92,6 +146,7 @@ def set_active_bot(bot_id):
         if target_bot.visibility == 'public' or is_creator or is_unlocked:
             session['active_bot_id'] = target_bot.id
             session['active_bot_name'] = target_bot.bot_name
+            session['lead_capture_timing'] = target_bot.lead_capture_timing
             
             if hasattr(target_bot, 'ui_settings') and target_bot.ui_settings:
                 session['theme_color'] = target_bot.ui_settings.theme_color
@@ -119,6 +174,7 @@ def unlock_bot(bot_id):
     submitted_key = request.form.get('access_key', '').upper()
     target_bot = Bot.query.get(bot_id)
     
+    
     if target_bot and target_bot.access_key == submitted_key:
         unlocked = session.get('unlocked_bots', [])
         if bot_id not in unlocked:
@@ -127,6 +183,7 @@ def unlock_bot(bot_id):
         
         session['active_bot_id'] = target_bot.id
         session['active_bot_name'] = target_bot.bot_name
+        session['lead_capture_timing'] = target_bot.lead_capture_timing
         
         if hasattr(target_bot, 'ui_settings') and target_bot.ui_settings:
             session['theme_color'] = target_bot.ui_settings.theme_color

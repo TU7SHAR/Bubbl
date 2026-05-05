@@ -1,6 +1,6 @@
-let messageCount = 0;
-let leadCaptureState = "idle"; // Can be: 'idle', 'asking_details', 'captured'
-let interceptedMessage = ""; // Holds the message the user was trying to send
+let chatHistory = [];
+let leadCaptured = false;
+let pendingMessage = "";
 
 function toggleChat() {
   const chatPopup = document.getElementById("chat-window-popup");
@@ -9,9 +9,105 @@ function toggleChat() {
   if (chatPopup.classList.contains("hidden")) {
     chatPopup.classList.remove("hidden");
     if (spriteContainer) spriteContainer.classList.add("chat-open");
+
+    // TRIGGER GATEKEEPER MODE
+    if (window.LEAD_TIMING === "gatekeeper" && !leadCaptured) {
+      renderGatekeeperForm();
+    }
   } else {
     chatPopup.classList.add("hidden");
     if (spriteContainer) spriteContainer.classList.remove("chat-open");
+  }
+}
+
+function renderGatekeeperForm() {
+  if (document.getElementById("gatekeeper-overlay")) return;
+
+  const display = document.getElementById("chat-window-popup");
+  const overlay = document.createElement("div");
+  overlay.id = "gatekeeper-overlay";
+  overlay.className = "lead-overlay-container";
+
+  overlay.innerHTML = `
+        <div class="lead-form-card">
+            <h3 style="margin-top:0; color:#111827; text-align:center; font-family:'Bricolage Grotesque', sans-serif;">Welcome!</h3>
+            <p style="font-size:13px; color:#6b7280; text-align:center; margin-bottom:20px;">Please share the following details to continue</p>
+            <input type="text" id="gk-name" class="lead-input" placeholder="Your full name">
+            <input type="email" id="gk-email" class="lead-input" placeholder="Email address">
+            <input type="text" id="gk-phone" class="lead-input" placeholder="Mobile number (Optional)">
+            <button id="gk-btn" class="lead-submit-btn" onclick="submitLeadForm('gk')">Continue</button>
+        </div>
+    `;
+  display.appendChild(overlay);
+}
+
+function renderInChatForm() {
+  if (document.getElementById("in-chat-form-wrapper")) return;
+
+  const display = document.getElementById("chat-display");
+  const formDiv = document.createElement("div");
+  formDiv.id = "in-chat-form-wrapper";
+  formDiv.className = "in-chat-form-container";
+
+  formDiv.innerHTML = `
+        <input type="text" id="ic-name" class="lead-input" placeholder="* Name">
+        <input type="email" id="ic-email" class="lead-input" placeholder="* Email">
+        <input type="text" id="ic-phone" class="lead-input" placeholder="Phone (Optional)">
+        <button id="ic-btn" class="lead-submit-btn" onclick="submitLeadForm('ic')">Submit</button>
+    `;
+  display.appendChild(formDiv);
+  display.scrollTop = display.scrollHeight;
+
+  setInputState(true);
+}
+
+async function submitLeadForm(prefix) {
+  const name = document.getElementById(`${prefix}-name`).value.trim();
+  const email = document.getElementById(`${prefix}-email`).value.trim();
+  const phone = document.getElementById(`${prefix}-phone`).value.trim();
+  const botId = window.EMBEDDED_BOT_ID;
+
+  if (!name || !email) {
+    alert("Name and email are required.");
+    return;
+  }
+
+  const payload = { bot_id: botId, name: name, email: email, phone: phone };
+  const btn = document.getElementById(`${prefix}-btn`);
+  btn.innerText = "Saving...";
+  btn.disabled = true;
+
+  try {
+    const response = await fetch("/api/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      leadCaptured = true;
+      if (prefix === "gk") {
+        document.getElementById("gatekeeper-overlay").remove();
+        if (pendingMessage) {
+          const input = document.getElementById("user-input");
+          input.value = pendingMessage;
+          pendingMessage = "";
+          sendMessage();
+        }
+      } else {
+        document.getElementById("in-chat-form-wrapper").remove();
+        appendBotMessage("Thank you! Your details have been received.");
+        setInputState(false);
+      }
+    } else {
+      alert("There was an error saving your details.");
+      btn.innerText = "Submit";
+      btn.disabled = false;
+    }
+  } catch (error) {
+    console.error("Submission Error:", error);
+    btn.innerText = "Submit";
+    btn.disabled = false;
   }
 }
 
@@ -33,11 +129,6 @@ function appendBotMessage(msg) {
   display.scrollTop = display.scrollHeight;
 }
 
-function removeTypingIndicator() {
-  const typing = document.getElementById("typing");
-  if (typing) typing.remove();
-}
-
 function showTypingIndicator() {
   const display = document.getElementById("chat-display");
   const typingDiv = document.createElement("div");
@@ -46,6 +137,11 @@ function showTypingIndicator() {
   typingDiv.innerText = "...";
   display.appendChild(typingDiv);
   display.scrollTop = display.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const typing = document.getElementById("typing");
+  if (typing) typing.remove();
 }
 
 function setInputState(disabled) {
@@ -65,113 +161,29 @@ function setInputState(disabled) {
   }
 }
 
-let chatHistory = [];
-
 async function sendMessage() {
   const input = document.getElementById("user-input");
   const rawMsg = input.value.trim();
   if (!rawMsg) return;
 
-  // 1. Update UI
-  const display = document.getElementById("chat-display");
-  const userDiv = document.createElement("div");
-  userDiv.className = "msg user";
-  userDiv.innerText = rawMsg;
-  display.appendChild(userDiv);
-  display.scrollTop = display.scrollHeight;
-
-  // 2. Prepare Payload with History
-  const payload = {
-    message: rawMsg,
-    history: chatHistory,
-  };
-
-  if (window.EMBEDDED_BOT_ID) {
-    payload.bot_id = window.EMBEDDED_BOT_ID;
+  // Gatekeeper Failsafe (if they somehow typed before overlay loaded)
+  if (window.LEAD_TIMING === "gatekeeper" && !leadCaptured) {
+    pendingMessage = rawMsg;
+    renderGatekeeperForm();
+    return;
   }
 
-  // 3. Save User message to memory
+  appendUserMessage(rawMsg);
   chatHistory.push({ role: "user", text: rawMsg });
 
-  // 4. Lock Input & Show Typing
-  input.value = "";
-  input.disabled = true;
-  const sendButton = document.getElementById("send-btn-icon");
-  if (sendButton) {
-    sendButton.disabled = true;
-    sendButton.style.opacity = "0.5";
-  }
-
-  if (window.SpriteBot) SpriteBot.setState("thinking");
-  const typingDiv = document.createElement("div");
-  typingDiv.id = "typing";
-  typingDiv.className = "msg bot";
-  typingDiv.innerText = "...";
-  display.appendChild(typingDiv);
-  display.scrollTop = display.scrollHeight;
-
-  try {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-
-    if (document.getElementById("typing"))
-      document.getElementById("typing").remove();
-
-    const botDiv = document.createElement("div");
-    botDiv.className = "msg bot";
-
-    if (data.error) {
-      botDiv.innerText = "SYSTEM ERROR: " + data.error;
-      if (window.SpriteBot) SpriteBot.setState("idle");
-    } else if (data.response) {
-      botDiv.innerText = data.response;
-      // Save Bot message to memory so it remembers for the next turn
-      chatHistory.push({ role: "bot", text: data.response });
-
-      if (window.SpriteBot) {
-        SpriteBot.setState("talking");
-        setTimeout(() => {
-          if (SpriteBot.currentState === "talking") SpriteBot.setState("idle");
-        }, 8000);
-      }
-    }
-
-    display.appendChild(botDiv);
-  } catch (error) {
-    if (window.SpriteBot) SpriteBot.setState("idle");
-    if (document.getElementById("typing")) {
-      document.getElementById("typing").innerText =
-        "Error connecting to server.";
-    }
-  } finally {
-    input.disabled = false;
-    if (sendButton) {
-      sendButton.disabled = false;
-      sendButton.style.opacity = "1";
-    }
-    input.focus();
-    display.scrollTop = display.scrollHeight;
-  }
-}
-
-// -----------------------------------------
-// API CALL TO AI
-// -----------------------------------------
-async function sendToGemini(msg, botId) {
-  messageCount++;
   setInputState(true);
   if (window.SpriteBot) SpriteBot.setState("thinking");
   showTypingIndicator();
 
-  try {
-    const payload = { message: msg };
-    if (botId) payload.bot_id = botId;
+  const payload = { message: rawMsg, history: chatHistory };
+  if (window.EMBEDDED_BOT_ID) payload.bot_id = window.EMBEDDED_BOT_ID;
 
+  try {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -185,22 +197,34 @@ async function sendToGemini(msg, botId) {
       if (window.SpriteBot) SpriteBot.setState("idle");
       appendBotMessage("SYSTEM ERROR: " + data.error);
     } else if (data.response) {
+      let replyText = data.response;
+
+      // CATCH AI'S IN-CHAT FORM TRIGGER
+      if (replyText.includes("[SHOW_FORM]") && !leadCaptured) {
+        replyText = replyText.replace("[SHOW_FORM]", "").trim();
+        if (replyText) {
+          appendBotMessage(replyText);
+          chatHistory.push({ role: "bot", text: replyText });
+        }
+        renderInChatForm();
+      } else {
+        replyText = replyText.replace("[SHOW_FORM]", "").trim();
+        appendBotMessage(replyText);
+        chatHistory.push({ role: "bot", text: replyText });
+        setInputState(false);
+      }
+
       if (window.SpriteBot) {
         SpriteBot.setState("talking");
         setTimeout(() => {
           if (SpriteBot.currentState === "talking") SpriteBot.setState("idle");
         }, 8000);
       }
-      appendBotMessage(data.response);
-    } else {
-      if (window.SpriteBot) SpriteBot.setState("idle");
-      appendBotMessage("SYSTEM ERROR: Unrecognized data format.");
     }
   } catch (error) {
     if (window.SpriteBot) SpriteBot.setState("idle");
     removeTypingIndicator();
     appendBotMessage("Error connecting to server.");
-  } finally {
     setInputState(false);
   }
 }

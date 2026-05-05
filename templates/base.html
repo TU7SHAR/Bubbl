@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Chatbot AI{% endblock %}</title>
-
+<title>{% block title %}{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet" />
@@ -45,7 +44,7 @@
       <nav class="navbar" id="nav">
         <div class="nav-container">
           <a href="{{ url_for('views_bp.index') }}" class="nav-logo bricolage">
-            chat.<span class="text-orange">bot</span>
+            {{config.COMPANY_NAME_FIRST}}<span class="text-orange">.{{config.COMPANY_LAST_NAME}}</span>
           </a>
 
           <div class="nav-menu">
@@ -54,6 +53,7 @@
               {% if session.get('user_id') and request.path not in ['/', '/pricing', '/compare'] %}
                 <a href="{{ url_for('views_bp.dashboard') }}" class="nav-link">Dashboard</a>
                 <a href="{{ url_for('admin_bp.create_pipeline') }}" class="nav-link">Create Bot</a>
+                <a href="{{ url_for('views_bp.leads_dashboard') }}" class="nav-link">Leads</a>
                 <a href="{{ url_for('profile_bp.profile') }}" class="nav-link">Profile</a>
                 
                 {% if request.endpoint == 'admin_bp.edit_bot' %}
@@ -102,7 +102,7 @@
         <div class="footer-container">
           <div class="footer-grid">
             <div class="footer-brand">
-              <a href="{{ url_for('views_bp.index') }}" class="nav-logo bricolage">bubbl<span class="text-orange">.ooo</span></a>
+              <a href="{{ url_for('views_bp.index') }}" class="nav-logo bricolage">{{config.COMPANY_NAME_FIRST}}<span class="text-orange">{{config.COMPANY_LAST_NAME}}</span></a>
               <p class="footer-desc">AI chatbot platform for Indian SMBs. WhatsApp-native, no-code, and premium support.</p>
             </div>
 
