@@ -110,7 +110,25 @@
         System ready. Querying <strong>{{ session.get('active_bot_name', 'selected bot') }}</strong>...
       </div>
     </div>
+<!-- Add this to your widget CSS -->
+<style>
+  .bubbl-feedback { padding: 15px; background: #f8fafc; border-radius: 12px; margin-top: 10px; text-align: center; }
+  .bubbl-stars { display: flex; justify-content: center; gap: 8px; font-size: 24px; cursor: pointer; color: #cbd5e1; }
+  .bubbl-stars span:hover, .bubbl-stars span.active { color: #f59e0b; /* Golden Yellow */ }
+</style>
 
+<!-- The UI injected into the chat stream -->
+<div id="feedback-module" class="bubbl-feedback">
+    <p style="font-size: 13px; color: #475569; margin: 0 0 10px 0;">Rate this conversation</p>
+    <div class="bubbl-stars" id="star-container">
+        <span data-val="1">★</span>
+        <span data-val="2">★</span>
+        <span data-val="3">★</span>
+        <span data-val="4">★</span>
+        <span data-val="5">★</span>
+    </div>
+    <p id="feedback-thanks" style="display: none; font-size: 12px; color: #10b981; margin-top: 10px;">Thanks for your feedback!</p>
+</div>
     <div class="chat-input-area">
       <div class="chat-input-wrapper">
         <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" onkeypress="if (event.key === 'Enter') sendMessage();" />
@@ -150,4 +168,34 @@
             .catch(err => console.log("Avatar fetch error", err));
       }
   });
+  document.getElementById('star-container').addEventListener('click', function(e) {
+    if (e.target.tagName === 'SPAN') {
+        const rating = e.target.getAttribute('data-val');
+        
+        // Visually fill the stars
+        let stars = this.children;
+        for(let i=0; i<stars.length; i++) {
+            if(i < rating) stars[i].classList.add('active');
+            else stars[i].classList.remove('active');
+        }
+
+        // Send to your Backend API
+        fetch('https://yourdomain.com/api/widget/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bot_id: window.BUBBL_BOT_ID, // Use the variable where you store the bot ID
+                rating: rating,
+                lead_id: window.BUBBL_LEAD_ID || null // Optional
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Hide stars, show thank you message
+            document.getElementById('star-container').style.display = 'none';
+            document.getElementById('feedback-thanks').style.display = 'block';
+        })
+        .catch(err => console.error("Error saving feedback:", err));
+    }
+});
 </script>

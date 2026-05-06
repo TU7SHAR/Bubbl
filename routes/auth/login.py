@@ -3,27 +3,48 @@ from flask import render_template, request, redirect, url_for, session, flash
 from models.models import db, User
 from utils.mail_helper import send_otp_email, generate_otp
 from . import auth_bp 
+import os
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        # Safely grab email and password, stripping invisible spaces
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
         
-        # 1. Look up the user
+        # --- 1. SUPER ADMIN CHECK (Bypasses Database entirely) ---
+        super_admin_env_email = os.environ.get('SUPER_ADMIN_MAIL')
+        super_admin_env_hash = os.environ.get('SUPER_ADMIN_HASH')
+        
+        if super_admin_env_email and email.lower() == super_admin_env_email.lower():
+            if super_admin_env_hash and bcrypt.checkpw(password.encode('utf-8'), super_admin_env_hash.encode('utf-8')):
+                # Super Admin Authenticated!
+                session['user_id'] = 0 
+                session['user_name'] = "Super Admin"
+                session['org_name'] = "Platform Admin"
+                session['org_id'] = 0 
+                session['role'] = 'super_admin'
+                flash("God Mode Activated.", "success")
+                return redirect(url_for('views_bp.super_admin_dashboard'))
+            else:
+                flash("Incorrect Super Admin password.", "error")
+                return redirect(url_for('auth.login'))
+        # ---------------------------------------------------------
+        
+        # 2. Look up the normal user
         user = User.query.filter_by(email=email).first()
         
-        # 2. CATCH: Wrong Email (Yellow Message)
+        # 3. CATCH: Wrong Email
         if not user:
             flash("No account found with that email address.", "warning")
             return redirect(url_for('auth.login'))
             
-        # 3. CATCH: Wrong Password (Red Message)
+        # 4. CATCH: Wrong Password
         if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
             flash("Incorrect password. Please try again.", "error")
             return redirect(url_for('auth.login'))
             
-        # 4. Enforce Verification
+        # 5. Enforce Verification
         if not user.is_verified:
             otp_code = generate_otp()
             user.otp = otp_code
@@ -33,12 +54,13 @@ def login():
             flash("Please verify your email first. A new code has been sent.", "info")
             return redirect(url_for('auth.verify_otp'))
 
-        # 5. Proceed with normal login (Green Message)
+        # 6. Proceed with normal login
         session['user_id'] = user.id
         session['user_name'] = user.name
         session['org_name'] = user.organization.name
         session['org_id'] = user.org_id
         session['role'] = user.role
+        
         flash("Access granted.", "success")
         return redirect(url_for('views_bp.dashboard'))
             

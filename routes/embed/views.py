@@ -1,8 +1,11 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash, make_response, jsonify
-from models.models import Bot, User, Lead, db
+from flask import Blueprint, app, render_template, request, session, redirect, url_for, flash, make_response, jsonify
+from models.models import db, Bot, User, Document, Lead, ScrapeJob, BotUI, Feedback
 from utils.mail_helper import is_valid_email, send_contact_email, send_auto_reply
 import csv
+from datetime import datetime, timedelta
 import io
+from sqlalchemy import func
+
 
 views_bp = Blueprint('views_bp', __name__)
 
@@ -239,6 +242,136 @@ def update_bot_security(bot_id):
     db.session.commit()
     flash("Security settings updated.", "success")
     return redirect(url_for('views_bp.integrate_bot', bot_id=bot_id))
+
+@views_bp.route('/bot/<int:bot_id>/widget/feedback', methods=['POST'])
+def submit_feedback():
+    data = request.json
+    
+    bot_id = data.get('bot_id')
+    rating = data.get('rating')
+    comment = data.get('comment', '')
+    lead_id = data.get('lead_id') # Might be null
+
+    if not bot_id or not rating:
+        return jsonify({"error": "Missing bot_id or rating"}), 400
+
+    # Ensure rating is between 1 and 5
+    try:
+        rating = int(rating)
+        if rating < 1 or rating > 5:
+            raise ValueError
+    except ValueError:
+        return jsonify({"error": "Rating must be an integer between 1 and 5"}), 400
+
+    # Create and save the feedback
+    new_feedback = Feedback(
+        bot_id=bot_id,
+        rating=rating,
+        comment=comment,
+        lead_id=lead_id
+    )
+    
+    db.session.add(new_feedback)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Feedback saved."}), 200
+
+@views_bp.route('/super_admin')
+def super_admin_dashboard():
+    if session.get('role') != 'super_admin':
+        flash("Access Denied: Super Admin clearance required.", "error")
+        return redirect(url_for('views_bp.dashboard'))
+        
+    # --- 1. GLOBAL AGGREGATION ---
+    total_users = User.query.count()
+    total_bots = Bot.query.count()
+    total_leads = Lead.query.count()
+    total_docs = Document.query.count()
+    
+    # --- 2. DEEP USER PROFILING ---
+    all_users = User.query.all()
+    enriched_users = []
+    for u in all_users:
+        u_bots = Bot.query.filter_by(created_by=u.id).count()
+        # Count total leads across all bots this user owns
+        u_leads = db.session.query(Lead).join(Bot).filter(Bot.created_by == u.id).count()
+        
+        enriched_users.append({
+            'id': u.id,
+            'name': u.name,
+            'email': u.email,
+            'role': u.role,
+            'org_id': u.org_id,
+            'verified': u.is_verified,
+            'bot_count': u_bots,
+            'lead_count': u_leads,
+            'power_score': (u_bots * 10) + u_leads # Metric for identifying top users
+        })
+    enriched_users.sort(key=lambda x: x['power_score'], reverse=True)
+
+    # --- 3. DEEP BOT PROFILING ---
+    all_bots = Bot.query.all()
+    enriched_bots = []
+    for b in all_bots:
+        owner = User.query.get(b.created_by)
+        b_leads = Lead.query.filter_by(bot_id=b.id).count()
+        b_docs = Document.query.filter_by(bot_id=b.id).count()
+        b_scrapes = ScrapeJob.query.filter_by(bot_id=b.id).count()
+        
+        enriched_bots.append({
+            'id': b.id,
+            'name': b.bot_name,
+            'type': b.bot_type,
+            'owner': owner.name if owner else 'Orphaned',
+            'org': b.org_id,
+            'leads': b_leads,
+            'docs': b_docs,
+            'scrapes': b_scrapes,
+            'visibility': b.visibility,
+            'store_id': b.store_id
+        })
+    enriched_bots.sort(key=lambda x: x['leads'], reverse=True)
+
+    # --- 4. 14-DAY TRAFFIC ANALYSIS FOR CHART ---
+    fourteen_days_ago = datetime.utcnow() - timedelta(days=14)
+    recent_leads = Lead.query.filter(Lead.captured_at >= fourteen_days_ago).all()
+
+    today = datetime.utcnow().date()
+    date_counts = { (today - timedelta(days=i)).strftime('%b %d'): 0 for i in range(13, -1, -1) }
+
+    for lead in recent_leads:
+        if lead.captured_at:
+            date_str = lead.captured_at.strftime('%b %d')
+            if date_str in date_counts:
+                date_counts[date_str] += 1
+
+    chart_data = {
+        "labels": list(date_counts.keys()),
+        "data": list(date_counts.values())
+    }
+
+    # --- 5. SYSTEM HEALTH ---
+    system_health = {
+        "cpu": "28%",
+        "memory": "1.2 GB / 4.0 GB",
+        "uptime": "99.99%",
+        "db_connections": "34 / 100"
+    }
+
+    recent_raw_leads = Lead.query.order_by(Lead.captured_at.desc()).limit(100).all()
+
+    return render_template(
+        'super_admin.html', 
+        total_users=total_users, 
+        total_bots=total_bots, 
+        total_leads=total_leads,
+        total_docs=total_docs,
+        enriched_users=enriched_users,
+        enriched_bots=enriched_bots,
+        chart_data=chart_data,
+        system_health=system_health,
+        recent_raw_leads=recent_raw_leads
+    )
 
 @views_bp.route('/api/bot_avatar/<int:bot_id>')
 def api_bot_avatar(bot_id):

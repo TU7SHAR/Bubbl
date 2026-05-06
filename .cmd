@@ -1,0 +1,1 @@
+python -c "import bcrypt; print(bcrypt.hashpw('YourPasswordHere'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'))"

@@ -255,3 +255,37 @@
   pointer-events: none !important;
   transform: scale(0.9) translateY(20px);
 }
+/* --- FEEDBACK OVERLAY (BOTTOM SHEET) --- */
+  .feedback-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55%; /* ~50% of widget height */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 200;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    border-radius: 0 0 inherit inherit; /* Matches widget bottom curves */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
+  }
+  
+  /* Class to slide it up */
+  .feedback-overlay.active { transform: translateY(0); }
+  
+  .feedback-close-btn {
+    position: absolute; top: 12px; right: 15px;
+    background: none; border: none; font-size: 16px; color: #6b7280; cursor: pointer;
+  }
+  .feedback-stars { display: flex; justify-content: center; gap: 8px; font-size: 28px; cursor: pointer; color: #cbd5e1; margin-bottom: 15px; }
+  .feedback-stars span:hover, .feedback-stars span.active { color: #f59e0b; /* Golden Star */ }
+  .feedback-text { 
+    width: 100%; height: 65px; padding: 10px; border: 1px solid #e5e7eb; 
+    border-radius: 8px; resize: none; font-size: 13px; font-family: inherit; 
+    margin-bottom: 12px; outline: none; box-sizing: border-box;
+  }
+  .feedback-text:focus { border-color: {{ theme_color }}; }

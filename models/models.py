@@ -73,3 +73,16 @@ class Lead(db.Model):
     phone = db.Column(db.String(20), nullable=True)
     custom_data = db.Column(db.JSON, default={})
     captured_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+class Feedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=False)
+    lead_id = db.Column(db.Integer, db.ForeignKey('lead.id'), nullable=True) # Optional
+    
+    rating = db.Column(db.Integer, nullable=False) # 1 to 5 stars
+    comment = db.Column(db.Text, nullable=True) # Optional text feedback
+    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Optional: Add a relationship to the Bot model for easy querying later
+    bot = db.relationship('Bot', backref=db.backref('feedbacks', lazy=True, cascade="all, delete-orphan"))

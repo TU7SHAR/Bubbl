@@ -54,6 +54,12 @@
                 <a href="{{ url_for('views_bp.dashboard') }}" class="nav-link">Dashboard</a>
                 <a href="{{ url_for('admin_bp.create_pipeline') }}" class="nav-link">Create Bot</a>
                 <a href="{{ url_for('views_bp.leads_dashboard') }}" class="nav-link">Leads</a>
+                {% if session.get('role') == 'super_admin' %}
+        <a href="{{ url_for('views_bp.super_admin_dashboard') }}" style="color: #8b5cf6; font-weight: 700;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px; margin-right: 4px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+            God Mode
+        </a>
+    {% endif %}
                 <a href="{{ url_for('profile_bp.profile') }}" class="nav-link">Profile</a>
                 
                 {% if request.endpoint == 'admin_bp.edit_bot' %}
