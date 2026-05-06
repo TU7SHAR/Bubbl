@@ -233,17 +233,19 @@
       btn.innerText = "Sending...";
       btn.disabled = true;
 
-      fetch('/api/widget/feedback', {
+      fetch(`/bot/${window.EMBEDDED_BOT_ID}/widget/feedback`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-              bot_id: window.EMBEDDED_BOT_ID,
               rating: currentRating,
               comment: comment,
               lead_id: window.BUBBL_LEAD_ID || null
           })
       })
-      .then(res => res.json())
+      .then(res => {
+          if (!res.ok) throw new Error('Network response was not ok');
+          return res.json();
+      })
       .then(data => {
           document.getElementById('feedback-form-content').style.display = 'none';
           document.getElementById('feedback-success-content').style.display = 'flex';
@@ -264,8 +266,10 @@
       })
       .catch(err => {
           console.error("Error saving feedback:", err);
+          alert("Error saving feedback. Please try again.");
           btn.innerText = "Send Feedback";
           btn.disabled = false;
       });
   }
+
 </script>

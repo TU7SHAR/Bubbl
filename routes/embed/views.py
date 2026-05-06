@@ -245,37 +245,31 @@ def update_bot_security(bot_id):
     return redirect(url_for('views_bp.integrate_bot', bot_id=bot_id))
 
 @views_bp.route('/bot/<int:bot_id>/widget/feedback', methods=['POST'])
-def submit_feedback():
+def submit_feedback(bot_id):  
     data = request.json
     
-    bot_id = data.get('bot_id')
     rating = data.get('rating')
     comment = data.get('comment', '')
-    lead_id = data.get('lead_id') # Might be null
+    lead_id = data.get('lead_id') 
 
-    if not bot_id or not rating:
-        return jsonify({"error": "Missing bot_id or rating"}), 400
+    if not rating:
+        return jsonify({"error": "Missing rating"}), 400
 
-    # Ensure rating is between 1 and 5
     try:
-        rating = int(rating)
-        if rating < 1 or rating > 5:
-            raise ValueError
-    except ValueError:
-        return jsonify({"error": "Rating must be an integer between 1 and 5"}), 400
+        new_feedback = Feedback(
+            bot_id=bot_id,
+            rating=int(rating),
+            comment=comment,
+            lead_id=lead_id
+        )
+        
+        db.session.add(new_feedback)
+        db.session.commit()
 
-    # Create and save the feedback
-    new_feedback = Feedback(
-        bot_id=bot_id,
-        rating=rating,
-        comment=comment,
-        lead_id=lead_id
-    )
-    
-    db.session.add(new_feedback)
-    db.session.commit()
-
-    return jsonify({"success": True, "message": "Feedback saved."}), 200
+        return jsonify({"success": True, "message": "Feedback saved."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 @views_bp.route('/super_admin')
 def super_admin_dashboard():

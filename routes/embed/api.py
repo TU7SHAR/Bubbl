@@ -98,14 +98,14 @@ def chat():
                     "Simply include the exact text [SHOW_FORM] anywhere in your response (e.g. 'Please fill out this form: [SHOW_FORM]'), "
                     "and the system will display the visual form."
                 )
-
-        reply = get_response_from_gemini(
+                reply = get_response_from_gemini(
             user_query=user_message, 
             target_store_id=bot_record.store_id, 
             custom_prompt=ai_prompt,
             history=history
         )
 
+        lead_id = None # Initialize lead_id
         if timing and timing.startswith('conv_'):
             lead_match = re.search(r'\[\[LEAD:(.*?)\]\]', reply)
             if lead_match:
@@ -117,26 +117,22 @@ def chat():
                 extracted_phone = parts[2] if len(parts) > 2 else ""
                 extracted_custom_raw = parts[3] if len(parts) > 3 else "{}"
 
-                if extracted_phone.lower() == 'none':
-                    extracted_phone = ""
-                    
                 custom_data_dict = {}
                 try:
                     custom_data_dict = json.loads(extracted_custom_raw)
                 except Exception:
-                    if extracted_custom_raw and extracted_custom_raw != '{}':
-                        custom_data_dict = {"Extracted Data": extracted_custom_raw}
+                    custom_data_dict = {"Extracted Data": extracted_custom_raw}
 
                 existing_lead = Lead.query.filter_by(bot_id=bot_id, email=extracted_email).first()
 
                 if existing_lead:
                     existing_lead.name = extracted_name
                     existing_lead.phone = extracted_phone
-                    
-                    # Merge existing custom data to avoid overwriting older useful keys
                     merged_custom = existing_lead.custom_data or {}
                     merged_custom.update(custom_data_dict)
                     existing_lead.custom_data = merged_custom
+                    db.session.commit()
+                    lead_id = existing_lead.id # Capture existing ID
                 else:
                     new_lead = Lead(
                         bot_id=bot_id, 
@@ -146,17 +142,20 @@ def chat():
                         custom_data=custom_data_dict
                     )
                     db.session.add(new_lead)
-                
-                db.session.commit()
+                    db.session.commit()
+                    lead_id = new_lead.id # Capture new ID
 
                 reply = re.sub(r'\s*\[\[LEAD:.*?\]\]\s*', '', reply).strip()
 
-        return jsonify({"response": reply})
+        # Return lead_id so frontend can store it
+        return jsonify({"response": reply, "lead_id": lead_id})
 
     except Exception as e:
         db.session.rollback()
         logging.error(f"API Crash: {str(e)}")
-        return jsonify({"error": "The AI is currently experiencing high demand. Please try again in a few seconds."})
+        return jsonify({"error": "The AI is currently experiencing high demand."})
+
+       
 
 @api_bp.route('/api/lead', methods=['POST'])
 def capture_lead():
@@ -171,7 +170,6 @@ def capture_lead():
         return jsonify({"error": "Missing required fields"}), 400
 
     try:
-        # --- 1. AI BACKGROUND VALIDATION & SCORING ---
         validation_prompt = f"""
         You are a strict data validator for a lead capture form.
         Evaluate this form submission:
@@ -187,10 +185,8 @@ def capture_lead():
         {{"Priority": "High", "is_fake": false}}
         """
         
-        # Send to Gemini
         ai_eval = get_response_from_gemini(user_query="Validate Form", custom_prompt=validation_prompt)
         
-        # Clean and parse the JSON
         try:
             clean_eval = ai_eval.replace('```json', '').replace('```', '').strip()
             score_data = json.loads(clean_eval)
@@ -203,20 +199,19 @@ def capture_lead():
         if is_fake:
             return jsonify({"error": "Please provide valid, real contact details. Placeholders are not accepted."}), 400
             
-        # Inject the AI's score into the data
         custom_data['Priority'] = priority
 
-        # --- 2. UPSERT LOGIC TO PREVENT DUPLICATES ---
         existing_lead = Lead.query.filter_by(bot_id=bot_id, email=email).first()
+        lead_id = None
 
         if existing_lead:
             existing_lead.name = name
             existing_lead.phone = phone
-            
-            # Merge custom data to retain existing keys like older answers
             merged_custom = existing_lead.custom_data or {}
             merged_custom.update(custom_data)
             existing_lead.custom_data = merged_custom
+            db.session.commit()
+            lead_id = existing_lead.id
         else:
             new_lead = Lead(
                 bot_id=bot_id, 
@@ -226,9 +221,10 @@ def capture_lead():
                 custom_data=custom_data 
             )
             db.session.add(new_lead)
+            db.session.commit()
+            lead_id = new_lead.id
             
-        db.session.commit()
-        return jsonify({"success": True}), 200
+        return jsonify({"success": True, "lead_id": lead_id}), 200
 
     except Exception as e:
         db.session.rollback()

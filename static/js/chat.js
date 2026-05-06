@@ -132,7 +132,7 @@ async function submitLeadForm(prefix) {
     name: name,
     email: email,
     phone: phone,
-    custom_data: customData, // Send dynamic data to Python
+    custom_data: customData,
   };
 
   const btn = document.getElementById(`${prefix}-btn`);
@@ -146,8 +146,13 @@ async function submitLeadForm(prefix) {
       body: JSON.stringify(payload),
     });
 
-    // Read the JSON response to grab the exact AI error message
     const data = await response.json();
+
+    // 👇 ADDED LEAD ID CAPTURE HERE 👇
+    if (data.lead_id) {
+      window.BUBBL_LEAD_ID = data.lead_id;
+    }
+    // 👆 ---------------------------- 👆
 
     if (response.ok) {
       leadCaptured = true;
@@ -165,7 +170,6 @@ async function submitLeadForm(prefix) {
         setInputState(false);
       }
     } else {
-      // Show the dynamic AI rejection message
       alert(data.error || "There was an error saving your details.");
       btn.innerText = "Submit";
       btn.disabled = false;
@@ -232,7 +236,7 @@ async function sendMessage() {
   const rawMsg = input.value.trim();
   if (!rawMsg) return;
 
-  // Gatekeeper Failsafe (if they somehow typed before overlay loaded)
+  // Gatekeeper Failsafe
   if (window.LEAD_TIMING === "gatekeeper" && !leadCaptured) {
     pendingMessage = rawMsg;
     renderGatekeeperForm();
@@ -257,6 +261,13 @@ async function sendMessage() {
     });
 
     const data = await response.json();
+
+    // 👇 ADDED LEAD ID CAPTURE HERE 👇
+    if (data.lead_id) {
+      window.BUBBL_LEAD_ID = data.lead_id;
+    }
+    // 👆 ---------------------------- 👆
+
     removeTypingIndicator();
 
     if (data.error) {
@@ -265,7 +276,6 @@ async function sendMessage() {
     } else if (data.response) {
       let replyText = data.response;
 
-      // CATCH AI'S IN-CHAT FORM TRIGGER
       if (replyText.includes("[SHOW_FORM]") && !leadCaptured) {
         replyText = replyText.replace("[SHOW_FORM]", "").trim();
         if (replyText) {
