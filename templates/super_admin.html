@@ -55,28 +55,31 @@
                 </div>
             </div>
 
-            <!-- DATE FILTER UI -->
-            <div class="glass-panel" style="width: 100%; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 16px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 13px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Timeframe:</span>
-                    <select id="date-preset" onchange="applyPreset(this.value)" class="sa-tab" style="padding: 6px 12px; margin: 0; background: #fff; border: 1px solid #e5e7eb;">
-                        <option value="today" {% if current_period == 'today' %}selected{% endif %}>Today</option>
-                        <option value="week" {% if current_period == 'week' %}selected{% endif %}>Last 7 Days</option>
-                        <option value="month" {% if current_period == 'month' %}selected{% endif %}>Last 30 Days</option>
-                        <option value="quarter" {% if current_period == 'quarter' %}selected{% endif %}>Last Quarter</option>
-                        <option value="half_year" {% if current_period == 'half_year' %}selected{% endif %}>Last 6 Months</option>
-                        <option value="year" {% if current_period == 'year' %}selected{% endif %}>Last Year</option>
-                        <option value="all" {% if current_period == 'all' %}selected{% endif %}>Lifetime</option>
-                    </select>
-                </div>
-                
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="date" id="custom-start" class="lead-input" style="width: 140px; margin: 0; font-size: 12px;" value="{{ start_date or '' }}">
-                    <span style="color: #9ca3af;">→</span>
-                    <input type="date" id="custom-end" class="lead-input" style="width: 140px; margin: 0; font-size: 12px;" value="{{ end_date or '' }}">
-                    <button onclick="applyCustomRange()" class="tag tag-purple" style="cursor: pointer; border: none; height: 32px; padding: 0 15px;">Apply</button>
-                </div>
-            </div>
+           <!-- DATE FILTER UI -->
+<div class="glass-panel" style="width: 100%; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 13px; font-weight: 700; color: #4b5563;">Timeframe:</span>
+        <select id="date-preset" onchange="applyPreset(this.value)" class="sa-tab" style="padding: 6px 12px; background: #fff; border: 1px solid #e5e7eb;">
+            <option value="today" {% if current_period == 'today' %}selected{% endif %}>Today</option>
+            <option value="week" {% if current_period == 'week' %}selected{% endif %}>Last 7 Days</option>
+            <option value="month" {% if current_period == 'month' %}selected{% endif %}>Last 30 Days</option>
+            <option value="quarter" {% if current_period == 'quarter' %}selected{% endif %}>Last Quarter</option>
+            <option value="half_year" {% if current_period == 'half_year' %}selected{% endif %}>Last 6 Months</option>
+            <option value="year" {% if current_period == 'year' %}selected{% endif %}>Last Year</option>
+            <option value="all" {% if current_period == 'all' %}selected{% endif %}>Lifetime</option>
+            {% if is_custom %}
+                <option value="custom" selected>Custom Range</option>
+            {% endif %}
+        </select>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="date" id="custom-start" class="lead-input" style="width: 140px;" value="{{ start_date }}">
+        <span style="color: #9ca3af;">→</span>
+        <input type="date" id="custom-end" class="lead-input" style="width: 140px;" value="{{ end_date }}">
+        <button onclick="applyCustomRange()" class="tag tag-purple" style="cursor: pointer; border: none; height: 32px;">Apply</button>
+    </div>
+</div>
         </header>
 
         <div class="sa-content-wrapper" id="sa-scroll-container">
@@ -106,14 +109,16 @@
                     </div>
                 </div>
 
-                <div class="chart-box">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                        <h3 style="margin: 0; font-size: 16px; font-family: 'Sora', sans-serif;">Platform Traffic (14 Days)</h3>
-                    </div>
-                    <div style="height: 280px; width: 100%;">
-                        <canvas id="trafficChart"></canvas>
-                    </div>
-                </div>
+ <div class="chart-box">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+        <h3 style="margin: 0; font-size: 16px;">
+            Platform Traffic ({% if current_period == 'today' %}Today{% else %}{{ days_count }} Days{% endif %})
+        </h3>
+    </div>
+    <div style="height: 280px; width: 100%;">
+        <canvas id="trafficChart"></canvas>
+    </div>
+</div>
             </div>
 
             <!-- PANE 2: API USAGE -->
@@ -331,48 +336,47 @@
         document.getElementById('sa-scroll-container').scrollTop = 0;
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        const rawChartData = {{ chart_data | tojson | safe }};
-        
-        const ctx = document.getElementById('trafficChart').getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: rawChartData.labels, // These are now dynamic dates based on your filter!
-                datasets: [{
-                    label: 'Interactions',
-                    data: rawChartData.data,
-                    borderColor: '#8b5cf6',
-                    backgroundColor: gradient,
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4 
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
-                    x: { grid: { display: false } }
-                }
+   document.addEventListener("DOMContentLoaded", function() {
+    const rawChartData = {{ chart_data | tojson | safe }};
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'line', // Changed to Line Graph
+        data: {
+            labels: rawChartData.labels,
+            datasets: [{
+                label: 'Interactions',
+                data: rawChartData.data,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+                x: { grid: { display: false } }
             }
-        });
+        }
     });
-    function applyPreset(val) {
-        window.location.href = `?period=${val}`;
-    }
+});
 
-    function applyCustomRange() {
-        const start = document.getElementById('custom-start').value;
-        const end = document.getElementById('custom-end').value;
-        if (!start || !end) return alert("Please select both dates.");
-        window.location.href = `?start=${start}&end=${end}`;
-    }
+function applyPreset(val) {
+    if(val === 'custom') return; // Don't reload if they just clicked the label
+    window.location.href = `?period=${val}`;
+}
+
+function applyCustomRange() {
+    const start = document.getElementById('custom-start').value;
+    const end = document.getElementById('custom-end').value;
+    if (!start || !end) return alert("Select both dates.");
+    window.location.href = `?start=${start}&end=${end}`;
+}
 </script>
 {% endblock %}
