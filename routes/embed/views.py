@@ -283,119 +283,97 @@ def super_admin_dashboard():
         flash("Access Denied: Super Admin clearance required.", "error")
         return redirect(url_for('views_bp.dashboard'))
         
-    # --- 1. GLOBAL AGGREGATION ---
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    total_hits_today = Lead.query.filter(Lead.captured_at >= today_start).count()
-    
+    period = request.args.get('period', 'week')
+    start_str = request.args.get('start')
+    end_str = request.args.get('end')
+    now = datetime.utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if start_str and end_str:
+        try:
+            start_date = datetime.strptime(start_str, '%Y-%m-%d')
+            end_date = datetime.strptime(end_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+        except:
+            start_date, end_date = now - timedelta(days=7), now
+    else:
+        end_date = now
+        if period == 'today': start_date = today_start
+        elif period == 'week': start_date = now - timedelta(days=7)
+        elif period == 'month': start_date = now - timedelta(days=30)
+        elif period == 'quarter': start_date = now - timedelta(days=90)
+        elif period == 'half_year': start_date = now - timedelta(days=180)
+        elif period == 'year': start_date = now - timedelta(days=365)
+        else: start_date = datetime(2025, 1, 1)
+
     total_users = User.query.count()
     total_bots = Bot.query.count()
-    total_leads = Lead.query.count()
+    total_leads = Lead.query.filter(Lead.captured_at >= start_date, Lead.captured_at <= end_date).count()
     total_docs = Document.query.count()
+    total_hits_today = Lead.query.filter(Lead.captured_at >= today_start).count()
     
-    # --- 2. DEEP USER PROFILING ---
     all_users = User.query.all()
     enriched_users = []
     for u in all_users:
         u_bots = Bot.query.filter_by(created_by=u.id).count()
-        # Count total leads across all bots this user owns
-        u_leads = db.session.query(Lead).join(Bot).filter(Bot.created_by == u.id).count()
-        
+        u_leads = db.session.query(Lead).join(Bot).filter(
+            Bot.created_by == u.id, 
+            Lead.captured_at >= start_date, 
+            Lead.captured_at <= end_date
+        ).count()
         enriched_users.append({
-            'id': u.id,
-            'name': u.name,
-            'email': u.email,
-            'role': u.role,
-            'org_id': u.org_id,
-            'verified': u.is_verified,
-            'bot_count': u_bots,
-            'lead_count': u_leads,
-            'power_score': (u_bots * 10) + u_leads
+            'id': u.id, 'name': u.name, 'email': u.email, 'role': u.role,
+            'org_id': u.org_id, 'bot_count': u_bots, 'lead_count': u_leads
         })
-    enriched_users.sort(key=lambda x: x['power_score'], reverse=True)
 
-    # --- 3. DEEP BOT PROFILING ---
     all_bots = Bot.query.all()
     enriched_bots = []
     for b in all_bots:
         owner = User.query.get(b.created_by)
-        b_leads = Lead.query.filter_by(bot_id=b.id).count()
-        # --> THIS IS THE CORRECT SPOT FOR TODAY's BOT LEADS <--
-        b_leads_today = Lead.query.filter(Lead.bot_id==b.id, Lead.captured_at >= today_start).count()
+        b_leads = Lead.query.filter(Lead.bot_id == b.id, Lead.captured_at >= start_date, Lead.captured_at <= end_date).count()
+        b_leads_today = Lead.query.filter(Lead.bot_id == b.id, Lead.captured_at >= today_start).count()
         b_docs = Document.query.filter_by(bot_id=b.id).count()
         b_scrapes = ScrapeJob.query.filter_by(bot_id=b.id).count()
         
         enriched_bots.append({
-            'id': b.id,
-            'name': b.bot_name,
-            'type': b.bot_type,
-            'owner': owner.name if owner else 'Orphaned',
-            'org': b.org_id,
-            'leads': b_leads,
-            'leads_today': b_leads_today,
-            'docs': b_docs,
-            'scrapes': b_scrapes,
-            'visibility': b.visibility,
-            'store_id': b.store_id
+            'id': b.id, 'name': b.bot_name, 'type': b.bot_type,
+            'owner': owner.name if owner else 'Orphaned', 'org': b.org_id,
+            'leads': b_leads, 'leads_today': b_leads_today, 'docs': b_docs, 
+            'scrapes': b_scrapes, 'store_id': b.store_id or 'None'
         })
-    enriched_bots.sort(key=lambda x: x['leads'], reverse=True)
 
-    # --- 4. 14-DAY TRAFFIC ANALYSIS FOR CHART ---
-    fourteen_days_ago = datetime.utcnow() - timedelta(days=14)
-    recent_leads = Lead.query.filter(Lead.captured_at >= fourteen_days_ago).all()
+    days_to_plot = (end_date - start_date).days + 1
+    plot_limit = min(days_to_plot, 31) 
+    date_counts = {}
+    for i in range(plot_limit - 1, -1, -1):
+        d = (end_date - timedelta(days=i)).strftime('%b %d')
+        date_counts[d] = 0
 
-    today = datetime.utcnow().date()
-    date_counts = { (today - timedelta(days=i)).strftime('%b %d'): 0 for i in range(13, -1, -1) }
+    chart_leads = Lead.query.filter(Lead.captured_at >= start_date, Lead.captured_at <= end_date).all()
+    for lead in chart_leads:
+        d_str = lead.captured_at.strftime('%b %d')
+        if d_str in date_counts:
+            date_counts[d_str] += 1
 
-    for lead in recent_leads:
-        if lead.captured_at:
-            date_str = lead.captured_at.strftime('%b %d')
-            if date_str in date_counts:
-                date_counts[date_str] += 1
+    chart_data = {"labels": list(date_counts.keys()), "data": list(date_counts.values())}
 
-    chart_data = {
-        "labels": list(date_counts.keys()),
-        "data": list(date_counts.values())
-    }
-
-    # --- 5. REAL LIVE SYSTEM HEALTH ---
     try:
-        # Get actual CPU usage
-        cpu_usage = psutil.cpu_percent(interval=0.1)
-        
-        # Get actual Memory (RAM) usage and convert bytes to Gigabytes
+        cpu = psutil.cpu_percent(interval=0.1)
         mem = psutil.virtual_memory()
-        mem_used_gb = f"{mem.used / (1024 ** 3):.1f}"
-        mem_total_gb = f"{mem.total / (1024 ** 3):.1f}"
+        system_health = {"cpu": f"{cpu}%", "memory": f"{mem.used // (1024**3)}GB / {mem.total // (1024**3)}GB"}
+    except:
+        system_health = {"cpu": "N/A", "memory": "N/A"}
 
-        system_health = {
-            "cpu": f"{cpu_usage}%",
-            "memory": f"{mem_used_gb} GB / {mem_total_gb} GB",
-            "uptime": "Live",
-            "db_connections": "Active"
-        }
-    except Exception as e:
-        # Fallback just in case the server OS blocks hardware access
-        system_health = {
-            "cpu": "N/A",
-            "memory": "N/A",
-            "uptime": "Unknown",
-            "db_connections": "Unknown"
-        }
-
-    recent_raw_leads = Lead.query.order_by(Lead.captured_at.desc()).limit(100).all()
+    recent_raw_leads = Lead.query.filter(
+        Lead.captured_at >= start_date, 
+        Lead.captured_at <= end_date
+    ).order_by(Lead.captured_at.desc()).limit(100).all()
 
     return render_template(
         'super_admin.html', 
-        total_hits_today=total_hits_today,
-        total_users=total_users, 
-        total_bots=total_bots, 
-        total_leads=total_leads,
-        total_docs=total_docs,
-        enriched_users=enriched_users,
-        enriched_bots=enriched_bots,
-        chart_data=chart_data,
-        system_health=system_health,
-        recent_raw_leads=recent_raw_leads
+        total_users=total_users, total_bots=total_bots, total_leads=total_leads, total_docs=total_docs,
+        total_hits_today=total_hits_today, enriched_users=enriched_users, enriched_bots=enriched_bots, 
+        chart_data=chart_data, system_health=system_health, current_period=period, 
+        start_date=start_str, end_date=end_str, recent_raw_leads=recent_raw_leads
     )
 
 @views_bp.route('/api/bot_avatar/<int:bot_id>')
