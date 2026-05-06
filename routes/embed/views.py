@@ -5,6 +5,7 @@ import csv
 from datetime import datetime, timedelta
 import io
 from sqlalchemy import func
+import psutil
 
 
 views_bp = Blueprint('views_bp', __name__)
@@ -283,6 +284,9 @@ def super_admin_dashboard():
         return redirect(url_for('views_bp.dashboard'))
         
     # --- 1. GLOBAL AGGREGATION ---
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    total_hits_today = Lead.query.filter(Lead.captured_at >= today_start).count()
+    
     total_users = User.query.count()
     total_bots = Bot.query.count()
     total_leads = Lead.query.count()
@@ -305,7 +309,7 @@ def super_admin_dashboard():
             'verified': u.is_verified,
             'bot_count': u_bots,
             'lead_count': u_leads,
-            'power_score': (u_bots * 10) + u_leads # Metric for identifying top users
+            'power_score': (u_bots * 10) + u_leads
         })
     enriched_users.sort(key=lambda x: x['power_score'], reverse=True)
 
@@ -315,6 +319,8 @@ def super_admin_dashboard():
     for b in all_bots:
         owner = User.query.get(b.created_by)
         b_leads = Lead.query.filter_by(bot_id=b.id).count()
+        # --> THIS IS THE CORRECT SPOT FOR TODAY's BOT LEADS <--
+        b_leads_today = Lead.query.filter(Lead.bot_id==b.id, Lead.captured_at >= today_start).count()
         b_docs = Document.query.filter_by(bot_id=b.id).count()
         b_scrapes = ScrapeJob.query.filter_by(bot_id=b.id).count()
         
@@ -325,6 +331,7 @@ def super_admin_dashboard():
             'owner': owner.name if owner else 'Orphaned',
             'org': b.org_id,
             'leads': b_leads,
+            'leads_today': b_leads_today,
             'docs': b_docs,
             'scrapes': b_scrapes,
             'visibility': b.visibility,
@@ -350,18 +357,36 @@ def super_admin_dashboard():
         "data": list(date_counts.values())
     }
 
-    # --- 5. SYSTEM HEALTH ---
-    system_health = {
-        "cpu": "28%",
-        "memory": "1.2 GB / 4.0 GB",
-        "uptime": "99.99%",
-        "db_connections": "34 / 100"
-    }
+    # --- 5. REAL LIVE SYSTEM HEALTH ---
+    try:
+        # Get actual CPU usage
+        cpu_usage = psutil.cpu_percent(interval=0.1)
+        
+        # Get actual Memory (RAM) usage and convert bytes to Gigabytes
+        mem = psutil.virtual_memory()
+        mem_used_gb = f"{mem.used / (1024 ** 3):.1f}"
+        mem_total_gb = f"{mem.total / (1024 ** 3):.1f}"
+
+        system_health = {
+            "cpu": f"{cpu_usage}%",
+            "memory": f"{mem_used_gb} GB / {mem_total_gb} GB",
+            "uptime": "Live",
+            "db_connections": "Active"
+        }
+    except Exception as e:
+        # Fallback just in case the server OS blocks hardware access
+        system_health = {
+            "cpu": "N/A",
+            "memory": "N/A",
+            "uptime": "Unknown",
+            "db_connections": "Unknown"
+        }
 
     recent_raw_leads = Lead.query.order_by(Lead.captured_at.desc()).limit(100).all()
 
     return render_template(
         'super_admin.html', 
+        total_hits_today=total_hits_today,
         total_users=total_users, 
         total_bots=total_bots, 
         total_leads=total_leads,

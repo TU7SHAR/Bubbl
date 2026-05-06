@@ -16,6 +16,8 @@
     backdrop-filter: blur({{ glass_blur }}px) !important;
     -webkit-backdrop-filter: blur({{ glass_blur }}px) !important;
     transition: all 0.3s ease;
+    position: relative; /* Required for the overlay to position correctly */
+    overflow: hidden; /* Keeps overlay inside the rounded corners */
   }
 
   .chat-header { background: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.05) !important; }
@@ -66,7 +68,7 @@
   .chat-close-x { color: #fff !important; }
   {% endif %}
 
-    /* Lead Capture Form Styles */
+  /* Lead Capture Form Styles */
   .lead-overlay-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.95); z-index: 100; display: flex; flex-direction: column; justify-content: center; padding: 20px; backdrop-filter: blur(5px); border-radius: inherit; }
   .lead-form-card { background: #fff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 20px; border: 1px solid rgba(0,0,0,0.05); }
   .lead-input { width: 100%; padding: 10px 12px; margin-bottom: 12px; border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 13px; outline: none; box-sizing: border-box; }
@@ -74,7 +76,36 @@
   .lead-submit-btn { width: 100%; padding: 12px; background: var(--theme-color, #E8722A); color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; }
   .in-chat-form-container { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 10px 0; align-self: flex-start; max-width: 85%; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
 
-
+  /* FEEDBACK OVERLAY (BOTTOM SHEET) */
+  .feedback-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55%; 
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 200;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    border-radius: 0 0 inherit inherit; 
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
+  }
+  
+  .feedback-overlay.active { transform: translateY(0); }
+  
+  .feedback-close-btn { position: absolute; top: 12px; right: 15px; background: none; border: none; font-size: 16px; color: #6b7280; cursor: pointer; }
+  .feedback-stars { display: flex; justify-content: center; gap: 8px; font-size: 28px; cursor: pointer; color: #cbd5e1; margin-bottom: 15px; }
+  .feedback-stars span:hover, .feedback-stars span.active { color: #f59e0b; }
+  .feedback-text { 
+    width: 100%; height: 65px; padding: 10px; border: 1px solid #e5e7eb; 
+    border-radius: 8px; resize: none; font-size: 13px; font-family: inherit; 
+    margin-bottom: 12px; outline: none; box-sizing: border-box;
+  }
+  .feedback-text:focus { border-color: {{ theme_color }}; }
 </style>
 
 <script>
@@ -82,10 +113,10 @@
   window.EMBEDDED_BOT_ID = "{{ bot.id if bot else session.get('active_bot_id', '') }}";
   window.CUSTOM_FIELDS = "{{ bot.custom_form_fields if bot else session.get('custom_form_fields', '') }}";
 </script>
+
 <div id="chat-widget-container">
   <div id="sprite-ask-container" onclick="toggleChat()">
     <div id="bot-sprite"></div>
-
     <button id="chat-open-btn">
       Ask: {{ session.get('active_bot_name', 'Bot') }}
     </button>
@@ -102,7 +133,11 @@
             <span class="chat-header-title">{{ session.get('active_bot_name', 'Global') | upper }}</span>
         </div>
       </div>
-      <button class="chat-close-x" onclick="toggleChat()">✕</button>
+      
+      <div style="display: flex; align-items: center; gap: 12px;">
+          <button style="background: none; border: none; font-size: 12px; color: #6b7280; cursor: pointer; text-decoration: underline;" onclick="toggleFeedbackOverlay()">Feedback</button>
+          <button class="chat-close-x" onclick="toggleChat()">✕</button>
+      </div>
     </div>
 
     <div id="chat-display">
@@ -110,25 +145,7 @@
         System ready. Querying <strong>{{ session.get('active_bot_name', 'selected bot') }}</strong>...
       </div>
     </div>
-<!-- Add this to your widget CSS -->
-<style>
-  .bubbl-feedback { padding: 15px; background: #f8fafc; border-radius: 12px; margin-top: 10px; text-align: center; }
-  .bubbl-stars { display: flex; justify-content: center; gap: 8px; font-size: 24px; cursor: pointer; color: #cbd5e1; }
-  .bubbl-stars span:hover, .bubbl-stars span.active { color: #f59e0b; /* Golden Yellow */ }
-</style>
 
-<!-- The UI injected into the chat stream -->
-<div id="feedback-module" class="bubbl-feedback">
-    <p style="font-size: 13px; color: #475569; margin: 0 0 10px 0;">Rate this conversation</p>
-    <div class="bubbl-stars" id="star-container">
-        <span data-val="1">★</span>
-        <span data-val="2">★</span>
-        <span data-val="3">★</span>
-        <span data-val="4">★</span>
-        <span data-val="5">★</span>
-    </div>
-    <p id="feedback-thanks" style="display: none; font-size: 12px; color: #10b981; margin-top: 10px;">Thanks for your feedback!</p>
-</div>
     <div class="chat-input-area">
       <div class="chat-input-wrapper">
         <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" onkeypress="if (event.key === 'Enter') sendMessage();" />
@@ -140,6 +157,27 @@
         </button>
       </div>
     </div>
+
+    <!-- FEEDBACK OVERLAY (SLIDES UP) -->
+    <div id="feedback-overlay" class="feedback-overlay">
+        <button class="feedback-close-btn" onclick="toggleFeedbackOverlay()">✕</button>
+        
+        <div id="feedback-form-content" style="display: flex; flex-direction: column; height: 100%; justify-content: center; text-align: center;">
+            <h4 style="margin: 0 0 5px 0; color: #111827; font-size: 15px;">Rate this conversation</h4>
+            <div class="feedback-stars" id="overlay-stars">
+                <span data-val="1">★</span><span data-val="2">★</span><span data-val="3">★</span><span data-val="4">★</span><span data-val="5">★</span>
+            </div>
+            <textarea id="feedback-comment" class="feedback-text" placeholder="Add a comment (optional)..."></textarea>
+            <button class="lead-submit-btn" id="submit-feedback-btn" onclick="submitFeedback()" style="background: {{ theme_color }};">Send Feedback</button>
+        </div>
+
+        <div id="feedback-success-content" style="display: none; flex-direction: column; height: 100%; justify-content: center; text-align: center; color: #10b981;">
+            <svg style="margin: 0 auto 10px auto;" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <h4 style="margin: 0; color: #111827;">Thank you!</h4>
+            <p style="font-size: 13px; color: #6b7280; margin-top: 4px;">Your feedback helps us improve.</p>
+        </div>
+    </div>
+
   </div>
 </div>
 
@@ -147,7 +185,6 @@
   document.addEventListener("DOMContentLoaded", function() {
       const activeBotId = "{{ session.get('active_bot_id', '') }}";
       if (activeBotId) {
-          // Fetch the Base64 string safely as JSON to bypass browser 404s
           fetch(`/api/bot_avatar/${activeBotId}`)
             .then(res => res.json())
             .then(data => {
@@ -159,7 +196,6 @@
                         avatarDiv.style.backgroundPosition = 'center';
                         avatarDiv.style.backgroundColor = 'transparent';
                         
-                        // Hide the text letter inside the circle
                         const initialSpan = document.getElementById('global-chat-initial');
                         if(initialSpan) initialSpan.style.display = 'none';
                     }
@@ -168,34 +204,68 @@
             .catch(err => console.log("Avatar fetch error", err));
       }
   });
-  document.getElementById('star-container').addEventListener('click', function(e) {
-    if (e.target.tagName === 'SPAN') {
-        const rating = e.target.getAttribute('data-val');
-        
-        // Visually fill the stars
-        let stars = this.children;
-        for(let i=0; i<stars.length; i++) {
-            if(i < rating) stars[i].classList.add('active');
-            else stars[i].classList.remove('active');
-        }
 
-        // Send to your Backend API
-        fetch('https://yourdomain.com/api/widget/feedback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                bot_id: window.BUBBL_BOT_ID, // Use the variable where you store the bot ID
-                rating: rating,
-                lead_id: window.BUBBL_LEAD_ID || null // Optional
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            // Hide stars, show thank you message
-            document.getElementById('star-container').style.display = 'none';
-            document.getElementById('feedback-thanks').style.display = 'block';
-        })
-        .catch(err => console.error("Error saving feedback:", err));
-    }
-});
+  let currentRating = 0;
+
+  function toggleFeedbackOverlay() {
+      document.getElementById('feedback-overlay').classList.toggle('active');
+  }
+
+  document.getElementById('overlay-stars').addEventListener('click', function(e) {
+      if (e.target.tagName === 'SPAN') {
+          currentRating = e.target.getAttribute('data-val');
+          let stars = this.children;
+          for(let i=0; i<stars.length; i++) {
+              if(i < currentRating) stars[i].classList.add('active');
+              else stars[i].classList.remove('active');
+          }
+      }
+  });
+
+  function submitFeedback() {
+      if (currentRating === 0) {
+          alert("Please select a star rating first.");
+          return;
+      }
+      
+      const comment = document.getElementById('feedback-comment').value;
+      const btn = document.getElementById('submit-feedback-btn');
+      btn.innerText = "Sending...";
+      btn.disabled = true;
+
+      fetch('/api/widget/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              bot_id: window.EMBEDDED_BOT_ID,
+              rating: currentRating,
+              comment: comment,
+              lead_id: window.BUBBL_LEAD_ID || null
+          })
+      })
+      .then(res => res.json())
+      .then(data => {
+          document.getElementById('feedback-form-content').style.display = 'none';
+          document.getElementById('feedback-success-content').style.display = 'flex';
+          
+          setTimeout(() => {
+              toggleFeedbackOverlay();
+              
+              setTimeout(() => {
+                  document.getElementById('feedback-form-content').style.display = 'flex';
+                  document.getElementById('feedback-success-content').style.display = 'none';
+                  btn.innerText = "Send Feedback";
+                  btn.disabled = false;
+                  currentRating = 0;
+                  document.getElementById('feedback-comment').value = '';
+                  Array.from(document.getElementById('overlay-stars').children).forEach(s => s.classList.remove('active'));
+              }, 500);
+          }, 2500);
+      })
+      .catch(err => {
+          console.error("Error saving feedback:", err);
+          btn.innerText = "Send Feedback";
+          btn.disabled = false;
+      });
+  }
 </script>

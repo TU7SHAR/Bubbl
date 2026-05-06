@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/super_admin.css') }}" />
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="{{ url_for('static', filename='js/sprite.js') }}"></script>
@@ -57,7 +58,7 @@
                 {% if session.get('role') == 'super_admin' %}
         <a href="{{ url_for('views_bp.super_admin_dashboard') }}" style="color: #8b5cf6; font-weight: 700;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px; margin-right: 4px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-            God Mode
+            Creator Mode
         </a>
     {% endif %}
                 <a href="{{ url_for('profile_bp.profile') }}" class="nav-link">Profile</a>
@@ -86,6 +87,7 @@
                 {% if session.get('user_id') %}
                   <a href="{{ url_for('views_bp.dashboard') }}" class="nav-link">Dashboard</a>
                 {% endif %}
+               
               {% endif %}
             </div>
             
@@ -94,6 +96,9 @@
                 <a href="{{ url_for('auth.logout') }}" class="btn btn-solid btn-nav" style="background: #fdf2f0; color: var(--orange); box-shadow: none;">Logout</a>
               {% else %}
                 <a href="{{ url_for('auth.login') }}" class="btn btn-solid btn-nav">Get Started Free</a>
+              {% endif %}
+               {% if session.get('role') == 'super_admin' %}
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-solid btn-nav" style="background: #fdf2f0; color: var(--orange); box-shadow: none;">Logout</a>
               {% endif %}
             </div>
           </div>

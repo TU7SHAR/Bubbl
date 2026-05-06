@@ -8,7 +8,6 @@
   right: 30px;
   z-index: 1000;
   font-family: "Inter", sans-serif;
-  /* NEW: Prevents invisible widget wrappers from stealing clicks */
   pointer-events: none;
 }
 
@@ -22,12 +21,11 @@
   padding: 12px 28px;
   font-size: 15px;
   font-weight: 700;
-  border-radius: 50px; /* Perfect Pill */
+  border-radius: 50px;
   cursor: pointer;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-top: 10px;
-  /* NEW: Re-enables clicks for just this visible button */
   pointer-events: auto;
 }
 
@@ -41,7 +39,7 @@
 #chat-window-popup {
   width: 380px;
   height: 580px;
-  background: rgba(255, 255, 255, 0.35); /* Glass Effect */
+  background: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -50,10 +48,8 @@
   flex-direction: column;
   margin-bottom: 20px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
   transform-origin: bottom right;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  /* NEW: Re-enables clicks for the visible chat window */
   pointer-events: auto;
 }
 
@@ -82,7 +78,7 @@
 .status-dot {
   width: 10px;
   height: 10px;
-  background: #10b981; /* Live Green */
+  background: #10b981;
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
 }
@@ -141,7 +137,7 @@
 }
 
 .user {
-  background: #000; /* Dark contrast like Bubbl buttons */
+  background: #000;
   color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
@@ -159,7 +155,7 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 50px; /* Pill input */
+  border-radius: 50px;
   padding: 5px 10px 5px 20px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -194,7 +190,7 @@
   background: #333;
 }
 
-/* 6. SPRITE CONTAINER (Sync with Dashboard JS) */
+/* 6. SPRITE CONTAINER */
 #sprite-ask-container {
   position: fixed;
   bottom: 20px;
@@ -203,7 +199,6 @@
   text-align: center;
   z-index: 1001;
   transform-origin: bottom right;
-  /* NEW: Prevents the large 200x200 sprite wrapper from stealing clicks */
   pointer-events: none;
 }
 
@@ -213,12 +208,11 @@
   background-image: url("/static/images/spritesheet.png");
   background-size: 80000px 200px;
   margin: 0 auto -15px auto;
-  /* NEW: Only clicks on the actual sprite work */
   pointer-events: auto;
 }
 
 #sprite-ask-container.chat-open {
-  bottom: 610px; /* Moves above the glass window */
+  bottom: 610px;
   transform: scale(0.5);
   opacity: 0.9;
 }
@@ -226,66 +220,29 @@
 #sprite-ask-container.chat-open #chat-open-btn {
   display: none;
 }
+
 /* =========================================
    CHAT WIDGET INVISIBLE SHIELD FIX
    ========================================= */
 
-/* 1. Stop the main wrapper from covering the screen */
 #chat-widget-container {
   pointer-events: none !important;
 }
 
-/* 2. Re-enable clicks ONLY on the bubble/sprite */
 #chat-open-btn,
 #sprite-ask-container,
 #bot-sprite {
   pointer-events: auto !important;
 }
 
-/* 3. Re-enable clicks inside the chat window WHEN OPEN */
 #chat-window-popup {
   pointer-events: auto !important;
   transition: all 0.3s ease;
 }
 
-/* 4. CRITICAL: Completely disable the window when hidden */
 #chat-window-popup.hidden {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
   transform: scale(0.9) translateY(20px);
 }
-/* --- FEEDBACK OVERLAY (BOTTOM SHEET) --- */
-  .feedback-overlay {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 55%; /* ~50% of widget height */
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    z-index: 200;
-    border-top: 1px solid rgba(0,0,0,0.1);
-    border-radius: 0 0 inherit inherit; /* Matches widget bottom curves */
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
-  }
-  
-  /* Class to slide it up */
-  .feedback-overlay.active { transform: translateY(0); }
-  
-  .feedback-close-btn {
-    position: absolute; top: 12px; right: 15px;
-    background: none; border: none; font-size: 16px; color: #6b7280; cursor: pointer;
-  }
-  .feedback-stars { display: flex; justify-content: center; gap: 8px; font-size: 28px; cursor: pointer; color: #cbd5e1; margin-bottom: 15px; }
-  .feedback-stars span:hover, .feedback-stars span.active { color: #f59e0b; /* Golden Star */ }
-  .feedback-text { 
-    width: 100%; height: 65px; padding: 10px; border: 1px solid #e5e7eb; 
-    border-radius: 8px; resize: none; font-size: 13px; font-family: inherit; 
-    margin-bottom: 12px; outline: none; box-sizing: border-box;
-  }
-  .feedback-text:focus { border-color: {{ theme_color }}; }
