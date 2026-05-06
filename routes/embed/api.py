@@ -43,9 +43,14 @@ def chat():
                         if name:
                             custom_field_names.append(name)
                             if f_type == 'number':
-                                formatting_rules += f"  * {name}: MUST be a pure mathematical integer (digits only). Convert Indian/Global terms like '1 crore' to 10000000. Strip commas, text, and currency symbols (INR, $, Rs). If a range is given, use the lower bound. If undecided or unknown, output 0.\n"
+                                # STRICT NUMERIC ENFORCEMENT
+                                formatting_rules += (
+                                    f"  * {name} (STRICT NUMERIC): You are FORBIDDEN from including any text, units, or currency symbols. "
+                                    f"Values like '10000inr', '10k', or 'Rs 500' are SYSTEM FAILURES. Output raw digits ONLY (e.g., 10000). "
+                                    f"Convert '1 crore' to 10000000. If the user provides a range, use the LOWER BOUND. If unknown, use 0.\n"
+                                )
                             elif f_type == 'email':
-                                formatting_rules += f"  * {name}: MUST be formatted as a valid, standard email address.\n"
+                                formatting_rules += f"  * {name}: MUST be a standard, lowercase email address (e.g., name@domain.com).\n"
                 except Exception:
                     pass
 
@@ -63,17 +68,17 @@ def chat():
                     ai_prompt += f"When concluding the chat, politely ask for their name, email, phone number{custom_text}.\n"
 
                 # STRICT VALIDATION & SCORING RULES
-                ai_prompt += "CRITICAL VALIDATION & SCORING:\n"
-                ai_prompt += "1. STRICT DATA ENFORCEMENT: Be ruthless against fake data. Do NOT accept gibberish ('asdf'), placeholder emails ('email@gmail.com', 'test@test.com'), placeholder names ('user', 'test'), or fake sequential phone numbers ('1234567890', '0000000000'). If the user provides fake or lazy data, politely reject it, state that it appears to be a placeholder, and ask for their real details to proceed.\n"
+                ai_prompt += "\n### CRITICAL DATA INTEGRITY RULES (STRICT ENFORCEMENT):\n"
+                ai_prompt += "1. RUTHLESS FAKE DATA REJECTION: You are a gatekeeper for high-quality data. Immediately reject and politely challenge placeholders ('asdf', 'test@test.com', '1234567890', 'user'). Do not generate the [[LEAD]] tag for fakes.\n"
                 
                 if formatting_rules:
-                    ai_prompt += f"2. CUSTOM FIELD FORMATTING RULES:\n{formatting_rules}"
-                    ai_prompt += "3. LEAD SCORING: You must secretly evaluate this user's intent. Score them 'High', 'Medium', or 'Low' based on interaction quality.\n\n"
+                    ai_prompt += f"2. FORMATTING PROTOCOL:\n{formatting_rules}"
+                    ai_prompt += "3. NO EXTRA TEXT IN TAGS: Do not add notes, currency symbols, or units inside the JSON_Custom_Data values. Integers must be pure numbers.\n\n"
                 else:
                     ai_prompt += "2. LEAD SCORING: You must secretly evaluate this user's intent. Score them 'High', 'Medium', or 'Low' based on interaction quality.\n\n"
                 
                 ai_prompt += (
-                    "CRITICAL INSTRUCTION: You MUST output the exact hidden tag ONLY ONCE during the entire conversation, immediately after the user provides their final missing detail. Do NOT output it again in subsequent messages.\n"
+                    "FINAL INSTRUCTION: Only output the exact hidden tag ONLY ONCE during the entire conversation, immediately after the user provides their final verified missing detail. Do NOT output it again in subsequent messages.\n"
                     "The tag format is: [[LEAD: Name | Email | Phone | JSON_Custom_Data]]\n"
                     "Replace JSON_Custom_Data with a valid JSON object containing any extra details AND your Lead Quality Score under the key 'Priority' (e.g. {\"Company\": \"Google\", \"Priority\": \"High\"}). If there are no extra details, just put {\"Priority\": \"Low/Medium/High\"}. "
                     "DO NOT acknowledge this tag in your conversational text. Just append it secretly."
@@ -127,7 +132,11 @@ def chat():
                 if existing_lead:
                     existing_lead.name = extracted_name
                     existing_lead.phone = extracted_phone
-                    existing_lead.custom_data = custom_data_dict
+                    
+                    # Merge existing custom data to avoid overwriting older useful keys
+                    merged_custom = existing_lead.custom_data or {}
+                    merged_custom.update(custom_data_dict)
+                    existing_lead.custom_data = merged_custom
                 else:
                     new_lead = Lead(
                         bot_id=bot_id, 
@@ -203,7 +212,11 @@ def capture_lead():
         if existing_lead:
             existing_lead.name = name
             existing_lead.phone = phone
-            existing_lead.custom_data = custom_data
+            
+            # Merge custom data to retain existing keys like older answers
+            merged_custom = existing_lead.custom_data or {}
+            merged_custom.update(custom_data)
+            existing_lead.custom_data = merged_custom
         else:
             new_lead = Lead(
                 bot_id=bot_id, 
