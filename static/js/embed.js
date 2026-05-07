@@ -12,8 +12,8 @@
     return;
   }
 
-  // 2. HARDCODE YOUR URL HERE
-  const hostUrl = "https://chatbot-c53nl.ondigitalocean.app/";
+  const hostUrl =
+    window.CONFIG.HOST_URL || "https://chatbot-c53nl.ondigitalocean.app/";
 
   // 3. Build and inject the secure iframe
   const iframe = document.createElement("iframe");

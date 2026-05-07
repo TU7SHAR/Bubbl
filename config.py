@@ -15,7 +15,7 @@ class Config:
   
   
     # HOST_URL = os.getenv('HOST_URL', 'https://chatbot-c53nl.ondigitalocean.app/')
-    HOST_URL = os.getenv('HOST_URL', 'https://chatbot-c53nl.ondigitalocean.app/')
+    HOST_URL = os.getenv('HOST_URL')
   
     COMPANY_NAME_FIRST = os.getenv('COMPANY_NAME_FRONT')
     COMPANY_LAST_NAME = os.getenv('COMPANY_NAME_BACK')
