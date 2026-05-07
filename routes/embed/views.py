@@ -359,6 +359,32 @@ def super_admin_dashboard():
             'scrapes': ScrapeJob.query.filter_by(bot_id=b.id).count(), 'type': b.bot_type
         })
 
+    # --- 4. NEW LOGIC: FEEDBACK DATA EXTRACTION ---
+    raw_feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
+    enriched_feedbacks = []
+    total_rating = 0
+    valid_ratings = 0
+
+    for fb in raw_feedbacks:
+        bot = Bot.query.get(fb.bot_id)
+        lead = Lead.query.get(fb.lead_id) if fb.lead_id else None
+        
+        enriched_feedbacks.append({
+            'created_at': fb.created_at,
+            'bot_name': bot.bot_name if bot else 'Deleted Bot',
+            'lead_name': lead.name if lead else None,
+            'lead_email': lead.email if lead else None,
+            'rating': fb.rating,
+            'comment': fb.comment
+        })
+        
+        if fb.rating:
+            total_rating += fb.rating
+            valid_ratings += 1
+
+    avg_rating = (total_rating / valid_ratings) if valid_ratings > 0 else 0
+    # ----------------------------------------------
+
     return render_template(
         'super_admin.html',
         chart_data=chart_data, total_leads=total_leads, total_users=total_users, 
@@ -366,7 +392,9 @@ def super_admin_dashboard():
         system_health=system_health, enriched_bots=enriched_bots,
         current_period=period, start_date=start_date.strftime('%Y-%m-%d'), 
         end_date=end_date.strftime('%Y-%m-%d'), days_count=days_count, is_custom=is_custom,
-        enriched_users=[], recent_raw_leads=[] # Add your existing logic for these
+        enriched_users=[], recent_raw_leads=[],
+        # Pass the newly extracted variables to the HTML here:
+        feedbacks=enriched_feedbacks, avg_rating=avg_rating
     )
 
 @views_bp.route('/api/bot_avatar/<int:bot_id>')
