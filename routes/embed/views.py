@@ -385,6 +385,15 @@ def super_admin_dashboard():
     avg_rating = (total_rating / valid_ratings) if valid_ratings > 0 else 0
     # ----------------------------------------------
 
+
+     # --- AGGREGATE REAL API METRICS ---
+    all_platform_bots = Bot.query.all()
+    total_tokens = sum(b.tokens_used or 0 for b in all_platform_bots)
+    total_interactions = sum(b.interaction_count or 0 for b in all_platform_bots)
+    total_time = sum(b.total_latency or 0.0 for b in all_platform_bots) 
+    avg_latency_ms = int((total_time / total_interactions) * 1000) if total_interactions > 0 else 0
+     # --------
+
     return render_template(
         'super_admin.html',
         chart_data=chart_data, total_leads=total_leads, total_users=total_users, 
@@ -393,7 +402,8 @@ def super_admin_dashboard():
         current_period=period, start_date=start_date.strftime('%Y-%m-%d'), 
         end_date=end_date.strftime('%Y-%m-%d'), days_count=days_count, is_custom=is_custom,
         enriched_users=[], recent_raw_leads=[],
-        # Pass the newly extracted variables to the HTML here:
+        total_tokens=total_tokens,          # <--- PASS THIS
+        avg_latency_ms=avg_latency_ms,
         feedbacks=enriched_feedbacks, avg_rating=avg_rating
     )
 

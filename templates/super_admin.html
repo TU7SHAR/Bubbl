@@ -131,20 +131,18 @@
             <div id="pane-api" class="sa-pane">
                 <div class="metrics-grid">
                     <div class="metric-card">
-                        <div class="m-icon" style="background: #f3e8ff; color: #8b5cf6;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>
-                        <div class="m-value">4.2M</div>
-                        <div class="m-label">Gemini Tokens</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #e0e7ff; color: #4f46e5;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
-                        <div class="m-value">{{ total_hits_today }}</div>
-                        <div class="m-label">API Hits (Today)</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #dcfce7; color: #16a34a;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
-                        <div class="m-value">240ms</div>
-                        <div class="m-label">Avg Latency</div>
-                    </div>
+    <div class="m-icon" style="background: #f3e8ff; color: #8b5cf6;">...</div>
+    <div class="m-value">{{ "{:,}".format(total_tokens) }}</div> <div class="m-label">Gemini Tokens</div>
+</div>
+<div class="metric-card">
+    <div class="m-icon" style="background: #e0e7ff; color: #4f46e5;">...</div>
+    <div class="m-value">{{ total_hits_today }}</div>
+    <div class="m-label">API Hits (Today)</div>
+</div>
+<div class="metric-card">
+    <div class="m-icon" style="background: #dcfce7; color: #16a34a;">...</div>
+    <div class="m-value">{{ avg_latency_ms }}ms</div> <div class="m-label">Avg Latency</div>
+</div>
                     <div class="metric-card" style="background: #111827; border-color: #111827;">
                         <div class="m-label" style="color: #9ca3af;">System (CPU / Mem)</div>
                         <div class="m-value" style="color: #10b981; font-size: 24px; padding-top: 10px;">{{ system_health.cpu }} / {{ system_health.memory.split(' ')[0] }}</div>
@@ -196,6 +194,7 @@
                                     </div>
                                     <strong style="font-size: 14px; color: #111827;">{{ b.leads }}</strong>
                                 </td>
+                                
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -378,12 +377,13 @@
                             <span style="color: #a1a1aa; font-style: italic;">Anonymous Chat</span>
                         {% endif %}
                     </td>
-                    <td>
-                        <div style="display: flex; gap: 2px; color: #f59e0b; font-size: 1.2rem;">
-                            {% for i in range(fb.rating) %}★{% endfor %}
-                            {% for i in range(5 - fb.rating) %}☆{% endfor %}
-                        </div>
-                    </td>
+                  <td>
+    <div style="display: flex; gap: 2px; color: #f59e0b; font-size: 1.2rem;">
+        {% set safe_rating = fb.rating if fb.rating else 0 %}
+        {% for i in range(safe_rating) %}★{% endfor %}
+        {% for i in range(5 - safe_rating) %}☆{% endfor %}
+    </div>
+</td>
                     <td style="max-width: 300px; white-space: normal; line-height: 1.4;">
                         {{ fb.comment or '<span style="color:#52525b; font-style:italic;">No comment left</span>'|safe }}
                     </td>

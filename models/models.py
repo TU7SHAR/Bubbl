@@ -37,6 +37,9 @@ class Bot(db.Model):
     ui_settings = db.relationship('BotUI', backref='bot', uselist=False, cascade="all, delete-orphan")
     leads = db.relationship('Lead', backref='bot_ref', lazy=True, cascade="all, delete-orphan")
     custom_form_fields = db.Column(db.String(500), default="")
+    tokens_used = db.Column(db.Integer, default=0)
+    total_latency = db.Column(db.Float, default=0.0)
+    interaction_count = db.Column(db.Integer, default=0)
 
 class BotUI(db.Model):
     id = db.Column(db.Integer, primary_key=True)

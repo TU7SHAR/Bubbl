@@ -102,7 +102,8 @@ def chat():
             user_query=user_message, 
             target_store_id=bot_record.store_id, 
             custom_prompt=ai_prompt,
-            history=history
+            history=history,
+            bot_id=bot_id
         )
 
         lead_id = None # Initialize lead_id
@@ -153,9 +154,7 @@ def chat():
     except Exception as e:
         db.session.rollback()
         logging.error(f"API Crash: {str(e)}")
-        return jsonify({"error": "The AI is currently experiencing high demand."})
-
-       
+        return jsonify({"error": "The AI is currently experiencing high demand."})       
 
 @api_bp.route('/api/lead', methods=['POST'])
 def capture_lead():

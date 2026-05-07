@@ -1,7 +1,9 @@
 import os
+import time
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from models.models import db, Bot
 
 load_dotenv()
 
@@ -27,7 +29,8 @@ PUBLIC_BOT_INSTRUCTIONS = (
     "If they ask some out of context question, respond with 'I'm here to help with questions about our platform and services. For other inquiries, please contact our support team.'"
 )
 
-def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=None, history=None):
+def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=None, history=None, bot_id=None):
+    start_ts = time.time()  # Start stopwatch
     try:
         if custom_prompt:
             system_instruction = BASE_GUARDRAILS + "SPECIFIC BOT INSTRUCTIONS:\n" + custom_prompt
@@ -62,9 +65,25 @@ def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=Non
             contents=contents,
             config=config
         )
-        
+
+        duration = time.time() - start_ts
+        token_count = 0
+        if hasattr(response, 'usage_metadata') and response.usage_metadata is not None:
+            token_count = getattr(response.usage_metadata, 'total_token_count', 0) or 0
+
+        if bot_id:
+            try:
+                bot = Bot.query.get(bot_id)
+                if bot:
+                    bot.tokens_used = (bot.tokens_used or 0) + token_count
+                    bot.total_latency = (bot.total_latency or 0.0) + duration
+                    bot.interaction_count = (bot.interaction_count or 0) + 1
+                    db.session.commit()
+            except Exception:
+                db.session.rollback()
+
         return response.text
-        
+
     except Exception as e:
         print(f"Gemini API Error: {e}") 
         return f"SYSTEM ALERT: The AI server is currently overloaded or unavailable. ({str(e)}). Please try again in 60 seconds."
