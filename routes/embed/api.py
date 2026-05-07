@@ -98,7 +98,9 @@ def chat():
                     "Simply include the exact text [SHOW_FORM] anywhere in your response (e.g. 'Please fill out this form: [SHOW_FORM]'), "
                     "and the system will display the visual form."
                 )
-                reply = get_response_from_gemini(
+                
+        # --- This executes safely for all bots regardless of lead capture settings ---
+        reply = get_response_from_gemini(
             user_query=user_message, 
             target_store_id=bot_record.store_id, 
             custom_prompt=ai_prompt,
@@ -154,7 +156,7 @@ def chat():
     except Exception as e:
         db.session.rollback()
         logging.error(f"API Crash: {str(e)}")
-        return jsonify({"error": "The AI is currently experiencing high demand."})       
+        return jsonify({"error": "The AI is currently experiencing high demand."})
 
 @api_bp.route('/api/lead', methods=['POST'])
 def capture_lead():

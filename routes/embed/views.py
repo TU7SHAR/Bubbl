@@ -352,14 +352,41 @@ def super_admin_dashboard():
     for b in all_bots:
         b_leads = Lead.query.filter(Lead.bot_id == b.id, Lead.captured_at >= start_date, Lead.captured_at <= end_date).count()
         b_leads_today = Lead.query.filter(Lead.bot_id == b.id, Lead.captured_at >= today_start).count()
+        owner_user = User.query.get(b.created_by) if b.created_by else None
+        
         enriched_bots.append({
             'id': b.id, 'name': b.bot_name, 'leads': b_leads, 'leads_today': b_leads_today,
-            'owner': User.query.get(b.created_by).name if User.query.get(b.created_by) else 'System',
+            'owner': owner_user.name if owner_user else 'System',
             'org': b.org_id, 'docs': Document.query.filter_by(bot_id=b.id).count(),
-            'scrapes': ScrapeJob.query.filter_by(bot_id=b.id).count(), 'type': b.bot_type
+            'scrapes': ScrapeJob.query.filter_by(bot_id=b.id).count(), 
+            'type': getattr(b, 'bot_type', 'Standard'),
+            'store_id': getattr(b, 'store_id', None) # <--- FIXED: Added store_id for the Bot table
         })
 
-    # --- 4. NEW LOGIC: FEEDBACK DATA EXTRACTION ---
+    # --- FIXED: POPULATE PLATFORM USERS DATA ---
+    all_users = User.query.all()
+    enriched_users = []
+    for u in all_users:
+        u_bots = Bot.query.filter_by(created_by=u.id).count()
+        u_bot_ids = [bot.id for bot in Bot.query.filter_by(created_by=u.id).all()]
+        u_leads = Lead.query.filter(Lead.bot_id.in_(u_bot_ids)).count() if u_bot_ids else 0
+        
+        enriched_users.append({
+            'name': u.name,
+            'email': u.email,
+            'role': getattr(u, 'role', 'user'),
+            'org_id': getattr(u, 'org_id', 'N/A'),
+            'bot_count': u_bots,
+            'lead_count': u_leads
+        })
+
+    # --- FIXED: POPULATE RAW INTERACTION / LEADS DATA ---
+    recent_raw_leads = Lead.query.filter(
+        Lead.captured_at >= start_date, 
+        Lead.captured_at <= end_date
+    ).order_by(Lead.captured_at.desc()).limit(150).all()
+
+    # --- 4. FEEDBACK DATA EXTRACTION ---
     raw_feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
     enriched_feedbacks = []
     total_rating = 0
@@ -387,10 +414,9 @@ def super_admin_dashboard():
 
 
      # --- AGGREGATE REAL API METRICS ---
-    all_platform_bots = Bot.query.all()
-    total_tokens = sum(b.tokens_used or 0 for b in all_platform_bots)
-    total_interactions = sum(b.interaction_count or 0 for b in all_platform_bots)
-    total_time = sum(b.total_latency or 0.0 for b in all_platform_bots) 
+    total_tokens = sum(b.tokens_used or 0 for b in all_bots)
+    total_interactions = sum(b.interaction_count or 0 for b in all_bots)
+    total_time = sum(b.total_latency or 0.0 for b in all_bots) 
     avg_latency_ms = int((total_time / total_interactions) * 1000) if total_interactions > 0 else 0
      # --------
 
@@ -401,8 +427,9 @@ def super_admin_dashboard():
         system_health=system_health, enriched_bots=enriched_bots,
         current_period=period, start_date=start_date.strftime('%Y-%m-%d'), 
         end_date=end_date.strftime('%Y-%m-%d'), days_count=days_count, is_custom=is_custom,
-        enriched_users=[], recent_raw_leads=[],
-        total_tokens=total_tokens,          # <--- PASS THIS
+        enriched_users=enriched_users,       # <--- FIXED: Now actually passing user metrics
+        recent_raw_leads=recent_raw_leads,   # <--- FIXED: Now passing recent API lead data
+        total_tokens=total_tokens,
         avg_latency_ms=avg_latency_ms,
         feedbacks=enriched_feedbacks, avg_rating=avg_rating
     )
