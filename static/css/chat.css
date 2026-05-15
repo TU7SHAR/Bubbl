@@ -246,3 +246,52 @@
   pointer-events: none !important;
   transform: scale(0.9) translateY(20px);
 }
+/* =========================================
+   MOBILE RESPONSIVE TWEAKS (PHONES ONLY)
+   ========================================= */
+@media screen and (max-width: 600px) {
+  /* Bring it closer to the edges on small screens */
+  #chat-widget-container {
+    bottom: 15px;
+    right: 15px;
+  }
+
+  /* Shrink the chat window to fit mobile screens */
+  #chat-window-popup {
+    width: calc(100vw - 30px); /* Leaves a 15px gap on both sides */
+    height: 380px; /* Much shorter so the keyboard doesn't crush it */
+    margin-bottom: 10px;
+  }
+
+  /* Make the Sprite and Text smaller */
+  #bot-sprite {
+    width: 100px;
+    height: 100px;
+    /* Math: 400 frames * 100px = 40000px */
+    background-size: 40000px 100px;
+    margin: 0 auto -5px auto;
+  }
+
+  #chat-open-btn {
+    padding: 8px 14px;
+    font-size: 11.5px;
+  }
+
+  #sprite-ask-container {
+    bottom: 15px;
+    right: 15px;
+  }
+
+  /* Calculate exact position of sprite when chat is open on mobile */
+  #sprite-ask-container.chat-open {
+    bottom: 410px; /* 380px height + 15px bottom + 15px gap */
+    transform: scale(0.4);
+  }
+
+  /* Tighten up chat bubbles for mobile */
+  .msg {
+    max-width: 90%;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}

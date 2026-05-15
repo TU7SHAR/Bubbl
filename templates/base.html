@@ -22,6 +22,70 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="{{ url_for('static', filename='js/sprite.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+
+    <style>
+      .mobile-menu-btn {
+        display: none;
+      }
+      
+      @media screen and (max-width: 860px) {
+        .mobile-menu-btn {
+          display: block;
+          position: fixed;
+          right: 24px;
+          top: 24px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #000;
+          z-index: 10000;
+        }
+
+        .nav-menu {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100vh;
+          background: rgba(255, 255, 255, 0.85); 
+          backdrop-filter: blur(20px); 
+          -webkit-backdrop-filter: blur(20px);
+          
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          
+          /* Hidden by default on mobile */
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+          z-index: 9999;
+        }
+
+        .nav-menu .nav-links {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2rem;
+        }
+
+        .nav-menu .nav-auth-group {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.5rem;
+          margin-top: 1rem;
+        }
+
+        /* Active toggle class */
+        .nav-menu.mobile-active {
+          opacity: 1;
+          visibility: visible;
+        }
+      }
+      
+    </style>
   </head>
 
   <body>
@@ -103,6 +167,14 @@
             </div>
           </div>
         </div>
+
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Navigation">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
       </nav>
 
       <main class="main-content">
@@ -195,25 +267,49 @@
           });
         }
       });
+
       document.addEventListener("DOMContentLoaded", function () {
-    // Find all flash messages on the page
-    const flashMessages = document.querySelectorAll('.flash-msg');
-    
-    flashMessages.forEach(msg => {
-      // Wait exactly 3 seconds (3000 milliseconds)
-      setTimeout(() => {
-        // Trigger the CSS transition to fade out and float up
-        msg.style.opacity = '0';
-        msg.style.transform = 'translateY(-10px)';
+        // --- Flash Messages ---
+        const flashMessages = document.querySelectorAll('.flash-msg');
         
-        // Wait 400ms for the fade animation to finish, then delete the HTML element
-        setTimeout(() => {
-          msg.remove();
-        }, 400); 
-        
-      }, 3000); 
-    });
-  });
+        flashMessages.forEach(msg => {
+          setTimeout(() => {
+            msg.style.opacity = '0';
+            msg.style.transform = 'translateY(-10px)';
+            
+            setTimeout(() => {
+              msg.remove();
+            }, 400); 
+            
+          }, 3000); 
+        });
+
+        // --- NEW: Mobile Menu Toggle Logic ---
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navMenu = document.querySelector('.nav-menu');
+
+        if (mobileMenuBtn && navMenu) {
+          mobileMenuBtn.addEventListener('click', () => {
+            navMenu.classList.toggle('mobile-active');
+            
+            if (navMenu.classList.contains('mobile-active')) {
+              // Show 'X' Close Icon
+              mobileMenuBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+              document.body.style.overflow = 'hidden'; 
+            } else {
+              // Show Hamburger Icon
+              mobileMenuBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+              document.body.style.overflow = ''; 
+            }
+          });
+          
+          navMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+              if(navMenu.classList.contains('mobile-active')) mobileMenuBtn.click(); 
+            });
+          });
+        }
+      });
     </script>
   </body>
 </html>
