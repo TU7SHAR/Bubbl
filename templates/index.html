@@ -26,8 +26,10 @@
 
 /* ═══ BUTTONS ═══ */
 .btn-hero { padding:.85rem 2rem; border-radius:50px; font-size:.95rem; font-weight:600; cursor:pointer; transition:all .3s; text-decoration:none; border:none; font-family:inherit; display:inline-flex; align-items:center; gap:.5rem; }
-.btn-outline { border:1.5px solid rgba(232,114,42,.3); color:var(--text-primary); background:transparent; padding:.6rem 1.4rem; border-radius:50px; font-size:.85rem; font-weight:600; cursor:pointer; transition:all .3s; text-decoration:none; display:inline-block; }
-.btn-outline:hover { border-color:var(--orange); background:rgba(232,114,42,.05); }
+.btn-solid { background:var(--orange); color:#fff; box-shadow:0 4px 20px rgba(232,114,42,.35); }
+.btn-solid:hover { background:var(--orange-light); transform:translateY(-2px); box-shadow:0 8px 28px rgba(232,114,42,.45); }
+.btn-outline { border:1.5px solid rgba(232,114,42,.4); color:var(--text-primary); background:rgba(255,255,255,.45); padding:.85rem 2rem; border-radius:50px; font-size:.95rem; font-weight:600; cursor:pointer; transition:all .3s; text-decoration:none; display:inline-flex; align-items:center; gap:.5rem; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.btn-outline:hover { border-color:var(--orange); background:rgba(255,255,255,.75); transform:translateY(-2px); box-shadow:0 6px 20px rgba(232,114,42,.15); }
 
 /* ═══ SECTIONS (Tightened Spacing) ═══ */
 .landing-section { padding:3.5rem 1.5rem; max-width:1200px; margin:0 auto; }
@@ -37,8 +39,8 @@
 
 /* ═══ FEATURE CARDS ═══ */
 .features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.2rem; margin-top:2rem; }
-.feature-card { padding:1.8rem; border-radius:20px; }
-.feature-card:hover { transform:translateY(-3px); box-shadow:0 16px 48px rgba(180,100,20,.08),0 0 30px rgba(0,0,0,.04); }
+.feature-card { padding:1.8rem; border-radius:20px; transition:transform .35s cubic-bezier(.175,.885,.32,1.5),box-shadow .35s ease; }
+.feature-card:hover { transform:translateY(-6px); box-shadow:0 20px 52px rgba(180,100,20,.12),0 0 32px rgba(0,0,0,.05); }
 .feature-icon { width:44px; height:44px; border-radius:12px; background:rgba(232,114,42,.08); display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:1rem; }
 .feature-card h3 { font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:1.08rem; margin-bottom:.4rem; letter-spacing:-.02em; }
 .feature-card p { color:var(--text-secondary); font-size:.88rem; line-height:1.65; }
@@ -132,7 +134,7 @@
   
   <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;animation:fu .7s ease-out .3s both">
     <a href="{{ url_for('auth.register') }}" class="btn-hero btn-solid">Start Building Free <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
-    <a href="#features" class="btn-hero btn-outline">See All Features</a>
+    <a href="{{ url_for('views_bp.features') }}" class="btn-hero btn-outline">See All Features</a>
   </div>
 </header>
 
@@ -246,8 +248,9 @@ if(bb){
 
 // SMOOTH SCROLLING
 document.addEventListener("DOMContentLoaded", function() {
-  const navLinks = document.querySelectorAll('a.nav-link');
-  navLinks.forEach(anchor => {
+  // Works for nav links AND hero anchor buttons (e.g. "See All Features")
+  const scrollLinks = document.querySelectorAll('a[href*="#"]');
+  scrollLinks.forEach(anchor => {
       anchor.addEventListener('click', function (e) {
           const fullHref = this.getAttribute('href');
           if (fullHref && fullHref.includes('#')) {

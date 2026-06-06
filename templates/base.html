@@ -134,7 +134,7 @@
 
               {# Case 2: User is on Marketing pages (Home, Pricing, Compare) #}
               {% else %}
-                <a href="{{ url_for('views_bp.index') }}#features" class="nav-link">Features</a>
+                <a href="{{ url_for('views_bp.features') }}" class="nav-link">Features</a>
                 <a href="{{ url_for('views_bp.pricing') }}" class="nav-link">Pricing</a>
                 <div class="has-drop">
                  <a href="{{ url_for('views_bp.compare') }}" class="nav-link">Compare</a>

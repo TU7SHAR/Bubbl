@@ -14,6 +14,10 @@ views_bp = Blueprint('views_bp', __name__)
 def index():
     return render_template('index.html')
 
+@views_bp.route('/features')
+def features():
+    return render_template('features.html')
+
 @views_bp.route('/pricing')
 def pricing():
     return render_template('pricing.html')
