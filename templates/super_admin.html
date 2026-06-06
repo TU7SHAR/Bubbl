@@ -1,6 +1,9 @@
 {% extends 'base.html' %} 
-
 {% block title %}Creator Mode | Platform Overview{% endblock %} 
+
+{% block meta_description %}
+<meta name="robots" content="noindex, nofollow" />
+{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/super_admin.css') }}">

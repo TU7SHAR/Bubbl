@@ -1,0 +1,30 @@
+# 1. HIDE DIRECTORIES (Prevent Indexing)
+# This prevents users from seeing a list of your files if they guess a folder name.
+Options -Indexes
+
+# 2. CACHE TTL (Set Expiry Headers)
+# This tells browsers to keep your static files (images, css, js) cached,
+# which drastically improves performance.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+
+    # Images (Cache for 1 year)
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+
+    # CSS and JavaScript (Cache for 1 month)
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType application/x-javascript "access plus 1 month"
+</IfModule>
+
+# 3. GZIP COMPRESSION (Bonus for Performance)
+# This compresses your files before sending them to the user.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript
+</IfModule>

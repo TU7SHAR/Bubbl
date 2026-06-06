@@ -1,6 +1,9 @@
 {% extends 'base.html' %} 
+{% block title %}Create Chatbot Agent | Bubbl.ooo{% endblock %} 
 
-{% block title %}Create Chatbot | {{ config.PROJECT_NAME | default('Bubbl') }}{% endblock %} 
+{% block meta_description %}
+<meta name="description" content="Create your custom AI chatbot agent. Train it on your data, configure UI, and set lead conventions in our intuitive no-code pipeline builder." />
+{% endblock %}
 
 {% block content %}
 {% include 'partials/_chatbot_styles.html' %}

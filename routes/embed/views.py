@@ -11,9 +11,21 @@ from datetime import datetime, timedelta
 import io
 from sqlalchemy import func
 import psutil
-
-
+from flask import send_from_directory, current_app
 views_bp = Blueprint('views_bp', __name__)
+
+@views_bp.app_errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@views_bp.route('/robots.txt')
+def robots():
+    return send_from_directory('static', 'robots.txt')
+
+@views_bp.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory('static', 'sitemap.xml')
+
 
 @views_bp.route('/api/waitlist', methods=['POST'])
 def join_waitlist():

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Page Not Found | {{ config.COMPANY_NAME_FIRST }}{% endblock %}
+
+{% block meta_description %}
+<meta name="robots" content="noindex, nofollow" />
+{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 100px 20px;">
+    <h1 style="font-family: 'Bricolage Grotesque'; font-size: 64px; margin-bottom: 20px;">404</h1>
+    <p style="font-size: 18px; color: var(--text-secondary); margin-bottom: 30px;">
+        Oops! We couldn't find the page you were looking for.
+    </p>
+    <a href="{{ url_for('views_bp.index') }}" class="btn btn-solid">Back to Homepage →</a>
+</div>
+{% endblock %}

@@ -1,10 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+ <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>{% block title %}{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}{% endblock %}</title>
-<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website" />
+<meta property="og:url" content="{{ request.url }}" />
+<meta property="og:title" content="{% block og_title %}{{ config.PROJECT_NAME }} | AI Chatbot Platform{% endblock %}" />
+<meta property="og:description" content="{% block og_description %}Build intelligent WhatsApp and website AI chatbots with Bubbl.ooo. Automate support and capture leads with no-code.{% endblock %}" />
+<meta property="og:image" content="{{ url_for('static', filename='images/og-banner.png', _external=True) }}" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content="{{ request.url }}" />
+<meta name="twitter:title" content="{% block twitter_title %}{{ config.PROJECT_NAME }}{% endblock %}" />
+<meta name="twitter:description" content="{% block twitter_description %}Build intelligent AI chatbots with Bubbl.ooo.{% endblock %}" />
+<meta name="twitter:image" content="{{ url_for('static', filename='images/og-banner.png', _external=True) }}" />
+    
+    <title>{% block title %}{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} | AI Chatbots for Business{% endblock %}</title>
+    <meta name="description" content="Build intelligent WhatsApp and website AI chatbots with Bubbl.ooo. Automate customer support, capture leads, and scale your Indian SMB with zero coding required." />
+    <meta name="keywords" content="AI chatbot, WhatsApp bot, no-code chatbot, Indian SMB, lead generation, customer support automation, chatbot platform" />
+    <meta name="author" content="{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}" />
+    <link rel="canonical" href="{{ request.url }}" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet" />
@@ -19,6 +36,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/super_admin.css') }}" />
+
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon-32x32.png') }}">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="{{ url_for('static', filename='js/sprite.js') }}"></script>
@@ -87,8 +107,37 @@
       }
       
     </style>
-  </head>
 
+    <!-- SEO Schema Markup -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "{{ config.COMPANY_NAME_FIRST }}{{ config.COMPANY_LAST_NAME }}",
+  "url": "https://bubbl.ooo",
+  "logo": "{{ url_for('static', filename='images/logo.png', _external=True) }}",
+  "description": "AI chatbot platform for Indian SMBs. WhatsApp-native, no-code, and premium support.",
+  "sameAs": [
+    "https://www.facebook.com/bubbl",
+    "https://twitter.com/bubbl"
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "url": "https://bubbl.ooo/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://bubbl.ooo/search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+  </head>
+  
   <body>
     <svg aria-hidden="true" style="position: absolute; width: 0; height: 0">
       <defs>

@@ -1,5 +1,11 @@
-{% extends 'base.html' %} {% block title %}Account Settings | Admin{% endblock
-%} {% block content %}
+{% extends 'base.html' %} 
+{% block title %}Account Settings | {{ config.PROJECT_NAME }}{% endblock %} 
+
+{% block meta_description %}
+<meta name="robots" content="noindex, nofollow" />
+{% endblock %}
+
+{% block content %}
 <div class="saas-profile-wrapper">
   <div class="saas-profile-container">
     <div class="saas-profile-header">

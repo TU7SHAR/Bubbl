@@ -1,6 +1,9 @@
 {% extends 'base.html' %} 
+{% block title %}Edit {{ bot.bot_name }} | Agent Settings{% endblock %} 
 
-{% block title %}Edit Chatbot | {{ bot.bot_name }}{% endblock %} 
+{% block meta_description %}
+<meta name="description" content="Fine-tune your AI agent's behavior. Update instructions, upload new knowledge base files, and modify lead capture settings for {{ bot.bot_name }}." />
+{% endblock %}
 
 {% block content %}
 <style>

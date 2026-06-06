@@ -1,10 +1,13 @@
 {% extends 'base.html' %} 
 
-{% block title %}{{config.COMPANY_NAME_FIRST}}.{{config.COMPANY_LAST_NAME}} — AI Chatbot Platform | WhatsApp & Website Chatbots for Business{% endblock %} 
+{% block title %}{{config.COMPANY_NAME_FIRST}}.{{config.COMPANY_LAST_NAME}} — AI Chatbot Platform for WhatsApp & Web{% endblock %} 
+
+{% block meta_description %}
+<meta name="description" content="Build smart, no-code AI chatbots for WhatsApp and your website. Train on your own data, automate 24/7 support, and capture leads easily with Bubbl.ooo." />
+{% endblock %}
 
 {% block content %}
 <style>
-/* ═══ CHATBOT LANDING SPECIFIC STYLES ═══ */
 :root {
   --orange: #E8722A;
   --orange-light: #F2943B;
@@ -17,7 +20,6 @@
   --bg: #FFFBF7;
 }
 
-/* ═══ LIQUID GLASS ═══ */
 .lg { position:relative; border-radius:20px; overflow:hidden; box-shadow:0 6px 6px rgba(0,0,0,.15),0 0 20px rgba(0,0,0,.08); transition:all .4s cubic-bezier(.175,.885,.32,2.2); }
 .lg .lg-fx { position:absolute; inset:0; z-index:0; backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); filter:url(#glass-fx); border-radius:inherit; overflow:hidden; isolation:isolate; }
 .lg .lg-tint { position:absolute; inset:0; z-index:1; background:rgba(255,255,255,.25); border-radius:inherit; }
