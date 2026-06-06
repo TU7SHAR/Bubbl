@@ -1,4 +1,7 @@
 <style>
+/* ============================================================
+   BASE STYLES — unchanged from original
+   ============================================================ */
 .cb-container { max-width: 1200px; margin: 0 auto; padding-top: 20px; }
 .cb-header { font-size: 32px; color: var(--text-primary); margin-bottom: 30px; }
 .cb-layout { display: flex; gap: 40px; align-items: flex-start; }
@@ -26,7 +29,7 @@
 .source-icon { color: #6b7280; display: flex; align-items: center; }
 .source-action-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 300; color: #6b7280; transition: all 0.2s; }
 .source-header:hover .source-action-btn { border-color: #d1d5db; background: #f9fafb; color: #111827; }
-.btn-train { background: #000; color: #fff; border: none; border-radius: 8px; width: 100%; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; font-family: inherit; }
+.btn-train { background: #000; color: #fff; border: none; border-radius: 8px; padding: 12px 28px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; font-family: inherit; display: inline-block; }
 .btn-train:hover { background: #1f2937; }
 .f-graphic-container { width: 100%; height: 300px; background: #fdfdfd; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
 .f-grid { position: absolute; inset: 0; background-size: 20px 20px; background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px); opacity: 0.5; }
@@ -59,22 +62,22 @@
 .btn-modal-action.active { background: var(--orange); }
 .chatbase-file-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 10px; border-bottom: 1px solid #f3f4f6; transition: background 0.2s; width: 100%; box-sizing: border-box; }
 .chatbase-file-row:hover { background: #f9fafb; }
-.file-badge-new { background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 12px; flex-shrink: 0; margin-left: 8px;}
+.file-badge-new { background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 12px; flex-shrink: 0; margin-left: 8px; }
 .ui-layout-split { display: flex; gap: 40px; flex-wrap: wrap; }
 .ui-settings-col { flex: 1; min-width: 300px; }
-.ui-preview-col { 
-    flex: 1; 
-    min-width: 300px; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
+.ui-preview-col {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-color: #fdfaf8;
-    background-image: 
+    background-image:
         radial-gradient(circle at 10% 20%, rgba(232, 114, 42, 0.15) 0%, transparent 40%),
         radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
-    border: 1px dashed rgba(232, 114, 42, 0.3); 
-    border-radius: 20px; 
-    padding: 20px; 
+    border: 1px dashed rgba(232, 114, 42, 0.3);
+    border-radius: 20px;
+    padding: 20px;
 }
 .mock-chat-widget { width: 100%; max-width: 350px; background: #fff; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); transition: background 0.3s, border-color 0.3s; }
 .mock-chat-header { padding: 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); transition: border-color 0.3s; }
@@ -87,27 +90,215 @@
 .cb-bottom-bar { margin-top: 40px; padding-top: 20px; border-top: 2px solid rgba(232, 114, 42, 0.15); display: flex; justify-content: flex-end; align-items: center; }
 .log-line { margin-bottom: 8px; }
 .log-time { color: #64748b; margin-right: 10px; }
+
 /* --- CUSTOM PRETTY DROPDOWN --- */
-  .pretty-dropdown { position: relative; width: 100%; user-select: none; }
-  .pd-selected {
-      background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;
-      padding: 12px 16px; display: flex; justify-content: space-between;
-      align-items: center; cursor: pointer; font-size: 14px; color: #111827; transition: all 0.2s;
+.pretty-dropdown { position: relative; width: 100%; user-select: none; }
+.pd-selected { background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 14px; color: #111827; transition: all 0.2s; }
+.pd-selected:hover { border-color: var(--orange); }
+.pd-options { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 50; display: none; max-height: 280px; overflow-y: auto; }
+.pd-options.show { display: block; animation: pdFadeIn 0.2s ease; }
+@keyframes pdFadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.pd-option { padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: background 0.2s; }
+.pd-option:last-child { border-bottom: none; }
+.pd-option:hover { background: rgba(232, 114, 42, 0.05); }
+.pd-option strong { display: block; font-size: 14px; color: #111827; margin-bottom: 2px; }
+.pd-option span { display: block; font-size: 12px; color: #6b7280; }
+
+.pipeline-card-body { padding: 40px; }
+.pipeline-col { flex: 1; min-width: 320px; }
+/* ============================================================
+   MOBILE RESPONSIVE — targets existing HTML IDs & structure,
+   no changes needed in any other file
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* ── 1. CRITICAL OVERFLOW FIXES ── */
+  /* Forces all padding/borders to calculate inside the width to prevent cards/inputs from bursting out */
+  .cb-container, .cb-container *, .lg, .lg-c {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
   }
-  .pd-selected:hover { border-color: var(--orange); }
-  .pd-options {
-      position: absolute; top: 100%; left: 0; right: 0; background: #fff;
-      border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; margin-top: 4px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 50; display: none;
-      max-height: 280px; overflow-y: auto;
+
+  /* Container & page header */
+  .cb-container {
+    padding-top: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    width: 100%;
+    overflow-x: hidden; /* Stops horizontal page scrolling */
   }
-  .pd-options.show { display: block; animation: pdFadeIn 0.2s ease; }
-  @keyframes pdFadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-  .pd-option { padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: background 0.2s; }
-  .pd-option:last-child { border-bottom: none; }
-  .pd-option:hover { background: rgba(232, 114, 42, 0.05); }
-  .pd-option strong { display: block; font-size: 14px; color: #111827; margin-bottom: 2px; }
-  .pd-option span { display: block; font-size: 12px; color: #6b7280; }
+  .cb-header { font-size: 24px; margin-bottom: 20px; }
+
+  /* Layout: vertical stack */
+  .cb-layout { flex-direction: column; gap: 16px; width: 100%; }
+
+  /* Sidebar → horizontal scrollable pill row */
+  .cb-sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: static; 
+    gap: 8px;
+    padding-bottom: 8px;
+    scrollbar-width: none; 
+  }
+  .cb-sidebar::-webkit-scrollbar { display: none; }
+  
+  .cb-tab {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    font-size: 13px;
+    white-space: nowrap;
+    border-radius: 50px; 
+    background: rgba(0, 0, 0, 0.03); 
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  .cb-tab.active {
+      background: rgba(232, 114, 42, 0.1);
+      border-color: rgba(232, 114, 42, 0.3);
+  }
+
+  /* Content area */
+  .cb-content { min-height: unset; width: 100%; }
+  .lg .lg-c { padding: 24px 16px !important; width: 100%; }
+
+  /* ── Tab: Quick Start ── */
+  #tab-quickstart > div {
+    flex-direction: column !important;
+    gap: 20px !important;
+    width: 100% !important;
+  }
+  /* Override the hardcoded inline min-width: 320px causing the card stretch */
+  #tab-quickstart > div > div {
+    min-width: 0 !important; 
+    width: 100% !important;
+  }
+  #tab-quickstart > div > div:last-child {
+    display: none !important;
+  }
+  #tab-quickstart .qs-input-wrapper { margin-bottom: 16px; width: 100%; }
+  #quick_url, #quick_usecase { font-size: 16px; width: 100%; } 
+  #tab-quickstart .btn-train { width: 100%; text-align: center; }
+
+  /* ── Tab: Knowledge Base ── */
+  .source-header { padding: 14px 0; }
+  .source-title-group { font-size: 14px; }
+
+  /* ── Tab: UI (Agent appearance) ── */
+  .ui-layout-split { flex-direction: column; gap: 24px; width: 100%; }
+  .ui-settings-col,
+  .ui-preview-col { min-width: 0 !important; width: 100% !important; }
+  .ui-preview-col { padding: 16px; border-radius: 16px; }
+  .mock-chat-widget { max-width: 100%; }
+
+  .ui-settings-col > div[style*="grid"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  /* ── Tab: Settings (Lead Conventions) ── */
+  #tab-settings > div[style*="grid"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  /* Custom field rows */
+  #custom-fields-container > div {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  #custom-fields-container > div > div:first-child { flex: 1 1 100% !important; }
+  #custom-fields-container > div > div:nth-child(2) { flex: 1 1 calc(50% - 4px) !important; }
+
+  #system_prompt { font-size: 16px; width: 100%; }
+
+  /* Bottom action bars */
+  .cb-bottom-bar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .cb-bottom-bar .btn,
+  .cb-bottom-bar .btn-train {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* ── Modals → bottom sheet on mobile ── */
+  .cb-modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+  .cb-modal-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 90vh !important;
+    transform: translateY(40px);
+  }
+  .cb-modal-overlay.active .cb-modal-container {
+    transform: translateY(0);
+  }
+  .cb-modal-close-top { top: 14px; right: 14px; }
+  .cb-modal-header { padding: 24px 20px 14px 20px; }
+  .cb-modal-header h2 { font-size: 20px; }
+  .cb-modal-header p { font-size: 13px; }
+  .cb-modal-body { padding: 0 20px 16px 20px; }
+  .cb-modal-footer { padding: 16px 20px 32px 20px; }
+
+  .cb-dropzone { padding: 36px 16px; }
+
+  #modal-links .cb-box-content > div > div[style*="grid"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  /* Inputs sizing fix */
+  .qs-input, .dash-input, #snippet_title, #snippet_text, #scrape_url, #qa_input, #bot_name { 
+      font-size: 16px; 
+      width: 100%;
+  }
+
+  /* ── Terminal overlay → bottom sheet ── */
+  #log-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+  .terminal-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 65vh !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+
+  .chatbase-file-row { padding: 12px 4px; }
+  /* Mobile Overrides for Pipeline Card */
+  .pipeline-card-body { 
+    padding: 24px 16px !important; 
+    width: 100% !important; 
+  }
+  .pipeline-col { 
+    min-width: 100% !important; 
+  }
+  .f-graphic-container svg { 
+    width: 100% !important; 
+    height: auto !important; 
+  }
+}
+
+/* Tablet: slightly tighter */
+@media (max-width: 500px) {
+  .cb-box-content { padding: 14px; }
+  .cb-box-header { padding: 12px 14px; font-size: 14px; }
+  .btn-modal-action { width: 100%; text-align: center; }
+  .cb-modal-footer { justify-content: stretch; }
+}
 </style>
 <script>
   window.LEAD_TIMING = "{{ bot.lead_capture_timing if bot and bot.lead_capture_timing else session.get('lead_capture_timing', 'disabled') }}";

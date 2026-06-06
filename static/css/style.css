@@ -18,6 +18,19 @@
 
   --bg: #fffbf7;
   --bg-alt: #fff7ef;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  --danger: #ef4444;
+  --danger-dark: #dc2626;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
 }
 
 html {
@@ -200,19 +213,38 @@ body {
 }
 
 .logout-btn {
-  color: #ef4444;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 18px;
+  height: 40px;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transition: all 0.25s ease;
 }
 
 .logout-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: var(--danger-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+  color: #fff;
 }
 
 /* ================= MAIN SPACING ================= */
 .main-content {
   position: relative;
   z-index: 10;
-  padding: 120px 24px 80px;
+  padding: 106px 24px 80px;
 }
 
 /* ================= HEADINGS & TYPOGRAPHY ================= */
@@ -318,10 +350,9 @@ h3,
    BUBBL.OOO SPREAD NAVBAR & FOOTER
    ========================================= */
 
-/* --- NAVBAR --- */
 .navbar {
   width: 100%;
-  height: 90px;
+  height: 70px;
   position: fixed;
   top: 0;
   left: 0;
@@ -329,14 +360,17 @@ h3,
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .navbar.scrolled {
   height: 70px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(232, 114, 42, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .nav-container {

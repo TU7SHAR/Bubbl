@@ -4,267 +4,397 @@
   #chat-window-popup {
     display: none !important;
   }
+
+  .int-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── Page header ── */
+  .int-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: color 0.2s;
+    margin-bottom: 24px;
+  }
+  .int-back:hover { color: var(--orange); }
+
+  .int-page-title {
+    font-size: 32px;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+  }
+  .int-page-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 36px;
+  }
+
+  /* ── Two-col layout ── */
+  .int-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ── Shared card shell ── */
+  .int-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  .int-card-body { padding: 28px; }
+
+  /* ── Section divider inside card ── */
+  .int-section-sep {
+    border: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+    margin: 28px 0;
+  }
+
+  /* ── Section heading row ── */
+  .int-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
+  .int-section-title .step-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .int-section-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 20px;
+    line-height: 1.5;
+  }
+
+  /* ── Framework label ── */
+  .fw-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--orange);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  /* ── Code block ── */
+  .int-code-block {
+    background: #0f1117;
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .int-code-block pre {
+    margin: 0;
+    color: #a3b8cc;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12.5px;
+    overflow-x: auto;
+    padding-top: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .int-copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255,255,255,0.7);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .int-copy-btn:hover {
+    background: rgba(232,114,42,0.25);
+    border-color: rgba(232,114,42,0.4);
+    color: #fff;
+  }
+  .int-copy-btn.copied {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #10b981;
+  }
+
+  /* ── Domain lock form ── */
+  .int-domain-tip {
+    background: rgba(232, 114, 42, 0.05);
+    border: 1px solid rgba(232, 114, 42, 0.15);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .int-domain-tip code {
+    background: rgba(232, 114, 42, 0.1);
+    color: var(--orange);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .int-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .int-input {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: #fcfaf8;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+  }
+  .int-input:focus {
+    border-color: var(--orange);
+    background: #fff;
+  }
+  .int-save-btn {
+    padding: 12px 22px;
+    background: var(--orange);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(232, 114, 42, 0.25);
+  }
+  .int-save-btn:hover {
+    background: #d4651f;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(232, 114, 42, 0.35);
+  }
+
+  /* ── Preview card ── */
+  .int-preview-card {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px dashed rgba(232, 114, 42, 0.3);
+    border-radius: 20px;
+    padding: 28px;
+    min-height: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    gap: 8px;
+  }
+  .int-preview-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(232,114,42,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(16,185,129,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .int-preview-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(232,114,42,0.08);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    border: 1px solid rgba(232,114,42,0.15);
+  }
+  .int-preview-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .int-preview-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+    max-width: 220px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ── Status pill ── */
+  .int-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.2);
+    color: #059669;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 50px;
+    letter-spacing: 0.03em;
+    margin-top: 4px;
+  }
+  .int-live-pill span {
+    width: 6px; height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .int-grid { grid-template-columns: 1fr; }
+  }
 </style>
-<div
-  class="integration-container"
-  style="max-width: 1200px; margin: 40px auto; padding: 0 20px"
->
-  <div class="header-section" style="margin-bottom: 40px">
-    <a
-      href="{{ url_for('views_bp.dashboard') }}"
-      style="color: #8a6535; text-decoration: none; font-size: 14px"
-      >← Back to Dashboard</a
-    >
-    <h1
-      style="
-        color: #1c1004;
-        font-family: &quot;Sora&quot;, sans-serif;
-        margin-top: 10px;
-      "
-    >
-      Integrate <span style="color: #8a6535">{{ bot.bot_name }}</span>
-    </h1>
-    <p style="color: #5a3d18">
-      Deploy your AI agent to your website in seconds.
-    </p>
-  </div>
 
-  <div
-    class="split-layout"
-    style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px"
-  >
-    <div class="settings-panel">
-      <div
-        class="glass-card"
-        style="
-          background: rgba(255, 255, 255, 0.7);
-          backdrop-filter: blur(16px);
-          padding: 30px;
-          border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.8);
-        "
-      >
-        <h3 style="margin-top: 0">1. Copy your Embed Code</h3>
-        <p style="font-size: 14px; color: #666; margin-bottom: 20px">
-          Paste the snippet that matches your website's framework.
-        </p>
+<div class="int-container">
 
-        <h4
-          style="
-            font-size: 13px;
-            color: #8a6535;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-          "
-        >
-          Standard HTML / WordPress
-        </h4>
-        <div
-          class="code-box"
-          style="
-            background: #0c0804;
-            border-radius: 8px;
-            padding: 20px;
-            position: relative;
-            margin-bottom: 20px;
-          "
-        >
-          <button
-            class="copy-btn"
-            onclick="copySnippet('embed-code-html', this)"
-            style="
-              position: absolute;
-              top: 10px;
-              right: 10px;
-              background: rgba(255, 255, 255, 0.1);
-              border: 1px solid rgba(255, 255, 255, 0.2);
-              color: white;
-              padding: 6px 12px;
-              border-radius: 6px;
-              cursor: pointer;
-              font-size: 12px;
-              transition: 0.2s;
-            "
-          >
-            Copy Code
-          </button>
-          <pre
-            style="
-              margin: 0;
-              color: #a3b8cc;
-              font-family: monospace;
-              font-size: 13px;
-              overflow-x: auto;
-              padding-top: 15px;
-            "
-            id="embed-code-html"
-          >
-&lt;!-- BotFactory Widget --&gt;
-&lt;script src="{{ request.host_url }}static/js/embed.js" data-bot-id="{{ bot.id }}"&gt;&lt;/script&gt;</pre
-          >
+  <a href="{{ url_for('views_bp.dashboard') }}" class="int-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    Back to Dashboard
+  </a>
+
+  <h1 class="int-page-title bricolage">
+    Integrate <span style="color: var(--orange);">{{ bot.bot_name }}</span>
+  </h1>
+  <p class="int-page-sub">Deploy your AI agent to your website in seconds.</p>
+
+  <div class="int-grid">
+
+    <!-- LEFT: Embed + Domain Lock -->
+    <div class="int-card">
+      <div class="int-card-body">
+
+        <!-- Step 1 -->
+        <div class="int-section-title">
+          <div class="step-badge">1</div>
+          Copy your Embed Code
+        </div>
+        <p class="int-section-desc">Paste the snippet that matches your website's framework.</p>
+
+        <div class="fw-label">Standard HTML / WordPress</div>
+        <div class="int-code-block">
+          <button class="int-copy-btn" onclick="copySnippet('embed-code-html', this)">Copy</button>
+          <pre id="embed-code-html">&lt;!-- Bubbl Widget --&gt;
+&lt;script src="{{ request.host_url }}static/js/embed.js"
+  data-bot-id="{{ bot.id }}"&gt;&lt;/script&gt;</pre>
         </div>
 
-        <h4
-          style="
-            font-size: 13px;
-            color: #8a6535;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-          "
-        >
-          React / Next.js
-        </h4>
-        <div
-          class="code-box"
-          style="
-            background: #0c0804;
-            border-radius: 8px;
-            padding: 20px;
-            position: relative;
-          "
-        >
-          <button
-            class="copy-btn"
-            onclick="copySnippet('embed-code-react', this)"
-            style="
-              position: absolute;
-              top: 10px;
-              right: 10px;
-              background: rgba(255, 255, 255, 0.1);
-              border: 1px solid rgba(255, 255, 255, 0.2);
-              color: white;
-              padding: 6px 12px;
-              border-radius: 6px;
-              cursor: pointer;
-              font-size: 12px;
-              transition: 0.2s;
-            "
-          >
-            Copy Code
-          </button>
-          <pre
-            style="
-              margin: 0;
-              color: #a3b8cc;
-              font-family: monospace;
-              font-size: 13px;
-              overflow-x: auto;
-              padding-top: 15px;
-            "
-            id="embed-code-react"
-          >
-{/* BotFactory Widget */}
-&lt;Script id="botfactory-init" strategy="beforeInteractive"&gt;
+        <div class="fw-label">React / Next.js</div>
+        <div class="int-code-block">
+          <button class="int-copy-btn" onclick="copySnippet('embed-code-react', this)">Copy</button>
+          <pre id="embed-code-react">{/* Bubbl Widget */}
+&lt;Script id="bubbl-init" strategy="beforeInteractive"&gt;
   {`window.BOTFACTORY_ID = "{{ bot.id }}";`}
 &lt;/Script&gt;
-&lt;Script src="{{ request.host_url }}static/js/embed.js" strategy="afterInteractive" /&gt;</pre
-          >
+&lt;Script src="{{ request.host_url }}static/js/embed.js"
+  strategy="afterInteractive" /&gt;</pre>
         </div>
 
-        <hr
-          style="
-            border: 0;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            margin: 30px 0;
-          "
-        />
+        <hr class="int-section-sep">
 
-        <h3 style="margin-top: 0">2. Security (Domain Lock)</h3>
-        <p style="font-size: 14px; color: #666; margin-bottom: 5px">
-          Lock this widget to prevent API theft. Enter the URL where this widget
-          will be hosted.
-        </p>
-        <p style="font-size: 12px; color: #999; margin-bottom: 15px">
-          <em
-            >Pro-Tip: To add multiple domains (like your dashboard preview),
-            separate them with a space: <br /><code
-              >https://www.nestimage.tech {{ request.host_url.rstrip('/')
-              }}</code
-            ></em
-          >
-        </p>
-        <form
-          action="{{ url_for('views_bp.update_bot_security', bot_id=bot.id) }}"
-          method="POST"
-          style="display: flex; gap: 10px; align-items: center"
-        >
-          <input
-            type="text"
-            name="allowed_domains"
-            value="{{ bot.allowed_domains or '' }}"
-            placeholder="e.g. https://mywebsite.com"
-            style="
-              flex: 1;
-              padding: 12px;
-              border-radius: 8px;
-              border: 1px solid #ccc;
-              background: #fff;
-            "
-          />
-          <button
-            type="submit"
-            style="
-              padding: 12px 20px;
-              background: #8a6535;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              font-weight: 500;
-              white-space: nowrap;
-            "
-          >
-            Save Lock
-          </button>
+        <!-- Step 2 -->
+        <div class="int-section-title">
+          <div class="step-badge">2</div>
+          Security — Domain Lock
+        </div>
+        <p class="int-section-desc">Lock this widget to prevent API theft. Enter the URL where your widget will live.</p>
+
+        <div class="int-domain-tip">
+          <strong>Pro tip:</strong> To allow multiple domains, separate them with a space:<br>
+          <code>https://mywebsite.com {{ request.host_url.rstrip('/') }}</code>
+        </div>
+
+        <form action="{{ url_for('views_bp.update_bot_security', bot_id=bot.id) }}" method="POST">
+          <div class="int-input-row">
+            <input
+              type="text"
+              name="allowed_domains"
+              value="{{ bot.allowed_domains or '' }}"
+              placeholder="https://mywebsite.com"
+              class="int-input"
+            />
+            <button type="submit" class="int-save-btn">Save Lock</button>
+          </div>
         </form>
+
       </div>
     </div>
 
-    <div class="preview-panel">
-      <div
-        class="glass-card"
-        style="
-          background: rgba(255, 255, 255, 0.4);
-          backdrop-filter: blur(16px);
-          padding: 30px;
-          border-radius: 16px;
-          border: 1px dashed rgba(138, 101, 53, 0.5);
-          height: 500px;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-        "
-      >
-        <h3 style="color: #1c1004; opacity: 0.5">Live Website Preview</h3>
-        <p style="color: #5a3d18; opacity: 0.5; font-size: 14px">
-          Your widget will appear in the bottom right corner of your screen.
-        </p>
-
-        <script
-          src="{{ request.host_url }}static/js/embed.js"
-          data-bot-id="{{ bot.id }}"
-        ></script>
+    <!-- RIGHT: Live Preview -->
+    <div class="int-preview-card">
+      <div class="int-preview-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
       </div>
+      <p class="int-preview-title">Live Widget Preview</p>
+      <p class="int-preview-sub">Your agent appears in the bottom-right corner of this page.</p>
+      <div class="int-live-pill"><span></span> Widget Active</div>
+
+      <script src="{{ request.host_url }}static/js/embed.js" data-bot-id="{{ bot.id }}"></script>
     </div>
+
   </div>
 </div>
 
 <script>
-  function copySnippet(elementId, btnElement) {
-    const codeText = document.getElementById(elementId).innerText;
-
-    navigator.clipboard.writeText(codeText).then(() => {
-      btnElement.innerText = "Copied!";
-      btnElement.style.background = "#28a745"; // Success green
-      btnElement.style.borderColor = "#28a745";
-
+  function copySnippet(elementId, btn) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.innerText = 'Copied!';
+      btn.classList.add('copied');
       setTimeout(() => {
-        btnElement.innerText = "Copy Code";
-        btnElement.style.background = "rgba(255,255,255,0.1)";
-        btnElement.style.borderColor = "rgba(255,255,255,0.2)";
+        btn.innerText = 'Copy';
+        btn.classList.remove('copied');
       }, 2000);
     });
   }

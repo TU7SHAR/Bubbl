@@ -204,11 +204,14 @@
 
 #bot-sprite {
   width: 200px;
-  height: 200px;
+  height: 110px;
   background-image: url("/static/images/spritesheet.png");
-  background-size: 80000px 200px;
-  margin: 0 auto -15px auto;
+  background-size: 80000px 110px;
+  margin: 0 auto -5px auto;
   pointer-events: auto;
+
+  transform: scale(2);
+  transform-origin: bottom center;
 }
 
 #sprite-ask-container.chat-open {
@@ -266,9 +269,9 @@
   /* Make the Sprite and Text smaller */
   #bot-sprite {
     width: 100px;
-    height: 100px;
+    height: 55px;
     /* Math: 400 frames * 100px = 40000px */
-    background-size: 40000px 100px;
+    background-size: 40000px 55px;
     margin: 0 auto -5px auto;
   }
 

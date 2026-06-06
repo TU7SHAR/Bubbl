@@ -24,9 +24,10 @@ body {
 .dash-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 120px 2rem 40px;
+  position: relative;
+  z-index: 1;
 }
-
 .dash-column-header {
   display: flex;
   justify-content: space-between;
@@ -60,10 +61,12 @@ body {
 /* THE INVITE BUTTON FIX */
 .btn-outline {
   background: rgba(232, 114, 42, 0.05) !important;
-  border: 2px solid var(--orange) !important;
+  border: 1.5px solid var(--orange) !important;
   color: var(--orange) !important;
-  padding: 10px 22px !important;
+  padding: 8px 16px !important;
   font-size: 13px !important;
+  min-height: 40px;
+  width: auto !important;
 }
 
 .btn-outline:hover {
@@ -76,7 +79,8 @@ body {
 .btn-solid {
   background: var(--orange);
   color: white;
-  padding: 12px 24px;
+  padding: 8px 20px;
+  min-height: 40px;
   box-shadow: 0 4px 15px rgba(232, 114, 42, 0.2);
 }
 

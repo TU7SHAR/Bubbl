@@ -157,7 +157,7 @@
             
             <div class="nav-auth-group">
               {% if session.get('user_id') %}
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-solid btn-nav" style="background: #fdf2f0; color: var(--orange); box-shadow: none;">Logout</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-solid btn-nav" style="background: rgba(239,68,68,0.08); color: #dc2626; border: 1.5px solid rgba(239,68,68,0.35); box-shadow: none;">Logout</a>
               {% else %}
                 <a href="{{ url_for('auth.login') }}" class="btn btn-solid btn-nav">Get Started Free</a>
               {% endif %}

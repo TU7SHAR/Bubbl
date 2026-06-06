@@ -29,14 +29,14 @@
 .btn-outline { border:1.5px solid rgba(232,114,42,.3); color:var(--text-primary); background:transparent; padding:.6rem 1.4rem; border-radius:50px; font-size:.85rem; font-weight:600; cursor:pointer; transition:all .3s; text-decoration:none; display:inline-block; }
 .btn-outline:hover { border-color:var(--orange); background:rgba(232,114,42,.05); }
 
-/* ═══ SECTIONS ═══ */
-.landing-section { padding:5rem 2rem; max-width:1200px; margin:0 auto; }
+/* ═══ SECTIONS (Tightened Spacing) ═══ */
+.landing-section { padding:3.5rem 1.5rem; max-width:1200px; margin:0 auto; }
 .section-label { font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--orange); margin-bottom:.8rem; }
 .section-title { font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:clamp(1.8rem,3.5vw,2.6rem); letter-spacing:-.035em; line-height:1.15; margin-bottom:.8rem; }
 .section-sub { color:var(--text-secondary); font-size:1rem; line-height:1.7; max-width:520px; }
 
 /* ═══ FEATURE CARDS ═══ */
-.features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.2rem; margin-top:2.5rem; }
+.features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.2rem; margin-top:2rem; }
 .feature-card { padding:1.8rem; border-radius:20px; }
 .feature-card:hover { transform:translateY(-3px); box-shadow:0 16px 48px rgba(180,100,20,.08),0 0 30px rgba(0,0,0,.04); }
 .feature-icon { width:44px; height:44px; border-radius:12px; background:rgba(232,114,42,.08); display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:1rem; }
@@ -44,15 +44,15 @@
 .feature-card p { color:var(--text-secondary); font-size:.88rem; line-height:1.65; }
 
 /* ═══ STEPS ═══ */
-.steps { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-top:2.5rem; }
+.steps { display:grid; grid-template-columns:repeat(3,1fr); gap:1.2rem; margin-top:2rem; }
 .step { text-align:center; padding:2.2rem 1.2rem; border-radius:20px; }
 .step-num { font-family:'Bricolage Grotesque',sans-serif; font-size:3rem; font-weight:800; color:rgba(232,114,42,.15); line-height:1; margin-bottom:.8rem; }
 .step h3 { font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:1.05rem; margin-bottom:.5rem; }
 .step p { color:var(--text-secondary); font-size:.88rem; line-height:1.6; }
 
-/* ═══ CTA SECTION ═══ */
-.cta-section { text-align:center; padding:5rem 2rem 6rem; }
-.cta-card { max-width:680px; margin:0 auto; padding:3.5rem 2.5rem; border-radius:24px; }
+/* ═══ CTA SECTION (Tightened Spacing) ═══ */
+.cta-section { text-align:center; padding:4rem 1.5rem 4rem; }
+.cta-card { max-width:680px; margin:0 auto; padding:2.5rem 2rem; border-radius:24px; }
 .cta-card h2 { font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:clamp(1.6rem,3vw,2.2rem); letter-spacing:-.03em; margin-bottom:.8rem; }
 .cta-card p { color:var(--text-secondary); margin-bottom:1.8rem; font-size:1rem; }
 
@@ -85,11 +85,14 @@
 .text-center { text-align:center; }
 .mx-auto { margin-left:auto; margin-right:auto; }
 
-/* ═══ RESPONSIVE ═══ */
+/* ═══ RESPONSIVE (Balanced Mobile Spacing) ═══ */
 @media(max-width:768px) {
+  .hero { padding:5rem 1.2rem 3rem !important; min-height:auto !important; }
+  .landing-section { padding:2.5rem 1.2rem; }
+  .cta-section { padding:3rem 1.2rem 4rem; }
+  .cta-card { padding:2rem 1.5rem; }
   .steps { grid-template-columns:1fr; gap:1rem; }
   .features-grid { grid-template-columns:1fr; }
-  .hero { padding:7rem 1.5rem 4rem; }
   .bbar-wrap { max-width:calc(100% - 1.5rem); }
   .bar-btn { padding:.45rem .6rem; font-size:.68rem; }
   .bar-prompt { font-size:.75rem; padding:.5rem .7rem; }
@@ -110,7 +113,7 @@
   </defs>
 </svg>
 
-<header id="hero" class="hero" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 6rem">
+<header id="hero" class="hero" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:50px 2rem 80px;">
   <div class="hero-badge lg" style="border-radius:50px;margin-bottom:2rem;animation:fu .7s ease-out">
     <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
     <div class="lg-c" style="display:flex;align-items:center;gap:.5rem;padding:.4rem 1rem .4rem .6rem;font-size:.78rem;font-weight:500;color:var(--text-secondary)">
@@ -214,35 +217,6 @@
     </div>
   </div>
 </section>
-
-<!-- <div class="bbar-wrap">
-  <div class="bbar">
-    <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-    <div class="bbar-content">
-      <div class="blob-ctr">
-        <div class="blob-body" id="blobBody">
-          <svg class="blob-svg" viewBox="0 0 100 100" id="blobSvg">
-            <ellipse cx="50" cy="54" rx="32" ry="30" fill="#FF8C3A" opacity=".95"/>
-            <ellipse cx="42" cy="42" rx="14" ry="8" fill="rgba(255,255,255,.3)" transform="rotate(-15 42 42)"/>
-            <ellipse cx="40" cy="50" rx="5" ry="5.5" fill="#1a1008" id="eyeL"/>
-            <circle cx="41.5" cy="48.5" r="1.8" fill="white" id="pupilL"/>
-            <ellipse cx="60" cy="50" rx="5" ry="5.5" fill="#1a1008" id="eyeR"/>
-            <circle cx="61.5" cy="48.5" r="1.8" fill="white" id="pupilR"/>
-            <path d="M 43 62 Q 50 68 57 62" stroke="#1a1008" stroke-width="2.2" fill="none" stroke-linecap="round" id="mouth"/>
-            <ellipse cx="33" cy="58" rx="5" ry="3" fill="rgba(255,100,60,.35)" id="blushL"/>
-            <ellipse cx="67" cy="58" rx="5" ry="3" fill="rgba(255,100,60,.35)" id="blushR"/>
-          </svg>
-        </div>
-      </div>
-      <div class="bar-prompt">Ask me anything about Bubbl.ooo...</div>
-      <div class="bar-actions">
-        <a class="bar-btn" href="#" onclick="openWaitlist()">Try Demo</a>
-        <a class="bar-btn" href="#features">Features</a>
-        <a class="bar-btn" href="#support">Contact Us</a>
-      </div>
-    </div>
-  </div>
-</div> -->
 
 <script>
 // SCROLL REVEAL ANIMATIONS
