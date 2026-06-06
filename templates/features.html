@@ -421,7 +421,7 @@ async function submitWaitlist(){
   if(!email||!email.includes('@')){document.getElementById('waitlistError').style.display='block';document.getElementById('waitlistError').textContent='Please enter a valid email.';return;}
   btn.textContent='Submitting...';btn.disabled=true;
   try{
-    const res=await fetch('https://formspree.io/f/xwvwrlra',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email,name,source:window.location.pathname})});
+const res=await fetch('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email,name,source:window.location.pathname})});
     if(res.ok){document.getElementById('waitlistForm').style.display='none';document.getElementById('waitlistSuccess').style.display='block';document.getElementById('waitlistError').style.display='none';gtag('event','waitlist_signup',{'event_category':'engagement','event_label':window.location.pathname});}
     else{throw new Error('Failed');}
   }catch(err){document.getElementById('waitlistError').style.display='block';document.getElementById('waitlistError').textContent='Something went wrong. Please try again.';btn.textContent='Join Waitlist →';btn.disabled=false;}

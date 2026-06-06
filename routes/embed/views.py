@@ -1,3 +1,8 @@
+import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from flask import request, jsonify
 from flask import Blueprint, app, render_template, request, session, redirect, url_for, flash, make_response, jsonify
 from models.models import db, Bot, User, Document, Lead, ScrapeJob, BotUI, Feedback
 from utils.mail_helper import is_valid_email, send_contact_email, send_auto_reply
@@ -10,6 +15,74 @@ import psutil
 
 views_bp = Blueprint('views_bp', __name__)
 
+@views_bp.route('/api/waitlist', methods=['POST'])
+def join_waitlist():
+    data = request.get_json()
+    user_email = data.get('email')
+    user_name = data.get('name', '').strip()
+    source_url = data.get('source', 'Unknown')
+    
+    if not user_email:
+        return jsonify({"success": False, "error": "Email is required"}), 400
+
+    # Load from your .env file
+    my_email = os.environ.get('EMAIL_ADDRESS')
+    my_password = os.environ.get('EMAIL_PASSWORD') # MUST BE AN APP PASSWORD
+    
+    if not my_email or not my_password:
+        return jsonify({"success": False, "error": "Server email config missing"}), 500
+
+    try:
+        # --- 1. EMAIL TO THE CUSTOMER ---
+        msg_customer = MIMEMultipart()
+        msg_customer['From'] = f"Bubbl.ooo <{my_email}>"
+        msg_customer['To'] = user_email
+        msg_customer['Subject'] = "You're on the list! 🎉"
+        
+        greeting = f"Hi {user_name}," if user_name else "Hi there,"
+        customer_body = f"""{greeting}
+        
+Thank you for joining the Bubbl.ooo waitlist! We're thrilled to have you on board.
+
+We are working hard to finalize the best AI chatbot platform for your business, and you will be the first to know the moment we launch.
+
+Best regards,
+The Bubbl.ooo Team
+https://bubbl.ooo
+"""
+        msg_customer.attach(MIMEText(customer_body, 'plain'))
+
+        # --- 2. NOTIFICATION EMAIL TO YOURSELF ---
+        msg_admin = MIMEMultipart()
+        msg_admin['From'] = f"Waitlist Bot <{my_email}>"
+        msg_admin['To'] = my_email
+        msg_admin['Subject'] = f"New Waitlist Signup: {user_email}"
+        
+        admin_body = f"""New waitlist signup received!
+        
+Name: {user_name if user_name else 'N/A'}
+Email: {user_email}
+Source Page: {source_url}
+"""
+        msg_admin.attach(MIMEText(admin_body, 'plain'))
+
+        # --- SEND EMAILS VIA GOOGLE SMTP ---
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(my_email, my_password)
+        
+        # Send both
+        server.send_message(msg_customer)
+        server.send_message(msg_admin)
+        
+        server.quit()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"SMTP Error: {e}")
+        return jsonify({"success": False, "error": "Failed to send email."}), 500
+    
 @views_bp.route('/')
 def index():
     return render_template('index.html')
