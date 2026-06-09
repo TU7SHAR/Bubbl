@@ -39,11 +39,14 @@
 .section-title { font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:clamp(1.8rem,3.5vw,2.6rem); letter-spacing:-.035em; line-height:1.15; margin-bottom:.8rem; }
 .section-sub { color:var(--text-secondary); font-size:1rem; line-height:1.7; max-width:520px; }
 
-/* ═══ FEATURE CARDS ═══ */
+/* ═══ FEATURE CARDS (UPDATED ICON SIZE) ═══ */
 .features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.2rem; margin-top:2rem; }
 .feature-card { padding:1.8rem; border-radius:20px; transition:transform .35s cubic-bezier(.175,.885,.32,1.5),box-shadow .35s ease; }
 .feature-card:hover { transform:translateY(-6px); box-shadow:0 20px 52px rgba(180,100,20,.12),0 0 32px rgba(0,0,0,.05); }
-.feature-icon { width:44px; height:44px; border-radius:12px; background:rgba(232,114,42,.08); display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:1rem; }
+
+/* Larger Icons! */
+.feature-icon { width:64px; height:64px; border-radius:16px; background:rgba(232,114,42,.08); display:flex; align-items:center; justify-content:center; font-size:32px; margin-bottom:20px; }
+
 .feature-card h3 { font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:1.08rem; margin-bottom:.4rem; letter-spacing:-.02em; }
 .feature-card p { color:var(--text-secondary); font-size:.88rem; line-height:1.65; }
 
@@ -60,28 +63,6 @@
 .cta-card h2 { font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:clamp(1.6rem,3vw,2.2rem); letter-spacing:-.03em; margin-bottom:.8rem; }
 .cta-card p { color:var(--text-secondary); margin-bottom:1.8rem; font-size:1rem; }
 
-/* ═══ BOTTOM BAR & BLOB ═══ */
-.bbar-wrap { position:fixed; bottom:1.2rem; left:50%; transform:translateX(-50%); z-index:200; width:calc(100% - 2rem); max-width:640px; }
-.bbar { position:relative; border-radius:22px; overflow:visible; box-shadow:0 8px 40px rgba(0,0,0,.12),0 0 24px rgba(0,0,0,.06); }
-.bbar .lg-fx { position:absolute; inset:0; z-index:0; backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); filter:url(#glass-heavy); border-radius:inherit; overflow:hidden; isolation:isolate; }
-.bbar .lg-tint { position:absolute; inset:0; z-index:1; background:rgba(255,255,255,.25); border-radius:inherit; }
-.bbar .lg-shine { position:absolute; inset:0; z-index:2; border-radius:inherit; box-shadow:inset 2px 2px 1px 0 rgba(255,255,255,.5),inset -1px -1px 1px 1px rgba(255,255,255,.5); }
-.bbar .lg-shine::before { content:''; position:absolute; top:0; left:8%; right:8%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent); }
-.bbar-content { position:relative; z-index:3; padding:.6rem .6rem .6rem 4rem; display:flex; align-items:center; gap:.5rem; }
-.bar-prompt { flex:1; background:rgba(0,0,0,.04); border-radius:14px; padding:.55rem .9rem; color:var(--text-muted); font-size:.82rem; cursor:text; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.bar-actions { display:flex; gap:.35rem; flex-shrink:0; }
-.bar-btn { padding:.5rem .85rem; border-radius:12px; font-size:.72rem; font-weight:600; cursor:pointer; transition:all .25s; text-decoration:none; border:none; font-family:inherit; background:rgba(232,114,42,.08); color:var(--text-primary); white-space:nowrap; }
-.bar-btn:hover { background:rgba(232,114,42,.18); transform:translateY(-1px); }
-
-.blob-ctr { position:absolute; left:-6px; top:50%; transform:translateY(-50%); width:56px; height:56px; z-index:10; cursor:pointer; }
-.blob-body { width:100%; height:100%; }
-.blob-svg { width:100%; height:100%; animation:bi 4s ease-in-out infinite; }
-@keyframes bi { 0%,100%{transform:translateY(0) rotate(0)} 25%{transform:translateY(-3px) rotate(2deg)} 50%{transform:translateY(0) rotate(0)} 75%{transform:translateY(-2px) rotate(-1.5deg)} }
-.blob-body.shake { animation:bs .5s ease-in-out; }
-@keyframes bs { 0%,100%{transform:translateX(0) rotate(0)} 15%{transform:translateX(-4px) rotate(-5deg)} 30%{transform:translateX(4px) rotate(5deg)} 45%{transform:translateX(-3px) rotate(-3deg)} 60%{transform:translateX(3px) rotate(3deg)} 75%{transform:translateX(-1px) rotate(-1deg)} }
-.blob-body.bounce { animation:bb .6s cubic-bezier(.34,1.56,.64,1); }
-@keyframes bb { 0%{transform:translateY(0) scale(1)} 30%{transform:translateY(-14px) scale(1.05,.95)} 50%{transform:translateY(0) scale(.95,1.05)} 70%{transform:translateY(-5px) scale(1.02,.98)} 100%{transform:translateY(0) scale(1)} }
-
 /* ═══ UTILITY ═══ */
 @keyframes fu { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
 .reveal { opacity:0; transform:translateY(28px); transition:opacity .65s ease,transform .65s ease; }
@@ -97,11 +78,7 @@
   .cta-card { padding:2rem 1.5rem; }
   .steps { grid-template-columns:1fr; gap:1rem; }
   .features-grid { grid-template-columns:1fr; }
-  .bbar-wrap { max-width:calc(100% - 1.5rem); }
-  .bar-btn { padding:.45rem .6rem; font-size:.68rem; }
-  .bar-prompt { font-size:.75rem; padding:.5rem .7rem; }
 }
-@media(max-width:480px) { .bar-actions { flex-wrap:wrap; } }
 </style>
 
 <svg aria-hidden="true" style="position:absolute;width:0;height:0;">
@@ -109,10 +86,6 @@
     <filter id="glass-fx" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="2" result="noise"/>
       <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-    <filter id="glass-heavy" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="8" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="30" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </defs>
 </svg>
@@ -137,6 +110,16 @@
   <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;animation:fu .7s ease-out .3s both">
     <a href="{{ url_for('auth.register') }}" class="btn-hero btn-solid">Start Building Free <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
     <a href="{{ url_for('views_bp.features') }}" class="btn-hero btn-outline">See All Features</a>
+  </div>
+
+  <div style="margin-top:2.5rem;display:flex;align-items:center;gap:.8rem;animation:fu .7s ease-out .4s both">
+    <div class="avatar-stack" style="display:flex">
+        <div class="av" style="width:34px;height:34px;border-radius:50%;border:2.5px solid rgba(240,168,56,.3);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;background:#c0392b">JL</div>
+        <div class="av" style="width:34px;height:34px;border-radius:50%;border:2.5px solid rgba(240,168,56,.3);margin-left:-9px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;background:#6c3483">AS</div>
+        <div class="av" style="width:34px;height:34px;border-radius:50%;border:2.5px solid rgba(240,168,56,.3);margin-left:-9px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;background:#1e8449">KR</div>
+        <div class="av" style="width:34px;height:34px;border-radius:50%;border:2.5px solid rgba(240,168,56,.3);margin-left:-9px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;background:#d68910">PM</div>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted)"><strong style="color:var(--text-secondary)">2,400+</strong> teams already using Bubbl.ooo</p>
   </div>
 </header>
 
@@ -172,6 +155,34 @@
         <p>Capture, qualify, and route leads automatically. Integrate with your CRM and watch your pipeline grow.</p>
       </div>
     </article>
+    <article class="feature-card lg reveal">
+      <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+      <div class="lg-c">
+        <div class="feature-icon">📊</div>
+        <h3>Analytics Dashboard</h3>
+        <p>Track conversations, measure satisfaction, identify trends, and discover what your customers actually need.</p>
+      </div>
+    </article>
+    <article class="feature-card lg reveal">
+      <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+      <div class="lg-c">
+        <div class="feature-icon">🌐</div>
+        <h3>Multilingual AI</h3>
+        <p>Hindi, Tamil, Telugu, Bengali + 50 more languages. Auto-detects and responds in your visitor's language.</p>
+      </div>
+    </article>
+    <article class="feature-card lg reveal">
+      <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+      <div class="lg-c">
+        <div class="feature-icon">⚡</div>
+        <h3>Deploy in Minutes</h3>
+        <p>No code needed. Share your WhatsApp number + website → bot is live in 5 minutes.</p>
+      </div>
+    </article>
+  </div>
+  
+  <div style="text-align:center;margin-top:2rem">
+      <a href="{{ url_for('views_bp.features') }}" class="btn-outline">See All Features →</a>
   </div>
 </section>
 
@@ -214,43 +225,47 @@
   <div class="cta-card lg reveal">
     <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
     <div class="lg-c text-center">
-      <p class="section-label" style="margin-bottom:1rem;">Contact Support</p>
+      <p class="section-label" style="margin-bottom:1rem;">Get Started</p>
       <h2>Ready to automate<br>your support?</h2>
       <p>Join thousands of teams using Bubbl.ooo to deliver instant, intelligent customer experiences.</p>
-      <a href="{{ url_for('views_bp.contact') }}" class="btn-hero btn-solid" style="justify-content:center" onclick="openWaitlist()">Get in Touch <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <a href="{{ url_for('auth.register') }}" class="btn-hero btn-solid" style="justify-content:center">Start Building Free <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
     </div>
   </div>
 </section>
+
+<div id="waitlistModal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
+  <div style="position:relative;width:90%;max-width:440px;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+    <div style="position:absolute;inset:0;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);filter:url(#glass-fx);border-radius:inherit"></div>
+    <div style="position:absolute;inset:0;background:rgba(255,255,255,.75);border-radius:inherit"></div>
+    <div style="position:absolute;inset:0;border-radius:inherit;box-shadow:inset 2px 2px 1px rgba(255,255,255,.7),inset -1px -1px 1px rgba(255,255,255,.4)"></div>
+    <div style="position:relative;z-index:3;padding:2.5rem 2rem">
+      <button onclick="closeWaitlist()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%">&times;</button>
+      <h2 style="font-family:Bricolage Grotesque,sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-.03em;margin-bottom:.4rem">Join the waitlist</h2>
+      <p style="color:var(--text-secondary);font-size:.9rem;margin-bottom:1.5rem;line-height:1.6">Be first to get access when Bubbl.ooo launches. We'll notify you — no spam, ever.</p>
+      
+      <div id="waitlistForm">
+        <input type="email" id="wlEmail" placeholder="you@company.com" required style="width:100%;padding:.75rem 1rem;border-radius:12px;border:1.5px solid rgba(0,0,0,.08);font-family:inherit;font-size:.9rem;margin-bottom:.6rem;background:rgba(255,255,255,.6);outline:none;transition:border .2s" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,.08)'">
+        <input type="text" id="wlName" placeholder="Your name (optional)" style="width:100%;padding:.75rem 1rem;border-radius:12px;border:1.5px solid rgba(0,0,0,.08);font-family:inherit;font-size:.9rem;margin-bottom:1rem;background:rgba(255,255,255,.6);outline:none;transition:border .2s" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,.08)'">
+        <button onclick="submitWaitlist()" id="wlBtn" style="width:100%;padding:.85rem;border-radius:12px;background:#E8722A;color:#fff;font-family:inherit;font-size:.95rem;font-weight:600;border:none;cursor:pointer;transition:all .3s;box-shadow:0 4px 16px rgba(232,114,42,.25)">Join Waitlist →</button>
+      </div>
+      
+      <div id="waitlistSuccess" style="display:none;text-align:center;padding:1rem 0">
+        <div style="font-size:2rem;margin-bottom:.5rem">🎉</div>
+        <p style="font-weight:600;font-size:1.05rem;margin-bottom:.3rem">You're on the list!</p>
+        <p style="color:var(--text-secondary);font-size:.85rem">We'll email you as soon as Bubbl.ooo is ready.</p>
+      </div>
+      <div id="waitlistError" style="display:none;text-align:center;padding:.5rem 0;color:#ef4444;font-size:.85rem"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 // SCROLL REVEAL ANIMATIONS
 const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');});},{threshold:.08,rootMargin:'0px 0px -40px 0px'});
 document.querySelectorAll('.reveal').forEach(e=>obs.observe(e));
 
-// BLOB CHARACTER LOGIC
-const bb=document.getElementById('blobBody');
-if(bb){
-  const mo=document.getElementById('mouth'),eL=document.getElementById('eyeL'),eR=document.getElementById('eyeR'),pL=document.getElementById('pupilL'),pR=document.getElementById('pupilR'),bL=document.getElementById('blushL'),bR=document.getElementById('blushR');
-  const expr={
-    happy:()=>{mo.setAttribute('d','M 43 62 Q 50 70 57 62');eL.setAttribute('ry','5.5');eR.setAttribute('ry','5.5');bL.setAttribute('opacity','1');bR.setAttribute('opacity','1');},
-    excited:()=>{mo.setAttribute('d','M 42 61 Q 50 72 58 61');eL.setAttribute('ry','6');eR.setAttribute('ry','6');bL.setAttribute('opacity','1');bR.setAttribute('opacity','1');},
-    curious:()=>{mo.setAttribute('d','M 45 63 Q 50 66 55 63');eL.setAttribute('ry','6.5');eR.setAttribute('ry','5');bL.setAttribute('opacity','.5');bR.setAttribute('opacity','.5');},
-    sleepy:()=>{mo.setAttribute('d','M 45 63 Q 50 65 55 63');eL.setAttribute('ry','2');eR.setAttribute('ry','2');bL.setAttribute('opacity','.8');bR.setAttribute('opacity','.8');},
-    wink:()=>{mo.setAttribute('d','M 43 62 Q 50 69 57 62');eL.setAttribute('ry','1.5');eR.setAttribute('ry','5.5');bL.setAttribute('opacity','1');bR.setAttribute('opacity','1');},
-    neutral:()=>{mo.setAttribute('d','M 43 62 Q 50 68 57 62');eL.setAttribute('ry','5.5');eR.setAttribute('ry','5.5');bL.setAttribute('opacity','.7');bR.setAttribute('opacity','.7');}
-  };
-  const names=Object.keys(expr);let cur='happy';
-  function chEx(){const a=names.filter(e=>e!==cur);cur=a[Math.floor(Math.random()*a.length)];expr[cur]();}
-  function grab(){const ac=['shake','bounce'][Math.floor(Math.random()*2)];bb.classList.remove('shake','bounce');void bb.offsetWidth;bb.classList.add(ac);setTimeout(()=>bb.classList.remove(ac),700);}
-  function blink(){const oL=eL.getAttribute('ry'),oR=eR.getAttribute('ry');eL.setAttribute('ry','.8');eR.setAttribute('ry','.8');setTimeout(()=>{eL.setAttribute('ry',oL);eR.setAttribute('ry',oR);},120);}
-  setInterval(blink,2800);setInterval(chEx,6000+Math.random()*3000);setInterval(grab,8000+Math.random()*7000);
-  document.addEventListener('mousemove',e=>{const r=document.getElementById('blobSvg').getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;const dx=(e.clientX-cx)/window.innerWidth,dy=(e.clientY-cy)/window.innerHeight;const m=2;pL.setAttribute('cx',41.5+dx*m);pL.setAttribute('cy',48.5+dy*m);pR.setAttribute('cx',61.5+dx*m);pR.setAttribute('cy',48.5+dy*m);});
-  expr.happy();
-}
-
 // SMOOTH SCROLLING
 document.addEventListener("DOMContentLoaded", function() {
-  // Works for nav links AND hero anchor buttons (e.g. "See All Features")
   const scrollLinks = document.querySelectorAll('a[href*="#"]');
   scrollLinks.forEach(anchor => {
       anchor.addEventListener('click', function (e) {
@@ -272,5 +287,46 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   });
 });
+
+// WAITLIST MODAL
+function openWaitlist() { document.getElementById('waitlistModal').style.display = 'flex'; }
+function closeWaitlist() { document.getElementById('waitlistModal').style.display = 'none'; }
+document.getElementById('waitlistModal').addEventListener('click', function(e){ if(e.target === this) closeWaitlist(); });
+
+async function submitWaitlist() {
+    const email = document.getElementById('wlEmail').value.trim();
+    const name = document.getElementById('wlName').value.trim();
+    const btn = document.getElementById('wlBtn');
+    
+    if (!email || !email.includes('@')) {
+        document.getElementById('waitlistError').style.display = 'block';
+        document.getElementById('waitlistError').textContent = 'Please enter a valid email.';
+        return;
+    }
+    
+    btn.textContent = 'Submitting...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('https://formspree.io/f/xwvwrlra', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ email, name, source: window.location.pathname })
+        });
+        if (res.ok) {
+            document.getElementById('waitlistForm').style.display = 'none';
+            document.getElementById('waitlistSuccess').style.display = 'block';
+            document.getElementById('waitlistError').style.display = 'none';
+            if (typeof gtag !== 'undefined') gtag('event', 'waitlist_signup', { 'event_category': 'engagement', 'event_label': window.location.pathname });
+        } else {
+            throw new Error('Failed');
+        }
+    } catch (err) {
+        document.getElementById('waitlistError').style.display = 'block';
+        document.getElementById('waitlistError').textContent = 'Something went wrong. Please try again.';
+        btn.textContent = 'Join Waitlist →';
+        btn.disabled = false;
+    }
+}
 </script>
 {% endblock %}

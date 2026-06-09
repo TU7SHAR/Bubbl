@@ -1,6 +1,6 @@
 <style>
 /* ============================================================
-   BASE STYLES — unchanged from original
+   BASE STYLES
    ============================================================ */
 .cb-container { max-width: 1200px; margin: 0 auto; padding-top: 20px; }
 .cb-header { font-size: 32px; color: var(--text-primary); margin-bottom: 30px; }
@@ -65,20 +65,7 @@
 .file-badge-new { background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 12px; flex-shrink: 0; margin-left: 8px; }
 .ui-layout-split { display: flex; gap: 40px; flex-wrap: wrap; }
 .ui-settings-col { flex: 1; min-width: 300px; }
-.ui-preview-col {
-    flex: 1;
-    min-width: 300px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #fdfaf8;
-    background-image:
-        radial-gradient(circle at 10% 20%, rgba(232, 114, 42, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
-    border: 1px dashed rgba(232, 114, 42, 0.3);
-    border-radius: 20px;
-    padding: 20px;
-}
+.ui-preview-col { flex: 1; min-width: 300px; display: flex; justify-content: center; align-items: center; background-color: #fdfaf8; background-image: radial-gradient(circle at 10% 20%, rgba(232, 114, 42, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%); border: 1px dashed rgba(232, 114, 42, 0.3); border-radius: 20px; padding: 20px; }
 .mock-chat-widget { width: 100%; max-width: 350px; background: #fff; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); transition: background 0.3s, border-color 0.3s; }
 .mock-chat-header { padding: 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); transition: border-color 0.3s; }
 .mock-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--orange); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; font-family: 'Bricolage Grotesque', sans-serif; overflow: hidden; }
@@ -88,8 +75,6 @@
 .mock-chat-footer { padding: 12px 16px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; }
 .mock-input { width: 100%; background: #f3f4f6; border: none; padding: 10px 12px; border-radius: 50px; font-size: 13px; color: #9ca3af; }
 .cb-bottom-bar { margin-top: 40px; padding-top: 20px; border-top: 2px solid rgba(232, 114, 42, 0.15); display: flex; justify-content: flex-end; align-items: center; }
-.log-line { margin-bottom: 8px; }
-.log-time { color: #64748b; margin-right: 10px; }
 
 /* --- CUSTOM PRETTY DROPDOWN --- */
 .pretty-dropdown { position: relative; width: 100%; user-select: none; }
@@ -106,28 +91,52 @@
 
 .pipeline-card-body { padding: 40px; }
 .pipeline-col { flex: 1; min-width: 320px; }
+
+
 /* ============================================================
-   MOBILE RESPONSIVE — targets existing HTML IDs & structure,
-   no changes needed in any other file
+   UPDATED MOBILE RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {
 
   /* ── 1. CRITICAL OVERFLOW FIXES ── */
-  /* Forces all padding/borders to calculate inside the width to prevent cards/inputs from bursting out */
   .cb-container, .cb-container *, .lg, .lg-c {
     box-sizing: border-box !important;
     max-width: 100% !important;
   }
 
-  /* Container & page header */
+  /* ── 2. PADDING FIX (Centers the white card) ── */
   .cb-container {
-    padding-top: 10px;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-top: 0 !important;
+    padding-left: 0 !important; /* Removed extra left padding */
+    padding-right: 0 !important;
     width: 100%;
-    overflow-x: hidden; /* Stops horizontal page scrolling */
+    overflow-x: hidden; 
   }
-  .cb-header { font-size: 24px; margin-bottom: 20px; }
+
+  /* ── 3. SMALLER, CENTERED HEADINGS ── */
+  .cb-header { 
+    font-size: 24px !important; 
+    margin-bottom: 16px !important; 
+    text-align: center !important; 
+  }
+
+  .pipeline-col h2, .cb-content-title, #tab-data h2 {
+    font-size: 22px !important; /* Fix for huge "Let's start with a link" */
+    line-height: 1.3 !important;
+    text-align: center !important; /* Centers the titles */
+    margin-bottom: 12px !important;
+  }
+  
+  .pipeline-col p, .cb-content-subtitle, #tab-data p {
+    font-size: 14px !important;
+    text-align: center !important; /* Centers the subtitles */
+    margin-bottom: 24px !important;
+  }
+
+  /* Keeps the input labels aligned to the left */
+  .cb-label, .qs-label {
+      text-align: left !important; 
+  }
 
   /* Layout: vertical stack */
   .cb-layout { flex-direction: column; gap: 16px; width: 100%; }
@@ -162,7 +171,13 @@
 
   /* Content area */
   .cb-content { min-height: unset; width: 100%; }
-  .lg .lg-c { padding: 24px 16px !important; width: 100%; }
+  .lg { width: 100% !important; margin: 0 !important; }
+  
+  /* Reset Card Padding */
+  .lg .lg-c.pipeline-card-body { 
+      padding: 24px 16px !important; 
+      width: 100% !important; 
+  }
 
   /* ── Tab: Quick Start ── */
   #tab-quickstart > div {
@@ -170,7 +185,6 @@
     gap: 20px !important;
     width: 100% !important;
   }
-  /* Override the hardcoded inline min-width: 320px causing the card stretch */
   #tab-quickstart > div > div {
     min-width: 0 !important; 
     width: 100% !important;
@@ -246,8 +260,8 @@
   }
   .cb-modal-close-top { top: 14px; right: 14px; }
   .cb-modal-header { padding: 24px 20px 14px 20px; }
-  .cb-modal-header h2 { font-size: 20px; }
-  .cb-modal-header p { font-size: 13px; }
+  .cb-modal-header h2 { font-size: 20px !important; }
+  .cb-modal-header p { font-size: 13px !important; }
   .cb-modal-body { padding: 0 20px 16px 20px; }
   .cb-modal-footer { padding: 16px 20px 32px 20px; }
 
@@ -278,18 +292,8 @@
   }
 
   .chatbase-file-row { padding: 12px 4px; }
-  /* Mobile Overrides for Pipeline Card */
-  .pipeline-card-body { 
-    padding: 24px 16px !important; 
-    width: 100% !important; 
-  }
-  .pipeline-col { 
-    min-width: 100% !important; 
-  }
-  .f-graphic-container svg { 
-    width: 100% !important; 
-    height: auto !important; 
-  }
+  .pipeline-col { min-width: 100% !important; }
+  .f-graphic-container svg { width: 100% !important; height: auto !important; }
 }
 
 /* Tablet: slightly tighter */

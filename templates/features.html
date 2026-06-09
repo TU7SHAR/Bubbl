@@ -1,251 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Features | {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} AI Chatbots</title>
+{% extends 'base.html' %} 
+
+{% block title %}Features | {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} AI Chatbots{% endblock %}
+
+{% block meta_description %}
+<meta name="description" content="Explore Bubbl.ooo features: WhatsApp-native chatbots, visual flow builder, multilingual AI, and automated lead capture for your business." />
+{% endblock %}
+
+{% block content %}
+<style>
+/* --- FEATURE PAGE SPECIFIC STYLES --- */
+.lg { position:relative; border-radius:20px; overflow:hidden; box-shadow:0 6px 6px rgba(0,0,0,.15),0 0 20px rgba(0,0,0,.08); transition:all .4s cubic-bezier(.175,.885,.32,2.2); }
+.lg .lg-fx { position:absolute; inset:0; z-index:0; backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); filter:url(#glass-fx); border-radius:inherit; overflow:hidden; isolation:isolate; }
+.lg .lg-tint { position:absolute; inset:0; z-index:1; background:rgba(255,255,255,.25); border-radius:inherit; }
+.lg .lg-shine { position:absolute; inset:0; z-index:2; border-radius:inherit; box-shadow:inset 2px 2px 1px 0 rgba(255,255,255,.5),inset -1px -1px 1px 1px rgba(255,255,255,.5); }
+.lg .lg-c { position:relative; z-index:3; }
+
+.page-header { padding: 4rem 1.5rem 2rem; text-align: center; max-width: 800px; margin: 0 auto; }
+.page-header h1 { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(2rem, 4.5vw, 3.2rem); letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 1rem; color: #111827; }
+.page-header p { color: var(--text-secondary); font-size: 1.1rem; line-height: 1.7; max-width: 600px; margin: 0 auto; }
+.section-label { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: var(--orange); margin-bottom: .8rem; display: inline-block;}
+
+.features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.2rem; margin:2rem auto; max-width: 1200px; padding: 0 1.5rem; }
+.feature-card { padding:1.8rem; border-radius:20px; transition:transform .35s cubic-bezier(.175,.885,.32,1.5),box-shadow .35s ease; }
+.feature-card:hover { transform:translateY(-6px); box-shadow:0 20px 52px rgba(180,100,20,.12),0 0 32px rgba(0,0,0,.05); }
+.feature-icon { width:44px; height:44px; border-radius:12px; background:rgba(232,114,42,.08); display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:1rem; }
+.feature-card h3 { font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:1.08rem; margin-bottom:.4rem; letter-spacing:-.02em; color: #111827;}
+.feature-card p { color:var(--text-secondary); font-size:.88rem; line-height:1.65; }
+
+.cta-section { text-align:center; padding:5rem 1.5rem 4rem; }
+.cta-card { max-width:680px; margin:0 auto; padding:3rem 2rem; border-radius:24px; }
+.cta-card h2 { font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:clamp(1.6rem,3vw,2.2rem); letter-spacing:-.03em; margin-bottom:.8rem; color: #111827;}
+.cta-card p { color:var(--text-secondary); margin-bottom:1.8rem; font-size:1rem; }
+
+.btn-hero { padding:.85rem 2rem; border-radius:50px; font-size:.95rem; font-weight:600; cursor:pointer; transition:all .3s; text-decoration:none; border:none; font-family:inherit; display:inline-flex; align-items:center; gap:.5rem; }
+.btn-solid { background:var(--orange); color:#fff; box-shadow:0 4px 20px rgba(232,114,42,.35); }
+.btn-solid:hover { background:var(--orange-light); transform:translateY(-2px); box-shadow:0 8px 28px rgba(232,114,42,.45); }
+
+.reveal { opacity:0; transform:translateY(28px); transition:opacity .65s ease,transform .65s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+</style>
+
+<div class="page-header reveal">
+  <span class="section-label">Features</span>
+  <h1>Everything you need to win customers</h1>
+  <p>From WhatsApp chatbots to lead generation, analytics to multilingual AI — Bubbl.ooo is the all-in-one platform for modern customer engagement.</p>
+</div>
+
+<section>
+  <div class="features-grid">
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">💬</div><h3>WhatsApp-Native Chatbot</h3><p>Deep WhatsApp Business API integration — automated flows, broadcast messaging, UPI/WhatsApp Pay payment collection, product catalogs, and smart follow-ups. Built for India's WhatsApp-first economy.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🌐</div><h3>Website Chat Widget</h3><p>Embed a beautiful, customizable chat widget on any website. Works with WordPress, Shopify, Wix, custom sites — one line of code to deploy.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🧠</div><h3>AI Training on Your Data</h3><p>Upload PDFs, Word docs, paste website URLs, or connect your knowledge base. Bubbl.ooo trains a custom AI model that knows your business inside and out.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🔀</div><h3>Visual Flow Builder</h3><p>Drag-and-drop conversation flows with branching logic. Combine deterministic paths (lead capture, booking, FAQs) with AI for everything else. Best of both worlds.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🎯</div><h3>Lead Generation &amp; Qualification</h3><p>Automatically capture visitor info, score leads based on conversation quality, and route hot leads to your sales team. Integrates with popular CRMs.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">📊</div><h3>Analytics &amp; Insights</h3><p>Comprehensive dashboard tracking conversation volume, resolution rates, customer satisfaction, popular questions, peak hours, and conversion funnels.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🤝</div><h3>Human Handoff</h3><p>Shared inbox where bot conversations seamlessly transfer to agents. Full context preserved — no customer repeats themselves. Basic CRM built right in.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🗣️</div><h3>Multilingual AI</h3><p>Hindi, Tamil, Telugu, Kannada, Bengali, Marathi, Gujarati + 50 more languages. Auto-detects visitor language. Uses Indian LLMs for regional cost efficiency.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🏷️</div><h3>White-Label Ready</h3><p>Remove Bubbl.ooo branding for just ₹999/mo (not $199 like competitors). Custom domain support. Perfect for agencies and resellers.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🔗</div><h3>Integrations</h3><p>Connect with Shopify, WooCommerce, Razorpay, Stripe, Zoho CRM, HubSpot, Google Sheets, Zapier, Slack, and more.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">📋</div><h3>Vertical Templates</h3><p>Pre-built bot templates for real estate, coaching institutes, restaurants, clinics, D2C e-commerce, and more. Go live in 10 minutes.</p></div></article>
+    <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🔄</div><h3>Auto-Refresh Data Sync</h3><p>Training data automatically refreshes when your website or documents change. Your chatbot always has the latest info — no manual retraining.</p></div></article>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="cta-card lg reveal">
+    <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <div class="lg-c text-center">
+      <h2>See Bubbl.ooo in action</h2>
+      <p>Start with our free tier — no credit card, no auto-deletion. Build your first chatbot in under 5 minutes.</p>
+      <a href="{{ url_for('auth.register') }}" class="btn-hero btn-solid">Get Started Free →</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Triggers the fade-up animations as you scroll down the page
+  const obs = new IntersectionObserver(e => {
+    e.forEach(x => { if(x.isIntersecting) x.target.classList.add('visible'); });
+  }, { threshold: .08, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(e => obs.observe(e));
   
-  {% block meta_description %}
-  <meta name="description" content="Explore Bubbl.ooo features: WhatsApp-native chatbots, visual flow builder, multilingual AI, and automated lead capture for your business." />
-  {% endblock %}
-  
-  <meta name="author" content="Bubbl.ooo">
-  <link rel="canonical" href="{{ request.url }}">
-  </head>
-<body>
-
-  <svg aria-hidden="true" style="position:absolute;width:0;height:0;">
-    <defs>
-      <filter id="glass-fx" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
-        <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="2" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
-      <filter id="glass-heavy" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
-        <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="8" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="30" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
-    </defs>
-  </svg>
-  <div class="bg-canvas" aria-hidden="true"></div>
-  <div class="grain" aria-hidden="true"></div>
-
-  <div class="content">
-    <nav id="nav" role="navigation" aria-label="Main navigation">
-      <div class="nav-inner">
-        <a href="/" class="logo" aria-label="Bubbl.ooo homepage">bubbl<span class="logo-ooo">.ooo</span></a>
-        <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
-        <ul class="nav-links" id="navLinks">
-          <li><a href="/features.html">Features</a></li>
-          <li><a href="/pricing.html">Pricing</a></li>
-          <li class="has-drop"><a href="/compare/">Compare</a>
-            <div class="drop">
-              <a href="/compare/chatbase.html">vs Chatbase</a>
-              <a href="/compare/tidio.html">vs Tidio</a>
-              <a href="/compare/intercom.html">vs Intercom</a>
-              <a href="/compare/gupshup.html">vs Gupshup</a>
-              <a href="/compare/">View All →</a>
-            </div>
-          </li>
-          <li><a href="/docs.html">Docs</a></li>
-          <li><a href="/how-to.html">How To</a></li>
-          <li><a href="#" class="btn btn-solid">Get Started Free</a></li>
-        </ul>
-      </div>
-    </nav>
-
-    <div class="page-header reveal">
-      <p class="section-label">Features</p>
-      <h1>Everything you need to win customers</h1>
-      <p>From WhatsApp chatbots to lead generation, analytics to multilingual AI — Bubbl.ooo is the all-in-one platform for modern customer engagement.</p>
-    </div>
-
-    <section>
-      <div class="features-grid">
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">💬</div><h3>WhatsApp-Native Chatbot</h3><p>Deep WhatsApp Business API integration — automated flows, broadcast messaging, UPI/WhatsApp Pay payment collection, product catalogs, and smart follow-ups. Built for India's WhatsApp-first economy.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🌐</div><h3>Website Chat Widget</h3><p>Embed a beautiful, customizable chat widget on any website. Works with WordPress, Shopify, Wix, custom sites — one line of code to deploy.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🧠</div><h3>AI Training on Your Data</h3><p>Upload PDFs, Word docs, paste website URLs, or connect your knowledge base. Bubbl.ooo trains a custom AI model that knows your business inside and out.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🔀</div><h3>Visual Flow Builder</h3><p>Drag-and-drop conversation flows with branching logic. Combine deterministic paths (lead capture, booking, FAQs) with AI for everything else. Best of both worlds.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🎯</div><h3>Lead Generation &amp; Qualification</h3><p>Automatically capture visitor info, score leads based on conversation quality, and route hot leads to your sales team. Integrates with popular CRMs.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">📊</div><h3>Analytics &amp; Insights</h3><p>Comprehensive dashboard tracking conversation volume, resolution rates, customer satisfaction, popular questions, peak hours, and conversion funnels.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🤝</div><h3>Human Handoff</h3><p>Shared inbox where bot conversations seamlessly transfer to agents. Full context preserved — no customer repeats themselves. Basic CRM built right in.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🗣️</div><h3>Multilingual AI</h3><p>Hindi, Tamil, Telugu, Kannada, Bengali, Marathi, Gujarati + 50 more languages. Auto-detects visitor language. Uses Indian LLMs for regional cost efficiency.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🏷️</div><h3>White-Label Ready</h3><p>Remove Bubbl.ooo branding for just ₹999/mo (not $199 like competitors). Custom domain support. Perfect for agencies and resellers.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🔗</div><h3>Integrations</h3><p>Connect with Shopify, WooCommerce, Razorpay, Stripe, Zoho CRM, HubSpot, Google Sheets, Zapier, Slack, and more.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">📋</div><h3>Vertical Templates</h3><p>Pre-built bot templates for real estate, coaching institutes, restaurants, clinics, D2C e-commerce, and more. Go live in 10 minutes.</p></div></article>
-        <article class="feature-card lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c"><div class="feature-icon">🔄</div><h3>Auto-Refresh Data Sync</h3><p>Training data automatically refreshes when your website or documents change. Your chatbot always has the latest info — no manual retraining.</p></div></article>
-      </div>
-    </section>
-
-    <section class="cta-section">
-      <div class="cta-card lg reveal">
-        <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-        <div class="lg-c text-center">
-          <h2>See Bubbl.ooo in action</h2>
-          <p>Start with our free tier — no credit card, no auto-deletion. Build your first chatbot in under 5 minutes.</p>
-          <a href="#" class="btn-hero btn-solid">Get Started Free →</a>
-        </div>
-      </div>
-    </section>
-
-    <footer>
-      <div class="footer-grid">
-        <div>
-          <a href="/" class="logo" style="margin-bottom:.8rem;display:inline-flex">bubbl<span class="logo-ooo">.ooo</span></a>
-          <p>The AI chatbot platform built for Indian SMBs and growing businesses worldwide. WhatsApp-native, multilingual, no-code.</p>
-        </div>
-        <div>
-          <h4>Product</h4>
-          <ul>
-            <li><a href="/features.html">Features</a></li>
-            <li><a href="/pricing.html">Pricing</a></li>
-            <li><a href="/roadmap.html">Roadmap</a></li>
-            <li><a href="/docs.html">Documentation</a></li>
-            <li><a href="/how-to.html">How-To Guides</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4>Compare</h4>
-          <ul>
-            <li><a href="/compare/chatbase.html">vs Chatbase</a></li>
-            <li><a href="/compare/tidio.html">vs Tidio</a></li>
-            <li><a href="/compare/intercom.html">vs Intercom</a></li>
-            <li><a href="/compare/gupshup.html">vs Gupshup</a></li>
-            <li><a href="/compare/">All Comparisons →</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4>Legal</h4>
-          <ul>
-            <li><a href="/legal/privacy.html">Privacy Policy</a></li>
-            <li><a href="/legal/terms.html">Terms of Service</a></li>
-            <li><a href="/legal/refunds.html">Refund Policy</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p class="footer-copy">
-          &copy; 2026 Bubbl.ooo &middot; A product of
-          <a href="https://essenn.associates" target="_blank" rel="noopener noreferrer">ESS ENN Associates</a> and
-          <a href="https://172tech.com" target="_blank" rel="noopener noreferrer">172 Tech</a>
-          &middot; Portfolio of <a href="https://fourone.ai" target="_blank" rel="noopener noreferrer">FourOne AI</a>
-          &middot; Designed by <a href="https://530.expert" target="_blank" rel="noopener noreferrer">530 Expert</a>
-        </p>
-      </div>
-    </footer>
-  </div>
-
-  <div class="bbar-wrap">
-    <div class="bbar">
-      <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-      <div class="bbar-content">
-        <div class="blob-ctr"><div class="blob-body" id="blobBody">
-          <svg class="blob-svg" viewBox="0 0 100 100" id="blobSvg">
-            <ellipse cx="50" cy="54" rx="32" ry="30" fill="#FF8C3A" opacity=".95"/>
-            <ellipse cx="42" cy="42" rx="14" ry="8" fill="rgba(255,255,255,.3)" transform="rotate(-15 42 42)"/>
-            <ellipse cx="40" cy="50" rx="5" ry="5.5" fill="#1a1008" id="eyeL"/>
-            <circle cx="41.5" cy="48.5" r="1.8" fill="white" id="pupilL"/>
-            <ellipse cx="60" cy="50" rx="5" ry="5.5" fill="#1a1008" id="eyeR"/>
-            <circle cx="61.5" cy="48.5" r="1.8" fill="white" id="pupilR"/>
-            <path d="M 43 62 Q 50 68 57 62" stroke="#1a1008" stroke-width="2.2" fill="none" stroke-linecap="round" id="mouth"/>
-            <ellipse cx="33" cy="58" rx="5" ry="3" fill="rgba(255,100,60,.35)" id="blushL"/>
-            <ellipse cx="67" cy="58" rx="5" ry="3" fill="rgba(255,100,60,.35)" id="blushR"/>
-          </svg>
-        </div></div>
-        <div class="bar-prompt">Ask me anything about Bubbl.ooo...</div>
-        <div class="bar-actions">
-          <a class="bar-btn" href="/features.html">Try Demo</a>
-          <a class="bar-btn" href="/features.html">Features</a>
-          <a class="bar-btn" href="/pricing.html">Contact Us</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Waitlist Modal -->
-  <div id="waitlistModal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
-    <div style="position:relative;width:90%;max-width:440px;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15)">
-      <div style="position:absolute;inset:0;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);filter:url(#glass-fx);border-radius:inherit"></div>
-      <div style="position:absolute;inset:0;background:rgba(255,255,255,.75);border-radius:inherit"></div>
-      <div style="position:absolute;inset:0;border-radius:inherit;box-shadow:inset 2px 2px 1px rgba(255,255,255,.7),inset -1px -1px 1px rgba(255,255,255,.4)"></div>
-      <div style="position:relative;z-index:3;padding:2.5rem 2rem">
-        <button onclick="closeWaitlist()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%">&times;</button>
-        <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-.03em;margin-bottom:.4rem">Join the waitlist</h2>
-        <p style="color:var(--text-secondary);font-size:.9rem;margin-bottom:1.5rem;line-height:1.6">Be first to get access when Bubbl.ooo launches. We'll notify you — no spam, ever.</p>
-        <div id="waitlistForm">
-          <input type="email" id="wlEmail" placeholder="you@company.com" required style="width:100%;padding:.75rem 1rem;border-radius:12px;border:1.5px solid rgba(0,0,0,.08);font-family:inherit;font-size:.9rem;margin-bottom:.6rem;background:rgba(255,255,255,.6);outline:none;transition:border .2s" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,.08)'">
-          <input type="text" id="wlName" placeholder="Your name (optional)" style="width:100%;padding:.75rem 1rem;border-radius:12px;border:1.5px solid rgba(0,0,0,.08);font-family:inherit;font-size:.9rem;margin-bottom:1rem;background:rgba(255,255,255,.6);outline:none;transition:border .2s" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,.08)'">
-          <button onclick="submitWaitlist()" id="wlBtn" style="width:100%;padding:.85rem;border-radius:12px;background:#E8722A;color:#fff;font-family:inherit;font-size:.95rem;font-weight:600;border:none;cursor:pointer;transition:all .3s;box-shadow:0 4px 16px rgba(232,114,42,.25)">Join Waitlist →</button>
-        </div>
-        <div id="waitlistSuccess" style="display:none;text-align:center;padding:1rem 0">
-          <div style="font-size:2rem;margin-bottom:.5rem">🎉</div>
-          <p style="font-weight:600;font-size:1.05rem;margin-bottom:.3rem">You're on the list!</p>
-          <p style="color:var(--text-secondary);font-size:.85rem">We'll email you as soon as Bubbl.ooo is ready.</p>
-        </div>
-        <div id="waitlistError" style="display:none;text-align:center;padding:.5rem 0;color:#ef4444;font-size:.85rem"></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-// NAV SCROLL
-const nav=document.getElementById('nav');
-if(nav) window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>50));
-
-// HAMBURGER
-const hamburger=document.getElementById('hamburger'),navLinks=document.getElementById('navLinks');
-if(hamburger) hamburger.addEventListener('click',()=>{navLinks.classList.toggle('open');hamburger.setAttribute('aria-expanded',navLinks.classList.contains('open'));});
-
-// SCROLL REVEAL
-const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');});},{threshold:.08,rootMargin:'0px 0px -40px 0px'});
-document.querySelectorAll('.reveal').forEach(e=>obs.observe(e));
-
-// SMOOTH SCROLL
-document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{const h=a.getAttribute('href');if(h==='#')return;e.preventDefault();const target=document.querySelector(h);if(target){target.scrollIntoView({behavior:'smooth',block:'start'});if(navLinks)navLinks.classList.remove('open');}});});
-
-// BLOB CHARACTER
-const bb=document.getElementById('blobBody');
-if(bb){
-  const mo=document.getElementById('mouth'),eL=document.getElementById('eyeL'),eR=document.getElementById('eyeR'),pL=document.getElementById('pupilL'),pR=document.getElementById('pupilR'),bL=document.getElementById('blushL'),bR=document.getElementById('blushR');
-  const expr={
-    happy:()=>{mo.setAttribute('d','M 43 62 Q 50 70 57 62');eL.setAttribute('ry','5.5');eR.setAttribute('ry','5.5');bL.setAttribute('opacity','1');bR.setAttribute('opacity','1');},
-    excited:()=>{mo.setAttribute('d','M 42 61 Q 50 72 58 61');eL.setAttribute('ry','6');eR.setAttribute('ry','6');bL.setAttribute('opacity','1');bR.setAttribute('opacity','1');},
-    curious:()=>{mo.setAttribute('d','M 45 63 Q 50 66 55 63');eL.setAttribute('ry','6.5');eR.setAttribute('ry','5');bL.setAttribute('opacity','.5');bR.setAttribute('opacity','.5');},
-    sleepy:()=>{mo.setAttribute('d','M 45 63 Q 50 65 55 63');eL.setAttribute('ry','2');eR.setAttribute('ry','2');bL.setAttribute('opacity','.8');bR.setAttribute('opacity','.8');},
-    wink:()=>{mo.setAttribute('d','M 43 62 Q 50 69 57 62');eL.setAttribute('ry','1.5');eR.setAttribute('ry','5.5');bL.setAttribute('opacity','1');bR.setAttribute('opacity','1');},
-    neutral:()=>{mo.setAttribute('d','M 43 62 Q 50 68 57 62');eL.setAttribute('ry','5.5');eR.setAttribute('ry','5.5');bL.setAttribute('opacity','.7');bR.setAttribute('opacity','.7');}
-  };
-  const names=Object.keys(expr);let cur='happy';
-  function chEx(){const a=names.filter(e=>e!==cur);cur=a[Math.floor(Math.random()*a.length)];expr[cur]();}
-  function grab(){const ac=['shake','bounce'][Math.floor(Math.random()*2)];bb.classList.remove('shake','bounce');void bb.offsetWidth;bb.classList.add(ac);setTimeout(()=>bb.classList.remove(ac),700);}
-  function blink(){const oL=eL.getAttribute('ry'),oR=eR.getAttribute('ry');eL.setAttribute('ry','.8');eR.setAttribute('ry','.8');setTimeout(()=>{eL.setAttribute('ry',oL);eR.setAttribute('ry',oR);},120);}
-  setInterval(blink,2800);setInterval(chEx,6000+Math.random()*3000);setInterval(grab,8000+Math.random()*7000);
-  document.addEventListener('mousemove',e=>{const r=document.getElementById('blobSvg').getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;const dx=(e.clientX-cx)/window.innerWidth,dy=(e.clientY-cy)/window.innerHeight;const m=2;pL.setAttribute('cx',41.5+dx*m);pL.setAttribute('cy',48.5+dy*m);pR.setAttribute('cx',61.5+dx*m);pR.setAttribute('cy',48.5+dy*m);});
-  expr.happy();
-}
-
-// WAITLIST MODAL
-function openWaitlist(){document.getElementById('waitlistModal').style.display='flex';}
-function closeWaitlist(){document.getElementById('waitlistModal').style.display='none';}
-document.getElementById('waitlistModal').addEventListener('click',function(e){if(e.target===this)closeWaitlist();});
-
-async function submitWaitlist(){
-  const email=document.getElementById('wlEmail').value.trim();
-  const name=document.getElementById('wlName').value.trim();
-  const btn=document.getElementById('wlBtn');
-  if(!email||!email.includes('@')){document.getElementById('waitlistError').style.display='block';document.getElementById('waitlistError').textContent='Please enter a valid email.';return;}
-  btn.textContent='Submitting...';btn.disabled=true;
-  try{
-const res=await fetch('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email,name,source:window.location.pathname})});
-    if(res.ok){document.getElementById('waitlistForm').style.display='none';document.getElementById('waitlistSuccess').style.display='block';document.getElementById('waitlistError').style.display='none';gtag('event','waitlist_signup',{'event_category':'engagement','event_label':window.location.pathname});}
-    else{throw new Error('Failed');}
-  }catch(err){document.getElementById('waitlistError').style.display='block';document.getElementById('waitlistError').textContent='Something went wrong. Please try again.';btn.textContent='Join Waitlist →';btn.disabled=false;}
-}
-
-document.querySelectorAll('.btn-solid, [href="#"]').forEach(function(el){
-  if(el.textContent.match(/Get Started|Start Building|Start Free|Start Trial|Join Waitlist/i)){
-    el.addEventListener('click',function(e){e.preventDefault();openWaitlist();});
-  }
-});
-  </script>
-</body>
-</html>
+  // Make sure the very top header fades in immediately 
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelector('.page-header').classList.add('visible');
+  });
+</script>
+{% endblock %}
