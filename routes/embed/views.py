@@ -46,7 +46,6 @@ def robots():
 def sitemap():
     return send_from_directory('static', 'sitemap.xml')
 
-
 @views_bp.route('/api/waitlist', methods=['POST'])
 def join_waitlist():
     data = request.get_json()

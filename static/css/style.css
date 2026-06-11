@@ -314,7 +314,7 @@ h3,
   color: #fff;
   border: none;
   padding: 10px 22px;
-  border-radius: 50px;
+  border-radius: 12px !important;
   font-family: "Outfit", sans-serif;
   font-size: 0.9rem;
   font-weight: 600;
