@@ -178,14 +178,35 @@ def start_scrape():
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.json
+    # Safely handle missing JSON payload
+    data = request.json or {}
+    
     url = data.get('url')
     use_spider = data.get('use_spider', False)
-    max_urls = int(data.get('max_urls', 20))
-    bot_id = session.get('active_bot_id')
+    
+    try:
+        max_urls = int(data.get('max_urls') or 20)
+    except ValueError:
+        max_urls = 20
 
-    if not url or not bot_id:
-        return jsonify({"error": "Missing URL or no active Bot selected."}), 400
+    # Try to get bot_id from JSON payload, then fallback to session
+    bot_id = data.get('bot_id')
+    if not bot_id:
+        bot_id = session.get('active_bot_id')
+
+    # -------- DEBUGGING PRINTS --------
+    print("\n--- SCRAPE TARGET DEBUG ---")
+    print(f"Payload Data: {data}")
+    print(f"URL: {url}")
+    print(f"BOT_ID: {bot_id}")
+    print(f"---------------------------\n")
+
+    # Split the 400 errors so the UI tells us exactly what failed
+    if not url:
+        return jsonify({"error": "Missing URL in request."}), 400
+        
+    if not bot_id:
+        return jsonify({"error": "No Bot ID provided. Cannot link documents."}), 400
 
     new_job = ScrapeJob(bot_id=bot_id, url=url, status='pending', limit=max_urls)
     db.session.add(new_job)
@@ -196,6 +217,34 @@ def start_scrape():
     thread.start()
 
     return jsonify({"success": True, "job_id": new_job.id, "message": "Scraping started."})
+
+
+
+
+# 
+# @admin_bp.route('/api/scrape/start', methods=['POST'])
+# def start_scrape():
+#     if 'user_id' not in session:
+#         return jsonify({"error": "Unauthorized"}), 401
+
+#     data = request.json
+#     url = data.get('url')
+#     use_spider = data.get('use_spider', False)
+#     max_urls = int(data.get('max_urls', 20))
+#     bot_id = session.get('active_bot_id')
+
+#     if not url or not bot_id:
+#         return jsonify({"error": "Missing URL or no active Bot selected."}), 400
+
+#     new_job = ScrapeJob(bot_id=bot_id, url=url, status='pending', limit=max_urls)
+#     db.session.add(new_job)
+#     db.session.commit()
+
+#     app_obj = current_app._get_current_object()
+#     thread = threading.Thread(target=async_scrape_task, args=(app_obj, new_job.id, url, bot_id, use_spider))
+#     thread.start()
+
+#     return jsonify({"success": True, "job_id": new_job.id, "message": "Scraping started."})
 
 @admin_bp.route('/api/scrape/status/<int:job_id>', methods=['GET'])
 def check_scrape_status(job_id):

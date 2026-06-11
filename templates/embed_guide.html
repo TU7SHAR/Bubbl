@@ -1,0 +1,236 @@
+{% extends 'base.html' %} 
+{% block title %}How to Embed | Bubbl.ooo{% endblock %} 
+
+{% block content %}
+<style>
+  .guide-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+  .guide-header { text-align: center; margin-bottom: 40px; }
+  .guide-header h1 { font-size: 32px; color: #111827; margin-bottom: 12px; }
+  .guide-header p { font-size: 16px; color: #6b7280; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+
+  .guide-layout { display: flex; gap: 40px; align-items: flex-start; }
+  
+  /* Sidebar Navigation */
+  .guide-sidebar { width: 250px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+  .guide-tab {
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px;
+      font-size: 14px; font-weight: 600; color: #4b5563; background: #fff;
+      border: 1px solid rgba(0,0,0,0.05); cursor: pointer; transition: all 0.2s; text-align: left;
+  }
+  .guide-tab:hover { border-color: rgba(232, 114, 42, 0.3); color: #111827; }
+  .guide-tab.active {
+      background: rgba(232, 114, 42, 0.05); color: var(--orange, #E8722A);
+      border-color: var(--orange, #E8722A);
+  }
+
+  /* Main Content Area */
+  .guide-content {
+      flex: 1; background: #fff; padding: 40px; border-radius: 20px;
+      border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 20px 40px rgba(0,0,0,0.02);
+  }
+  .guide-pane { display: none; animation: fadeIn 0.3s ease; }
+  .guide-pane.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .step-row { display: flex; gap: 20px; margin-bottom: 30px; }
+  .step-num {
+      width: 32px; height: 32px; border-radius: 50%; background: #111827; color: #fff;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
+  }
+  .step-text h3 { margin: 0 0 8px 0; font-size: 18px; color: #111827; }
+  .step-text p { margin: 0; color: #4b5563; font-size: 14px; line-height: 1.6; }
+  
+  .img-placeholder {
+      margin-top: 15px; width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);
+      background: #f9fafb; padding: 20px; font-family: monospace; font-size: 13px; color: #6b7280;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+      .guide-layout { flex-direction: column; }
+      .guide-sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding-bottom: 10px; }
+      .guide-tab { white-space: nowrap; }
+      .guide-content { padding: 20px; }
+  }
+</style>
+
+<div class="guide-container">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('views_bp.dashboard') }}" style="color: white; text-decoration: none; font-weight: 600; font-size: 14px; background: #E8722A; padding: 8px 16px; border-radius: 4px;">← Back to Dashboard</a>
+    </div>
+
+    <div class="guide-header">
+        <h1 class="bricolage">How to Install Your Chatbot</h1>
+        <p>Select your website platform below to see exact, step-by-step instructions on how to embed the Bubbl agent onto your site.</p>
+    </div>
+
+    <div class="guide-layout">
+        <div class="guide-sidebar">
+            <button class="guide-tab active" onclick="switchGuideTab('tab-html')">🌐 Custom HTML</button>
+            <button class="guide-tab" onclick="switchGuideTab('tab-wp')">📝 WordPress</button>
+            <button class="guide-tab" onclick="switchGuideTab('tab-shopify')">🛍️ Shopify</button>
+            <button class="guide-tab" onclick="switchGuideTab('tab-wix')">🎨 Wix</button>
+            <button class="guide-tab" onclick="switchGuideTab('tab-react')">⚛️ React / Next.js</button>
+        </div>
+
+        <div class="guide-content">
+            
+            <div id="tab-html" class="guide-pane active">
+                <h2 style="margin-top: 0; color: #111827; margin-bottom: 24px;">Install on Custom HTML</h2>
+                
+                <div class="step-row">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Copy your Script Tag</h3>
+                        <p>Go to your dashboard, click "Deploy" on your bot, and copy the provided <code>&lt;script&gt;</code> tag.</p>
+                    </div>
+                </div>
+                <div class="step-row">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Open your Index File</h3>
+                        <p>Open your website's main HTML file (usually <code>index.html</code>) in your code editor.</p>
+                    </div>
+                </div>
+                <div class="step-row" style="margin-bottom: 0;">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Paste before the closing body tag</h3>
+                        <p>Scroll to the very bottom of your code and paste the script directly above the <code>&lt;/body&gt;</code> tag. Save and upload your file.</p>
+                        <div class="img-placeholder">
+                            &lt;html&gt;<br>
+                            &nbsp;&nbsp;&lt;body&gt;<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&lt;!-- Rest of your website --&gt;<br><br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--orange);"><b>&lt;script src="https://bubbl.ooo/static/js/embed.js" data-bot-id="YOUR_ID" defer&gt;&lt;/script&gt;</b></span><br>
+                            &nbsp;&nbsp;&lt;/body&gt;<br>
+                            &lt;/html&gt;
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-wp" class="guide-pane">
+                <h2 style="margin-top: 0; color: #111827; margin-bottom: 24px;">Install on WordPress</h2>
+                
+                <div class="step-row">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Install a Code Plugin</h3>
+                        <p>Log in to your WP Admin dashboard. Go to <b>Plugins > Add New</b>. Search for and install a free plugin called <b>"WPCode – Insert Headers and Footers"</b>.</p>
+                    </div>
+                </div>
+                <div class="step-row">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Navigate to the Plugin</h3>
+                        <p>Activate the plugin, then look for <b>"Code Snippets"</b> in your left-hand WordPress menu. Click on <b>"Header & Footer"</b>.</p>
+                    </div>
+                </div>
+                <div class="step-row" style="margin-bottom: 0;">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Paste in the Footer</h3>
+                        <p>Scroll down to the <b>"Footer"</b> box. Paste your Bubbl embed script here and click <b>Save Changes</b> in the top right. Your bot is now live!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-shopify" class="guide-pane">
+                <h2 style="margin-top: 0; color: #111827; margin-bottom: 24px;">Install on Shopify</h2>
+                
+                <div class="step-row">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Go to Theme Editor</h3>
+                        <p>Log in to your Shopify Admin. On the left menu, click <b>Online Store</b>, then <b>Themes</b>.</p>
+                    </div>
+                </div>
+                <div class="step-row">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Edit Theme Code</h3>
+                        <p>Find your current live theme. Click the three dots (<b>...</b>) button next to "Customize", and select <b>Edit Code</b>.</p>
+                    </div>
+                </div>
+                <div class="step-row" style="margin-bottom: 0;">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Update theme.liquid</h3>
+                        <p>In the left sidebar under "Layout", click <b>theme.liquid</b>. Scroll to the very bottom of the file, paste your Bubbl embed script right above <code>&lt;/body&gt;</code>, and click <b>Save</b>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-wix" class="guide-pane">
+                <h2 style="margin-top: 0; color: #111827; margin-bottom: 24px;">Install on Wix</h2>
+                <div class="step-row">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Open Site Settings</h3>
+                        <p>Go to your Wix Dashboard. Scroll to the bottom left and click <b>Settings</b>.</p>
+                    </div>
+                </div>
+                <div class="step-row">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Go to Custom Code</h3>
+                        <p>Scroll down to the "Advanced" section and click on <b>Custom Code</b>.</p>
+                    </div>
+                </div>
+                <div class="step-row" style="margin-bottom: 0;">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Add Custom Code</h3>
+                        <p>Click <b>+ Add Custom Code</b>. Paste your Bubbl script into the text box. Name it "Bubbl Bot", select <b>"Load code on each new page"</b>, choose <b>"Body - end"</b> for placement, and click <b>Apply</b>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-react" class="guide-pane">
+                <h2 style="margin-top: 0; color: #111827; margin-bottom: 24px;">Install on React / Next.js</h2>
+                
+                <div class="step-row" style="margin-bottom: 0;">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h3 class="bricolage">Inject the Script</h3>
+                        <p>Because React uses a virtual DOM, standard scripts behave differently. For standard React, append the script dynamically in a <code>useEffect</code>. For Next.js, use the built in <code>next/script</code> component in your root layout.</p>
+                        
+                        <div class="img-placeholder">
+// Next.js App Router (layout.tsx)
+import Script from 'next/script';
+
+export default function RootLayout({ children }) {
+  return (
+    &lt;html&gt;
+      &lt;body&gt;
+        {children}
+        &lt;Script 
+          src="https://bubbl.ooo/static/js/embed.js" 
+          strategy="lazyOnload" 
+          data-bot-id="YOUR_BOT_ID" 
+        /&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+  );
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+function switchGuideTab(tabId) {
+    // Remove active classes
+    document.querySelectorAll('.guide-tab').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.guide-pane').forEach(pane => pane.classList.remove('active'));
+    
+    // Add active classes to target
+    event.currentTarget.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+</script>
+{% endblock %}

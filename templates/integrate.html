@@ -305,7 +305,7 @@
 <div class="int-container">
 
   <a href="{{ url_for('views_bp.dashboard') }}" class="int-back">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" ><polyline points="15 18 9 12 15 6"></polyline></svg>
     Back to Dashboard
   </a>
 
@@ -326,6 +326,8 @@
           Copy your Embed Code
         </div>
         <p class="int-section-desc">Paste the snippet that matches your website's framework.</p>
+        <p class="int-section-desc">Or follow our <a href="{{ url_for('admin_bp.embed_guide') }}" style="color:#E8722A">integration guide</a>.</p>
+
 
         <div class="fw-label">Standard HTML / WordPress</div>
         <div class="int-code-block">

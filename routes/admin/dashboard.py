@@ -40,6 +40,11 @@ def admin_dashboard():
         
     return render_template('admin.html', files=files, bots=visible_bots, active_bot=active_bot)
 
+@admin_bp.route('/how-to-embed', methods=['GET'])
+def embed_guide():
+    # Render the guide template. No specific bot ID needed since this is general documentation!
+    return render_template('embed_guide.html')
+
 @admin_bp.route('/select_bot/<int:bot_id>')
 @admin_required
 def select_bot(bot_id):
