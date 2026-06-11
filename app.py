@@ -12,10 +12,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.config.from_object(Config)
-CORS(app, resources={r"/api/*": {"origins": [
-            "http://localhost:5000",
-            "http://127.0.0.1:5000"
-        ]}})
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 UPLOAD_FOLDER = app.config.get('UPLOAD_FOLDER')
 SCRAPE_FOLDER = app.config.get('SCRAPE_FOLDER')
