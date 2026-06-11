@@ -346,6 +346,37 @@ h3,
   border-color: var(--orange);
   background: rgba(232, 114, 42, 0.05);
 }
+
+/* =========================================
+   GLOBAL .btn BASE + .btn-solid MODIFIER
+   Used by navbar, login, register, and any
+   page that uses class="btn btn-solid ..."
+   ========================================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s ease;
+}
+
+.btn-solid {
+  background: var(--orange);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(232, 114, 42, 0.35);
+}
+
+.btn-solid:hover {
+  background: var(--orange-light);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(232, 114, 42, 0.45);
+  color: #fff;
+}
+
 /* =========================================
    BUBBL.OOO SPREAD NAVBAR & FOOTER
    ========================================= */

@@ -248,3 +248,23 @@
     opacity 0.4s ease,
     transform 0.4s ease;
 }
+
+/* =========================================
+   BROWSER AUTOFILL OVERRIDE
+   Prevents Chrome/Safari from forcing a
+   blue or yellow background on autofilled
+   inputs. The large inset box-shadow trick
+   is the only reliable cross-browser fix.
+   ========================================= */
+.dash-input:-webkit-autofill,
+.dash-input:-webkit-autofill:hover,
+.dash-input:-webkit-autofill:focus,
+.auth-form input:-webkit-autofill,
+.auth-form input:-webkit-autofill:hover,
+.auth-form input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+  box-shadow: 0 0 0px 1000px #ffffff inset;
+  -webkit-text-fill-color: #111827;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

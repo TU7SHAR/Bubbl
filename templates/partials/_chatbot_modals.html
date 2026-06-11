@@ -72,10 +72,10 @@
           <div class="cb-box-header">Add text snippet</div>
           <div class="cb-box-content" style="padding: 0;">
             <div style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
-              <label style="display: block; font-size: 12px; color: #4b5563; margin-bottom: 8px;">Title</label>
-              <input type="text" id="snippet_title" class="dash-input" style="width: 100%; margin-bottom: 0;" placeholder="Ex: Refund requests">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Title</label>
+              <input type="text" id="snippet_title" style="width: 100%; margin-bottom: 0; border-radius: 8px; padding: 12px 16px; border: 1.5px solid rgba(0,0,0,0.15); background: #fff; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Ex: Refund requests" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.15)';">
             </div>
-            <textarea id="snippet_text" class="dash-input" rows="6" style="width: 100%; border: none; border-radius: 0; margin-bottom: 0; padding: 20px; border-bottom: 1px solid #e5e7eb;" placeholder="Paste your raw text here..."></textarea>
+            <textarea id="snippet_text" rows="6" style="width: 100%; border-top: none; border-left: none; border-right: none; border-bottom: 1px solid #e5e7eb; border-radius: 0; margin-bottom: 0; padding: 20px; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; resize: vertical; transition: border-color 0.2s; box-sizing: border-box; background: #fff;" placeholder="Paste your raw text here..." onfocus="this.style.borderBottomColor='#E8722A';" onblur="this.style.borderBottomColor='#e5e7eb';"></textarea>
             <div style="padding: 15px; text-align: right; background: #f9fafb;">
               <button type="button" id="btn-add-snippet" class="btn-modal-action" style="background: #111827;" onclick="addTextSnippet()">+ Add Snippet</button>
             </div>
@@ -97,15 +97,15 @@
           <div class="cb-box-header">Add Link</div>
           <div class="cb-box-content" style="padding: 0;">
             <div style="padding: 20px;">
-              <input type="url" id="scrape_url" class="dash-input" style="width: 100%; margin-bottom: 20px;" placeholder="https://www.example.com" />
+              <input type="url" id="scrape_url" style="width: 100%; margin-bottom: 20px; border-radius: 8px; padding: 12px 16px; border: 1.5px solid rgba(0,0,0,0.15); background: #fff; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; transition: border-color 0.2s; box-sizing: border-box;" placeholder="https://www.example.com" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.15)';" />
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                  <div style="display: flex; align-items: center; gap: 10px; background: #f9fafb; padding: 12px 16px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                    <input type="checkbox" id="use_deep_crawl" style="width: 16px; height: 16px; cursor: pointer;" />
+                  <div style="display: flex; align-items: center; gap: 10px; background: #f9fafb; padding: 12px 16px; border-radius: 8px; border: 1.5px solid rgba(0,0,0,0.15);">
+                    <input type="checkbox" id="use_deep_crawl" style="width: 16px; height: 16px; cursor: pointer; accent-color: #E8722A;" />
                     <label for="use_deep_crawl" style="font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; margin: 0;">Deep Crawl</label>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 10px; background: #f9fafb; padding: 12px 16px; border-radius: 8px; border: 1px solid #e5e7eb;">
-                    <label for="max_urls" style="font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin: 0;">Max Pages:</label>
-                    <input type="number" id="max_urls" value="20" class="dash-input" style="width: 70px; padding: 4px; margin-bottom: 0; text-align: center; background: #fff;" />
+                  <div style="display: flex; align-items: center; gap: 10px; background: #f9fafb; padding: 12px 16px; border-radius: 8px; border: 1.5px solid rgba(0,0,0,0.15);">
+                    <label for="max_urls" style="font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; white-space: nowrap;">Max Pages:</label>
+                    <input type="number" id="max_urls" value="20" style="width: 60px; padding: 6px 8px; border-radius: 6px; border: 1.5px solid rgba(0,0,0,0.15); background: #fff; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; text-align: center; transition: border-color 0.2s;" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.15)';" />
                   </div>
               </div>
             </div>
@@ -150,7 +150,7 @@
         <div class="cb-box">
           <div class="cb-box-header">Add Q&A</div>
           <div class="cb-box-content">
-             <textarea name="qa_text" id="qa_input" class="dash-input" rows="6" style="width: 100%; resize: vertical; margin-bottom: 0;" placeholder="Q: What is your refund policy?&#10;A: We offer a 30-day money-back guarantee."></textarea>
+             <textarea name="qa_text" id="qa_input" rows="6" style="width: 100%; resize: vertical; margin-bottom: 0; border-radius: 8px; padding: 12px 16px; border: 1.5px solid rgba(0,0,0,0.15); background: #fff; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; transition: border-color 0.2s; box-sizing: border-box;" placeholder="Q: What is your refund policy?&#10;A: We offer a 30-day money-back guarantee." onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.15)';"></textarea>
           </div>
         </div>
       </div>

@@ -70,6 +70,17 @@
     box-shadow: 0 0 0 3px rgba(232, 114, 42, 0.1);
   }
 
+  /* Override browser autofill blue/yellow background */
+  .dash-input:-webkit-autofill,
+  .dash-input:-webkit-autofill:hover,
+  .dash-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    box-shadow: 0 0 0px 1000px #ffffff inset;
+    -webkit-text-fill-color: #111827;
+    border-color: rgba(0,0,0,0.08);
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
   /* 4. Password Specifics */
   .password-wrapper {
     position: relative;

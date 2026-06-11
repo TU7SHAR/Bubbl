@@ -303,6 +303,33 @@
   .btn-modal-action { width: 100%; text-align: center; }
   .cb-modal-footer { justify-content: stretch; }
 }
+
+/* =========================================
+   Secondary Outline Buttons
+   ========================================= */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background-color: #ffffff;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  border: 1.5px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-outline:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background-color: rgba(232, 114, 42, 0.05);
+  transform: translateY(-1px);
+}
+
 </style>
 <script>
   window.LEAD_TIMING = "{{ bot.lead_capture_timing if bot and bot.lead_capture_timing else session.get('lead_capture_timing', 'disabled') }}";
