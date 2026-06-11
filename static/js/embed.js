@@ -12,8 +12,10 @@
     return;
   }
 
+  // Safe version
   const hostUrl =
-    window.CONFIG.HOST_URL || "https://bubbl-vv5an.ondigitalocean.app";
+    (window.CONFIG && window.CONFIG.HOST_URL) ||
+    "https://bubbl-vv5an.ondigitalocean.app";
 
   // 3. Build and inject the secure iframe
   const iframe = document.createElement("iframe");
