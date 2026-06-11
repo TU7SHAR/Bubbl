@@ -13,7 +13,7 @@
   }
 
   const hostUrl =
-    window.CONFIG.HOST_URL || "https://chatbot-c53nl.ondigitalocean.app/";
+    window.CONFIG.HOST_URL || "https://bubbl-vv5an.ondigitalocean.app";
 
   // 3. Build and inject the secure iframe
   const iframe = document.createElement("iframe");
