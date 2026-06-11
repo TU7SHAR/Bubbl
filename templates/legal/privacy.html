@@ -1,0 +1,157 @@
+{% extends 'base.html' %} 
+
+{% block title %}Privacy Policy — Bubbl.ooo{% endblock %}
+
+{% block og_title %}Privacy Policy — Bubbl.ooo{% endblock %}
+{% block og_description %}Bubbl.ooo privacy policy. Learn how we collect, use, and protect your data.{% endblock %}
+{% block twitter_title %}Privacy Policy — Bubbl.ooo{% endblock %}
+{% block twitter_description %}Bubbl.ooo privacy policy. Learn how we collect, use, and protect your data.{% endblock %}
+
+{% block content %}
+<style>
+/* ═══ PROSE & PAGE HEADER STYLES ═══ */
+.breadcrumb {
+    padding: 6.5rem 2rem 0.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-size: 0.78rem;
+    color: var(--text-muted, #8a7558);
+}
+.breadcrumb a {
+    color: var(--text-muted, #8a7558);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.breadcrumb a:hover {
+    color: var(--orange, #E8722A);
+}
+.breadcrumb span {
+    margin: 0 0.4rem;
+}
+
+.page-header {
+    padding: 3rem 2rem 3rem;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.page-header h1 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 4.5vw, 3.2rem);
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    color: var(--text-primary, #1a1008);
+}
+
+.prose {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+.prose h2 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin: 2.5rem 0 0.8rem;
+    letter-spacing: -0.02em;
+    color: var(--text-primary, #1a1008);
+}
+.prose p {
+    color: var(--text-secondary, #5c4a30);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+.prose a {
+    color: var(--orange, #E8722A);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+.prose a:hover {
+    text-decoration: underline;
+    color: #c45a1a;
+}
+
+/* Animations */
+.reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media(max-width: 768px) {
+    .page-header {
+        padding: 2rem 1.5rem 2rem;
+    }
+}
+</style>
+
+<div class="breadcrumb reveal">
+    <a href="{{ url_for('views_bp.index') }}">Home</a> <span>›</span> <span>Legal</span> <span>›</span> Privacy Policy
+</div>
+
+<div class="page-header reveal">
+    <h1>Privacy Policy</h1>
+    <p style="font-size: .9rem; color: #8a7558; margin-top: .5rem;">
+        Bubbl.ooo is owned and operated by <a href="https://172tech.com" target="_blank" rel="noopener noreferrer" style="color: var(--orange, #E8722A); text-decoration: none;">172 Tech</a>
+    </p>
+</div>
+
+<section style="max-width: 760px; margin: 0 auto; padding-bottom: 5rem;">
+    <div class="prose reveal">
+        <h2>Information We Collect</h2>
+        <p>When you use Bubbl.ooo, we collect information you provide directly: account details (name, email, phone), chatbot configuration data, training content you upload, and conversation logs between your chatbot and its users.</p>
+        <p>We also collect usage data automatically: IP addresses, browser type, pages visited, feature usage patterns, and performance metrics.</p>
+        
+        <h2>How We Use Your Data</h2>
+        <p>We use your data to provide and improve the Bubbl.ooo service, train your custom chatbot models (your data is never used to train models for other customers), send service-related communications, and comply with legal obligations.</p>
+        
+        <h2>Data Storage &amp; Security</h2>
+        <p>All data is encrypted at rest and in transit using industry-standard AES-256 encryption. We host data on secure cloud infrastructure with SOC 2 compliance. Your training data and conversation logs are isolated per account.</p>
+        
+        <h2>Third-Party Sharing</h2>
+        <p>We do not sell your data. We share data only with service providers necessary to operate Bubbl.ooo (hosting, AI model providers, payment processors) and when required by law.</p>
+        
+        <h2>Your Rights</h2>
+        <p>You can request data export, correction, or deletion at any time by contacting us at privacy@bubbl.ooo. We will respond within 30 days.</p>
+        
+        <h2>Cookies</h2>
+        <p>We use essential cookies for authentication and analytics cookies (Google Analytics) to understand usage patterns. You can disable non-essential cookies in your browser settings.</p>
+        
+        <h2>Changes</h2>
+        <p>We may update this policy from time to time. We will notify you of material changes via email or in-app notification. Continued use of Bubbl.ooo after changes constitutes acceptance.</p>
+        
+        <p style="margin-top: 2rem;"><em>Last updated: April 2026</em></p>
+    </div>
+
+    <div class="reveal" style="margin-top: 2rem; padding: 1rem; background: rgba(232, 114, 42, 0.04); border-radius: 12px; text-align: center;">
+        <p style="font-size: .85rem; color: #5c4a30; margin: 0;">
+            See also: 
+            <a href="/legal/terms" style="color: var(--orange, #E8722A); text-decoration: none; font-weight: 500;">Terms of Service</a> · 
+            <a href="/legal/refunds" style="color: var(--orange, #E8722A); text-decoration: none; font-weight: 500;">Refund Policy</a>
+        </p>
+    </div>
+</section>
+
+<script>
+// Scroll reveal animation logic
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+});
+</script>
+{% endblock %}

@@ -14,6 +14,26 @@ import psutil
 from flask import send_from_directory, current_app
 views_bp = Blueprint('views_bp', __name__)
 
+@views_bp.route('/roadmap')
+def roadmap():
+    return render_template('roadmap.html')
+
+@views_bp.route('/how-to')
+def how_to():
+    return render_template('how_to.html')
+
+@views_bp.route('/legal/privacy')
+def privacy():
+    return render_template('legal/privacy.html')
+
+@views_bp.route('/legal/terms')
+def terms():
+    return render_template('legal/terms.html')
+
+@views_bp.route('/legal/refunds')
+def refunds():
+    return render_template('legal/refunds.html')
+
 @views_bp.app_errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404

@@ -3,7 +3,7 @@
 {% block title %}{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} vs Intercom — AI Chatbot Comparison 2026{% endblock %}
 
 {% block meta_description %}
-<meta name="description" content="See how Bubbl.ooo compares to Intercom. Get WhatsApp-native chatbots, transparent pricing, and robust AI automation without expensive per-seat agent fees." />
+<meta name="description" content="See how {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} compares to Intercom. Get WhatsApp-native chatbots, transparent pricing, and robust AI automation without expensive per-seat agent fees." />
 {% endblock %}
 
 {% block content %}
@@ -20,24 +20,76 @@
   .section-title { text-align: center; width: 100%; margin-top: 4rem; }
 </style>
 
-<div class="page-header reveal"><p class="section-label">Comparison</p><h1>{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} vs Intercom</h1><p>Avoid per-resolution fees and high seat costs by switching to {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}.</p></div>
+<div class="page-header reveal">
+  <p class="section-label">Comparison</p>
+  <h1>{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} vs Intercom</h1>
+  <p>Avoid per-resolution fees and high seat costs by switching to {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}.</p>
+</div>
 
 <section>
-  <div class="lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c">
-    <table class="compare-table"><thead><tr><th>Feature</th><th>Intercom</th><th class="bubbl-col">{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</th></tr></thead><tbody>
-    <tr><td>No per-chat fees</td><td class="cross">✗ Charges $0.99/res</td><td class="check bubbl-col">✓ Included in plan</td></tr>
-    <tr><td>WhatsApp-Native</td><td class="partial">Add-on cost</td><td class="check bubbl-col">✓ Core focus</td></tr>
-    <tr><td>Starting Price</td><td>$74/mo+</td><td class="bubbl-col"><strong>₹0 (Free)</strong></td></tr>
-    </tbody></table>
-  </div></div>
+  <div class="lg reveal">
+    <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <div class="lg-c">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Intercom</th>
+            <th class="bubbl-col">{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>No per-chat fees</td><td class="cross">✗ Charges $0.99/res</td><td class="check bubbl-col">✓ Included in plan</td></tr>
+          <tr><td>WhatsApp-Native</td><td class="partial">Add-on cost</td><td class="check bubbl-col">✓ Core focus</td></tr>
+          <tr><td>Starting Price</td><td>$74/mo+</td><td class="bubbl-col"><strong>₹0 (Free)</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <h2 class="section-title reveal">Where Intercom falls short</h2>
-  <div class="lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c">
-    <table class="compare-table"><thead><tr><th>Limitation</th><th>Intercom</th><th class="bubbl-col">{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</th></tr></thead><tbody>
-    <tr><td>Very expensive for SMBs</td><td class="cross">✗ Intercom</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
-    <tr><td>Complex pricing model</td><td class="cross">✗ Intercom</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
-    <tr><td>Overkill for simple tasks</td><td class="cross">✗ Intercom</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
-    </tbody></table>
-  </div></div>
+  <div class="lg reveal">
+    <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <div class="lg-c">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Limitation</th>
+            <th>Intercom</th>
+            <th class="bubbl-col">{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Very expensive for SMBs</td><td class="cross">✗ Intercom</td><td class="check">✓ {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</td></tr>
+          <tr><td>Complex pricing model</td><td class="cross">✗ Intercom</td><td class="check">✓ {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</td></tr>
+          <tr><td>Overkill for simple tasks</td><td class="cross">✗ Intercom</td><td class="check">✓ {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section style="text-align: center; padding: 5rem 2rem;">
+  <div class="lg reveal" style="max-width: 680px; margin: 0 auto; padding: 3.5rem 2.5rem; border-radius: 24px;">
+    <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <div class="lg-c">
+      <h2 class="bricolage" style="font-size: 2rem; margin-bottom: 0.8rem;">Ready to switch?</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.8rem;">Start free. Import your data. See the difference in 5 minutes.</p>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-solid" style="padding: 1rem 2rem;">Get Started Free →</a>
+    </div>
+  </div>
+</section>
+
+<section style="max-width: 800px; margin: 0 auto 4rem auto; padding: 0 2rem;">
+  <div style="padding: 1.2rem; background: rgba(232, 114, 42, 0.05); border-radius: 16px; border: 1px solid rgba(232, 114, 42, 0.1);">
+    <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; line-height: 1.6;">
+      <strong style="color: var(--text-primary); margin-right: 8px;">More comparisons:</strong>
+      <a href="{{ url_for('views_bp.compare', competitor='chatbase') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Chatbase</a> · 
+      <a href="{{ url_for('views_bp.compare', competitor='tidio') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Tidio</a> · 
+      <a href="{{ url_for('views_bp.compare', competitor='intercom') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Intercom</a> · 
+      <a href="{{ url_for('views_bp.compare', competitor='gupshup') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Gupshup</a> · 
+      <a href="{{ url_for('views_bp.compare') }}" style="color: var(--orange); text-decoration: none; font-weight: 700; margin-left: 8px;">View all →</a>
+    </p>
+  </div>
 </section>
 {% endblock %}

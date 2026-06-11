@@ -3,7 +3,7 @@
 {% block title %}{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} vs Gupshup — AI Chatbot Comparison 2026{% endblock %}
 
 {% block meta_description %}
-<meta name="description" content="Compare Bubbl.ooo vs Gupshup. Discover a more affordable, truly no-code AI chatbot platform built specifically for Indian SMBs without enterprise lock-in." />
+<meta name="description" content="Compare {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} vs Gupshup. Discover a more affordable, truly no-code AI chatbot platform built specifically for Indian SMBs without enterprise lock-in." />
 {% endblock %}
 
 {% block content %}
@@ -15,51 +15,82 @@
   .compare-table th { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); background: rgba(232,114,42,0.03); }
   .compare-table .check { color: #22c55e; font-weight: 700; }
   .compare-table .cross { color: #ef4444; font-weight: 700; }
+  .compare-table .partial { color: var(--amber); font-weight: 700; }
   .compare-table .bubbl-col { background: rgba(232,114,42,0.04); font-weight: 600; }
   .page-header { text-align: center; padding: 8rem 2rem 3rem; width: 100%; }
   .section-title { text-align: center; width: 100%; margin-top: 4rem; }
 </style>
 
-<div class="page-header reveal"><p class="section-label">Comparison</p><h1>{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME} vs Gupshup</h1><p>Choose the modern no-code alternative to Gupshup's enterprise complexity.</p></div>
+<div class="page-header reveal">
+  <p class="section-label">Comparison</p>
+  <h1>{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }} vs Gupshup</h1>
+  <p>Choose the modern no-code alternative to Gupshup's enterprise complexity.</p>
+</div>
 
 <section>
-  <div class="lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c">
-    <table class="compare-table"><thead><tr><th>Feature</th><th>Gupshup</th><th class="bubbl-col">{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</th></tr></thead><tbody>
-    <tr><td>No-Code Builder</td><td class="partial">Technical setup</td><td class="check bubbl-col">✓ 100% Visual</td></tr>
-    <tr><td>Self-Serve Training</td><td class="cross">✗ Requires support</td><td class="check bubbl-col">✓ Instant setup</td></tr>
-    <tr><td>Transparent Pricing</td><td class="cross">✗ Pay-per-message</td><td class="check bubbl-col">✓ Clear tiers</td></tr>
-    </tbody></table>
-  </div></div>
+  <div class="lg reveal">
+    <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <div class="lg-c">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Gupshup</th>
+            <th class="bubbl-col">{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>No-Code Builder</td><td class="partial">Technical setup</td><td class="check bubbl-col">✓ 100% Visual</td></tr>
+          <tr><td>Self-Serve Training</td><td class="cross">✗ Requires support</td><td class="check bubbl-col">✓ Instant setup</td></tr>
+          <tr><td>Transparent Pricing</td><td class="cross">✗ Pay-per-message</td><td class="check bubbl-col">✓ Clear tiers</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <h2 class="section-title reveal">Where Gupshup falls short</h2>
-  <div class="lg reveal"><div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div><div class="lg-c">
-    <table class="compare-table"><thead><tr><th>Limitation</th><th>Gupshup</th><th class="bubbl-col">{config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</th></tr></thead><tbody>
-    <tr><td>Not SMB-friendly</td><td class="cross">✗ Gupshup</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
-    <tr><td>Enterprise-only focus</td><td class="cross">✗ Gupshup</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
-    <tr><td>Hidden message costs</td><td class="cross">✗ Gupshup</td><td class="check">✓ {config.COMPANY_NAME_FIRST}.{config.COMPANY_LAST_NAME}</td></tr>
-    </tbody></table>
-  </div></div>
-</section><section style="text-align: center; padding: 5rem 2rem;">
-    <div class="lg reveal" style="max-width: 680px; margin: 0 auto; padding: 3.5rem 2.5rem; border-radius: 24px;">
-      <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-      <div class="lg-c">
-        <h2 class="bricolage" style="font-size: 2rem; margin-bottom: 0.8rem;">Ready to switch?</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.8rem;">Start free. Import your data. See the difference in 5 minutes.</p>
-        <a href="{{ url_for('auth.register') }}" class="btn btn-solid" style="padding: 1rem 2rem;">Get Started Free →</a>
-      </div>
+  <div class="lg reveal">
+    <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <div class="lg-c">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Limitation</th>
+            <th>Gupshup</th>
+            <th class="bubbl-col">{{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Not SMB-friendly</td><td class="cross">✗ Gupshup</td><td class="check">✓ {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</td></tr>
+          <tr><td>Enterprise-only focus</td><td class="cross">✗ Gupshup</td><td class="check">✓ {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</td></tr>
+          <tr><td>Hidden message costs</td><td class="cross">✗ Gupshup</td><td class="check">✓ {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}</td></tr>
+        </tbody>
+      </table>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section style="max-width: 800px; margin: 0 auto 4rem auto; padding: 0 2rem;">
-    <div style="padding: 1.2rem; background: rgba(232, 114, 42, 0.05); border-radius: 16px; border: 1px solid rgba(232, 114, 42, 0.1);">
-      <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; line-height: 1.6;">
-        <strong style="color: var(--text-primary); margin-right: 8px;">More comparisons:</strong>
-        <a href="/compare/chatbase.html" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Chatbase</a> · 
-        <a href="/compare/tidio.html" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Tidio</a> · 
-        <a href="/compare/intercom.html" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Intercom</a> · 
-        <a href="/compare/gupshup.html" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Gupshup</a> · 
-        <a href="/compare/" style="color: var(--orange); text-decoration: none; font-weight: 700; margin-left: 8px;">View all →</a>
-      </p>
+<section style="text-align: center; padding: 5rem 2rem;">
+  <div class="lg reveal" style="max-width: 680px; margin: 0 auto; padding: 3.5rem 2.5rem; border-radius: 24px;">
+    <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
+    <div class="lg-c">
+      <h2 class="bricolage" style="font-size: 2rem; margin-bottom: 0.8rem;">Ready to switch?</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.8rem;">Start free. Import your data. See the difference in 5 minutes.</p>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-solid" style="padding: 1rem 2rem;">Get Started Free →</a>
     </div>
-  </section>
+  </div>
+</section>
+
+<section style="max-width: 800px; margin: 0 auto 4rem auto; padding: 0 2rem;">
+  <div style="padding: 1.2rem; background: rgba(232, 114, 42, 0.05); border-radius: 16px; border: 1px solid rgba(232, 114, 42, 0.1);">
+    <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; line-height: 1.6;">
+      <strong style="color: var(--text-primary); margin-right: 8px;">More comparisons:</strong>
+      <a href="{{ url_for('views_bp.compare', competitor='chatbase') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Chatbase</a> · 
+      <a href="{{ url_for('views_bp.compare', competitor='tidio') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Tidio</a> · 
+      <a href="{{ url_for('views_bp.compare', competitor='intercom') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Intercom</a> · 
+      <a href="{{ url_for('views_bp.compare', competitor='gupshup') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">vs Gupshup</a> · 
+      <a href="{{ url_for('views_bp.compare') }}" style="color: var(--orange); text-decoration: none; font-weight: 700; margin-left: 8px;">View all →</a>
+    </p>
+  </div>
+</section>
 {% endblock %}

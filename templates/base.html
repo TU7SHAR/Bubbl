@@ -231,7 +231,7 @@
         {% block content %}{% endblock %}
       </main>
 
-      <footer class="footer">
+     <footer class="footer">
         <div class="footer-container">
           <div class="footer-grid">
             <div class="footer-brand">
@@ -241,29 +241,35 @@
 
             <div class="footer-col">
               <h4 class="bricolage">Product</h4>
-              <a href="{{ url_for('views_bp.index') }}#features">Features</a>
+                <a href="{{ url_for('views_bp.features') }}">Features</a>
               <a href="{{ url_for('views_bp.pricing') }}">Pricing</a>
-              <a href="#">Roadmap</a>
-              <a href="{{ url_for('views_bp.index') }}#how-to">How-To Guides</a>
+              <a href="{{ url_for('views_bp.roadmap') }}">Roadmap</a>
+              <a href="{{ url_for('views_bp.how_to') }}">How-To Guides</a>
             </div>
 
             <div class="footer-col">
               <h4 class="bricolage">Compare</h4>
-              <a href="{{ url_for('views_bp.compare') }}">vs Chatbase</a>
-              <a href="{{ url_for('views_bp.compare') }}">vs Tidio</a>
-              <a href="{{ url_for('views_bp.compare') }}">vs Intercom</a>
+              <a href="{{ url_for('views_bp.compare', competitor='chatbase') }}">vs Chatbase</a>
+              <a href="{{ url_for('views_bp.compare', competitor='tidio') }}">vs Tidio</a>
+              <a href="{{ url_for('views_bp.compare', competitor='intercom') }}">vs Intercom</a>
+              <a href="{{ url_for('views_bp.compare', competitor='gupshup') }}">vs Gupshup</a>
               <a href="{{ url_for('views_bp.compare') }}" style="color: var(--orange);">View All →</a>
             </div>
 
             <div class="footer-col">
               <h4 class="bricolage">Legal</h4>
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms of Service</a>
+              <a href="{{ url_for('views_bp.privacy') }}">Privacy Policy</a>
+              <a href="{{ url_for('views_bp.terms') }}">Terms of Service</a>
+              <a href="{{ url_for('views_bp.refunds') }}">Refund Policy</a>
             </div>
           </div>
 
-          <div class="footer-bottom">
-            <p>© 2026 Bubbl.ooo · Built by <strong>ESS ENN Associates</strong> & <strong>172 Tech</strong></p>
+          <div class="footer-bottom" >
+          © 2026 Bubbl.ooo · A product of
+          <a style="color: black;" href="https://essenn.associates" target="_blank" rel="noopener noreferrer">ESS ENN Associates</a> and
+          <a style="color: black;" href="https://172tech.com" target="_blank" rel="noopener noreferrer">172 Tech</a>
+          · Portfolio of <a style="color: black;" href="https://fourone.ai" target="_blank" rel="noopener noreferrer">FourOne AI</a>
+          · Designed by <a style="color: black;" href="https://530.expert" target="_blank" rel="noopener noreferrer">530 Expert</a>
           </div>
         </div>
       </footer>
