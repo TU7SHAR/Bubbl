@@ -322,10 +322,21 @@ def unlock_bot(bot_id):
 def embed_bot(bot_id):
     target_bot = Bot.query.get_or_404(bot_id)
     response = make_response(render_template('embed_chat.html', bot=target_bot))
-    if getattr(target_bot, 'allowed_domains', None):
-        response.headers['Content-Security-Policy'] = f"frame-ancestors 'self' {target_bot.allowed_domains}"
+    
+    # 1. Strip the legacy X-Frame-Options
+    response.headers.pop('X-Frame-Options', None)
+    
+    # 2. Enforce the Domain Lock
+    allowed = getattr(target_bot, 'allowed_domains', '').strip()
+    
+    if allowed:
+        # If domains are listed, lock it to those domains
+        response.headers['Content-Security-Policy'] = f"frame-ancestors 'self' {allowed}"
     else:
-        response.headers.pop('X-Frame-Options', None)
+        # If the field is completely empty, default to allowing any site (Standard SaaS behavior)
+        # OR, if you want empty to mean STRICTLY BLOCKED, change '*' to 'none'
+        response.headers['Content-Security-Policy'] = "frame-ancestors *"
+        
     return response
 
 @views_bp.route('/bot/<int:bot_id>/integrate')

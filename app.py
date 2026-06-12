@@ -39,12 +39,13 @@ with app.app_context():
 
 @app.after_request
 def add_security_headers(response):
-    # Remove X-Frame-Options if it exists (legacy, prevents embedding)
     if 'X-Frame-Options' in response.headers:
         del response.headers['X-Frame-Options']
         
-    # Use Content-Security-Policy to allow any site to iframe this app
-    response.headers['Content-Security-Policy'] = "frame-ancestors *"
+    # Only open the iframe globally if a specific route hasn't locked it down
+    if 'Content-Security-Policy' not in response.headers:
+        response.headers['Content-Security-Policy'] = "frame-ancestors *"
+        
     return response
 
 if __name__ == '__main__':
