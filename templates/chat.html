@@ -1,7 +1,8 @@
-{% set theme_color = session.get('theme_color', '#E8722A') %}
-{% set theme_mode = session.get('theme_mode', 'light') %}
-{% set glass_opacity = session.get('glass_opacity', 35) %}
-{% set glass_blur = session.get('glass_blur', 25) %}
+{% set theme_color = bot.ui_settings.theme_color if (bot and bot.ui_settings) else session.get('theme_color', '#E8722A') %}
+{% set theme_mode = bot.ui_settings.theme_mode if (bot and bot.ui_settings) else session.get('theme_mode', 'light') %}
+{% set glass_opacity = bot.ui_settings.glass_opacity if (bot and bot.ui_settings) else session.get('glass_opacity', 35) %}
+{% set glass_blur = bot.ui_settings.glass_blur if (bot and bot.ui_settings) else session.get('glass_blur', 25) %}
+{% set active_bot_name = bot.bot_name if bot else session.get('active_bot_name', 'Global') %}
 
 <style>
   /* 1. PILL BUTTON SYNC */
@@ -118,19 +119,24 @@
   <div id="sprite-ask-container" onclick="toggleChat()">
     <div id="bot-sprite"></div>
     <button id="chat-open-btn">
-      Ask: {{ session.get('active_bot_name', 'Bot') }}
+      Ask: {{ active_bot_name }}
     </button>
   </div>
 
   <div id="chat-window-popup" class="hidden">
     <div class="chat-header">
       <div class="chat-header-info" style="display: flex; align-items: center;">
-        <div class="chat-header-avatar" id="global-chat-avatar">
-            <span id="global-chat-initial">{{ session.get('active_bot_name', 'B')[0] | upper }}</span>
+        <div class="chat-header-avatar" id="global-chat-avatar"
+             {% if bot and bot.ui_settings and bot.ui_settings.avatar_base64 %}
+             style="background-image: url('{{ bot.ui_settings.avatar_base64 }}'); background-size: cover; background-position: center; background-color: transparent;"
+             {% endif %}>
+            {% if not (bot and bot.ui_settings and bot.ui_settings.avatar_base64) %}
+            <span id="global-chat-initial">{{ active_bot_name[0] | upper if active_bot_name else 'B' }}</span>
+            {% endif %}
         </div>
         <div>
             <span class="status-dot"></span>
-            <span class="chat-header-title">{{ session.get('active_bot_name', 'Global') | upper }}</span>
+            <span class="chat-header-title">{{ active_bot_name | upper }}</span>
         </div>
       </div>
       
@@ -142,7 +148,7 @@
 
     <div id="chat-display">
       <div class="msg bot">
-        System ready. Querying <strong>{{ session.get('active_bot_name', 'selected bot') }}</strong>...
+        System ready. Querying <strong>{{ active_bot_name }}</strong>...
       </div>
     </div>
 

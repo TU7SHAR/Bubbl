@@ -1,23 +1,23 @@
 (function () {
-  // 1. Find the bot ID (Checks for React/Next.js window variable FIRST, then fallback)
+  // 1. Find the bot ID
   const currentScript = document.currentScript;
   const botId =
     window.BOTFACTORY_ID ||
     (currentScript && currentScript.getAttribute("data-bot-id"));
 
   if (!botId) {
-    console.error(
-      "BotFactory Error: No Bot ID found. Please ensure window.BOTFACTORY_ID is set.",
-    );
+    console.error("BotFactory Error: No Bot ID found.");
     return;
   }
 
-  // Safe version
-  const hostUrl =
-    (window.CONFIG && window.CONFIG.HOST_URL) ||
-    "https://bubbl-vv5an.ondigitalocean.app";
+  // 2. Auto-detect the host URL
+  let hostUrl = "https://bubbl-vv5an.ondigitalocean.app"; // Fallback
+  if (currentScript && currentScript.src) {
+    const urlObj = new URL(currentScript.src);
+    hostUrl = urlObj.origin;
+  }
 
-  // 3. Build and inject the secure iframe
+  // 3. Build the secure iframe
   const iframe = document.createElement("iframe");
   iframe.src = `${hostUrl}/embed/${botId}`;
 
@@ -32,5 +32,14 @@
   iframe.allowTransparency = "true";
   iframe.style.zIndex = "2147483647";
 
-  document.body.appendChild(iframe);
+  // 4. SAFELY inject the iframe (Wait for the body to exist)
+  const injectWidget = () => {
+    document.body.appendChild(iframe);
+  };
+
+  if (document.body) {
+    injectWidget();
+  } else {
+    window.addEventListener("DOMContentLoaded", injectWidget);
+  }
 })();

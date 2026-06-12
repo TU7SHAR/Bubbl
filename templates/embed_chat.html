@@ -10,37 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <style>
-      :root {
-        --theme-color: {{ bot.ui_settings.theme_color if bot.ui_settings else '#E8722A' }};
-        --glass-opacity: {{ bot.ui_settings.glass_opacity if bot.ui_settings else '35' }};
-        --glass-blur: {{ bot.ui_settings.glass_blur if bot.ui_settings else '25' }}px;
-        
-        {% if bot.ui_settings and bot.ui_settings.theme_mode == 'dark' %}
-        --glass-bg: rgba(17, 24, 39, calc(var(--glass-opacity) / 100));
-        --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-        {% else %}
-        --glass-bg: rgba(255, 255, 255, calc(var(--glass-opacity) / 100));
-        --glass-border: 1px solid rgba(255, 255, 255, 0.5);
-        {% endif %}
-      }
-
       body, html {
         background: transparent !important;
         margin: 0;
         padding: 0;
         overflow: hidden;
         font-family: "Outfit", sans-serif !important; 
-      }
-
-      /* 3. Dynamic glass UI settings based on database */
-      #chat-window-popup {
-        background: var(--glass-bg) !important;
-        border: var(--glass-border) !important;
-        backdrop-filter: blur(var(--glass-blur)) !important;
-        -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
       }
 
       #chat-widget-container {
@@ -51,6 +28,8 @@
   </head>
   <body>
     {% include 'chat.html' %}
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script>
       window.EMBEDDED_BOT_ID = "{{ bot.id }}";
       window.LEAD_TIMING = "{{ bot.lead_capture_timing }}";
