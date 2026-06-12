@@ -81,7 +81,7 @@
             
             <!-- DYNAMIC HEADERS FOR CUSTOM FIELDS -->
             {% for key in custom_keys %}
-                <th class="dynamic-col dynamic-col-{{ loop.index0 }}" style="padding: 16px 24px; font-weight: 700; border-bottom: 1px solid rgba(0,0,0,0.05);">{{ key }}</th>
+                <th class="dynamic-col dynamic-col-{{ loop.index0 }}" style="padding: 16px 24px; font-weight: 700; border-bottom: 1px solid rgba(0,0,0,0.05);">{{ key|replace('_', ' ')|title }}</th>
             {% endfor %}
             
             <th style="padding: 16px 24px; font-weight: 700; border-bottom: 1px solid rgba(0,0,0,0.05);"> Lead Quality</th>
@@ -120,15 +120,22 @@
                 {% set val = namespace(found=false, value="") %}
                 {% if lead.custom_data %}
                     {% for k, v in lead.custom_data.items() %}
-                        {% if k|lower == key|lower %}
+                        {% if k|lower == key|lower and k != 'Priority' %}
                             {% set val.found = true %}
                             {% set val.value = v %}
                         {% endif %}
                     {% endfor %}
                 {% endif %}
 
-                {% if val.found and val.value %}
-                    {{ val.value }}
+                {% if val.found and val.value and val.value|string|trim not in ('', 'None', 'null', 'N/A', 'Not provided', '-', '0') %}
+                    {# Try to render numbers with comma formatting #}
+                    {% set raw = val.value|string|trim %}
+                    {% if raw|int(-1) != -1 and raw|int(-1)|string == raw %}
+                        {# Pure integer — format with commas #}
+                        <span style="font-weight: 600; color: var(--text-dark);">{{ '{:,}'.format(raw|int) }}</span>
+                    {% else %}
+                        {{ raw }}
+                    {% endif %}
                 {% else %}
                     <span class="empty-dash" style="color: var(--text-muted); opacity: 0.4;">-</span>
                 {% endif %}

@@ -7,6 +7,79 @@ from models.models import Bot, Lead, db
 
 api_bp = Blueprint('api_bp', __name__)
 
+
+def sanitize_custom_data(raw_dict, field_schema_json=""):
+    """
+    Post-process the LLM-generated custom_data dict before writing to DB.
+    - Normalises key casing to Title Case so template matching is reliable.
+    - Coerces 'number'-typed fields to plain integers (strips currency, units, k/lakh/crore).
+    - Drops null-ish values so the table shows '-' instead of 'None'/'null'/''.
+    - Preserves 'Priority' exactly.
+    """
+    if not raw_dict or not isinstance(raw_dict, dict):
+        return {}
+
+    # Build a name → type map from the bot's field schema (best-effort)
+    field_types = {}
+    if field_schema_json:
+        try:
+            for f in json.loads(field_schema_json):
+                name = f.get('name', '')
+                if name:
+                    field_types[name.lower()] = f.get('type', 'text')
+        except Exception:
+            pass
+
+    def coerce_number(val):
+        """Strip non-numeric noise and return an int string, or the original if hopeless."""
+        if val is None:
+            return "0"
+        s = str(val).strip().lower()
+        # Named multipliers — longer/more-specific patterns first
+        multipliers = [
+            (r'(\d+(?:\.\d+)?)\s*cr(?:ore)?',           1_00_00_000),
+            (r'(\d+(?:\.\d+)?)\s*billion',               1_000_000_000),
+            (r'(\d+(?:\.\d+)?)\s*million',               1_000_000),
+            (r'(\d+(?:\.\d+)?)\s*(?:lakh|lac(?:s|h)?)',  1_00_000),
+            (r'(\d+(?:\.\d+)?)\s*thousand',              1_000),
+            (r'(\d+(?:\.\d+)?)\s*k\b',                   1_000),
+            (r'(\d+(?:\.\d+)?)\s*l\b',                   1_00_000),   # bare 'l' last
+        ]
+        for pattern, mult in multipliers:
+            m = re.search(pattern, s)
+            if m:
+                return str(int(float(m.group(1)) * mult))
+        # Strip everything except digits, dots, hyphens; take lower bound of ranges
+        s = re.sub(r'[^\d.\-]', '', s)
+        if '-' in s:
+            s = s.split('-')[0]   # "10000-20000" → "10000"
+        try:
+            return str(int(float(s))) if s else "0"
+        except ValueError:
+            return "0"
+
+    cleaned = {}
+    for key, value in raw_dict.items():
+        # Keep Priority untouched
+        if key == 'Priority':
+            cleaned['Priority'] = value
+            continue
+
+        # Drop empty / null-ish values
+        if value is None or str(value).strip().lower() in ('', 'none', 'null', 'n/a', 'not provided', '-'):
+            continue
+
+        # Normalise key to Title Case
+        clean_key = key.strip().title()
+
+        # Coerce number fields
+        if field_types.get(key.lower()) == 'number':
+            cleaned[clean_key] = coerce_number(value)
+        else:
+            cleaned[clean_key] = str(value).strip()
+
+    return cleaned
+
 @api_bp.route('/api/chat', methods=['POST'])
 def chat():
     data = request.json
@@ -126,6 +199,9 @@ def chat():
                 except Exception:
                     custom_data_dict = {"Extracted Data": extracted_custom_raw}
 
+                # Sanitize: normalise keys, coerce numbers, drop empties
+                custom_data_dict = sanitize_custom_data(custom_data_dict, custom_fields)
+
                 existing_lead = Lead.query.filter_by(bot_id=bot_id, email=extracted_email).first()
 
                 if existing_lead:
@@ -201,6 +277,10 @@ def capture_lead():
             return jsonify({"error": "Please provide valid, real contact details. Placeholders are not accepted."}), 400
             
         custom_data['Priority'] = priority
+
+        # Sanitize keys and values before writing to DB
+        # We don't have the bot's field schema here, but key normalisation still helps
+        custom_data = sanitize_custom_data(custom_data)
 
         existing_lead = Lead.query.filter_by(bot_id=bot_id, email=email).first()
         lead_id = None
