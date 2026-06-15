@@ -696,8 +696,28 @@
         avatarPreview.innerText = name[0].toUpperCase();
     }
 
+    const isDark = (theme === 'dark');
+
     const widget = document.getElementById('mock-widget');
-    widget.style.backgroundColor = (theme === 'dark') ? 'rgba(17, 24, 39, 0.95)' : '#ffffff';
+    widget.style.backgroundColor = isDark ? 'rgba(17, 24, 39, 0.95)' : '#ffffff';
+
+    // --- THEME-AWARE TEXT COLORS ---
+    // Bot name in the header
+    document.getElementById('preview-name').style.color = isDark ? '#f9fafb' : '#111827';
+
+    // Incoming (bot) message bubble: text + background
+    const bubbleIn = widget.querySelector('.mock-bubble-in');
+    if (bubbleIn) {
+        bubbleIn.style.color = isDark ? '#f9fafb' : '#111827';
+        bubbleIn.style.background = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    }
+
+    // Header divider + body background so the dark theme looks consistent
+    const header = widget.querySelector('.mock-chat-header');
+    if (header) header.style.borderBottomColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+
+    const body = widget.querySelector('.mock-chat-body');
+    if (body) body.style.background = isDark ? 'rgba(31,41,55,0.6)' : 'transparent';
   }
 
   function setPreviewTheme(theme) {
@@ -767,6 +787,10 @@
       }
   });
 
-  document.addEventListener('DOMContentLoaded', updateLivePreview);
+  document.addEventListener('DOMContentLoaded', function() {
+    // Reflect the saved theme on the toggle buttons AND the preview text colors
+    const savedTheme = document.getElementById('theme_mode').value || 'light';
+    setPreviewTheme(savedTheme);
+  });
 </script>
 {% endblock %}
