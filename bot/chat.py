@@ -7,7 +7,17 @@ from models.models import db, Bot
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+# Lazy singleton — do NOT create the client at import time.
+# With gunicorn preload_app=True, an import-time crash here (e.g. missing
+# GEMINI_API_KEY) would kill the master before it binds to $PORT, causing
+# "container terminated" on deploy. Creating it on first use avoids that.
+_client = None
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+    return _client
 
 BASE_GUARDRAILS = (
     "STRICT OPERATING CONSTRAINTS:\n"
@@ -60,7 +70,7 @@ def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=Non
             types.Content(role="user", parts=[types.Part.from_text(text=user_query)])
         )
 
-        response = client.models.generate_content(
+        response = _get_client().models.generate_content(
             model="gemini-3.1-flash-lite-preview",
             contents=contents,
             config=config
