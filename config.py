@@ -5,10 +5,16 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
 
 class Config:
-    SECRET_KEY = os.getenv('SECRET_KEY', 'defaulter-2002')
+    SECRET_KEY = os.environ['SECRET_KEY']  # No fallback — crash on startup if missing
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 30,"pool_timeout": 10}
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,       # Recycle connections every 5 min (was 30s — way too aggressive)
+        "pool_timeout": 30,        # Wait up to 30s for a connection (was 10s)
+        "pool_size": 20,           # 20 persistent connections (was default 5)
+        "max_overflow": 30,        # Allow 30 extra connections during spikes (total max: 50)
+    }
     
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
     SCRAPE_FOLDER = os.path.join(basedir, 'scraped_docs') 

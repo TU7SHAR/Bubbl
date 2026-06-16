@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from models.models import db, User, Organization
 from utils.mail_helper import send_otp_email, generate_otp
+from extensions import limiter
 from . import auth_bp  
 
 class RegistrationForm(FlaskForm):
@@ -15,6 +16,7 @@ class RegistrationForm(FlaskForm):
     password = PasswordField("Password", validators=[DataRequired()])
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])  # Prevents registration spam
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
@@ -93,6 +95,7 @@ def verify_otp():
     return render_template('verify_otp.html', email=email)
 
 @auth_bp.route('/resend_otp')
+@limiter.limit("3 per minute")  # Prevents OTP email flood
 def resend_otp():
     email = session.get('verify_email')
     

@@ -6,7 +6,7 @@ from google import genai
 load_dotenv()
 
 def get_gemini_client():
-    return genai.Client(api_key=os.getenv('API_KEY'))
+    return genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 
 def create_dynamic_store(bot_name):
     """Creates a new vector store on Google Cloud and returns its ID."""
