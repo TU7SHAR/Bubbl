@@ -16,6 +16,8 @@ BASE_GUARDRAILS = (
     "3. NEVER use your internal training data to answer factual questions. NEVER hallucinate facts.\n"
     "4. You are allowed to answer basic conversational greetings (like 'hello', 'who are you', 'how are you') naturally.\n"
     "5. If a user asks a specific question and the answer is NOT explicitly in your provided files, reply EXACTLY: 'I apologize, but I don't have information on that topic in my records.'\n\n"
+    "6. NEVER use markdown formatting in your responses. No asterisks (*), no bold (**), no headers (#), no bullet symbols. Use plain text only. For lists, use dashes (-) or numbers (1. 2. 3.). Give Human Readable answers."
+
 )
 
 PUBLIC_BOT_INSTRUCTIONS = (

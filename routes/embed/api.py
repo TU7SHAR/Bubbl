@@ -144,7 +144,7 @@ def chat():
 
                 # STRICT VALIDATION & SCORING RULES
                 ai_prompt += "\n### CRITICAL DATA INTEGRITY RULES (STRICT ENFORCEMENT):\n"
-                ai_prompt += "1. RUTHLESS FAKE DATA REJECTION: You are a gatekeeper for high-quality data. Immediately reject and politely challenge placeholders ('asdf', 'test@test.com', '1234567890', 'user'). Do not generate the [[LEAD]] tag for fakes.\n"
+                ai_prompt += "1. RUTHLESS FAKE DATA REJECTION: You are a gatekeeper for high-quality data. Immediately reject and politely challenge placeholders ('asdf', 'test@test.com', '1234567890', 'user'). Do not generate the [[LEAD]] tag for fakes. Country Code is Optional not neccessary.\n"
                 
                 if formatting_rules:
                     ai_prompt += f"2. FORMATTING PROTOCOL:\n{formatting_rules}"
