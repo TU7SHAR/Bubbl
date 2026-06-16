@@ -2,10 +2,12 @@ import bcrypt
 from flask import render_template, request, redirect, url_for, session, flash
 from models.models import db, User
 from utils.mail_helper import send_otp_email, generate_otp
+from extensions import limiter
 from . import auth_bp 
 import os
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])  # Prevents brute force
 def login():
     if request.method == 'POST':
         # Safely grab email and password, stripping invisible spaces
@@ -67,6 +69,7 @@ def login():
     return render_template('login.html')
 
 @auth_bp.route('/forgot_password', methods=['GET', 'POST'])
+@limiter.limit("3 per minute", methods=["POST"])  # Prevents email spam
 def forgot_password():
     if request.method == 'GET':
         return render_template('forgot_password.html')
