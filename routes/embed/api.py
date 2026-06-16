@@ -1,9 +1,10 @@
 import json
 import re
 import logging
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, current_app
 from bot.chat import get_response_from_gemini
 from models.models import Bot, Lead, db
+from extensions import limiter
 
 api_bp = Blueprint('api_bp', __name__)
 
@@ -81,6 +82,7 @@ def sanitize_custom_data(raw_dict, field_schema_json=""):
     return cleaned
 
 @api_bp.route('/api/chat', methods=['POST'])
+@limiter.limit("20 per minute")  # Protects Gemini API spend
 def chat():
     data = request.json
     user_message = data.get('message')
@@ -235,6 +237,7 @@ def chat():
         return jsonify({"error": "The AI is currently experiencing high demand."})
 
 @api_bp.route('/api/lead', methods=['POST'])
+@limiter.limit("10 per minute")  # Prevents lead spam
 def capture_lead():
     data = request.json
     bot_id = data.get('bot_id')

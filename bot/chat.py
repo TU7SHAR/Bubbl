@@ -7,7 +7,7 @@ from models.models import db, Bot
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv('API_KEY'))
+client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 
 BASE_GUARDRAILS = (
     "STRICT OPERATING CONSTRAINTS:\n"
