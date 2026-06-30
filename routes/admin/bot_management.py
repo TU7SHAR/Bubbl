@@ -9,8 +9,15 @@ from werkzeug.utils import secure_filename
 from models.models import db, Bot, Document, BotUI, ScrapeJob
 from bot.cloud import upload_to_gemini, delete_from_gemini, create_dynamic_store
 from routes.auth.decorators import admin_required
+from extensions import cache
 from . import admin_bp
 from .scrape_managment import async_scrape_task
+
+
+def invalidate_bot_cache(bot_id):
+    """Clear cached config + avatar for a bot after it's edited or deleted."""
+    cache.delete(f"bot_config_{bot_id}")
+    cache.delete(f"bot_avatar_{bot_id}")
 
 @admin_bp.route('/create_pipeline', methods=['GET', 'POST'])
 def create_pipeline():
@@ -179,6 +186,7 @@ def rename_bot(bot_id):
     if target_bot:
         target_bot.bot_name = new_name.strip()
         db.session.commit()
+        invalidate_bot_cache(bot_id)
 
         if session.get('active_bot_id') == bot_id:
             session['active_bot_name'] = target_bot.bot_name
@@ -213,6 +221,7 @@ def delete_bot(bot_id):
 
         db.session.delete(target_bot)
         db.session.commit()
+        invalidate_bot_cache(bot_id)
        
         fallback = Bot.query.filter_by(org_id=session.get('org_id')).first()
         if fallback:
@@ -271,6 +280,7 @@ def update_bot(bot_id):
         bot.ui_settings.avatar_base64 = f"data:{avatar_file.mimetype};base64,{b64_encoded}"
 
     db.session.commit()
+    invalidate_bot_cache(bot_id)
     
     if session.get('active_bot_id') == bot.id:
         session['active_bot_name'] = bot.bot_name

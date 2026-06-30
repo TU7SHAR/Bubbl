@@ -9,7 +9,7 @@ from routes.profile import profile_bp
 from routes.embed.views import views_bp
 from routes.embed.api import api_bp
 from flask_cors import CORS
-from extensions import limiter
+from extensions import limiter, cache
 
 app = Flask(__name__)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
@@ -26,6 +26,9 @@ CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
 
 # --- RATE LIMITER: Prevent abuse of paid APIs ---
 limiter.init_app(app)
+
+# --- CACHE: Avoid hitting the DB for the same data every request ---
+cache.init_app(app)
 
 UPLOAD_FOLDER = app.config.get('UPLOAD_FOLDER')
 SCRAPE_FOLDER = app.config.get('SCRAPE_FOLDER')
