@@ -4,9 +4,38 @@ import logging
 from flask import Blueprint, request, jsonify, session, current_app
 from bot.chat import get_response_from_gemini
 from models.models import Bot, Lead, db
-from extensions import limiter
+from extensions import limiter, cache
 
 api_bp = Blueprint('api_bp', __name__)
+
+
+def get_bot_config(bot_id):
+    """
+    Returns a bot's chat config as a plain dict, cached for 60s.
+
+    We cache a DICT (not the SQLAlchemy object) on purpose: caching an ORM
+    object across requests causes DetachedInstanceError because its DB session
+    is closed. A plain dict is safe to reuse.
+
+    The cache is invalidated in bot_management.py whenever a bot is
+    updated/renamed/deleted, so edits show up immediately.
+    """
+    cache_key = f"bot_config_{bot_id}"
+    cfg = cache.get(cache_key)
+    if cfg is None:
+        bot = Bot.query.get(bot_id)
+        if not bot:
+            cfg = {"exists": False}
+        else:
+            cfg = {
+                "exists": True,
+                "system_prompt": bot.system_prompt,
+                "lead_capture_timing": bot.lead_capture_timing,
+                "custom_form_fields": getattr(bot, "custom_form_fields", "") or "",
+                "store_id": bot.store_id,
+            }
+        cache.set(cache_key, cfg, timeout=60)
+    return cfg
 
 
 def sanitize_custom_data(raw_dict, field_schema_json=""):
@@ -94,13 +123,13 @@ def chat():
             reply = get_response_from_gemini(user_query=user_message, history=history)
             return jsonify({"response": reply})
 
-        bot_record = Bot.query.get(bot_id)
-        if not bot_record:
+        bot_cfg = get_bot_config(bot_id)
+        if not bot_cfg["exists"]:
             return jsonify({"error": "Invalid Bot ID."})
 
-        ai_prompt = bot_record.system_prompt or "You are a helpful assistant."
-        timing = bot_record.lead_capture_timing
-        custom_fields = getattr(bot_record, 'custom_form_fields', '').strip()
+        ai_prompt = bot_cfg["system_prompt"] or "You are a helpful assistant."
+        timing = bot_cfg["lead_capture_timing"]
+        custom_fields = (bot_cfg["custom_form_fields"] or "").strip()
 
         if timing and timing != 'disabled' and timing != 'gatekeeper':
             ai_prompt += "\n\n--- LEAD CAPTURE INSTRUCTIONS ---\n"
@@ -177,7 +206,7 @@ def chat():
         # --- This executes safely for all bots regardless of lead capture settings ---
         reply = get_response_from_gemini(
             user_query=user_message, 
-            target_store_id=bot_record.store_id, 
+            target_store_id=bot_cfg["store_id"], 
             custom_prompt=ai_prompt,
             history=history,
             bot_id=bot_id

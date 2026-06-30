@@ -6,6 +6,7 @@ from flask import request, jsonify
 from flask import Blueprint, app, render_template, request, session, redirect, url_for, flash, make_response, jsonify
 from models.models import db, Bot, User, Document, Lead, ScrapeJob, BotUI, Feedback
 from utils.mail_helper import is_valid_email, send_contact_email, send_auto_reply
+from extensions import cache
 import csv
 from datetime import datetime, timedelta
 import io
@@ -555,7 +556,22 @@ def super_admin_dashboard():
 
 @views_bp.route('/api/bot_avatar/<int:bot_id>')
 def api_bot_avatar(bot_id):
+    # Cached for 5 min — this endpoint is hit on every page load.
+    # We store "" to represent "no avatar" so misses are cached too
+    # (avoids re-querying the DB for bots that have no avatar).
+    cache_key = f"bot_avatar_{bot_id}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        if cached == "":
+            return jsonify({"error": "No avatar"}), 404
+        return jsonify({"avatar": cached})
+
     bot = Bot.query.get(bot_id)
+    avatar = None
     if bot and hasattr(bot, 'ui_settings') and bot.ui_settings and bot.ui_settings.avatar_base64:
-        return jsonify({"avatar": bot.ui_settings.avatar_base64})
+        avatar = bot.ui_settings.avatar_base64
+
+    cache.set(cache_key, avatar or "", timeout=300)
+    if avatar:
+        return jsonify({"avatar": avatar})
     return jsonify({"error": "No avatar"}), 404
