@@ -42,16 +42,34 @@ function toggleChat() {
   const spriteContainer = document.getElementById("sprite-ask-container");
 
   if (chatPopup.classList.contains("hidden")) {
+    // 1. Make it physically present first
     chatPopup.classList.remove("hidden");
     if (spriteContainer) spriteContainer.classList.add("chat-open");
 
-    // TRIGGER GATEKEEPER MODE
+    // 2. Animate it in smoothly
+    gsap.fromTo(
+      chatPopup,
+      { opacity: 0, scale: 0.8, y: 30 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.2)" },
+    );
+
     if (window.LEAD_TIMING === "gatekeeper" && !leadCaptured) {
       renderGatekeeperForm();
     }
   } else {
-    chatPopup.classList.add("hidden");
-    if (spriteContainer) spriteContainer.classList.remove("chat-open");
+    // 1. Animate it out smoothly
+    gsap.to(chatPopup, {
+      opacity: 0,
+      scale: 0.8,
+      y: 30,
+      duration: 0.3,
+      ease: "power2.in",
+      onComplete: () => {
+        // 2. Hide it fully ONLY after the animation finishes
+        chatPopup.classList.add("hidden");
+        if (spriteContainer) spriteContainer.classList.remove("chat-open");
+      },
+    });
   }
 }
 

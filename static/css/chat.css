@@ -29,13 +29,32 @@
   pointer-events: auto;
 }
 
+#chat-open-btn {
+  /* Keep your existing pill button styles, but make sure this transition is there: */
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform;
+}
+
+#chat-open-btn {
+  /* Keep your existing pill button styles, but make sure this transition is there: */
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform;
+}
+
 #chat-open-btn:hover {
   background: rgba(255, 255, 255, 0.6);
   transform: translateY(-3px);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
 }
 
-/* 2. THE CHAT POPUP WINDOW */
+#chat-open-btn:active {
+  transform: scale(0.95) !important; /* Satisfying click depression */
+}
+
+#chat-open-btn:active {
+  transform: scale(0.95) !important; /* Satisfying click depression */
+}
+
 #chat-window-popup {
   width: 380px;
   height: 580px;
@@ -48,8 +67,8 @@
   flex-direction: column;
   margin-bottom: 20px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  transform-origin: bottom right;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: rotate(0deg) scale(1) translateY(0) !important;
+  transition: opacity 0.3s ease;
   pointer-events: auto;
 }
 
@@ -205,7 +224,7 @@
 #bot-sprite {
   width: 200px;
   height: 110px;
-  background-image: url("/static/images/spritesheet.png");
+  background-image: url("/static/images/spritesheet.webp");
   background-size: 80000px 110px;
   margin: 0 auto -5px auto;
   pointer-events: auto;
@@ -240,14 +259,16 @@
 
 #chat-window-popup {
   pointer-events: auto !important;
-  transition: all 0.3s ease;
+  will-change: transform, opacity, visibility;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1) !important;
+  transform-origin: bottom right;
 }
 
 #chat-window-popup.hidden {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
-  transform: scale(0.9) translateY(20px);
+  transform: scale(0.85) translateY(20px) rotate(2deg) !important;
 }
 /* =========================================
    MOBILE RESPONSIVE TWEAKS (PHONES ONLY)

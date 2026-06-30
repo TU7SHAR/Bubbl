@@ -19,6 +19,8 @@
     transition: all 0.3s ease;
     position: relative; /* Required for the overlay to position correctly */
     overflow: hidden; /* Keeps overlay inside the rounded corners */
+    filter: none !important;
+    -webkit-filter: none !important;
   }
 
   .chat-header { background: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.05) !important; }
@@ -66,6 +68,7 @@
   .chat-header-title { color: #f9fafb !important; }
   .chat-input-wrapper { background: rgba(0,0,0,0.2) !important; border-color: rgba(255,255,255,0.1) !important; }
   #user-input { color: #f9fafb !important; }
+  #user-input::placeholder { color: rgba(255, 255, 255, 0.5) !important; }
   .chat-close-x { color: #fff !important; }
   {% endif %}
 
