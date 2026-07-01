@@ -17,6 +17,7 @@ User=root
 Group=root
 WorkingDirectory=/root/Bubbl
 Environment="PATH=/root/Bubbl/myenv/bin:/usr/local/bin:/usr/bin"
+Environment="PYTHONPATH=/root/Bubbl"
 
 # --- THE COMMAND ---
 # gevent pool: 1 process, 20 concurrent I/O tasks (scraping + uploads)
