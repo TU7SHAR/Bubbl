@@ -20,6 +20,7 @@ app.config.from_object(Config)
 ALLOWED_ORIGINS = [
     "https://bubbl.ooo",
     "https://www.bubbl.ooo",
+    "http://168.144.123.62:8080",
     os.getenv('HOST_URL', 'http://localhost:5000'),
 ]
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}})
