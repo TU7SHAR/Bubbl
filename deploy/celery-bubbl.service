@@ -1,0 +1,44 @@
+# =========================================
+# SYSTEMD SERVICE — CELERY WORKER (BUBBL.OOO)
+# =========================================
+# Install: sudo cp deploy/celery-bubbl.service /etc/systemd/system/
+# Enable:  sudo systemctl daemon-reload && sudo systemctl enable celery-bubbl
+# Start:   sudo systemctl start celery-bubbl
+# Logs:    sudo journalctl -u celery-bubbl -f
+
+[Unit]
+Description=Celery Worker for Bubbl.ooo (gevent pool)
+After=network.target redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/Bubbl
+Environment="PATH=/root/Bubbl/myenv/bin:/usr/local/bin:/usr/bin"
+
+# --- THE COMMAND ---
+# gevent pool: 1 process, 20 concurrent I/O tasks (scraping + uploads)
+# Uses ~150MB RAM total — very efficient for network-bound work
+ExecStart=/root/Bubbl/myenv/bin/celery -A celery_app.celery worker \
+    --pool=gevent \
+    --concurrency=20 \
+    --loglevel=info \
+    --max-tasks-per-child=200
+
+# --- RESTART POLICY ---
+Restart=always
+RestartSec=5
+
+# --- MEMORY SAFETY ---
+# Kill the worker if it bloats past 250MB (prevents OOM on 1GB droplet)
+MemoryMax=250M
+
+# --- LOGGING ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=celery-bubbl
+
+[Install]
+WantedBy=multi-user.target
