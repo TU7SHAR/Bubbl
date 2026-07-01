@@ -12,12 +12,12 @@ export let options = {
 
 export default function () {
   // Test homepage
-  let res = http.get("https://coral-app-jbybo.ondigitalocean.app/");
+  let res = http.get("http://168.144.123.62:8080/");
   check(res, { "homepage 200": (r) => r.status === 200 });
 
   // Test chat API
   let chatRes = http.post(
-    "https://coral-app-jbybo.ondigitalocean.app/api/chat",
+    "http://168.144.123.62:8080/api/chat",
     JSON.stringify({ message: "hello", bot_id: 12, history: [] }),
     { headers: { "Content-Type": "application/json" } },
   );
