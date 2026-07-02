@@ -33,3 +33,8 @@ class Config:
     
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
+    
+    # --- ANALYTICS ---
+    GA4_MEASUREMENT_ID = os.getenv('GA4_MEASUREMENT_ID')       # e.g. G-XXXXXXXXXX
+    META_PIXEL_ID = os.getenv('META_PIXEL_ID')                 # e.g. 1234567890
+    CLARITY_ID = os.getenv('CLARITY_ID')                       # e.g. abcdef123

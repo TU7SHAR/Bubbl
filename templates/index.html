@@ -318,6 +318,7 @@ async function submitWaitlist() {
             document.getElementById('waitlistSuccess').style.display = 'block';
             document.getElementById('waitlistError').style.display = 'none';
             if (typeof gtag !== 'undefined') gtag('event', 'waitlist_signup', { 'event_category': 'engagement', 'event_label': window.location.pathname });
+            if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackWaitlist();
         } else {
             throw new Error('Failed');
         }

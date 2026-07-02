@@ -15,6 +15,10 @@ import psutil
 from flask import send_from_directory, current_app
 views_bp = Blueprint('views_bp', __name__)
 
+@views_bp.route('/coming-soon')
+def coming_soon():
+    return render_template('coming_soon.html')
+
 @views_bp.route('/roadmap')
 def roadmap():
     return render_template('roadmap.html')

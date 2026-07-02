@@ -188,5 +188,21 @@
     regPasswordInput.setAttribute('type', isPassword ? 'text' : 'password');
     regToggleBtn.textContent = isPassword ? 'Hide' : 'Show';
   });
+
+  // --- UTM FORWARDING: If UTMs were stored from a landing page, append to URL ---
+  (function() {
+    const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+    const currentParams = new URLSearchParams(window.location.search);
+    let hasNew = false;
+    utmKeys.forEach(function(key) {
+      if (!currentParams.has(key)) {
+        const stored = localStorage.getItem(key);
+        if (stored) { currentParams.set(key, stored); hasNew = true; }
+      }
+    });
+    if (hasNew && !window.location.search.includes('utm_')) {
+      window.history.replaceState({}, '', window.location.pathname + '?' + currentParams.toString());
+    }
+  })();
 </script>
 {% endblock %}

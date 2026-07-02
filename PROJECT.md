@@ -14,20 +14,32 @@
 │  Landing → Register → Dashboard → Create Bot → Embed/Chat   │
 │     ↓          ↓          ↓           ↓            ↓        │
 │  Static     SMTP OTP   Session     FormData     iframe+JS    │
+│                                                              │
+│  Analytics: GA4 + Meta Pixel + Microsoft Clarity             │
+│  UTM tracking: localStorage → session → GA4 attribution     │
 └───────────────────────────┬──────────────────────────────────┘
                             │ HTTPS
 ┌───────────────────────────▼──────────────────────────────────┐
 │                   GUNICORN (gthread)                           │
-│  2 workers × 4 threads = 8 concurrent slots                   │
+│  2 workers × 12 threads = 24 concurrent slots                 │
 │  preload_app=True · timeout=120s · max_requests=1000          │
 └───────┬──────────────────┬──────────────────┬────────────────┘
         │                  │                  │
 ┌───────▼──────┐  ┌───────▼──────┐  ┌───────▼──────────┐
-│  PostgreSQL  │  │  Gemini AI   │  │  Firecrawl API   │
-│  (Supabase/  │  │  • Chat      │  │  • URL Scraping  │
-│   DO Managed │  │  • FileSearch│  │  • Markdown Out   │
-│   or Local)  │  │  • VectorDB  │  │                   │
-└──────────────┘  └──────────────┘  └───────────────────┘
+│  NeonDB      │  │  Gemini AI   │  │  Redis (local)   │
+│  PostgreSQL  │  │  • Chat      │  │  • Cache         │
+│  (free tier) │  │  • FileSearch│  │  • Rate limiter  │
+│              │  │  • VectorDB  │  │  • Celery broker │
+└──────────────┘  └──────────────┘  └────────┬─────────┘
+                                             │
+                                    ┌────────▼─────────┐
+                                    │  Celery Worker   │
+                                    │  gevent pool     │
+                                    │  20 concurrent   │
+                                    │  • Scraping      │
+                                    │  • Gemini upload │
+                                    │  • Auto-retry    │
+                                    └──────────────────┘
 ```
 
 ### Request Flow — Chat (Embed Widget)
@@ -52,16 +64,17 @@ User types message in iframe widget
 Admin clicks "Start Scrape" with URL + options
   → POST /admin/api/scrape/start
     → ScrapeJob created in DB (status=pending)
-    → threading.Thread spawned inside gunicorn worker
+    → Celery task queued via Redis: async_scrape_task.delay(job_id, url, bot_id)
     → Immediate JSON response: {job_id}
-  → Thread runs async_scrape_task():
+  → Celery worker picks up task (separate process):
     → Spider/Sitemap/Single URL resolution
     → For each URL:
       → Firecrawl API → markdown content
       → Save .md file to /uploads/
       → Document record in DB
-      → upload_to_gemini() → polls until indexed (time.sleep(5) loop)
+      → upload_to_gemini() → polls until indexed
     → Job status updated to completed/failed
+    → On failure: auto-retry up to 3 times (60s delay)
   → Frontend polls /admin/api/scrape/status/{job_id} every 2-3s
 ```
 
@@ -322,6 +335,54 @@ ADMIN VIEWS LEADS (/leads)
 
 ---
 
+## Analytics & Funnel Tracking
+
+### Tools Installed
+
+| Tool | Purpose | Env Var | Free? |
+|------|---------|---------|-------|
+| **Google Analytics 4** | Page views, user flow, conversion events, traffic attribution | `GA4_MEASUREMENT_ID` | Yes |
+| **Meta Pixel** | Facebook/Instagram ad conversion tracking | `META_PIXEL_ID` | Yes |
+| **Microsoft Clarity** | Heatmaps, session recordings, rage clicks | `CLARITY_ID` | Yes |
+
+All tools are gated behind env vars — if the var isn't set, the script doesn't load. Zero performance impact when disabled.
+
+### Funnel Events Tracked
+
+| Event | Trigger | GA4 Event | Meta Pixel Event | File |
+|-------|---------|-----------|-----------------|------|
+| Page View | Every page load | Automatic | `PageView` | `base.html` |
+| Registration | OTP verified, first dashboard load | `sign_up` (with UTM data) | `CompleteRegistration` | `dashboard.html` |
+| Bot Created | Pipeline form success | `bot_created` | `CustomizeProduct` | `_chatbot_scripts.html` |
+| Embed Widget | User visits integrate page | `embed_widget` | `StartTrial` | `integrate.html` |
+| Lead Captured | Lead form submitted OR conversational lead extracted | `lead_captured` | `Lead` | `chat.js` |
+| Plan Click | User clicks paid plan button | `plan_click` | `InitiateCheckout` | `pricing.html` |
+| Plan Interest | User lands on coming-soon page | `plan_interest` | `InitiateCheckout` | `coming_soon.html` |
+| Waitlist Signup | Waitlist form submitted | `waitlist_signup` | `Subscribe` | `index.html` |
+
+### UTM Attribution Flow
+
+```
+User clicks ad: bubbl.ooo/?utm_source=google&utm_medium=cpc&utm_campaign=launch
+  → analytics.js saves UTMs to localStorage (survives page navigation)
+  → User browses site, clicks "Register"
+  → register.html appends stored UTMs to URL via history.replaceState
+  → Flask register route captures utm_* from request.args → session
+  → After OTP verification, dashboard fires sign_up event with UTM data
+  → GA4 attributes this registration to the original ad campaign
+```
+
+### Implementation Files
+
+| File | What it does |
+|------|-------------|
+| `static/js/analytics.js` | BubblAnalytics utility object + UTM localStorage persistence |
+| `templates/base.html` | Loads GA4, Meta Pixel, Clarity scripts (conditional on env vars) |
+| `config.py` | Reads `GA4_MEASUREMENT_ID`, `META_PIXEL_ID`, `CLARITY_ID` from env |
+| `templates/coming_soon.html` | "Premium plans coming soon" page with conversion tracking |
+
+---
+
 ## Environment Variables
 
 | Variable | Required | Free? | Purpose |
@@ -341,7 +402,11 @@ ADMIN VIEWS LEADS (/leads)
 | `SUPER_ADMIN_HASH` | No | — | bcrypt hash for super admin |
 | `PORT` | No | — | Gunicorn bind port (default 5000) |
 | `WEB_CONCURRENCY` | No | — | Gunicorn worker count (default 2) |
-| `GUNICORN_THREADS` | No | — | Threads per worker (default 4) |
+| `GUNICORN_THREADS` | No | — | Threads per worker (default 12) |
+| `REDIS_URL` | No | — | Redis connection (default redis://localhost:6379/0) |
+| `GA4_MEASUREMENT_ID` | No | Yes | Google Analytics 4 (e.g. G-XXXXXXXXXX) |
+| `META_PIXEL_ID` | No | Yes | Facebook/Meta Pixel ID |
+| `CLARITY_ID` | No | Yes | Microsoft Clarity project ID |
 
 ### Zero-Cost Stack
 
@@ -554,6 +619,7 @@ Bubbl/
 ├── static/
 │   ├── css/                       # 11 stylesheets (admin, auth, chat, dashboard, index, mobile, profile, super_admin, etc.)
 │   ├── js/
+│   │   ├── analytics.js          # Funnel events (GA4 + Pixel) + UTM localStorage persistence
 │   │   ├── chat.js               # Chat widget logic (send, receive, lead forms, typing indicator)
 │   │   ├── embed.js              # Embed script (creates iframe, auto-detects host)
 │   │   ├── script.js             # Global: form disabling, scrape polling, copy-to-clipboard
@@ -603,19 +669,23 @@ pip install -r requirements.txt    # All pinned versions
 | Component | Details |
 |-----------|---------|
 | **Server** | DigitalOcean Droplet, 1GB RAM, 1 vCPU, 25GB SSD |
-| **OS** | Ubuntu (latest LTS) |
-| **Process Manager** | systemd (gunicorn as service) |
-| **Web Server** | Gunicorn 25.1.0 (gthread worker class) |
-| **Database** | PostgreSQL (psycopg2-binary) |
-| **AI Model** | Google Gemini 3.1 Flash-Lite Preview |
+| **OS** | Ubuntu 24.04 LTS |
+| **Process Manager** | systemd (gunicorn + celery + redis as services) |
+| **Web Server** | Gunicorn 25.1.0 (gthread, 2 workers × 12 threads) |
+| **Task Queue** | Celery 5.4.0 (gevent pool, 20 concurrency) |
+| **Cache + Broker** | Redis 7.0 (local, 50MB cap, allkeys-lru) |
+| **Database** | NeonDB PostgreSQL (free tier, 20 connection limit) |
+| **AI Model** | Google Gemini 3.1 Flash-Lite Preview (free: 15 RPM, 500 RPD) |
 | **Vector Store** | Google Gemini File Search Stores |
 | **Scraping** | Firecrawl API (markdown extraction) |
 | **Email** | Gmail SMTP (500/day free) |
-| **Domain** | bubbl.ooo |
-| **SSL** | Let's Encrypt (via DO or nginx) |
-| **Monitoring** | None (print statements to stdout) |
+| **Analytics** | GA4 + Meta Pixel + Microsoft Clarity (all free) |
+| **Domain** | bubbl.ooo (pending DNS pointing) |
+| **SSL** | Pending (after domain configured) |
+| **Monitoring** | systemd journal logs |
 | **CI/CD** | None (manual git pull + restart) |
-| **Backups** | None configured |
+| **Backups** | NeonDB automatic (DB); None for server |
+| **Monthly Cost** | **$6/mo** |
 
 ---
 
@@ -623,18 +693,20 @@ pip install -r requirements.txt    # All pinned versions
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Celery + Redis (background tasks) | Planned | Move scraping out of gunicorn threads |
+| Celery + Redis (background tasks) | **DONE** ✅ | Scraping fully isolated, auto-retry |
+| Analytics (GA4 + Pixel + Clarity) | **DONE** ✅ | Full funnel tracking with UTM attribution |
+| Coming Soon page (paid plans) | **DONE** ✅ | Redirects from pricing, tracks plan interest |
 | WhatsApp Business API integration | Marketing only | Landing page mentions it, not implemented |
-| Payment / Billing (Razorpay) | Not started | Pricing page exists but no checkout |
+| Payment / Billing (Razorpay) | Not started | Pricing page exists, redirects to coming-soon |
 | Flow builder | Not started | Mentioned in Starter tier |
 | Human handoff | Not started | Mentioned in Growth tier |
 | CRM integration | Not started | Mentioned in Growth tier |
 | White-label | Not started | Mentioned in Pro tier |
 | API access | Not started | Mentioned in Pro tier |
 | Multi-language detection | Not started | Gemini handles natively, no explicit routing |
-| 30-day challenge / retention | Not started | No retention loop beyond dashboard |
 | Analytics beyond super_admin | Not started | No per-bot analytics for regular users |
-| File search in embed (user-facing) | Not started | Vector search is internal to Gemini |
+| Nginx + SSL | Pending | Waiting for domain DNS to be pointed |
+| Gemini paid tier | Pending | Current blocker: 15 RPM limits chat to ~5-7 users |
 
 ---
 
@@ -662,7 +734,8 @@ pip install -r requirements.txt    # All pinned versions
 ---
 
 *Last updated: July 2026*
-*Total routes: 35+ (20 page routes + 15 API endpoints)*
+*Total routes: 36+ (21 page routes + 15 API endpoints)*
 *Total models: 7 (Organization, User, Bot, BotUI, Document, ScrapeJob, Lead, Feedback)*
-*Total JS files: 5 (chat, embed, script, sprite, dashboard)*
-*Deployed on: DigitalOcean 1GB Droplet*
+*Total JS files: 6 (analytics, chat, embed, script, sprite, dashboard)*
+*Deployed on: DigitalOcean 1GB Droplet ($6/mo)*
+*Analytics: GA4 + Meta Pixel + Microsoft Clarity (all free)*

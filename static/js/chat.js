@@ -166,13 +166,11 @@ async function submitLeadForm(prefix) {
 
     const data = await response.json();
 
-    // 👇 ADDED LEAD ID CAPTURE HERE 👇
     if (data.lead_id) {
       window.BUBBL_LEAD_ID = data.lead_id;
+      // --- FUNNEL EVENT: Lead Captured ---
+      if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackLeadCaptured(window.EMBEDDED_BOT_ID || 'unknown');
     }
-    // 👆 ---------------------------- 👆
-
-    if (response.ok) {
       leadCaptured = true;
       if (prefix === "gk") {
         document.getElementById("gatekeeper-overlay").remove();
@@ -280,11 +278,11 @@ async function sendMessage() {
 
     const data = await response.json();
 
-    // 👇 ADDED LEAD ID CAPTURE HERE 👇
     if (data.lead_id) {
       window.BUBBL_LEAD_ID = data.lead_id;
+      // --- FUNNEL EVENT: Lead Captured via Conversation ---
+      if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackLeadCaptured(window.EMBEDDED_BOT_ID || 'unknown');
     }
-    // 👆 ---------------------------- 👆
 
     removeTypingIndicator();
 
