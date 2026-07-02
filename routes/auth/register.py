@@ -18,6 +18,14 @@ class RegistrationForm(FlaskForm):
 @auth_bp.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", methods=["POST"])  # Prevents registration spam
 def register():
+    # --- UTM CAPTURE: Save UTM params from URL into session ---
+    # Works when user lands on /register?utm_source=google&utm_medium=cpc&utm_campaign=launch
+    utm_params = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
+    for param in utm_params:
+        val = request.args.get(param)
+        if val:
+            session[param] = val
+
     form = RegistrationForm()
     if form.validate_on_submit():
         try:
@@ -85,6 +93,7 @@ def verify_otp():
             session['org_name'] = user.organization.name
             session['org_id'] = user.org_id
             session['role'] = user.role
+            session['just_registered'] = True
             session.pop('verify_email', None)
 
             flash(f"Account verified successfully! Welcome to {{config.COMPANY_NAME_FIRST}}.{{config.COMPANY_LAST_NAME}}", "success")

@@ -554,6 +554,8 @@
       }
       if (data.success) {
           createdBotId = data.bot_id;
+          // --- FUNNEL EVENT: Bot Created ---
+          if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackBotCreated(document.getElementById('bot_name').value);
           if (data.logs && data.logs.length > 0) {
               data.logs.forEach(log => {
                   if (log.includes("[Error]")) addLogLine(log, "#ef4444");

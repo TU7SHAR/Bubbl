@@ -407,6 +407,9 @@
       }, 2000);
     });
   }
+
+  // --- FUNNEL EVENT: User visited embed/integrate page ---
+  if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackEmbed('{{ bot.id }}');
 </script>
 
 {% endblock %}

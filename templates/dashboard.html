@@ -145,6 +145,21 @@ function toggleBotMenu(event, menuId) {
     document.getElementById(menuId).classList.toggle('show');
 }
 
+// --- FUNNEL EVENT: Registration Complete ---
+{% if session.pop('just_registered', None) %}
+if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackRegistration();
+if (typeof gtag !== 'undefined') {
+  gtag('event', 'sign_up', {
+    method: 'email',
+    utm_source: '{{ session.pop("utm_source", "") }}',
+    utm_medium: '{{ session.pop("utm_medium", "") }}',
+    utm_campaign: '{{ session.pop("utm_campaign", "") }}',
+    utm_term: '{{ session.pop("utm_term", "") }}',
+    utm_content: '{{ session.pop("utm_content", "") }}'
+  });
+}
+{% endif %}
+
 window.onclick = function(event) {
     if (!event.target.matches('.dots-btn') && !event.target.closest('.dots-btn')) {
         document.querySelectorAll('.dropdown-window').forEach(m => m.classList.remove('show'));

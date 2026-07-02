@@ -100,7 +100,7 @@
                 <li>Basic analytics</li>
                 <li>Lead capture</li>
             </ul>
-            <a href="{{ url_for('auth.register') }}" class="btn-price outlined">Start Trial</a>
+            <a href="{{ url_for('views_bp.coming_soon', plan='starter') }}" class="btn-price outlined" onclick="trackPlanClick('starter')">Start Trial</a>
         </div>
     </div>
 
@@ -119,7 +119,7 @@
                 <li>Full analytics dashboard</li>
                 <li>Priority support</li>
             </ul>
-            <a href="{{ url_for('auth.register') }}" class="btn-price filled">Start Trial</a>
+            <a href="{{ url_for('views_bp.coming_soon', plan='growth') }}" class="btn-price filled" onclick="trackPlanClick('growth')">Start Trial</a>
         </div>
     </div>
 
@@ -137,7 +137,7 @@
                 <li>Advanced analytics</li>
                 <li>Custom integrations</li>
             </ul>
-            <a href="{{ url_for('auth.register') }}" class="btn-price outlined">Start Trial</a>
+            <a href="{{ url_for('views_bp.coming_soon', plan='pro') }}" class="btn-price outlined" onclick="trackPlanClick('pro')">Start Trial</a>
         </div>
     </div>
 </div>
@@ -166,5 +166,14 @@
 <script>
 const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');});},{threshold:.08});
 document.querySelectorAll('.reveal').forEach(e=>obs.observe(e));
+
+function trackPlanClick(plan) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'plan_click', { 'event_category': 'monetization', 'event_label': plan, 'value': plan === 'starter' ? 499 : plan === 'growth' ? 1499 : 4999 });
+  }
+  if (typeof fbq !== 'undefined') {
+    fbq('track', 'InitiateCheckout', { content_name: plan });
+  }
+}
 </script>
 {% endblock %}
