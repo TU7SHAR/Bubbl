@@ -12,14 +12,14 @@ bind = f"0.0.0.0:{os.environ.get('PORT', '5000')}"
 backlog = 2048
 
 # --- WORKERS ---
-# Scale workers to the instance. Small dynos (512MB-1GB) can't run 8 workers
-# without getting OOM-killed ("container terminated").
-# Override per-instance with the WEB_CONCURRENCY env var.
-#   - 512MB dyno  -> WEB_CONCURRENCY=2
-#   - 1GB  dyno   -> WEB_CONCURRENCY=3
-#   - 2GB+ server -> WEB_CONCURRENCY=8
+# Optimized for 1GB VPS with Celery handling background tasks.
+# All gunicorn slots are now dedicated to serving web requests (chat, pages).
+#   - 1GB VPS  -> 2 workers × 12 threads = 24 concurrent slots
+#   - 2GB VPS  -> 3 workers × 12 threads = 36 slots
+#   - 4GB VPS  -> 4 workers × 12 threads = 48 slots
+# Override per-instance with WEB_CONCURRENCY / GUNICORN_THREADS env vars.
 workers = int(os.environ.get('WEB_CONCURRENCY', 2))
-threads = int(os.environ.get('GUNICORN_THREADS', 4))
+threads = int(os.environ.get('GUNICORN_THREADS', 12))
 worker_class = "gthread"
 
 # --- TIMEOUTS ---

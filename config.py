@@ -10,17 +10,17 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
-        "pool_recycle": 300,       # Recycle connections every 5 min (was 30s — way too aggressive)
-        "pool_timeout": 30,        # Wait up to 30s for a connection (was 10s)
-        "pool_size": 20,           # 20 persistent connections (was default 5)
-        "max_overflow": 30,        # Allow 30 extra connections during spikes (total max: 50)
+        "pool_recycle": 300,       # Recycle connections every 5 min
+        "pool_timeout": 20,        # Wait up to 20s for a connection
+        "pool_size": 5,            # 5 per process (gunicorn×2 + celery×1 = 15 total, under NeonDB free 20 limit)
+        "max_overflow": 3,         # Allow 3 extra during spikes (max 8 per process, 24 total — brief bursts OK)
     }
     
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
     SCRAPE_FOLDER = os.path.join(basedir, 'scraped_docs') 
   
   
-    # HOST_URL = os.getenv('HOST_URL', 'https://coral-app-jbybo.ondigitalocean.app/')
+    # HOST_URL = os.getenv('HOST_URL', 'http://168.144.123.62:8080/')
     HOST_URL = os.getenv('HOST_URL')
   
     COMPANY_NAME_FIRST = os.getenv('COMPANY_NAME_FRONT')

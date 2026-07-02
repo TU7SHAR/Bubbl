@@ -1,7 +1,6 @@
 import os
 import uuid
 import json
-import threading
 import base64
 from flask import request, redirect, url_for, flash, session, render_template, jsonify, current_app
 from werkzeug.utils import secure_filename 
@@ -11,7 +10,7 @@ from bot.cloud import upload_to_gemini, delete_from_gemini, create_dynamic_store
 from routes.auth.decorators import admin_required
 from extensions import cache
 from . import admin_bp
-from .scrape_managment import async_scrape_task
+from tasks.scrape_tasks import async_scrape_task
 
 
 def invalidate_bot_cache(bot_id):
@@ -154,9 +153,8 @@ def create_pipeline():
         db.session.add(new_job)
         db.session.flush() 
 
-        app_obj = current_app._get_current_object()
-        thread = threading.Thread(target=async_scrape_task, args=(app_obj, new_job.id, url_to_scrape, new_bot.id, use_spider))
-        thread.start()
+        # Queue scrape in Celery (runs in separate worker process)
+        async_scrape_task.delay(new_job.id, url_to_scrape, new_bot.id, use_spider)
 
     db.session.commit()    
     

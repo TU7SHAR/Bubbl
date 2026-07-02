@@ -11,7 +11,7 @@
   }
 
   // 2. Auto-detect the host URL
-  let hostUrl = "https://coral-app-jbybo.ondigitalocean.app"; // Fallback
+  let hostUrl = "http://168.144.123.62:8080"; // Fallback
   if (currentScript && currentScript.src) {
     const urlObj = new URL(currentScript.src);
     hostUrl = urlObj.origin;
