@@ -35,15 +35,15 @@ def how_to():
 
 @views_bp.route('/legal/privacy')
 def privacy():
-    return redirect(f"{MARKETING_SITE}/legal/privacy.html")
+    return render_template('legal/privacy.html')
 
 @views_bp.route('/legal/terms')
 def terms():
-    return redirect(f"{MARKETING_SITE}/legal/terms.html")
+    return render_template('legal/terms.html')
 
 @views_bp.route('/legal/refunds')
 def refunds():
-    return redirect(f"{MARKETING_SITE}/legal/refunds.html")
+    return render_template('legal/refunds.html')
 
 @views_bp.app_errorhandler(404)
 def page_not_found(e):
@@ -137,7 +137,7 @@ def features():
 
 @views_bp.route('/pricing')
 def pricing():
-    return redirect(f"{MARKETING_SITE}/pricing.html")
+    return render_template('pricing.html')
 
 @views_bp.route('/export_leads')
 def export_leads():
