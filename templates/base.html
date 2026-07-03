@@ -158,14 +158,14 @@
     <div class="content">
       <nav class="navbar" id="nav">
         <div class="nav-container">
-          <a href="{{ url_for('views_bp.index') }}" class="nav-logo bricolage">
+          <a href="{% if session.get('user_id') %}{{ url_for('views_bp.dashboard') }}{% else %}https://bubbl.ooo{% endif %}" class="nav-logo bricolage">
             {{config.COMPANY_NAME_FIRST}}<span class="text-orange">.{{config.COMPANY_LAST_NAME}}</span>
           </a>
 
           <div class="nav-menu">
             <div class="nav-links">
-              {# Case 1: User is logged in AND NOT on the marketing pages #}
-              {% if session.get('user_id') and request.path not in ['/', '/pricing', '/compare'] %}
+              {# Case 1: Logged-in user — show the app navigation #}
+              {% if session.get('user_id') %}
                 <a href="{{ url_for('views_bp.dashboard') }}" class="nav-link">Dashboard</a>
                 <a href="{{ url_for('admin_bp.create_pipeline') }}" class="nav-link">Create Bot</a>
                 <a href="{{ url_for('views_bp.leads_dashboard') }}" class="nav-link">Leads</a>
@@ -182,26 +182,21 @@
                   <span class="nav-link" style="color: var(--orange); font-weight: 800; cursor: default; pointer-events: none;">Edit Bot</span>
                 {% endif %}
 
-              {# Case 2: User is on Marketing pages (Home, Pricing, Compare) #}
+              {# Case 2: Not logged in (login/register pages) — link back to marketing site #}
               {% else %}
-                <a href="{{ url_for('views_bp.features') }}" class="nav-link">Features</a>
-                <a href="{{ url_for('views_bp.pricing') }}" class="nav-link">Pricing</a>
+                <a href="https://bubbl.ooo/features.html" class="nav-link">Features</a>
+                <a href="https://bubbl.ooo/pricing.html" class="nav-link">Pricing</a>
                 <div class="has-drop">
-                 <a href="{{ url_for('views_bp.compare') }}" class="nav-link">Compare</a>
+                 <a href="https://bubbl.ooo/compare/" class="nav-link">Compare</a>
                  <div class="drop">
-                   <a href="/compare/chatbase.html">vs Chatbase</a>
-                   <a href="/compare/tidio.html">vs Tidio</a>
-                   <a href="/compare/intercom.html">vs Intercom</a>
-                   <a href="/compare/gupshup.html">vs Gupshup</a>
-                   <a href="/compare/">View All &rarr;</a>
+                   <a href="https://bubbl.ooo/compare/chatbase.html">vs Chatbase</a>
+                   <a href="https://bubbl.ooo/compare/tidio.html">vs Tidio</a>
+                   <a href="https://bubbl.ooo/compare/intercom.html">vs Intercom</a>
+                   <a href="https://bubbl.ooo/compare/gupshup.html">vs Gupshup</a>
+                   <a href="https://bubbl.ooo/compare/">View All &rarr;</a>
                  </div>
                </div>
-                <a href="{{ url_for('views_bp.index') }}#how-to" class="nav-link">How It Works</a>
-                
-                {% if session.get('user_id') %}
-                  <a href="{{ url_for('views_bp.dashboard') }}" class="nav-link">Dashboard</a>
-                {% endif %}
-               
+                <a href="https://bubbl.ooo/how-to.html" class="nav-link">How It Works</a>
               {% endif %}
             </div>
             
@@ -235,32 +230,32 @@
         <div class="footer-container">
           <div class="footer-grid">
             <div class="footer-brand">
-              <a href="{{ url_for('views_bp.index') }}" class="nav-logo bricolage">{{config.COMPANY_NAME_FIRST}}<span class="text-orange">{{config.COMPANY_LAST_NAME}}</span></a>
+              <a href="https://bubbl.ooo" class="nav-logo bricolage">{{config.COMPANY_NAME_FIRST}}<span class="text-orange">{{config.COMPANY_LAST_NAME}}</span></a>
               <p class="footer-desc">AI chatbot platform for Indian SMBs. WhatsApp-native, no-code, and premium support.</p>
             </div>
 
             <div class="footer-col">
               <h4 class="bricolage">Product</h4>
-                <a href="{{ url_for('views_bp.features') }}">Features</a>
-              <a href="{{ url_for('views_bp.pricing') }}">Pricing</a>
-              <a href="{{ url_for('views_bp.roadmap') }}">Roadmap</a>
-              <a href="{{ url_for('views_bp.how_to') }}">How-To Guides</a>
+              <a href="https://bubbl.ooo/features.html">Features</a>
+              <a href="https://bubbl.ooo/pricing.html">Pricing</a>
+              <a href="https://bubbl.ooo/roadmap.html">Roadmap</a>
+              <a href="https://bubbl.ooo/how-to.html">How-To Guides</a>
             </div>
 
             <div class="footer-col">
               <h4 class="bricolage">Compare</h4>
-              <a href="{{ url_for('views_bp.compare', competitor='chatbase') }}">vs Chatbase</a>
-              <a href="{{ url_for('views_bp.compare', competitor='tidio') }}">vs Tidio</a>
-              <a href="{{ url_for('views_bp.compare', competitor='intercom') }}">vs Intercom</a>
-              <a href="{{ url_for('views_bp.compare', competitor='gupshup') }}">vs Gupshup</a>
-              <a href="{{ url_for('views_bp.compare') }}" style="color: var(--orange);">View All →</a>
+              <a href="https://bubbl.ooo/compare/chatbase.html">vs Chatbase</a>
+              <a href="https://bubbl.ooo/compare/tidio.html">vs Tidio</a>
+              <a href="https://bubbl.ooo/compare/intercom.html">vs Intercom</a>
+              <a href="https://bubbl.ooo/compare/gupshup.html">vs Gupshup</a>
+              <a href="https://bubbl.ooo/compare/" style="color: var(--orange);">View All →</a>
             </div>
 
             <div class="footer-col">
               <h4 class="bricolage">Legal</h4>
-              <a href="{{ url_for('views_bp.privacy') }}">Privacy Policy</a>
-              <a href="{{ url_for('views_bp.terms') }}">Terms of Service</a>
-              <a href="{{ url_for('views_bp.refunds') }}">Refund Policy</a>
+              <a href="https://bubbl.ooo/legal/privacy.html">Privacy Policy</a>
+              <a href="https://bubbl.ooo/legal/terms.html">Terms of Service</a>
+              <a href="https://bubbl.ooo/legal/refunds.html">Refund Policy</a>
             </div>
           </div>
 

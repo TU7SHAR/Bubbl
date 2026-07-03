@@ -11,9 +11,12 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                   CLIENT (Browser / Embed)                    │
 │                                                              │
-│  Landing → Register → Dashboard → Create Bot → Embed/Chat   │
-│     ↓          ↓          ↓           ↓            ↓        │
-│  Static     SMTP OTP   Session     FormData     iframe+JS    │
+│  bubbl.ooo (marketing) → app.bubbl.ooo/login → Dashboard    │
+│         ↓                      ↓                   ↓         │
+│  Separate site          SMTP OTP + Session     App only     │
+│                                                              │
+│  app.bubbl.ooo has NO marketing pages — root redirects to   │
+│  /dashboard (if logged in) or /login (if not).              │
 └───────────────────────────┬──────────────────────────────────┘
                             │ HTTPS
 ┌───────────────────────────▼──────────────────────────────────┐
@@ -137,15 +140,17 @@ ADMIN VIEWS LEADS (/leads)
 
 ## Pages
 
+> **NOTE (app-only split):** `app.bubbl.ooo` now serves ONLY the authenticated
+> application. All marketing/public pages live on the separate marketing site
+> `bubbl.ooo`. The routes below that previously rendered marketing templates
+> now **301-redirect to bubbl.ooo**. The old templates are preserved in
+> `templates/archive/` for reference.
+
+### Application Routes (served by app.bubbl.ooo)
+
 | Route | File | Auth | Purpose |
 |-------|------|------|---------|
-| `/` | `templates/index.html` | None | Landing page with hero, features, how-it-works, CTA |
-| `/features` | `templates/features.html` | None | Full feature list |
-| `/pricing` | `templates/pricing.html` | None | 4-tier pricing (Free/Starter/Growth/Pro) |
-| `/compare` | `templates/compare.html` | None | Competitor comparison hub |
-| `/compare/<name>` | `templates/compare_*.html` | None | Individual competitor pages |
-| `/how-to` | `templates/how_to.html` | None | User guides |
-| `/contact` | `templates/contact.html` | None | Contact form (SMTP) |
+| `/` | — | None | Redirects: logged in → `/dashboard`, else → `/login` |
 | `/login` | `templates/login.html` | None | Login + Super Admin bypass |
 | `/register` | `templates/register.html` | None | Signup + OTP flow |
 | `/dashboard` | `templates/dashboard.html` | Session | Bot cards + team management |
@@ -157,9 +162,20 @@ ADMIN VIEWS LEADS (/leads)
 | `/leads` | `templates/leads.html` | Session | Filterable lead table + CSV export |
 | `/profile` | `templates/profile.html` | Session | User profile + team member removal |
 | `/super_admin` | `templates/super_admin.html` | Super Admin | Platform-wide analytics + all bots/users |
-| `/legal/privacy` | `templates/legal/privacy.html` | None | Privacy policy |
-| `/legal/terms` | `templates/legal/terms.html` | None | Terms of service |
-| `/legal/refunds` | `templates/legal/refunds.html` | None | Refund policy |
+
+### Redirect Routes (→ bubbl.ooo marketing site)
+
+| Route | Redirects To |
+|-------|-------------|
+| `/features` | `https://bubbl.ooo/features.html` |
+| `/pricing` | `https://bubbl.ooo/pricing.html` |
+| `/compare`, `/compare/<name>` | `https://bubbl.ooo/compare/...` |
+| `/how-to` | `https://bubbl.ooo/how-to.html` |
+| `/roadmap` | `https://bubbl.ooo/roadmap.html` |
+| `/contact` | `https://bubbl.ooo/contact.html` |
+| `/legal/privacy` | `https://bubbl.ooo/legal/privacy.html` |
+| `/legal/terms` | `https://bubbl.ooo/legal/terms.html` |
+| `/legal/refunds` | `https://bubbl.ooo/legal/refunds.html` |
 
 ---
 
