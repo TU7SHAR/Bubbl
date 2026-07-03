@@ -96,7 +96,7 @@ def verify_otp():
             session['just_registered'] = True
             session.pop('verify_email', None)
 
-            flash(f"Account verified successfully! Welcome to {{config.COMPANY_NAME_FIRST}}.{{config.COMPANY_LAST_NAME}}", "success")
+            flash("Account verified successfully! Welcome to Bubbl.ooo", "success")
             return redirect(url_for('views_bp.dashboard'))
         else:
             flash("Invalid or expired verification code.", "error")

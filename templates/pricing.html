@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Pricing Plans | Bubbl.ooo{% endblock %}
+{% block og_title %}Pricing Plans | Bubbl.ooo{% endblock %}
+{% block og_description %}Simple, transparent pricing for AI chatbots. Start free, scale as you grow. Plans from ₹0 to ₹4,999/month.{% endblock %}
+
+{% block content %}
+<section class="pricing-hero" style="text-align:center; padding: 4rem 1.5rem 2rem;">
+  <h1 class="bricolage" style="font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; margin-bottom: 0.8rem;">
+    Simple pricing. <span style="color: var(--orange);">Powerful chatbots.</span>
+  </h1>
+  <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 560px; margin: 0 auto;">
+    Start free forever. Upgrade when you need more power. No hidden fees, cancel anytime.
+  </p>
+</section>
+
+<section class="pricing-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto 4rem; padding: 0 1.5rem;">
+
+  <!-- FREE -->
+  <div class="lg scroll-reveal" style="border: 1.5px solid rgba(232,114,42,0.12);">
+    <div class="lg-fx"></div>
+    <div class="lg-tint"></div>
+    <div class="lg-shine"></div>
+    <div class="lg-c" style="display:flex; flex-direction:column; height:100%;">
+      <h3 class="bricolage" style="font-size:1.3rem; font-weight:700; margin-bottom:0.3rem;">Free</h3>
+      <div style="margin-bottom:1.2rem;">
+        <span style="font-size:2.2rem; font-weight:800;">₹0</span>
+        <span style="color:var(--text-muted); font-size:0.9rem;">/forever</span>
+      </div>
+      <ul style="list-style:none; padding:0; margin-bottom:auto; display:flex; flex-direction:column; gap:0.6rem; font-size:0.92rem; color:var(--text-secondary);">
+        <li>✓ 1 chatbot</li>
+        <li>✓ 200 messages/month</li>
+        <li>✓ WhatsApp + website</li>
+        <li>✓ Basic AI</li>
+        <li>✓ No expiry</li>
+      </ul>
+      <a href="{{ url_for('auth.register') }}" class="btn-primary" style="display:block; text-align:center; margin-top:1.5rem; text-decoration:none; border-radius:12px;">Start Free</a>
+    </div>
+  </div>
+
+  <!-- STARTER -->
+  <div class="lg scroll-reveal" style="border: 1.5px solid rgba(232,114,42,0.12);">
+    <div class="lg-fx"></div>
+    <div class="lg-tint"></div>
+    <div class="lg-shine"></div>
+    <div class="lg-c" style="display:flex; flex-direction:column; height:100%;">
+      <h3 class="bricolage" style="font-size:1.3rem; font-weight:700; margin-bottom:0.3rem;">Starter</h3>
+      <div style="margin-bottom:1.2rem;">
+        <span style="font-size:2.2rem; font-weight:800;">₹499</span>
+        <span style="color:var(--text-muted); font-size:0.9rem;">/month</span>
+      </div>
+      <ul style="list-style:none; padding:0; margin-bottom:auto; display:flex; flex-direction:column; gap:0.6rem; font-size:0.92rem; color:var(--text-secondary);">
+        <li>✓ 2 chatbots</li>
+        <li>✓ 2,000 messages/month</li>
+        <li>✓ Flow builder</li>
+        <li>✓ Hindi + English AI</li>
+        <li>✓ Basic analytics</li>
+        <li>✓ Lead capture</li>
+      </ul>
+      <a href="#" onclick="openPaddleCheckout('starter'); return false;" class="btn-primary" style="display:block; text-align:center; margin-top:1.5rem; text-decoration:none; border-radius:12px;">Get Starter</a>
+    </div>
+  </div>
+
+  <!-- GROWTH (Most Popular) -->
+  <div class="lg scroll-reveal" style="border: 2px solid var(--orange); box-shadow: 0 8px 32px rgba(232,114,42,0.15);">
+    <div class="lg-fx"></div>
+    <div class="lg-tint"></div>
+    <div class="lg-shine"></div>
+    <div class="lg-c" style="display:flex; flex-direction:column; height:100%;">
+      <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.3rem;">
+        <h3 class="bricolage" style="font-size:1.3rem; font-weight:700;">Growth</h3>
+        <span style="background:var(--orange); color:#fff; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; text-transform:uppercase;">Most Popular</span>
+      </div>
+      <div style="margin-bottom:1.2rem;">
+        <span style="font-size:2.2rem; font-weight:800;">₹1,499</span>
+        <span style="color:var(--text-muted); font-size:0.9rem;">/month</span>
+      </div>
+      <ul style="list-style:none; padding:0; margin-bottom:auto; display:flex; flex-direction:column; gap:0.6rem; font-size:0.92rem; color:var(--text-secondary);">
+        <li>✓ 5 chatbots</li>
+        <li>✓ 10,000 messages/month</li>
+        <li>✓ All Indian languages</li>
+        <li>✓ Human handoff + CRM lite</li>
+        <li>✓ Full analytics</li>
+        <li>✓ Lead gen & qualification</li>
+        <li>✓ Priority support</li>
+      </ul>
+      <a href="#" onclick="openPaddleCheckout('growth'); return false;" class="btn-primary" style="display:block; text-align:center; margin-top:1.5rem; text-decoration:none; border-radius:12px;">Get Growth</a>
+    </div>
+  </div>
+
+  <!-- PRO -->
+  <div class="lg scroll-reveal" style="border: 1.5px solid rgba(232,114,42,0.12);">
+    <div class="lg-fx"></div>
+    <div class="lg-tint"></div>
+    <div class="lg-shine"></div>
+    <div class="lg-c" style="display:flex; flex-direction:column; height:100%;">
+      <h3 class="bricolage" style="font-size:1.3rem; font-weight:700; margin-bottom:0.3rem;">Pro</h3>
+      <div style="margin-bottom:1.2rem;">
+        <span style="font-size:2.2rem; font-weight:800;">₹4,999</span>
+        <span style="color:var(--text-muted); font-size:0.9rem;">/month</span>
+      </div>
+      <ul style="list-style:none; padding:0; margin-bottom:auto; display:flex; flex-direction:column; gap:0.6rem; font-size:0.92rem; color:var(--text-secondary);">
+        <li>✓ Unlimited chatbots</li>
+        <li>✓ 50,000 messages/month</li>
+        <li>✓ White-label</li>
+        <li>✓ API access</li>
+        <li>✓ Advanced analytics</li>
+        <li>✓ Custom integrations</li>
+        <li>✓ Dedicated support</li>
+      </ul>
+      <a href="#" onclick="openPaddleCheckout('pro'); return false;" class="btn-primary" style="display:block; text-align:center; margin-top:1.5rem; text-decoration:none; border-radius:12px;">Get Pro</a>
+    </div>
+  </div>
+
+</section>
+
+<!-- Global Pricing Comparison Table -->
+<section style="max-width: 900px; margin: 0 auto 4rem; padding: 0 1.5rem;">
+  <h2 class="bricolage scroll-reveal" style="font-size: 1.8rem; font-weight: 700; text-align: center; margin-bottom: 2rem;">
+    Global Pricing Comparison
+  </h2>
+  <div class="lg scroll-reveal" style="overflow-x: auto;">
+    <div class="lg-fx"></div>
+    <div class="lg-tint"></div>
+    <div class="lg-shine"></div>
+    <div class="lg-c" style="padding: 0;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.9rem; min-width:600px;">
+        <thead>
+          <tr style="border-bottom: 1.5px solid rgba(0,0,0,0.08);">
+            <th style="text-align:left; padding:1rem 1.2rem; font-weight:700;">Plan</th>
+            <th style="text-align:center; padding:1rem 1.2rem; font-weight:700;">INR (₹)</th>
+            <th style="text-align:center; padding:1rem 1.2rem; font-weight:700;">USD ($)</th>
+            <th style="text-align:center; padding:1rem 1.2rem; font-weight:700;">Messages</th>
+            <th style="text-align:center; padding:1rem 1.2rem; font-weight:700;">Chatbots</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
+            <td style="padding:0.8rem 1.2rem; font-weight:600;">Free</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">₹0</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">$0</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">200/mo</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">1</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
+            <td style="padding:0.8rem 1.2rem; font-weight:600;">Starter</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">₹499</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">$6</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">2,000/mo</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">2</td>
+          </tr>
+          <tr style="border-bottom: 1px solid rgba(0,0,0,0.04); background: rgba(232,114,42,0.04);">
+            <td style="padding:0.8rem 1.2rem; font-weight:600; color:var(--orange);">Growth</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">₹1,499</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">$18</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">10,000/mo</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">5</td>
+          </tr>
+          <tr>
+            <td style="padding:0.8rem 1.2rem; font-weight:600;">Pro</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">₹4,999</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">$60</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">50,000/mo</td>
+            <td style="text-align:center; padding:0.8rem 1.2rem;">Unlimited</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p style="text-align:center; color:var(--text-muted); font-size:0.82rem; margin-top:0.8rem;">
+    USD prices are approximate. All payments processed securely via Paddle.
+  </p>
+</section>
+
+<script>
+// Scroll Reveal Observer
+document.addEventListener('DOMContentLoaded', function() {
+  const revealElements = document.querySelectorAll('.scroll-reveal');
+
+  const revealObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  revealElements.forEach(function(el) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    revealObserver.observe(el);
+  });
+});
+
+// Paddle Checkout Placeholder
+function openPaddleCheckout(planName) {
+  alert('Paddle checkout coming soon for: ' + planName);
+}
+</script>
+{% endblock %}

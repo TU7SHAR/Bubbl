@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Refund Policy | Bubbl.ooo{% endblock %}
+{% block og_title %}Refund Policy | Bubbl.ooo{% endblock %}
+{% block og_description %}Bubbl.ooo refund policy. 7-day refund eligibility, cancellation terms, and how to request a refund.{% endblock %}
+
+{% block content %}
+<section style="max-width: 780px; margin: 0 auto; padding: 3rem 1.5rem 4rem;">
+
+  <!-- Breadcrumb -->
+  <nav style="margin-bottom: 2rem; font-size: 0.85rem; color: var(--text-muted);">
+    <a href="/" style="color: var(--text-muted); text-decoration: none;">Home</a>
+    <span style="margin: 0 0.4rem;">/</span>
+    <a href="{{ url_for('views_bp.refunds') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">Refund Policy</a>
+  </nav>
+
+  <div class="prose" style="line-height: 1.8; color: var(--text-secondary);">
+    <h1 class="bricolage" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">Refund Policy</h1>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;"><strong>Last updated:</strong> July 2026</p>
+
+    <p>We want you to be happy with Bubbl.ooo. If things don't work out, here's how refunds work.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">1. Subscription Cancellation</h2>
+    <p>You can cancel your subscription at any time from your account settings. When you cancel:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Your paid features remain active until the end of your current billing period</li>
+      <li>Your account automatically downgrades to the Free plan after the period ends</li>
+      <li>Your chatbots and data are preserved (within Free plan limits)</li>
+      <li>No further charges will be made</li>
+    </ul>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">2. Refund Eligibility</h2>
+    <p>You are eligible for a full refund if:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>You request a refund <strong>within 7 days</strong> of your initial subscription purchase or renewal</li>
+      <li>You have not extensively used the paid features during that period</li>
+      <li>Your account is in good standing (no violations of our Terms of Service)</li>
+    </ul>
+    <p>After 7 days, refunds are generally not available, but we may consider exceptional circumstances on a case-by-case basis.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">3. How to Request a Refund</h2>
+    <p>To request a refund:</p>
+    <ol style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Email <a href="mailto:support@bubbl.ooo" style="color: var(--orange);">support@bubbl.ooo</a> with the subject line "Refund Request"</li>
+      <li>Include your registered email address and reason for the refund</li>
+      <li>Our team will review and respond within 2 business days</li>
+    </ol>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">4. Processing & Timeline</h2>
+    <p>All payments and refunds are processed through <strong>Paddle</strong>, our merchant of record. Once approved:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Paddle initiates the refund to your original payment method</li>
+      <li>Refunds typically appear within 5-10 business days, depending on your bank</li>
+      <li>You will receive a confirmation email from Paddle when the refund is processed</li>
+    </ul>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">5. Non-Refundable Items</h2>
+    <p>The following are not eligible for refunds:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Free plan accounts (no payment made)</li>
+      <li>Subscriptions older than 7 days from purchase/renewal date</li>
+      <li>Accounts terminated due to Terms of Service violations</li>
+      <li>Partial-month usage after cancellation (you retain access until period ends)</li>
+      <li>Add-on message packs or one-time purchases (if applicable)</li>
+    </ul>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">6. Disputes</h2>
+    <p>If you believe a charge was made in error, please contact us before filing a dispute with your bank. Chargebacks may result in account suspension. We are happy to resolve billing issues directly.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">7. Contact</h2>
+    <p>For refund requests or billing questions:</p>
+    <p><strong>Email:</strong> <a href="mailto:support@bubbl.ooo" style="color: var(--orange);">support@bubbl.ooo</a><br>
+    <strong>Platform:</strong> <a href="https://app.bubbl.ooo" style="color: var(--orange);">app.bubbl.ooo</a><br>
+    <strong>Response time:</strong> Within 2 business days</p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy | Bubbl.ooo{% endblock %}
+{% block og_title %}Privacy Policy | Bubbl.ooo{% endblock %}
+{% block og_description %}Learn how Bubbl.ooo collects, uses, and protects your data. GDPR-aware privacy practices.{% endblock %}
+
+{% block content %}
+<section style="max-width: 780px; margin: 0 auto; padding: 3rem 1.5rem 4rem;">
+
+  <!-- Breadcrumb -->
+  <nav style="margin-bottom: 2rem; font-size: 0.85rem; color: var(--text-muted);">
+    <a href="/" style="color: var(--text-muted); text-decoration: none;">Home</a>
+    <span style="margin: 0 0.4rem;">/</span>
+    <a href="{{ url_for('views_bp.privacy') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">Privacy Policy</a>
+  </nav>
+
+  <div class="prose" style="line-height: 1.8; color: var(--text-secondary);">
+    <h1 class="bricolage" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">Privacy Policy</h1>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;"><strong>Last updated:</strong> July 2026</p>
+
+    <p>Bubbl.ooo ("we", "our", "us") operates the platform at <strong>app.bubbl.ooo</strong>. This Privacy Policy explains how we collect, use, store, and protect your information when you use our services.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">1. Information We Collect</h2>
+    <p><strong>Account Data:</strong> When you register, we collect your name, email address, and password (hashed). If you upgrade to a paid plan, payment is handled by Paddle (our merchant of record) — we never store your card details.</p>
+    <p><strong>Bot & Content Data:</strong> Documents you upload, URLs you scrape, and chatbot configurations are stored to power your AI chatbots.</p>
+    <p><strong>Usage Data:</strong> We collect analytics data including pages visited, features used, device type, and IP address to improve our service.</p>
+    <p><strong>Chat Logs:</strong> Conversations between your chatbot and end-users are stored to provide conversation history and analytics.</p>
+    <p><strong>Lead Data:</strong> If you enable lead capture, end-user contact information (name, email, phone) is collected on your behalf.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">2. How We Use Your Data</h2>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Provide and maintain the Bubbl.ooo platform</li>
+      <li>Process your chatbot queries through AI models</li>
+      <li>Send transactional emails (account verification, billing)</li>
+      <li>Improve our services through aggregated analytics</li>
+      <li>Prevent abuse and ensure platform security</li>
+      <li>Comply with legal obligations</li>
+    </ul>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">3. Third-Party Services</h2>
+    <p>We use the following third-party services that may process your data:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li><strong>Google Gemini:</strong> Powers AI responses in your chatbots. Chat messages are sent to Google's API for processing.</li>
+      <li><strong>Firecrawl:</strong> Used for web scraping when you add URLs as knowledge sources.</li>
+      <li><strong>Paddle:</strong> Our merchant of record for payments. Paddle processes all billing, invoicing, and tax compliance.</li>
+      <li><strong>Google Analytics (GA4):</strong> Collects anonymized usage data for product improvement.</li>
+      <li><strong>Microsoft Clarity:</strong> Session recordings and heatmaps to improve UX (if enabled).</li>
+    </ul>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">4. Cookies</h2>
+    <p>We use essential cookies for session management (login state). We also use analytics cookies (Google Analytics, Meta Pixel) to understand usage patterns. You can disable non-essential cookies in your browser settings.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">5. Data Storage & Security</h2>
+    <p>Your data is stored on secure servers. We use industry-standard encryption (HTTPS/TLS) for data in transit and encrypt sensitive data at rest. Access to production systems is restricted to authorized personnel only.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">6. Data Retention</h2>
+    <p>We retain your account data for as long as your account is active. Chat logs are retained for 12 months by default (configurable on paid plans). Upon account deletion, we remove your personal data within 30 days, except where legal obligations require longer retention.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">7. Your Rights (GDPR)</h2>
+    <p>If you are in the EU/EEA, you have the right to:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li><strong>Access:</strong> Request a copy of your personal data</li>
+      <li><strong>Rectification:</strong> Correct inaccurate data</li>
+      <li><strong>Erasure:</strong> Request deletion of your data</li>
+      <li><strong>Portability:</strong> Export your data in a machine-readable format</li>
+      <li><strong>Objection:</strong> Object to processing for marketing purposes</li>
+    </ul>
+    <p>To exercise any of these rights, email us at <a href="mailto:support@bubbl.ooo" style="color: var(--orange);">support@bubbl.ooo</a>.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">8. Children's Privacy</h2>
+    <p>Bubbl.ooo is not intended for users under 16. We do not knowingly collect data from children. If you believe a child has provided us with personal data, contact us immediately.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">9. Changes to This Policy</h2>
+    <p>We may update this policy from time to time. We will notify registered users of material changes via email. Continued use of the platform after changes constitutes acceptance.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">10. Contact</h2>
+    <p>For privacy-related questions or requests:</p>
+    <p><strong>Email:</strong> <a href="mailto:support@bubbl.ooo" style="color: var(--orange);">support@bubbl.ooo</a><br>
+    <strong>Platform:</strong> <a href="https://app.bubbl.ooo" style="color: var(--orange);">app.bubbl.ooo</a></p>
+  </div>
+</section>
+{% endblock %}
