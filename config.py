@@ -33,6 +33,12 @@ class Config:
     
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
+
+    # --- PADDLE (Payment Gateway) ---
+    PADDLE_API_KEY = os.getenv('PADDLE_API_KEY')
+    PADDLE_WEBHOOK_SECRET = os.getenv('PADDLE_WEBHOOK_SECRET')
+    PADDLE_ENVIRONMENT = os.getenv('PADDLE_ENVIRONMENT', 'sandbox')  # 'sandbox' or 'production'
+    PADDLE_CLIENT_TOKEN = os.getenv('PADDLE_CLIENT_TOKEN')  # For frontend Paddle.js
     
     # --- ANALYTICS ---
     GA4_MEASUREMENT_ID = os.getenv('GA4_MEASUREMENT_ID')       # e.g. G-XXXXXXXXXX

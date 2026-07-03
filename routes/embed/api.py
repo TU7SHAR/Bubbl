@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, session, current_app
 from bot.chat import get_response_from_gemini
 from models.models import Bot, Lead, db
 from extensions import limiter, cache
+from utils.plan_limits import check_message_limit, increment_message_count
 
 api_bp = Blueprint('api_bp', __name__)
 
@@ -126,6 +127,15 @@ def chat():
         bot_cfg = get_bot_config(bot_id)
         if not bot_cfg["exists"]:
             return jsonify({"error": "Invalid Bot ID."})
+
+        # --- PLAN LIMIT CHECK ---
+        # Find which org owns this bot to check their message quota
+        from models.models import Bot as BotModel
+        bot_record = BotModel.query.get(bot_id)
+        if bot_record:
+            allowed, remaining, limit = check_message_limit(bot_record.org_id)
+            if not allowed:
+                return jsonify({"response": "This chatbot has reached its monthly message limit. Please ask the owner to upgrade their plan.", "lead_id": None})
 
         ai_prompt = bot_cfg["system_prompt"] or "You are a helpful assistant."
         timing = bot_cfg["lead_capture_timing"]
@@ -258,6 +268,10 @@ def chat():
                 reply = re.sub(r'\s*\[\[LEAD:.*?\]\]\s*', '', reply).strip()
 
         # Return lead_id so frontend can store it
+        # Increment message count for the org
+        if bot_record:
+            increment_message_count(bot_record.org_id)
+
         return jsonify({"response": reply, "lead_id": lead_id})
 
     except Exception as e:

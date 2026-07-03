@@ -100,7 +100,7 @@
                 <li>Basic analytics</li>
                 <li>Lead capture</li>
             </ul>
-            <a href="{{ url_for('views_bp.coming_soon', plan='starter') }}" class="btn-price outlined" onclick="trackPlanClick('starter')">Start Trial</a>
+            <a href="javascript:void(0)" class="btn-price outlined" onclick="openPaddleCheckout('starter'); trackPlanClick('starter')">Start Trial</a>
         </div>
     </div>
 
@@ -119,7 +119,7 @@
                 <li>Full analytics dashboard</li>
                 <li>Priority support</li>
             </ul>
-            <a href="{{ url_for('views_bp.coming_soon', plan='growth') }}" class="btn-price filled" onclick="trackPlanClick('growth')">Start Trial</a>
+            <a href="javascript:void(0)" class="btn-price filled" onclick="openPaddleCheckout('growth'); trackPlanClick('growth')">Start Trial</a>
         </div>
     </div>
 
@@ -137,7 +137,7 @@
                 <li>Advanced analytics</li>
                 <li>Custom integrations</li>
             </ul>
-            <a href="{{ url_for('views_bp.coming_soon', plan='pro') }}" class="btn-price outlined" onclick="trackPlanClick('pro')">Start Trial</a>
+            <a href="javascript:void(0)" class="btn-price outlined" onclick="openPaddleCheckout('pro'); trackPlanClick('pro')">Start Trial</a>
         </div>
     </div>
 </div>
@@ -175,5 +175,65 @@ function trackPlanClick(plan) {
     fbq('track', 'InitiateCheckout', { content_name: plan });
   }
 }
+
+// Paddle Checkout Integration
+function openPaddleCheckout(planName) {
+  // Map plan names to Paddle price IDs (replace with real IDs from Paddle dashboard)
+  const priceMap = {
+    'starter': '{{ config.PADDLE_PRICE_STARTER or "pri_starter_monthly" }}',
+    'growth': '{{ config.PADDLE_PRICE_GROWTH or "pri_growth_monthly" }}',
+    'pro': '{{ config.PADDLE_PRICE_PRO or "pri_pro_monthly" }}'
+  };
+
+  const priceId = priceMap[planName];
+  if (!priceId) {
+    alert('Invalid plan selected.');
+    return;
+  }
+
+  // Check if user is logged in first
+  fetch('/payments/checkout-session', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      // Not logged in — redirect to register
+      window.location.href = '/register';
+      return;
+    }
+
+    // Open Paddle Checkout
+    if (typeof Paddle !== 'undefined') {
+      Paddle.Checkout.open({
+        items: [{ priceId: priceId, quantity: 1 }],
+        customer: { email: data.email },
+        customData: { org_id: String(data.org_id) },
+        settings: {
+          successUrl: '/dashboard?upgraded=true',
+          displayMode: 'overlay'
+        }
+      });
+    } else {
+      alert('Payment system loading. Please try again in a moment.');
+    }
+  })
+  .catch(err => {
+    console.error('Checkout error:', err);
+    alert('Unable to start checkout. Please try again.');
+  });
+}
 </script>
+
+<!-- Paddle.js -->
+{% if config.PADDLE_CLIENT_TOKEN %}
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script>
+  Paddle.Setup({ 
+    token: '{{ config.PADDLE_CLIENT_TOKEN }}',
+    environment: '{{ config.PADDLE_ENVIRONMENT or "sandbox" }}'
+  });
+</script>
+{% endif %}
 {% endblock %}

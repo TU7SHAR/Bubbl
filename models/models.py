@@ -6,6 +6,11 @@ db = SQLAlchemy()
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    plan = db.Column(db.String(20), default='free')  # free, starter, growth, pro
+    messages_used = db.Column(db.Integer, default=0)
+    messages_reset_at = db.Column(db.DateTime, nullable=True)  # When the monthly counter resets
+    paddle_subscription_id = db.Column(db.String(255), nullable=True)
+    paddle_customer_id = db.Column(db.String(255), nullable=True)
     users = db.relationship('User', backref='organization', lazy=True)
 
 class User(db.Model):
