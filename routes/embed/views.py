@@ -15,29 +15,35 @@ import psutil
 from flask import send_from_directory, current_app
 views_bp = Blueprint('views_bp', __name__)
 
+# =========================================
+# MARKETING SITE REDIRECT — app.bubbl.ooo is app-only.
+# All marketing/public content lives on bubbl.ooo (separate frontend).
+# =========================================
+MARKETING_SITE = "https://bubbl.ooo"
+
 @views_bp.route('/coming-soon')
 def coming_soon():
-    return render_template('coming_soon.html')
+    return redirect(f"{MARKETING_SITE}/pricing.html")
 
 @views_bp.route('/roadmap')
 def roadmap():
-    return render_template('roadmap.html')
+    return redirect(f"{MARKETING_SITE}/roadmap.html")
 
 @views_bp.route('/how-to')
 def how_to():
-    return render_template('how_to.html')
+    return redirect(f"{MARKETING_SITE}/how-to.html")
 
 @views_bp.route('/legal/privacy')
 def privacy():
-    return render_template('legal/privacy.html')
+    return redirect(f"{MARKETING_SITE}/legal/privacy.html")
 
 @views_bp.route('/legal/terms')
 def terms():
-    return render_template('legal/terms.html')
+    return redirect(f"{MARKETING_SITE}/legal/terms.html")
 
 @views_bp.route('/legal/refunds')
 def refunds():
-    return render_template('legal/refunds.html')
+    return redirect(f"{MARKETING_SITE}/legal/refunds.html")
 
 @views_bp.app_errorhandler(404)
 def page_not_found(e):
@@ -121,15 +127,17 @@ Source Page: {source_url}
     
 @views_bp.route('/')
 def index():
-    return render_template('index.html')
+    if session.get('user_id'):
+        return redirect(url_for('views_bp.dashboard'))
+    return redirect(url_for('auth.login'))
 
 @views_bp.route('/features')
 def features():
-    return render_template('features.html')
+    return redirect(f"{MARKETING_SITE}/features.html")
 
 @views_bp.route('/pricing')
 def pricing():
-    return render_template('pricing.html')
+    return redirect(f"{MARKETING_SITE}/pricing.html")
 
 @views_bp.route('/export_leads')
 def export_leads():
@@ -186,50 +194,14 @@ def leads_dashboard():
 @views_bp.route('/compare')
 @views_bp.route('/compare/<competitor>')
 def compare(competitor=None):
-    valid_competitors = ['chatbase', 'tidio', 'intercom', 'gupshup']
     if competitor:
         clean_name = competitor.replace('.html', '')
-        if clean_name in valid_competitors:
-            return render_template(f'compare_{clean_name}.html')
-        else:
-            return redirect(url_for('views_bp.compare'))
-    return render_template('compare.html')
+        return redirect(f"{MARKETING_SITE}/compare/{clean_name}.html")
+    return redirect(f"{MARKETING_SITE}/compare/")
 
-@views_bp.route('/contact', methods=['GET', 'POST'])
+@views_bp.route('/contact')
 def contact():
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        raw_email = request.form.get('email', '').strip()
-        subject = request.form.get('subject', '').strip()
-        message = request.form.get('message', '').strip()
-
-        # 1. Advanced Validation Check
-        is_valid, validation_result = is_valid_email(raw_email)
-        
-        if not is_valid:
-            flash(f"Invalid email: {validation_result}", "error")
-            return redirect(url_for('views_bp.contact'))
-            
-        safe_email = validation_result 
-
-        if not name or not message:
-            flash("Name and message fields are required.", "error")
-            return redirect(url_for('views_bp.contact'))
-
-        # 2. Send the alert to YOUR support team
-        admin_notified = send_contact_email(name, safe_email, subject, message)
-        
-        # 3. If your team got the alert, send the auto-reply to the USER
-        if admin_notified:
-            # We trigger the auto-reply silently (no need to crash if it fails)
-            send_auto_reply(name, safe_email)
-            flash("Your message has been sent successfully! Check your inbox for a confirmation.", "success")
-        else:
-            flash("An internal error occurred while sending your message. Please try again later.", "error")
-            
-        return redirect(url_for('views_bp.contact'))
-
-    return render_template('contact.html')
+    return redirect(f"{MARKETING_SITE}/contact.html")
 
 @views_bp.route('/dashboard')
 def dashboard():
