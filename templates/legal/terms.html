@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service | Bubbl.ooo{% endblock %}
+{% block og_title %}Terms of Service | Bubbl.ooo{% endblock %}
+{% block og_description %}Terms and conditions for using the Bubbl.ooo AI chatbot platform.{% endblock %}
+
+{% block content %}
+<section style="max-width: 780px; margin: 0 auto; padding: 3rem 1.5rem 4rem;">
+
+  <!-- Breadcrumb -->
+  <nav style="margin-bottom: 2rem; font-size: 0.85rem; color: var(--text-muted);">
+    <a href="/" style="color: var(--text-muted); text-decoration: none;">Home</a>
+    <span style="margin: 0 0.4rem;">/</span>
+    <a href="{{ url_for('views_bp.terms') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">Terms of Service</a>
+  </nav>
+
+  <div class="prose" style="line-height: 1.8; color: var(--text-secondary);">
+    <h1 class="bricolage" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">Terms of Service</h1>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;"><strong>Last updated:</strong> July 2026</p>
+
+    <p>These Terms of Service ("Terms") govern your use of the Bubbl.ooo platform operated at <strong>app.bubbl.ooo</strong>. By creating an account or using our services, you agree to these Terms.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">1. Account Terms</h2>
+    <p>You must be at least 16 years old to use Bubbl.ooo. You are responsible for maintaining the security of your account credentials. One person or entity may not maintain more than one free account. You must provide accurate, complete information when registering.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">2. Service Description</h2>
+    <p>Bubbl.ooo is an AI-powered chatbot platform that allows you to create, train, and deploy chatbots on websites and WhatsApp. We provide tools for document ingestion, web scraping, flow building, lead capture, and analytics.</p>
+    <p>We strive for high uptime but do not guarantee uninterrupted service. We may perform maintenance with reasonable notice.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">3. Acceptable Use</h2>
+    <p>You agree NOT to use Bubbl.ooo to:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Generate spam, phishing, or malicious content</li>
+      <li>Impersonate other individuals or organizations</li>
+      <li>Violate any applicable laws or regulations</li>
+      <li>Distribute illegal, harmful, or offensive content</li>
+      <li>Attempt to reverse-engineer or exploit the platform</li>
+      <li>Exceed your plan's usage limits through automated means</li>
+      <li>Scrape or collect data from other users' chatbots</li>
+    </ul>
+    <p>We reserve the right to suspend or terminate accounts that violate these terms without prior notice.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">4. Intellectual Property</h2>
+    <p><strong>Your Content:</strong> You retain ownership of all content you upload (documents, images, configurations). By uploading content, you grant us a limited license to process it for the purpose of providing our services.</p>
+    <p><strong>Our Platform:</strong> The Bubbl.ooo platform, including its design, code, and branding, is owned by us and protected by intellectual property laws. You may not copy, modify, or distribute any part of our platform without written permission.</p>
+    <p><strong>Chatbot Output:</strong> AI-generated responses are provided as-is. You are responsible for reviewing and verifying chatbot output before relying on it.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">5. Payment Terms</h2>
+    <p>Paid subscriptions are billed monthly via <strong>Paddle</strong>, our merchant of record. Paddle handles all payment processing, invoicing, sales tax, and VAT compliance on our behalf.</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Prices are listed in INR. International users are billed in their local currency by Paddle.</li>
+      <li>Subscriptions renew automatically each billing cycle.</li>
+      <li>You may cancel your subscription at any time from your account settings.</li>
+      <li>Downgrades take effect at the end of the current billing period.</li>
+      <li>We reserve the right to change pricing with 30 days' notice.</li>
+    </ul>
+    <p>For refund terms, please see our <a href="{{ url_for('views_bp.refunds') }}" style="color: var(--orange);">Refund Policy</a>.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">6. Termination</h2>
+    <p>You may delete your account at any time. Upon termination:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Your chatbots will immediately stop responding</li>
+      <li>Your data will be deleted within 30 days</li>
+      <li>Any remaining subscription period is subject to our Refund Policy</li>
+    </ul>
+    <p>We may terminate or suspend your account if you violate these Terms, fail to pay, or if required by law.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">7. Limitation of Liability</h2>
+    <p>To the maximum extent permitted by law:</p>
+    <ul style="padding-left: 1.5rem; margin: 0.8rem 0;">
+      <li>Bubbl.ooo is provided "as is" without warranties of any kind</li>
+      <li>We are not liable for indirect, incidental, or consequential damages</li>
+      <li>Our total liability shall not exceed the amount you paid us in the 12 months preceding the claim</li>
+      <li>We are not responsible for AI-generated content accuracy</li>
+    </ul>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">8. Governing Law</h2>
+    <p>These Terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in India. If any provision is found unenforceable, the remaining provisions continue in full force.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">9. Changes to Terms</h2>
+    <p>We may update these Terms from time to time. Material changes will be communicated via email to registered users at least 14 days before taking effect. Continued use after changes constitutes acceptance.</p>
+
+    <h2 class="bricolage" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-top: 2rem;">10. Contact</h2>
+    <p>Questions about these Terms? Reach us at:</p>
+    <p><strong>Email:</strong> <a href="mailto:support@bubbl.ooo" style="color: var(--orange);">support@bubbl.ooo</a><br>
+    <strong>Platform:</strong> <a href="https://app.bubbl.ooo" style="color: var(--orange);">app.bubbl.ooo</a></p>
+  </div>
+</section>
+{% endblock %}
