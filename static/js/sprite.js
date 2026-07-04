@@ -87,7 +87,7 @@ const SpriteBot = {
     gsap.set(this.element, { backgroundPositionX: `${startPosition}px` });
     this.currentTween = gsap.to(this.element, {
       backgroundPositionX: `${endPosition}px`,
-      duration: 8,
+      duration: 2.5,
       ease: "steps(80)",
       repeat: -1,
     });
