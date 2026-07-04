@@ -56,38 +56,46 @@ const SpriteBot = {
 
     if (this.currentTween) this.currentTween.kill();
 
-    let startPosition, endPosition;
+    let startPosition, endPosition, duration;
 
+    // Each state = 80 frames × 200px = 16000px
+    // Different states look best at different speeds
     switch (stateName) {
       case "hover":
         startPosition = 0;
         endPosition = -16000;
+        duration = 2;       // Excited, fast
         break;
       case "thinking":
         startPosition = -16000;
         endPosition = -32000;
+        duration = 3;       // Slow, contemplative
         break;
       case "idle":
         startPosition = -32000;
         endPosition = -48000;
+        duration = 4;       // Relaxed, breathing pace
         break;
       case "talking":
         startPosition = -48000;
         endPosition = -64000;
+        duration = 1.8;     // Fast, animated mouth
         break;
       case "rolling":
         startPosition = -64000;
         endPosition = -80000;
+        duration = 2.5;     // Natural roll speed
         break;
       default:
         startPosition = -32000;
         endPosition = -48000;
+        duration = 4;
     }
 
     gsap.set(this.element, { backgroundPositionX: `${startPosition}px` });
     this.currentTween = gsap.to(this.element, {
       backgroundPositionX: `${endPosition}px`,
-      duration: 8,
+      duration: duration,
       ease: "steps(80)",
       repeat: -1,
     });
