@@ -171,6 +171,8 @@ async function submitLeadForm(prefix) {
       // --- FUNNEL EVENT: Lead Captured ---
       if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackLeadCaptured(window.EMBEDDED_BOT_ID || 'unknown');
     }
+
+    if (response.ok) {
       leadCaptured = true;
       if (prefix === "gk") {
         document.getElementById("gatekeeper-overlay").remove();
