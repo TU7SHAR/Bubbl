@@ -11,6 +11,7 @@ from routes.auth.decorators import admin_required
 from extensions import cache
 from . import admin_bp
 from tasks.scrape_tasks import async_scrape_task
+from utils.plan_limits import check_bot_limit
 
 
 def invalidate_bot_cache(bot_id):
@@ -22,6 +23,11 @@ def invalidate_bot_cache(bot_id):
 def create_pipeline():
     if request.method == 'GET':
         return render_template('create_pipeline.html')
+
+    # --- BOT LIMIT CHECK ---
+    allowed, current, limit = check_bot_limit(session.get('org_id'))
+    if not allowed:
+        return jsonify({"success": False, "error": f"Bot limit reached ({current}/{limit}). Please upgrade your plan."}), 403
 
     bot_name = request.form.get('bot_name')
     bot_type = request.form.get('bot_type')

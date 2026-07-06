@@ -12,8 +12,7 @@ from flask_caching import Cache
 REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
 # --- RATE LIMITER ---
-# Now uses Redis: consistent across ALL gunicorn workers.
-# Before: memory:// = each worker tracked limits separately (broken).
+# Uses Redis in production, falls back to memory:// for local dev without Redis
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per hour"],
@@ -21,11 +20,14 @@ limiter = Limiter(
 )
 
 # --- CACHE ---
-# Now uses Redis: shared across ALL gunicorn workers.
-# Before: SimpleCache = each worker had its own cache (inconsistent).
-# Bot configs fetched ONCE, served to all workers for 60 seconds.
-cache = Cache(config={
-    "CACHE_TYPE": "RedisCache",
-    "CACHE_REDIS_URL": os.getenv('REDIS_URL', 'redis://localhost:6379/1'),
-    "CACHE_DEFAULT_TIMEOUT": 60,
-})
+if REDIS_URL.startswith('memory'):
+    cache = Cache(config={
+        "CACHE_TYPE": "SimpleCache",
+        "CACHE_DEFAULT_TIMEOUT": 60,
+    })
+else:
+    cache = Cache(config={
+        "CACHE_TYPE": "RedisCache",
+        "CACHE_REDIS_URL": os.getenv('REDIS_URL', 'redis://localhost:6379/1'),
+        "CACHE_DEFAULT_TIMEOUT": 60,
+    })

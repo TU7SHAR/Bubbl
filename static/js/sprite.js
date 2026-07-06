@@ -58,6 +58,8 @@ const SpriteBot = {
 
     let startPosition, endPosition, duration;
 
+    // Each state = 80 frames × 200px = 16000px
+    // Different states look best at different speeds
     switch (stateName) {
       case "hover":
         startPosition = 0;
