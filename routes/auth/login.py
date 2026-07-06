@@ -64,6 +64,11 @@ def login():
         session['role'] = user.role
         
         flash("Access granted.", "success")
+        # Honor ?next= for post-login redirect (e.g. back to /pricing).
+        # Only allow internal relative paths to prevent open-redirect attacks.
+        next_url = request.args.get('next') or request.form.get('next')
+        if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+            return redirect(next_url)
         return redirect(url_for('views_bp.dashboard'))
             
     return render_template('login.html')
