@@ -434,7 +434,7 @@ function startCheckout(plan) {
         customer: { email: data.email },
         customData: { org_id: String(data.org_id) },
         settings: {
-          successUrl: window.location.origin + '/dashboard?upgraded=true',
+          successUrl: window.location.origin + '/payments/upgrade-callback',
           displayMode: 'overlay'
         }
       });
