@@ -452,9 +452,11 @@ function startCheckout(plan) {
 {% if config.PADDLE_CLIENT_TOKEN %}
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script>
+  {% if config.PADDLE_ENVIRONMENT == 'sandbox' %}
+  Paddle.Environment.set('sandbox');
+  {% endif %}
   Paddle.Setup({ 
-    token: '{{ config.PADDLE_CLIENT_TOKEN }}',
-    environment: '{{ config.PADDLE_ENVIRONMENT or "sandbox" }}'
+    token: '{{ config.PADDLE_CLIENT_TOKEN }}'
   });
 </script>
 {% endif %}
