@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import request, jsonify
 from flask import Blueprint, app, render_template, request, session, redirect, url_for, flash, make_response, jsonify
-from models.models import db, Bot, User, Document, Lead, ScrapeJob, BotUI, Feedback
+from models.models import db, Bot, User, Document, Lead, ScrapeJob, BotUI, Feedback, Organization, Payment
 from utils.mail_helper import is_valid_email, send_contact_email, send_auto_reply
 from extensions import cache
 import csv
@@ -516,8 +516,65 @@ def super_admin_dashboard():
     avg_latency_ms = int((total_time / total_interactions) * 1000) if total_interactions > 0 else 0
      # --------
 
+    # --- 5. REVENUE METRICS ---
+    plan_price = current_app.config.get('PLAN_PRICE_INR', {
+        'free': 0, 'starter': 499, 'growth': 1499, 'pro': 4999
+    })
+
+    all_orgs = Organization.query.all()
+    # Active subscriptions grouped by plan (anything that isn't free & has a sub)
+    plan_counts = {'free': 0, 'starter': 0, 'growth': 0, 'pro': 0}
+    for o in all_orgs:
+        p = (o.plan or 'free')
+        plan_counts[p] = plan_counts.get(p, 0) + 1
+
+    active_subscriptions = sum(c for p, c in plan_counts.items() if p != 'free')
+    # Monthly Recurring Revenue = sum of (paying orgs on a plan x that plan's price)
+    mrr = sum(plan_counts.get(p, 0) * price for p, price in plan_price.items())
+
+    # Revenue breakdown per plan (for a small table/donut)
+    revenue_by_plan = [
+        {
+            'plan': p.capitalize(),
+            'count': plan_counts.get(p, 0),
+            'price': plan_price.get(p, 0),
+            'mrr': plan_counts.get(p, 0) * plan_price.get(p, 0),
+        }
+        for p in ['starter', 'growth', 'pro']
+    ]
+
+    # Actual recorded payments (real cash collected)
+    all_payments = Payment.query.filter_by(status='completed').all()
+    total_revenue = sum(pm.amount or 0 for pm in all_payments)
+    payments_in_range = [
+        pm for pm in all_payments
+        if pm.created_at and start_date <= pm.created_at <= end_date
+    ]
+    revenue_in_range = sum(pm.amount or 0 for pm in payments_in_range)
+
+    org_names = {o.id: o.name for o in all_orgs}
+    recent_payments = []
+    for pm in sorted(all_payments, key=lambda x: x.created_at or datetime.min, reverse=True)[:100]:
+        recent_payments.append({
+            'created_at': pm.created_at,
+            'org': org_names.get(pm.org_id, 'N/A'),
+            'email': pm.customer_email or 'N/A',
+            'plan': (pm.plan or 'N/A').capitalize(),
+            'amount': pm.amount or 0,
+            'currency': pm.currency or 'INR',
+            'transaction_id': pm.paddle_transaction_id or '—',
+            'status': pm.status or 'completed',
+        })
+
+    arr = mrr * 12  # Annual Recurring Revenue
+    # --------
+
     return render_template(
         'super_admin.html',
+        mrr=mrr, arr=arr, active_subscriptions=active_subscriptions,
+        total_revenue=total_revenue, revenue_in_range=revenue_in_range,
+        revenue_by_plan=revenue_by_plan, plan_counts=plan_counts,
+        recent_payments=recent_payments, total_orgs=len(all_orgs),
         chart_data=chart_data, total_leads=total_leads, total_users=total_users, 
         total_bots=total_bots, total_docs=total_docs, total_hits_today=total_hits_today,
         system_health=system_health, enriched_bots=enriched_bots,

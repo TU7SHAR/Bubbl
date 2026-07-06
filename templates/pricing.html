@@ -398,14 +398,19 @@
 </style>
 
 <script>
-// Paddle Price IDs (sandbox)
+// Paddle Price IDs — injected from server env (config.py) so production
+// uses the company's real price IDs without touching this file.
 const PADDLE_PRICES = {
-  starter: 'pri_01kwkzgxgad3ekzdp83qm7rhh3',
-  growth: 'pri_01kwkzhsxvsttqrsp5sv0pb9bn',
-  pro: 'pri_01kwkzjpkrqnmc6gb9cj470xa7'
+  starter: '{{ config.PADDLE_PRICE_STARTER or "" }}',
+  growth: '{{ config.PADDLE_PRICE_GROWTH or "" }}',
+  pro: '{{ config.PADDLE_PRICE_PRO or "" }}'
 };
 
 function startCheckout(plan) {
+  if (!PADDLE_PRICES[plan]) {
+    alert('This plan is not available for checkout right now. Please contact support.');
+    return;
+  }
   // Check if user is logged in by calling our backend
   fetch('/payments/checkout-session', {
     method: 'POST',
