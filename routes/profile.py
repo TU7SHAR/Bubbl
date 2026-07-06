@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request
-from models.models import User, Bot, db
+from models.models import User, Bot, Organization, db
+from utils.plan_limits import PLAN_LIMITS, check_message_limit
 
 profile_bp = Blueprint('profile_bp', __name__)
 
@@ -10,6 +11,18 @@ def profile():
     
     user = User.query.get(session['user_id'])
     bot_count = Bot.query.filter_by(created_by=session['user_id']).count()
+    org = Organization.query.get(session.get('org_id'))
+    
+    # Plan & usage info
+    plan = org.plan if org else 'free'
+    limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
+    messages_used = org.messages_used if org else 0
+    messages_limit = limits['messages']
+    bots_limit = limits['bots']
+    messages_reset_at = org.messages_reset_at if org else None
+    
+    # Usage percentage for progress bar
+    usage_percent = min(int((messages_used / messages_limit) * 100), 100) if messages_limit > 0 else 0
     
     org_members = []
     if session.get('role') == 'admin':
@@ -18,7 +31,19 @@ def profile():
             User.id != session['user_id']
         ).all()
     
-    return render_template('profile.html', user=user, bot_count=bot_count, org_members=org_members)
+    return render_template('profile.html', 
+        user=user, 
+        bot_count=bot_count, 
+        org_members=org_members,
+        org=org,
+        plan=plan,
+        limits=limits,
+        messages_used=messages_used,
+        messages_limit=messages_limit,
+        bots_limit=bots_limit,
+        usage_percent=usage_percent,
+        messages_reset_at=messages_reset_at
+    )
 
 @profile_bp.route('/remove_member/<int:member_id>', methods=['POST'])
 def remove_member(member_id):
