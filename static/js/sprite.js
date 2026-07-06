@@ -64,32 +64,32 @@ const SpriteBot = {
       case "hover":
         startPosition = 0;
         endPosition = -16000;
-        duration = 2;       // Excited, fast
+        duration = 3;
         break;
       case "thinking":
         startPosition = -16000;
         endPosition = -32000;
-        duration = 3;       // Slow, contemplative
+        duration = 5;
         break;
       case "idle":
         startPosition = -32000;
         endPosition = -48000;
-        duration = 4;       // Relaxed, breathing pace
+        duration = 6;
         break;
       case "talking":
         startPosition = -48000;
         endPosition = -64000;
-        duration = 1.8;     // Fast, animated mouth
+        duration = 3;
         break;
       case "rolling":
         startPosition = -64000;
         endPosition = -80000;
-        duration = 2.5;     // Natural roll speed
+        duration = 4;
         break;
       default:
         startPosition = -32000;
         endPosition = -48000;
-        duration = 4;
+        duration = 6;
     }
 
     gsap.set(this.element, { backgroundPositionX: `${startPosition}px` });
