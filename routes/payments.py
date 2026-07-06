@@ -165,9 +165,13 @@ def create_checkout_session():
         org.paddle_customer_id = f"org_{org.id}"
         db.session.commit()
 
+    # Get the logged-in user's email from the DB (session doesn't store email)
+    user = User.query.get(session['user_id'])
+    user_email = user.email if user else ''
+
     return jsonify({
         "customer_id": org.paddle_customer_id,
         "org_id": org.id,
         "current_plan": org.plan,
-        "email": session.get('user_email', '')
+        "email": user_email
     }), 200
