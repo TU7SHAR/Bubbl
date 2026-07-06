@@ -39,6 +39,20 @@ class Config:
     PADDLE_WEBHOOK_SECRET = os.getenv('PADDLE_WEBHOOK_SECRET')
     PADDLE_ENVIRONMENT = os.getenv('PADDLE_ENVIRONMENT', 'sandbox')  # 'sandbox' or 'production'
     PADDLE_CLIENT_TOKEN = os.getenv('PADDLE_CLIENT_TOKEN')  # For frontend Paddle.js
+
+    # Paddle Price IDs — kept in env so the company's PRODUCTION Paddle account
+    # (which has different price IDs) works without any code change.
+    PADDLE_PRICE_STARTER = os.getenv('PADDLE_PRICE_STARTER')
+    PADDLE_PRICE_GROWTH = os.getenv('PADDLE_PRICE_GROWTH')
+    PADDLE_PRICE_PRO = os.getenv('PADDLE_PRICE_PRO')
+
+    # Monthly price (in INR) per plan — used for revenue/MRR reporting.
+    PLAN_PRICE_INR = {
+        'free': 0,
+        'starter': 499,
+        'growth': 1499,
+        'pro': 4999,
+    }
     
     # --- ANALYTICS ---
     GA4_MEASUREMENT_ID = os.getenv('GA4_MEASUREMENT_ID')       # e.g. G-XXXXXXXXXX

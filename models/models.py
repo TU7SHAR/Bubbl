@@ -46,6 +46,19 @@ class Bot(db.Model):
     total_latency = db.Column(db.Float, default=0.0)
     interaction_count = db.Column(db.Integer, default=0)
 
+class Payment(db.Model):
+    """Records every completed Paddle transaction for revenue reporting."""
+    id = db.Column(db.Integer, primary_key=True)
+    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=True)
+    plan = db.Column(db.String(20), nullable=True)              # starter / growth / pro
+    amount = db.Column(db.Float, default=0.0)                   # major units (e.g. 499.00)
+    currency = db.Column(db.String(10), default='INR')
+    customer_email = db.Column(db.String(120), nullable=True)
+    paddle_transaction_id = db.Column(db.String(255), unique=True, nullable=True)
+    paddle_customer_id = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.String(30), default='completed')      # completed / refunded
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
 class BotUI(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=False, unique=True)

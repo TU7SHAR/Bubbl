@@ -161,3 +161,87 @@ def send_otp_email(to_email, otp_code):
     except Exception as e:
         print(f"SMTP Email Error: {e}")
         return False
+
+
+
+def _send_html_email(to_email, subject, html_content):
+    """Internal helper to send an HTML email via Gmail SMTP."""
+    smtp_user = os.getenv('EMAIL_ADDRESS')
+    smtp_password = os.getenv('EMAIL_PASSWORD')
+    platform_name = f"{COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME}"
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{platform_name} <{smtp_user}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html_content, "html"))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_user, to_email, msg.as_string())
+        return True
+    except Exception as e:
+        print(f"SMTP Error sending email to {to_email}: {e}")
+        return False
+
+
+def send_payment_receipt(to_email, plan_name, amount, currency="INR", transaction_id=None):
+    """Sends a payment/subscription receipt to the paying customer."""
+    platform_name = f"{COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME}"
+    plan_label = (plan_name or "").capitalize()
+    amount_str = f"{currency} {amount:,.2f}" if isinstance(amount, (int, float)) else f"{currency} {amount}"
+    txn_row = f"""
+        <tr>
+            <td style="padding: 6px 0; color: #6b7280;">Transaction ID</td>
+            <td style="padding: 6px 0; text-align: right; color: #111827; font-weight: 600;">{transaction_id}</td>
+        </tr>""" if transaction_id else ""
+
+    html_content = f"""
+    <div style="font-family: sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eee; border-radius: 12px;">
+        <h2 style="color: #111827; margin-top: 0;">Payment Successful &#127881;</h2>
+        <p style="color: #4b5563; font-size: 15px;">Thank you for subscribing to <strong>{platform_name}</strong>. Your <strong>{plan_label}</strong> plan is now active.</p>
+        <div style="background: #f9fafb; padding: 18px 20px; border-radius: 10px; margin: 20px 0;">
+            <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 6px 0; color: #6b7280;">Plan</td>
+                    <td style="padding: 6px 0; text-align: right; color: #111827; font-weight: 600;">{plan_label}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; color: #6b7280;">Amount</td>
+                    <td style="padding: 6px 0; text-align: right; color: #E8722A; font-weight: 700;">{amount_str}</td>
+                </tr>{txn_row}
+            </table>
+        </div>
+        <p style="color: #4b5563; font-size: 14px;">You can manage your subscription and view usage anytime from your profile dashboard.</p>
+        <p style="color: #9ca3af; font-size: 13px;">If you have any questions, just reply to this email.</p>
+        <p style="color: #4b5563; font-size: 14px; margin-top: 24px;">— The {platform_name} Team</p>
+    </div>
+    """
+    return _send_html_email(to_email, f"Your {platform_name} {plan_label} receipt", html_content)
+
+
+def send_sale_notification(plan_name, amount, currency="INR", org_name=None, customer_email=None, transaction_id=None):
+    """Notifies the admin/founder that a sale just happened."""
+    platform_name = f"{COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME}"
+    admin_email = os.getenv('SUPER_ADMIN_MAIL') or os.getenv('SUPPORT_EMAIL') or os.getenv('EMAIL_ADDRESS')
+    plan_label = (plan_name or "").capitalize()
+    amount_str = f"{currency} {amount:,.2f}" if isinstance(amount, (int, float)) else f"{currency} {amount}"
+
+    html_content = f"""
+    <div style="font-family: sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eee; border-radius: 12px;">
+        <h2 style="color: #16a34a; margin-top: 0;">&#128176; New Sale!</h2>
+        <p style="color: #4b5563; font-size: 15px;">A customer just subscribed on <strong>{platform_name}</strong>.</p>
+        <div style="background: #f0fdf4; padding: 18px 20px; border-radius: 10px; margin: 20px 0;">
+            <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                <tr><td style="padding: 6px 0; color: #6b7280;">Plan</td><td style="padding: 6px 0; text-align: right; color: #111827; font-weight: 600;">{plan_label}</td></tr>
+                <tr><td style="padding: 6px 0; color: #6b7280;">Amount</td><td style="padding: 6px 0; text-align: right; color: #16a34a; font-weight: 700;">{amount_str}</td></tr>
+                <tr><td style="padding: 6px 0; color: #6b7280;">Customer</td><td style="padding: 6px 0; text-align: right; color: #111827;">{customer_email or 'N/A'}</td></tr>
+                <tr><td style="padding: 6px 0; color: #6b7280;">Organization</td><td style="padding: 6px 0; text-align: right; color: #111827;">{org_name or 'N/A'}</td></tr>
+                <tr><td style="padding: 6px 0; color: #6b7280;">Transaction</td><td style="padding: 6px 0; text-align: right; color: #111827;">{transaction_id or 'N/A'}</td></tr>
+            </table>
+        </div>
+    </div>
+    """
+    return _send_html_email(admin_email, f"[{platform_name}] New {plan_label} sale — {amount_str}", html_content)

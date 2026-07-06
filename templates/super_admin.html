@@ -26,6 +26,10 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                 Dashboard
             </button>
+            <button class="sa-tab" onclick="switchPane('pane-revenue', 'Revenue & Billing')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                Revenue
+            </button>
             <button class="sa-tab" onclick="switchPane('pane-api', 'API & Resource Usage')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
                 API Usage
@@ -124,6 +128,105 @@
                     </div>
                     <div style="height: 280px; width: 100%;">
                         <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pane-revenue" class="sa-pane">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="m-icon" style="background: #dcfce7; color: #16a34a;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+                        <div class="m-value">&#8377;{{ '{:,.0f}'.format(mrr) }}</div>
+                        <div class="m-label">Monthly Recurring Revenue</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="m-icon" style="background: #dbeafe; color: #2563eb;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></svg></div>
+                        <div class="m-value">&#8377;{{ '{:,.0f}'.format(arr) }}</div>
+                        <div class="m-label">Annual Run Rate (ARR)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="m-icon" style="background: #f3e8ff; color: #8b5cf6;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path></svg></div>
+                        <div class="m-value">{{ active_subscriptions }}</div>
+                        <div class="m-label">Active Subscriptions</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="m-icon" style="background: #ffedd5; color: #ea580c;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg></div>
+                        <div class="m-value">&#8377;{{ '{:,.2f}'.format(total_revenue) }}</div>
+                        <div class="m-label">Total Collected (lifetime)</div>
+                    </div>
+                </div>
+
+                <div class="chart-box" style="margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 16px;">Revenue by Plan (MRR breakdown)</h3>
+                        <span class="tag tag-green" style="align-self: center;">&#8377;{{ '{:,.2f}'.format(revenue_in_range) }} collected in range</span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="sa-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="text-align: left; color: #6b7280; font-size: 13px;">
+                                    <th style="padding: 10px 12px;">Plan</th>
+                                    <th style="padding: 10px 12px;">Subscribers</th>
+                                    <th style="padding: 10px 12px;">Price / mo</th>
+                                    <th style="padding: 10px 12px;">MRR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in revenue_by_plan %}
+                                <tr style="border-top: 1px solid rgba(0,0,0,0.05);">
+                                    <td style="padding: 10px 12px; font-weight: 600; color: #111827;">{{ row.plan }}</td>
+                                    <td style="padding: 10px 12px;">{{ row.count }}</td>
+                                    <td style="padding: 10px 12px;">&#8377;{{ '{:,.0f}'.format(row.price) }}</td>
+                                    <td style="padding: 10px 12px; font-weight: 700; color: #16a34a;">&#8377;{{ '{:,.0f}'.format(row.mrr) }}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr style="border-top: 2px solid rgba(0,0,0,0.1); font-weight: 700;">
+                                    <td style="padding: 10px 12px;">Total</td>
+                                    <td style="padding: 10px 12px;">{{ active_subscriptions }}</td>
+                                    <td style="padding: 10px 12px;">—</td>
+                                    <td style="padding: 10px 12px; color: #16a34a;">&#8377;{{ '{:,.0f}'.format(mrr) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="chart-box" style="margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 16px;">Payment History</h3>
+                        <span style="font-size: 13px; color: #6b7280;">{{ recent_payments|length }} transaction(s)</span>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="sa-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="text-align: left; color: #6b7280; font-size: 13px;">
+                                    <th style="padding: 10px 12px;">Date</th>
+                                    <th style="padding: 10px 12px;">Customer</th>
+                                    <th style="padding: 10px 12px;">Org</th>
+                                    <th style="padding: 10px 12px;">Plan</th>
+                                    <th style="padding: 10px 12px;">Amount</th>
+                                    <th style="padding: 10px 12px;">Transaction</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pm in recent_payments %}
+                                <tr style="border-top: 1px solid rgba(0,0,0,0.05);">
+                                    <td style="padding: 10px 12px; color: #4b5563;">{{ pm.created_at.strftime('%b %d, %Y %H:%M') if pm.created_at else '—' }}</td>
+                                    <td style="padding: 10px 12px;">{{ pm.email }}</td>
+                                    <td style="padding: 10px 12px;">{{ pm.org }}</td>
+                                    <td style="padding: 10px 12px;"><span class="tag tag-purple">{{ pm.plan }}</span></td>
+                                    <td style="padding: 10px 12px; font-weight: 700; color: #16a34a;">&#8377;{{ '{:,.2f}'.format(pm.amount) }}</td>
+                                    <td style="padding: 10px 12px; font-family: monospace; font-size: 12px; color: #9ca3af;">{{ pm.transaction_id }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" style="padding: 30px 12px; text-align: center; color: #9ca3af;">
+                                        No payments recorded yet. Completed Paddle transactions will appear here automatically.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
