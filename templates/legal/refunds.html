@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Refund Policy | Bubbl.ooo{% endblock %}
+{% block og_title %}Refund Policy | Bubbl.ooo{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+  <div class="prose">
+    <h1 class="bricolage">Refund Policy</h1>
+    <p class="legal-updated">Last updated: July 2026</p>
+
+    <p>At Bubbl.ooo, we want you to be completely satisfied with our service. This Refund Policy outlines the terms and conditions under which refunds are granted for paid subscriptions.</p>
+
+    <h2>1. 7-Day Refund Window</h2>
+    <p>We offer a <strong>7-day refund window</strong> from the date of your initial subscription purchase. If you are not satisfied with the Service within the first 7 days of a new subscription, you may request a full refund with no questions asked.</p>
+    <p>This 7-day window applies only to:</p>
+    <ul>
+      <li>First-time subscriptions to a paid plan (Starter, Growth, or Pro)</li>
+      <li>Upgrades to a higher-tier plan (refund applies to the price difference)</li>
+    </ul>
+    <p>The 7-day refund window does not reset upon renewal. It applies only to the initial purchase or upgrade.</p>
+
+    <h2>2. Cancellation Terms</h2>
+    <p>You may cancel your subscription at any time from your account profile settings. Upon cancellation:</p>
+    <ul>
+      <li>Your subscription remains active until the end of the current billing period</li>
+      <li>You will not be charged for the next billing cycle</li>
+      <li>Your account will be automatically downgraded to the Free plan after the period ends</li>
+      <li>Your chatbot data and configuration will be preserved, but features beyond the Free plan limits will become inaccessible</li>
+    </ul>
+    <p>Cancellation does not automatically trigger a refund. If you wish to receive a refund, you must explicitly request one (see Section 3).</p>
+
+    <h2>3. How to Request a Refund</h2>
+    <p>To request a refund, please follow these steps:</p>
+    <ol>
+      <li>Send an email to <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a> with the subject line "Refund Request"</li>
+      <li>Include your registered email address and organization name</li>
+      <li>Briefly describe the reason for your refund request</li>
+      <li>Our team will review your request within 2 business days</li>
+    </ol>
+    <p>Once approved, refunds are processed through Paddle (our payment processor) and typically appear in your account within 5-10 business days, depending on your bank or payment provider.</p>
+
+    <h2>4. Paddle Processes Refunds</h2>
+    <p><strong>Paddle</strong> is our Merchant of Record and handles all payment processing, including refunds. When a refund is approved:</p>
+    <ul>
+      <li>Paddle initiates the refund to your original payment method</li>
+      <li>You will receive a confirmation email from Paddle</li>
+      <li>The refund amount will appear on your statement from Paddle (not Bubbl.ooo)</li>
+      <li>Processing times vary by payment method and region</li>
+    </ul>
+    <p>If you have questions about a refund's status after approval, you may contact Paddle's support directly or reach out to us at <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a>.</p>
+
+    <h2>5. Non-Refundable Items</h2>
+    <p>The following are <strong>not eligible</strong> for refunds:</p>
+    <ul>
+      <li>Subscription renewals beyond the 7-day initial window</li>
+      <li>Partial months of service (subscriptions are billed in full monthly cycles)</li>
+      <li>Accounts terminated due to Terms of Service violations</li>
+      <li>Message overage charges (if applicable in future plans)</li>
+      <li>Custom integration or development work performed on your behalf</li>
+      <li>Free plan accounts (no payment was made)</li>
+    </ul>
+
+    <h2>6. Exceptional Circumstances</h2>
+    <p>We understand that exceptional circumstances may arise. In the following situations, we may grant refunds outside the standard 7-day window at our discretion:</p>
+    <ul>
+      <li>Extended service outage (more than 48 consecutive hours) that materially impacts your business</li>
+      <li>Billing errors or duplicate charges</li>
+      <li>Service features that were advertised but not delivered within a reasonable timeframe</li>
+    </ul>
+    <p>Each case is reviewed individually. Please contact support with relevant details.</p>
+
+    <h2>7. Downgrades and Plan Changes</h2>
+    <p>If you downgrade to a lower-tier plan:</p>
+    <ul>
+      <li>The change takes effect at the start of your next billing cycle</li>
+      <li>No partial refund is issued for the remaining days on the higher-tier plan</li>
+      <li>You retain access to higher-tier features until the current period ends</li>
+    </ul>
+
+    <h2>8. Changes to This Policy</h2>
+    <p>We may update this Refund Policy from time to time. Changes will be posted on this page with an updated "Last updated" date. Material changes will be communicated via email to active subscribers.</p>
+
+    <h2>9. Contact Us</h2>
+    <p>For refund requests or questions about this policy, please contact us at:</p>
+    <p>
+      <strong>Email:</strong> <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a><br>
+      <strong>Platform:</strong> Bubbl.ooo<br>
+      <strong>Operated by:</strong> ESS ENN Associates & 172 Tech
+    </p>
+  </div>
+</section>
+
+<style>
+  .legal-page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+  }
+  .legal-updated {
+    font-size: 0.88rem;
+    color: var(--text-secondary, #777);
+    margin-bottom: 2rem;
+  }
+  .prose h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+  .prose h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .prose h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose p {
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: var(--text-secondary, #444);
+    margin-bottom: 1rem;
+  }
+  .prose ul, .prose ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .prose ul li, .prose ol li {
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: var(--text-secondary, #444);
+    margin-bottom: 0.35rem;
+  }
+  .prose a {
+    color: var(--orange);
+    text-decoration: underline;
+  }
+  .prose strong {
+    color: var(--text-primary);
+  }
+</style>
+{% endblock %}
