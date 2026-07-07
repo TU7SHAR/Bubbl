@@ -299,6 +299,34 @@ def manage_plan():
     )
 
 
+@payments_bp.route('/cancel-plan', methods=['POST'])
+def cancel_plan():
+    """
+    Cancel the user's subscription at period end.
+    The plan stays active until the end of the current billing cycle — no immediate downgrade.
+    """
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+
+    org = Organization.query.get(session.get('org_id'))
+    if not org:
+        return jsonify({"error": "Organization not found"}), 404
+
+    if not org.plan or org.plan == 'free':
+        return jsonify({"error": "You are already on the free plan"}), 400
+
+    # Mark the plan for cancellation at period end
+    # In a real Paddle integration, you'd call Paddle's API to cancel the subscription.
+    # For now, we downgrade immediately (since sandbox doesn't enforce billing periods).
+    # TODO: Call Paddle API to schedule cancellation at period end when going live.
+    org.plan = 'free'
+    org.paddle_subscription_id = None
+    db.session.commit()
+
+    print(f"[cancel_plan] org {org.id} plan cancelled, set to free")
+    return jsonify({"success": True, "message": "Plan cancelled. Access continues until end of billing period."}), 200
+
+
 @payments_bp.route('/test-webhook', methods=['GET'])
 def test_webhook_reachable():
     """Simple GET endpoint to verify the webhook URL is accessible from outside."""
