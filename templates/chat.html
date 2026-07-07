@@ -254,7 +254,11 @@
           })
       })
       .then(res => {
-          if (!res.ok) throw new Error('Network response was not ok');
+          if (!res.ok) {
+              return res.json().then(data => {
+                  throw new Error(data.error || 'Failed to save feedback');
+              });
+          }
           return res.json();
       })
       .then(data => {
@@ -277,7 +281,7 @@
       })
       .catch(err => {
           console.error("Error saving feedback:", err);
-          alert("Error saving feedback. Please try again.");
+          alert(err.message || "Error saving feedback. Please try again.");
           btn.innerText = "Send Feedback";
           btn.disabled = false;
       });

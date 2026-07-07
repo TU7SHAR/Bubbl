@@ -233,6 +233,27 @@ function startCheckout(plan) {
     console.error(err);
     alert('Unable to start checkout. Please try again.');
   });
+function cancelPlan() {
+  if (!confirm('Are you sure you want to cancel your plan?\n\nYour current plan will remain active until the end of this billing period. No extra charges will be made.')) {
+    return;
+  }
+  fetch('/payments/cancel-plan', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Plan cancelled. You will retain access until the end of your current billing period.');
+      window.location.reload();
+    } else {
+      alert(data.error || 'Unable to cancel plan. Please contact support.');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Unable to cancel plan. Please try again.');
+  });
 }
 </script>
 
