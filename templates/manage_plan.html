@@ -275,9 +275,9 @@ function showModal(type) {
   } else if (type === 'payment') {
     icon.className = 'mp-modal-icon info';
     icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>';
-    title.textContent = 'Payment Methods';
-    body.innerHTML = 'Paddle manages your payment method securely. Supported methods:<br><br><strong>Cards</strong> (Visa, Mastercard, Amex), <strong>UPI</strong>, <strong>Net Banking</strong>, <strong>PayPal</strong>, <strong>Google Pay</strong>, <strong>Apple Pay</strong><br><br>To change your card or payment method, you can cancel your current plan and resubscribe — Paddle will prompt you to enter a new payment method during checkout.';
-    actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Got it</button>';
+    title.textContent = 'Manage Billing on Paddle';
+    body.innerHTML = 'You\'ll be redirected to Paddle\'s secure portal where you can:<br><br>&#8226; Update payment method (Cards, UPI, PayPal)<br>&#8226; Cancel subscription<br>&#8226; Reactivate subscription<br>&#8226; View invoices';
+    actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Cancel</button><button class="mp-btn mp-btn-upgrade" onclick="openPaddlePortal()">Open Paddle Portal</button>';
   } else if (type === 'success') {
     icon.className = 'mp-modal-icon success';
     icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
@@ -326,21 +326,25 @@ function confirmCancel() {
 }
 
 function confirmUpdatePayment() {
-  var btn = document.querySelector('#modalActions .mp-btn-upgrade');
-  btn.textContent = 'Redirecting...';
-  btn.disabled = true;
+  openPaddlePortal();
+}
 
-  fetch('/payments/update-payment-method', {
+function openPaddlePortal() {
+  var btn = document.querySelector('#modalActions .mp-btn-upgrade');
+  if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
+
+  fetch('/payments/customer-portal', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
     if (data.success && data.url) {
-      window.location.href = data.url;
+      window.open(data.url, '_blank');
+      closeModal();
     } else {
       closeModal();
-      window._modalErrorMsg = data.error || 'Could not get payment portal URL.';
+      window._modalErrorMsg = data.error || 'Could not open Paddle portal. Complete a purchase first.';
       setTimeout(function() { showModal('error'); }, 200);
     }
   })
