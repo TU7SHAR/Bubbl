@@ -2,177 +2,358 @@
 
 {% block title %}Manage Plan | Bubbl.ooo{% endblock %}
 
+{% block meta_description %}
+<meta name="robots" content="noindex, nofollow" />
+{% endblock %}
+
 {% block content %}
-<meta name="robots" content="noindex, nofollow">
+<div class="mp-container">
 
-<div style="max-width: 900px; margin: 40px auto; padding: 0 20px; font-family: 'Outfit', sans-serif;">
+  <!-- Header -->
+  <div class="mp-header">
+    <h1>Manage Plan</h1>
+    <p>Your subscription, usage, and billing at a glance.</p>
+  </div>
 
-  <!-- Current Plan Card -->
-  <div style="background: rgba(255,255,255,0.25); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; padding: 32px; margin-bottom: 24px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-      <div>
-        <h1 style="margin: 0 0 8px; font-size: 1.8rem; font-weight: 700;">{{ plan_name }} Plan</h1>
+  <!-- Plan + Usage Row -->
+  <div class="mp-grid-2">
+    <!-- Current Plan -->
+    <div class="mp-card">
+      <div class="mp-card-top">
+        <span class="mp-label">Current Plan</span>
         {% if plan != 'free' %}
-          <span style="display: inline-block; background: rgba(34,197,94,0.15); color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Active</span>
+        <span class="mp-badge mp-badge-active">Active</span>
         {% else %}
-          <span style="display: inline-block; background: rgba(156,163,175,0.2); color: #6b7280; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Free</span>
+        <span class="mp-badge mp-badge-free">Free Tier</span>
         {% endif %}
       </div>
+      <h2 class="mp-plan-name">{{ plan_name }}</h2>
+      <div class="mp-plan-price">
+        {% if plan == 'starter' %}&#8377;499<span>/mo</span>
+        {% elif plan == 'growth' %}&#8377;1,499<span>/mo</span>
+        {% elif plan == 'pro' %}&#8377;4,999<span>/mo</span>
+        {% else %}&#8377;0<span>/forever</span>
+        {% endif %}
+      </div>
+      {% if plan != 'pro' %}
+      <a href="/pricing" class="mp-btn mp-btn-upgrade">Upgrade Plan</a>
+      {% endif %}
     </div>
 
-    <!-- Usage Stats -->
-    <div style="margin-top: 24px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 0.9rem; color: #555;">Messages Used</span>
-        <span style="font-size: 0.9rem; font-weight: 600;">{{ messages_used }} / {{ messages_limit }}</span>
+    <!-- Usage -->
+    <div class="mp-card">
+      <span class="mp-label">Usage This Period</span>
+      <div class="mp-usage-block">
+        <div class="mp-usage-row">
+          <span>Messages</span>
+          <span class="mp-usage-value">{{ messages_used }} / {{ messages_limit }}</span>
+        </div>
+        <div class="mp-progress-bar">
+          <div class="mp-progress-fill {% if usage_percent > 90 %}mp-danger{% elif usage_percent > 70 %}mp-warn{% endif %}" style="width: {{ usage_percent }}%;"></div>
+        </div>
       </div>
-      <div style="width: 100%; height: 10px; background: rgba(0,0,0,0.06); border-radius: 8px; overflow: hidden;">
-        <div style="width: {{ usage_percent }}%; height: 100%; background: linear-gradient(90deg, #E8722A, #f59e0b); border-radius: 8px; transition: width 0.5s ease;"></div>
+      <div class="mp-usage-block">
+        <div class="mp-usage-row">
+          <span>Bots</span>
+          <span class="mp-usage-value">{{ bot_count }} / {% if bots_limit >= 999 %}&#8734;{% else %}{{ bots_limit }}{% endif %}</span>
+        </div>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.85rem; color: #777;">
-        <span>Bots: {{ bot_count }} / {{ bots_limit }}</span>
-        <span>Resets: {{ reset_date }}</span>
+      <div class="mp-usage-block" style="margin-top: 8px;">
+        <div class="mp-usage-row">
+          <span style="color: #999; font-size: 12px;">Resets on</span>
+          <span style="color: #999; font-size: 12px;">{{ reset_date }}</span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Subscription Details -->
-  <div style="background: rgba(255,255,255,0.25); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; padding: 32px; margin-bottom: 24px;">
-    <h2 style="margin: 0 0 20px; font-size: 1.3rem; font-weight: 600;">Subscription Details</h2>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-      <div>
-        <p style="margin: 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Subscription ID</p>
-        <p style="margin: 4px 0 0; font-size: 0.95rem; font-weight: 500;">{{ subscription_id or 'N/A' }}</p>
+  <!-- Billing Details -->
+  <div class="mp-card">
+    <div class="mp-card-top">
+      <span class="mp-label">Billing Details</span>
+      <span class="mp-total-spent">Total: &#8377;{{ '{:,.2f}'.format(total_spent) }}</span>
+    </div>
+    <div class="mp-billing-grid">
+      <div class="mp-billing-item">
+        <span class="mp-billing-key">Subscription</span>
+        <span class="mp-billing-val mono">{{ subscription_id or '—' }}</span>
       </div>
-      <div>
-        <p style="margin: 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Customer ID</p>
-        <p style="margin: 4px 0 0; font-size: 0.95rem; font-weight: 500;">{{ customer_id or 'N/A' }}</p>
+      <div class="mp-billing-item">
+        <span class="mp-billing-key">Customer</span>
+        <span class="mp-billing-val mono">{{ customer_id or '—' }}</span>
       </div>
-      <div>
-        <p style="margin: 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Payment Method</p>
-        <p style="margin: 4px 0 0; font-size: 0.95rem; font-weight: 500;">Managed via Paddle</p>
-      </div>
-      <div>
-        <p style="margin: 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Total Spent</p>
-        <p style="margin: 4px 0 0; font-size: 0.95rem; font-weight: 600; color: #E8722A;">${{ "%.2f"|format(total_spent) }}</p>
+      <div class="mp-billing-item">
+        <span class="mp-billing-key">Payment</span>
+        <span class="mp-billing-val">Managed via Paddle</span>
       </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div style="margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap;">
-      {% if plan != 'free' %}
-      <button onclick="cancelPlan()" style="padding: 10px 24px; background: rgba(239,68,68,0.1); color: #dc2626; border: 1.5px solid rgba(239,68,68,0.3); border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
-        CANCEL PLAN
-      </button>
-      {% endif %}
-      <button onclick="updatePaymentMethod()" style="padding: 10px 24px; background: rgba(232,114,42,0.1); color: #E8722A; border: 1.5px solid rgba(232,114,42,0.3); border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
-        UPDATE PAYMENT METHOD
-      </button>
+    {% if plan != 'free' %}
+    <div class="mp-actions">
+      <button onclick="showModal('cancel')" class="mp-btn mp-btn-danger">Cancel Plan</button>
+      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Change Payment Method</button>
     </div>
-
-    <p style="margin-top: 16px; font-size: 0.8rem; color: #999; line-height: 1.5;">
-      Cancellation takes effect at end of current billing period. No extra charges will be made.
-    </p>
+    {% else %}
+    <div class="mp-actions">
+      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Update Payment Method</button>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Payment History -->
-  <div style="background: rgba(255,255,255,0.25); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; padding: 32px; margin-bottom: 24px;">
-    <h2 style="margin: 0 0 20px; font-size: 1.3rem; font-weight: 600;">Payment History</h2>
-    
+  <div class="mp-card">
+    <div class="mp-card-top">
+      <span class="mp-label">Payment History</span>
+      <span style="font-size: 13px; color: #999;">{{ payments|length }} transaction{{ 's' if payments|length != 1 else '' }}</span>
+    </div>
+
     {% if payments %}
-    <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+    <div class="mp-table-wrap">
+      <table class="mp-table">
         <thead>
-          <tr style="border-bottom: 1px solid rgba(0,0,0,0.08);">
-            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Date</th>
-            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Plan</th>
-            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Amount</th>
-            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Status</th>
-            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Transaction ID</th>
+          <tr>
+            <th>Date</th>
+            <th>Plan</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Transaction</th>
           </tr>
         </thead>
         <tbody>
-          {% for payment in payments %}
-          <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-            <td style="padding: 12px 8px;">{{ payment.created_at.strftime('%b %d, %Y') if payment.created_at else 'N/A' }}</td>
-            <td style="padding: 12px 8px; text-transform: capitalize;">{{ payment.plan }}</td>
-            <td style="padding: 12px 8px; font-weight: 500;">{{ payment.amount }} {{ payment.currency }}</td>
-            <td style="padding: 12px 8px;">
-              {% if payment.status == 'completed' %}
-                <span style="display: inline-block; background: rgba(34,197,94,0.12); color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">Completed</span>
-              {% elif payment.status == 'failed' %}
-                <span style="display: inline-block; background: rgba(239,68,68,0.12); color: #dc2626; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">Failed</span>
-              {% elif payment.status == 'refunded' %}
-                <span style="display: inline-block; background: rgba(156,163,175,0.15); color: #6b7280; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">Refunded</span>
-              {% elif payment.status == 'pending' %}
-                <span style="display: inline-block; background: rgba(245,158,11,0.12); color: #d97706; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">Pending</span>
+          {% for p in payments %}
+          <tr>
+            <td>
+              <span class="mp-date-main">{{ p.created_at.strftime('%b %d, %Y') if p.created_at else '—' }}</span>
+              <span class="mp-date-sub">{{ p.created_at.strftime('%I:%M %p') if p.created_at else '' }}</span>
+            </td>
+            <td><span class="mp-plan-pill">{{ (p.plan or '—')|capitalize }}</span></td>
+            <td class="mp-amount">&#8377;{{ '{:,.2f}'.format(p.amount or 0) }}</td>
+            <td>
+              {% if p.status == 'completed' %}
+              <span class="mp-status mp-status-ok">Paid</span>
+              {% elif p.status == 'failed' %}
+              <span class="mp-status mp-status-fail">Failed</span>
+              {% elif p.status == 'refunded' %}
+              <span class="mp-status mp-status-refund">Refunded</span>
               {% else %}
-                <span style="display: inline-block; background: rgba(156,163,175,0.15); color: #6b7280; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">{{ payment.status }}</span>
+              <span class="mp-status mp-status-pending">Pending</span>
               {% endif %}
             </td>
-            <td style="padding: 12px 8px; font-size: 0.82rem; color: #777;">{{ payment.paddle_transaction_id or '—' }}</td>
+            <td class="mono mp-txn">{{ p.paddle_transaction_id or '—' }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-    <div style="text-align: center; padding: 40px 20px; color: #999;">
-      <p style="font-size: 1rem; margin: 0;">No payments yet.</p>
-      <p style="font-size: 0.85rem; margin-top: 8px;">Your payment history will appear here once you subscribe to a plan.</p>
+    <div class="mp-empty">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+      <p>No transactions yet</p>
+      <span>Your payment history will appear here after you subscribe.</span>
     </div>
     {% endif %}
   </div>
 
-  <!-- Back to Profile -->
-  <div style="text-align: center; margin-bottom: 40px;">
-    <a href="{{ url_for('profile_bp.profile') }}" style="color: #E8722A; font-size: 0.9rem; text-decoration: none; font-weight: 500;">← Back to Profile</a>
+  <div style="text-align: center; margin-top: 16px;">
+    <a href="/profile" class="mp-back-link">&#8592; Back to Profile</a>
   </div>
-
 </div>
 
+<!-- ══════════ MODAL ══════════ -->
+<div class="mp-modal-overlay" id="modalOverlay" onclick="closeModal()">
+  <div class="mp-modal" onclick="event.stopPropagation()">
+    <button class="mp-modal-close" onclick="closeModal()">&times;</button>
+    <div id="modalIcon" class="mp-modal-icon"></div>
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+    <div class="mp-modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<style>
+  .mp-container { max-width: 820px; margin: 48px auto 80px; padding: 0 20px; }
+  .mp-header { margin-bottom: 32px; }
+  .mp-header h1 { font-size: 26px; font-weight: 700; color: #111; margin: 0 0 4px; }
+  .mp-header p { font-size: 14px; color: #777; margin: 0; }
+
+  .mp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 640px) { .mp-grid-2 { grid-template-columns: 1fr; } }
+
+  .mp-card { background: #fff; border: 1px solid #f0f0f0; border-radius: 14px; padding: 24px 28px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
+  .mp-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .mp-label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.8px; }
+
+  .mp-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; }
+  .mp-badge-active { background: #ecfdf5; color: #059669; }
+  .mp-badge-free { background: #f3f4f6; color: #6b7280; }
+
+  .mp-plan-name { font-size: 22px; font-weight: 700; color: #111; margin: 0 0 4px; }
+  .mp-plan-price { font-size: 28px; font-weight: 800; color: #E8722A; margin-bottom: 16px; }
+  .mp-plan-price span { font-size: 14px; font-weight: 500; color: #999; }
+
+  .mp-usage-block { margin-bottom: 12px; }
+  .mp-usage-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #555; margin-bottom: 6px; }
+  .mp-usage-value { font-weight: 600; color: #111; }
+  .mp-progress-bar { height: 6px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+  .mp-progress-fill { height: 100%; background: #22c55e; border-radius: 4px; transition: width 0.4s ease; }
+  .mp-progress-fill.mp-warn { background: #f59e0b; }
+  .mp-progress-fill.mp-danger { background: #ef4444; }
+
+  .mp-total-spent { font-size: 14px; font-weight: 700; color: #16a34a; }
+
+  .mp-billing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .mp-billing-item { display: flex; flex-direction: column; gap: 2px; }
+  .mp-billing-key { font-size: 11px; color: #aaa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .mp-billing-val { font-size: 13px; color: #333; font-weight: 500; word-break: break-all; }
+  .mp-billing-val.mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #555; }
+
+  .mp-actions { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid #f5f5f5; }
+
+  .mp-btn { padding: 9px 20px; font-size: 13px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s ease; text-decoration: none; display: inline-block; }
+  .mp-btn-upgrade { background: #E8722A; color: #fff; }
+  .mp-btn-upgrade:hover { background: #d4631f; }
+  .mp-btn-secondary { background: #f8f8f8; color: #333; border: 1px solid #e5e5e5; }
+  .mp-btn-secondary:hover { background: #f0f0f0; }
+  .mp-btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .mp-btn-danger:hover { background: #fee2e2; }
+
+  .mp-table-wrap { overflow-x: auto; margin-top: 4px; }
+  .mp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .mp-table th { text-align: left; padding: 10px 10px; font-size: 11px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #f0f0f0; }
+  .mp-table td { padding: 14px 10px; border-bottom: 1px solid #fafafa; color: #333; }
+  .mp-date-main { display: block; font-weight: 500; }
+  .mp-date-sub { display: block; font-size: 11px; color: #bbb; }
+  .mp-plan-pill { background: #f5f3ff; color: #6d28d9; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+  .mp-amount { font-weight: 700; color: #111; }
+  .mp-txn { font-size: 11px; color: #aaa; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+
+  .mp-status { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 8px; }
+  .mp-status-ok { background: #ecfdf5; color: #059669; }
+  .mp-status-fail { background: #fef2f2; color: #dc2626; }
+  .mp-status-refund { background: #f3f4f6; color: #6b7280; }
+  .mp-status-pending { background: #fffbeb; color: #d97706; }
+
+  .mp-empty { text-align: center; padding: 40px 20px; }
+  .mp-empty p { font-size: 14px; color: #888; margin: 12px 0 4px; font-weight: 500; }
+  .mp-empty span { font-size: 12px; color: #bbb; }
+
+  .mp-back-link { font-size: 13px; color: #888; text-decoration: none; font-weight: 500; }
+  .mp-back-link:hover { color: #E8722A; }
+
+  /* Modal */
+  .mp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .mp-modal-overlay.active { display: flex; }
+  .mp-modal { background: #fff; border-radius: 16px; padding: 36px 32px 28px; max-width: 420px; width: 100%; text-align: center; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: modalIn 0.2s ease; }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .mp-modal-close { position: absolute; top: 14px; right: 18px; background: none; border: none; font-size: 22px; color: #bbb; cursor: pointer; line-height: 1; }
+  .mp-modal-close:hover { color: #666; }
+  .mp-modal-icon { width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+  .mp-modal-icon.danger { background: #fef2f2; }
+  .mp-modal-icon.info { background: #eff6ff; }
+  .mp-modal-icon.success { background: #ecfdf5; }
+  .mp-modal h3 { font-size: 18px; font-weight: 700; color: #111; margin: 0 0 8px; }
+  .mp-modal p { font-size: 14px; color: #666; margin: 0 0 24px; line-height: 1.5; }
+  .mp-modal-actions { display: flex; gap: 10px; justify-content: center; }
+  .mp-modal-actions .mp-btn { min-width: 110px; padding: 10px 20px; }
+</style>
+
 <script>
-function cancelPlan() {
-  if (!confirm('Are you sure you want to cancel your plan? Your access will continue until the end of the current billing period.')) {
-    return;
+function showModal(type) {
+  var overlay = document.getElementById('modalOverlay');
+  var icon = document.getElementById('modalIcon');
+  var title = document.getElementById('modalTitle');
+  var body = document.getElementById('modalBody');
+  var actions = document.getElementById('modalActions');
+
+  if (type === 'cancel') {
+    icon.className = 'mp-modal-icon danger';
+    icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+    title.textContent = 'Cancel your plan?';
+    body.textContent = 'Your plan will remain active until the end of the current billing period. After that, you\'ll be moved to the Free tier. No additional charges will be made.';
+    actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Keep Plan</button><button class="mp-btn mp-btn-danger" onclick="confirmCancel()">Yes, Cancel</button>';
+  } else if (type === 'payment') {
+    icon.className = 'mp-modal-icon info';
+    icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>';
+    title.textContent = 'Update Payment Method';
+    body.textContent = 'You\'ll be redirected to Paddle\'s secure portal where you can add, remove, or change your payment card.';
+    actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Cancel</button><button class="mp-btn mp-btn-upgrade" onclick="confirmUpdatePayment()">Continue to Paddle</button>';
+  } else if (type === 'success') {
+    icon.className = 'mp-modal-icon success';
+    icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    title.textContent = 'Plan Cancelled';
+    body.textContent = 'Your plan has been cancelled. You\'ll retain full access until the end of your current billing period.';
+    actions.innerHTML = '<button class="mp-btn mp-btn-upgrade" onclick="window.location.reload()">Got it</button>';
+  } else if (type === 'error') {
+    icon.className = 'mp-modal-icon danger';
+    icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+    title.textContent = 'Something went wrong';
+    body.textContent = window._modalErrorMsg || 'An unexpected error occurred. Please try again.';
+    actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Dismiss</button>';
   }
+
+  overlay.classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function confirmCancel() {
+  var btn = document.querySelector('#modalActions .mp-btn-danger');
+  btn.textContent = 'Cancelling...';
+  btn.disabled = true;
+
   fetch('/payments/cancel-plan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   })
-  .then(res => res.json())
-  .then(data => {
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    closeModal();
     if (data.success) {
-      alert(data.message || 'Plan cancelled successfully.');
-      window.location.reload();
+      setTimeout(function() { showModal('success'); }, 200);
     } else {
-      alert(data.error || 'Failed to cancel plan.');
+      window._modalErrorMsg = data.error || 'Failed to cancel plan.';
+      setTimeout(function() { showModal('error'); }, 200);
     }
   })
-  .catch(err => {
-    alert('An error occurred. Please try again.');
-    console.error(err);
+  .catch(function() {
+    closeModal();
+    window._modalErrorMsg = 'Network error. Please check your connection.';
+    setTimeout(function() { showModal('error'); }, 200);
   });
 }
 
-function updatePaymentMethod() {
+function confirmUpdatePayment() {
+  var btn = document.querySelector('#modalActions .mp-btn-upgrade');
+  btn.textContent = 'Redirecting...';
+  btn.disabled = true;
+
   fetch('/payments/update-payment-method', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   })
-  .then(res => res.json())
-  .then(data => {
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
     if (data.success && data.url) {
       window.location.href = data.url;
     } else {
-      alert(data.error || 'Failed to get payment method update URL.');
+      closeModal();
+      window._modalErrorMsg = data.error || 'Could not get payment portal URL.';
+      setTimeout(function() { showModal('error'); }, 200);
     }
   })
-  .catch(err => {
-    alert('An error occurred. Please try again.');
-    console.error(err);
+  .catch(function() {
+    closeModal();
+    window._modalErrorMsg = 'Network error. Please try again.';
+    setTimeout(function() { showModal('error'); }, 200);
   });
 }
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
 </script>
 {% endblock %}
