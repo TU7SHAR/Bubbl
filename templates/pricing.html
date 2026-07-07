@@ -6,192 +6,161 @@
 
 {% block content %}
 {% set current_plan = current_plan|default('free') %}
-{% set plan_order = ['free', 'starter', 'growth', 'pro'] %}
+{% set plan_rank = {'free': 0, 'starter': 1, 'growth': 2, 'pro': 3} %}
+{% set my_rank = plan_rank[current_plan] | default(0) %}
 
-<section class="pricing-hero">
-  <h1 class="bricolage">Simple, transparent <span class="text-orange">pricing</span></h1>
-  <p class="pricing-subtitle">Start free. Upgrade when you're ready. No hidden fees.</p>
-  {% if current_plan != 'free' %}
-  <p style="margin-top: 12px; font-size: 14px; color: #16a34a; font-weight: 600;">You're on the {{ current_plan|capitalize }} plan. <a href="/payments/manage" style="color: #E8722A; text-decoration: underline;">Manage billing →</a></p>
-  {% endif %}
+<section style="text-align: center; padding: 4rem 1.5rem 2rem;">
+  <h1 class="bricolage" style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; margin-bottom: 0.5rem;">Simple, transparent <span class="text-orange">pricing</span></h1>
+  <p style="font-size: 1.1rem; color: #666; max-width: 480px; margin: 0 auto;">Start free. Upgrade when you're ready. No hidden fees.</p>
 </section>
 
-<section class="pricing-grid">
-  <!-- Starter Plan -->
-  <div class="pricing-card lg {% if current_plan == 'starter' %}current-plan{% endif %}">
-    {% if current_plan == 'starter' %}
-    <div class="plan-badge current">Current Plan</div>
-    {% endif %}
-    <div class="pricing-card-header">
-      <h3 class="bricolage">Starter</h3>
-      <div class="pricing-amount">
-        <span class="price bricolage">&#8377;499</span>
-        <span class="period">/month</span>
-      </div>
-      <p class="pricing-desc">For small businesses getting serious</p>
+<section style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 3rem;">
+
+  <!-- FREE -->
+  <div class="p-card {% if current_plan == 'free' %}p-card-active{% endif %}">
+    <div class="p-card-inner">
+      <h3>Free</h3>
+      <div class="p-price">&#8377;0<span>/forever</span></div>
+      <p class="p-desc">Get started with AI chatbots at zero cost</p>
+      <ul class="p-features">
+        <li>1 chatbot</li>
+        <li>200 messages/month</li>
+        <li>WhatsApp + Website</li>
+        <li>Basic AI</li>
+        <li>No expiry</li>
+      </ul>
+      {% if current_plan == 'free' %}
+        <span class="p-btn p-btn-current">Current Plan</span>
+      {% else %}
+        <span class="p-btn p-btn-grey">Free Tier</span>
+      {% endif %}
     </div>
-    <ul class="pricing-features">
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 2 chatbots</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 2,000 messages/month</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Flow builder</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Hindi + English AI</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Basic analytics</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Lead capture</li>
-    </ul>
-    {% if current_plan == 'starter' %}
-      <a href="/payments/manage" class="pricing-btn btn-manage">Manage Plan</a>
-    {% elif plan_order.index(current_plan) > plan_order.index('starter') %}
-      {# User is on a higher plan — hide button entirely #}
-    {% else %}
-      <button onclick="startCheckout('starter')" class="pricing-btn">Subscribe</button>
-    {% endif %}
   </div>
 
-  <!-- Growth Plan -->
-  <div class="pricing-card lg popular {% if current_plan == 'growth' %}current-plan{% endif %}">
-    {% if current_plan == 'growth' %}
-    <div class="plan-badge current">Current Plan</div>
-    {% else %}
-    <div class="plan-badge popular">Most Popular</div>
-    {% endif %}
-    <div class="pricing-card-header">
-      <h3 class="bricolage">Growth</h3>
-      <div class="pricing-amount">
-        <span class="price bricolage">&#8377;1,499</span>
-        <span class="period">/month</span>
-      </div>
-      <p class="pricing-desc">Scale your customer engagement</p>
+  <!-- STARTER -->
+  <div class="p-card {% if current_plan == 'starter' %}p-card-active{% endif %}">
+    <div class="p-card-inner">
+      <h3>Starter</h3>
+      <div class="p-price">&#8377;499<span>/month</span></div>
+      <p class="p-desc">For small businesses getting serious</p>
+      <ul class="p-features">
+        <li>2 chatbots</li>
+        <li>2,000 messages/month</li>
+        <li>Flow builder</li>
+        <li>Hindi + English AI</li>
+        <li>Basic analytics</li>
+        <li>Lead capture</li>
+      </ul>
+      {% if current_plan == 'starter' %}
+        <span class="p-btn p-btn-current">Current Plan</span>
+      {% elif my_rank > 1 %}
+        <span class="p-btn p-btn-grey">Starter</span>
+      {% else %}
+        <button onclick="startCheckout('starter')" class="p-btn p-btn-orange">Upgrade</button>
+      {% endif %}
     </div>
-    <ul class="pricing-features">
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 5 chatbots</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 10,000 messages/month</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> All Indian languages</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Human handoff + CRM lite</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Full analytics</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Lead gen</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Priority support</li>
-    </ul>
-    {% if current_plan == 'growth' %}
-      <a href="/payments/manage" class="pricing-btn btn-manage btn-popular-manage">Manage Plan</a>
-    {% elif plan_order.index(current_plan) > plan_order.index('growth') %}
-      {# User is on Pro — hide button #}
-    {% else %}
-      <button onclick="startCheckout('growth')" class="pricing-btn btn-popular">Subscribe</button>
-    {% endif %}
   </div>
 
-  <!-- Pro Plan -->
-  <div class="pricing-card lg {% if current_plan == 'pro' %}current-plan{% endif %}">
-    {% if current_plan == 'pro' %}
-    <div class="plan-badge current">Current Plan</div>
-    {% endif %}
-    <div class="pricing-card-header">
-      <h3 class="bricolage">Pro</h3>
-      <div class="pricing-amount">
-        <span class="price bricolage">&#8377;4,999</span>
-        <span class="period">/month</span>
-      </div>
-      <p class="pricing-desc">Enterprise-grade for power users</p>
+  <!-- GROWTH -->
+  <div class="p-card p-card-popular {% if current_plan == 'growth' %}p-card-active{% endif %}">
+    <span class="p-popular-tag">Popular</span>
+    <div class="p-card-inner">
+      <h3>Growth</h3>
+      <div class="p-price">&#8377;1,499<span>/month</span></div>
+      <p class="p-desc">Scale your customer engagement</p>
+      <ul class="p-features">
+        <li>5 chatbots</li>
+        <li>10,000 messages/month</li>
+        <li>All Indian languages</li>
+        <li>Human handoff + CRM lite</li>
+        <li>Full analytics</li>
+        <li>Lead gen</li>
+        <li>Priority support</li>
+      </ul>
+      {% if current_plan == 'growth' %}
+        <span class="p-btn p-btn-current">Current Plan</span>
+      {% elif my_rank > 2 %}
+        <span class="p-btn p-btn-grey">Growth</span>
+      {% else %}
+        <button onclick="startCheckout('growth')" class="p-btn p-btn-orange-fill">Upgrade</button>
+      {% endif %}
     </div>
-    <ul class="pricing-features">
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Unlimited chatbots</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> 50,000 messages/month</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> White-label</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> API access</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Advanced analytics</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Custom integrations</li>
-      <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Dedicated support</li>
-    </ul>
-    {% if current_plan == 'pro' %}
-      <a href="/payments/manage" class="pricing-btn btn-manage">Manage Plan</a>
-    {% else %}
-      <button onclick="startCheckout('pro')" class="pricing-btn">Subscribe</button>
-    {% endif %}
   </div>
+
+  <!-- PRO -->
+  <div class="p-card {% if current_plan == 'pro' %}p-card-active{% endif %}">
+    <div class="p-card-inner">
+      <h3>Pro</h3>
+      <div class="p-price">&#8377;4,999<span>/month</span></div>
+      <p class="p-desc">Enterprise-grade for power users</p>
+      <ul class="p-features">
+        <li>Unlimited chatbots</li>
+        <li>50,000 messages/month</li>
+        <li>White-label</li>
+        <li>API access</li>
+        <li>Advanced analytics</li>
+        <li>Custom integrations</li>
+        <li>Dedicated support</li>
+      </ul>
+      {% if current_plan == 'pro' %}
+        <span class="p-btn p-btn-current">Current Plan</span>
+      {% else %}
+        <button onclick="startCheckout('pro')" class="p-btn p-btn-orange">Upgrade</button>
+      {% endif %}
+    </div>
+  </div>
+
 </section>
 
-<!-- Comparison Table -->
-<section class="pricing-comparison">
-  <h2 class="bricolage">Compare all plans</h2>
-  <div class="comparison-table-wrapper">
-    <table class="comparison-table">
-      <thead>
-        <tr>
-          <th>Feature</th>
-          <th>Starter</th>
-          <th class="highlight-col">Growth</th>
-          <th>Pro</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Chatbots</td><td>2</td><td class="highlight-col">5</td><td>Unlimited</td></tr>
-        <tr><td>Messages/month</td><td>2,000</td><td class="highlight-col">10,000</td><td>50,000</td></tr>
-        <tr><td>Channels</td><td>WhatsApp + Web</td><td class="highlight-col">All channels</td><td>All channels</td></tr>
-        <tr><td>Languages</td><td>Hindi + English</td><td class="highlight-col">All Indian</td><td>All Indian</td></tr>
-        <tr><td>Flow Builder</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td><td class="highlight-col"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td></tr>
-        <tr><td>Analytics</td><td>Basic</td><td class="highlight-col">Full</td><td>Advanced</td></tr>
-        <tr><td>Lead Capture</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td><td class="highlight-col"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td></tr>
-        <tr><td>Human Handoff</td><td>&mdash;</td><td class="highlight-col"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td></tr>
-        <tr><td>White-label</td><td>&mdash;</td><td class="highlight-col">&mdash;</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td></tr>
-        <tr><td>API Access</td><td>&mdash;</td><td class="highlight-col">&mdash;</td><td><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></td></tr>
-        <tr><td>Support</td><td>Email</td><td class="highlight-col">Priority</td><td>Dedicated</td></tr>
-      </tbody>
-    </table>
+<!-- Payment methods note -->
+<section style="text-align: center; padding: 0 1.5rem 3rem; max-width: 600px; margin: 0 auto;">
+  <p style="font-size: 13px; color: #999; margin: 0;">We accept Cards, UPI, Net Banking, Wallets, and PayPal via Paddle. All payments are secure and encrypted.</p>
+  <div style="display: flex; justify-content: center; gap: 12px; margin-top: 12px; opacity: 0.5;">
+    <span style="font-size: 12px; background: #f5f5f5; padding: 4px 10px; border-radius: 6px; color: #666;">Visa</span>
+    <span style="font-size: 12px; background: #f5f5f5; padding: 4px 10px; border-radius: 6px; color: #666;">Mastercard</span>
+    <span style="font-size: 12px; background: #f5f5f5; padding: 4px 10px; border-radius: 6px; color: #666;">UPI</span>
+    <span style="font-size: 12px; background: #f5f5f5; padding: 4px 10px; border-radius: 6px; color: #666;">PayPal</span>
+    <span style="font-size: 12px; background: #f5f5f5; padding: 4px 10px; border-radius: 6px; color: #666;">Net Banking</span>
   </div>
 </section>
 
 <style>
-  .pricing-hero { text-align: center; padding: 4rem 1.5rem 2rem; }
-  .pricing-hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; color: var(--text-primary); margin-bottom: 0.75rem; }
-  .pricing-subtitle { font-size: 1.15rem; color: var(--text-secondary, #555); max-width: 500px; margin: 0 auto; }
+  .p-card { position: relative; background: #fff; border: 1px solid #eee; border-radius: 14px; overflow: visible; transition: transform 0.2s, box-shadow 0.2s; }
+  .p-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.06); }
+  .p-card-inner { padding: 28px 24px 24px; display: flex; flex-direction: column; height: 100%; }
+  .p-card-active { border: 2px solid #16a34a; }
+  .p-card-popular { border: 2px solid #E8722A; }
+  .p-card-active.p-card-popular { border-color: #16a34a; }
 
-  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+  .p-popular-tag { position: absolute; top: 12px; right: 12px; background: #E8722A; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.3px; text-transform: uppercase; }
 
-  .pricing-card { position: relative; background: rgba(255,255,255,0.55); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.6); border-radius: 20px; padding: 2.5rem 1.75rem 2rem; display: flex; flex-direction: column; transition: transform 0.25s ease, box-shadow 0.25s ease; }
-  .pricing-card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0,0,0,0.08); }
-  .pricing-card.popular { border: 2px solid var(--orange); box-shadow: 0 8px 40px rgba(232,114,42,0.12); }
-  .pricing-card.current-plan { border: 2px solid #16a34a; box-shadow: 0 8px 40px rgba(34,197,94,0.1); }
+  .p-card h3 { font-size: 1.1rem; font-weight: 700; color: #111; margin: 0 0 8px; }
+  .p-price { font-size: 2rem; font-weight: 800; color: #111; margin-bottom: 6px; }
+  .p-price span { font-size: 0.8rem; font-weight: 500; color: #999; }
+  .p-desc { font-size: 0.82rem; color: #888; margin: 0 0 16px; }
 
-  .plan-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); font-size: 0.72rem; font-weight: 700; padding: 0.4rem 1.1rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; z-index: 1; }
-  .plan-badge.popular { background: var(--orange); color: #fff; }
-  .plan-badge.current { background: #16a34a; color: #fff; }
+  .p-features { list-style: none; padding: 0; margin: 0 0 20px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .p-features li { font-size: 0.85rem; color: #444; padding-left: 18px; position: relative; }
+  .p-features li::before { content: ''; position: absolute; left: 0; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: #E8722A; opacity: 0.7; }
 
-  .pricing-card-header { margin-bottom: 1.5rem; }
-  .pricing-card-header h3 { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
-  .pricing-amount { display: flex; align-items: baseline; gap: 0.25rem; margin-bottom: 0.5rem; }
-  .pricing-amount .price { font-size: 2.5rem; font-weight: 800; color: var(--text-primary); }
-  .pricing-amount .period { font-size: 0.9rem; color: var(--text-secondary, #777); }
-  .pricing-desc { font-size: 0.88rem; color: var(--text-secondary, #666); }
+  .p-btn { display: block; width: 100%; text-align: center; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; }
+  .p-btn-orange { background: #fff; color: #E8722A; border: 1.5px solid #E8722A; }
+  .p-btn-orange:hover { background: #E8722A; color: #fff; }
+  .p-btn-orange-fill { background: #E8722A; color: #fff; border: 1.5px solid #E8722A; }
+  .p-btn-orange-fill:hover { background: #d4631f; }
+  .p-btn-current { background: #ecfdf5; color: #059669; border: 1.5px solid #bbf7d0; cursor: default; }
+  .p-btn-grey { background: #f9fafb; color: #bbb; border: 1.5px solid #f0f0f0; cursor: default; }
 
-  .pricing-features { list-style: none; padding: 0; margin: 0 0 2rem 0; flex: 1; display: flex; flex-direction: column; gap: 0.65rem; }
-  .pricing-features li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.92rem; color: var(--text-primary); }
-
-  .pricing-btn { width: 100%; text-align: center; padding: 0.85rem 1.5rem; border-radius: 12px; font-weight: 600; font-size: 0.95rem; cursor: pointer; border: 1.5px solid var(--orange); background: rgba(232,114,42,0.06); color: var(--orange); transition: all 0.2s ease; text-decoration: none; display: block; }
-  .pricing-btn:hover { background: var(--orange); color: #fff; }
-  .pricing-btn.btn-popular { background: var(--orange); color: #fff; }
-  .pricing-btn.btn-popular:hover { background: #d4631f; }
-  .pricing-btn.btn-manage { background: rgba(34,197,94,0.08); color: #16a34a; border-color: rgba(34,197,94,0.3); }
-  .pricing-btn.btn-manage:hover { background: rgba(34,197,94,0.15); color: #15803d; }
-  .pricing-btn.btn-popular-manage { background: rgba(34,197,94,0.08); color: #16a34a; border-color: rgba(34,197,94,0.3); }
-  .pricing-btn.btn-popular-manage:hover { background: rgba(34,197,94,0.15); color: #15803d; }
-
-  .pricing-comparison { max-width: 900px; margin: 0 auto 4rem; padding: 0 1.5rem; }
-  .pricing-comparison h2 { text-align: center; font-size: 1.8rem; font-weight: 700; margin-bottom: 2rem; color: var(--text-primary); }
-  .comparison-table-wrapper { overflow-x: auto; border-radius: 16px; background: rgba(255,255,255,0.55); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.6); }
-  .comparison-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  .comparison-table th, .comparison-table td { padding: 0.85rem 1.25rem; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
-  .comparison-table th { font-weight: 700; color: var(--text-primary); background: rgba(0,0,0,0.02); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.3px; }
-  .comparison-table td:first-child { text-align: left; font-weight: 500; color: var(--text-primary); }
-  .comparison-table .highlight-col { background: rgba(232,114,42,0.04); }
-
-  @media screen and (max-width: 768px) {
-    .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
-    .pricing-hero h1 { font-size: 2rem; }
+  @media (max-width: 900px) {
+    section:nth-of-type(2) { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    section:nth-of-type(2) { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; }
   }
 </style>
 
 <script>
-const PADDLE_PRICES = {
+var PADDLE_PRICES = {
   starter: '{{ config.PADDLE_PRICE_STARTER or "" }}',
   growth: '{{ config.PADDLE_PRICE_GROWTH or "" }}',
   pro: '{{ config.PADDLE_PRICE_PRO or "" }}'
@@ -199,7 +168,7 @@ const PADDLE_PRICES = {
 
 function startCheckout(plan) {
   if (!PADDLE_PRICES[plan]) {
-    alert('This plan is not available for checkout right now. Please contact support.');
+    alert('This plan is not available right now. Contact support.');
     return;
   }
   fetch('/payments/checkout-session', {
@@ -207,10 +176,7 @@ function startCheckout(plan) {
     headers: {'Content-Type': 'application/json'}
   })
   .then(function(res) {
-    if (res.status === 401) {
-      window.location.href = '/login?next=/pricing';
-      return null;
-    }
+    if (res.status === 401) { window.location.href = '/login?next=/pricing'; return null; }
     return res.json();
   })
   .then(function(data) {
@@ -220,49 +186,20 @@ function startCheckout(plan) {
         items: [{ priceId: PADDLE_PRICES[plan], quantity: 1 }],
         customer: { email: data.email },
         customData: { org_id: String(data.org_id) },
-        settings: {
-          successUrl: window.location.origin + '/payments/upgrade-callback',
-          displayMode: 'overlay'
-        }
+        settings: { successUrl: window.location.origin + '/payments/upgrade-callback', displayMode: 'overlay' }
       });
     } else {
-      alert('Payment system is loading. Please try again.');
+      alert('Payment system loading. Try again in a moment.');
     }
   })
-  .catch(function(err) {
-    console.error(err);
-    alert('Unable to start checkout. Please try again.');
-  });
-function cancelPlan() {
-  if (!confirm('Are you sure you want to cancel your plan?\n\nYour current plan will remain active until the end of this billing period. No extra charges will be made.')) {
-    return;
-  }
-  fetch('/payments/cancel-plan', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'}
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert('Plan cancelled. You will retain access until the end of your current billing period.');
-      window.location.reload();
-    } else {
-      alert(data.error || 'Unable to cancel plan. Please contact support.');
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alert('Unable to cancel plan. Please try again.');
-  });
+  .catch(function(err) { console.error(err); alert('Checkout error. Please retry.'); });
 }
 </script>
 
 {% if config.PADDLE_CLIENT_TOKEN %}
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script>
-  {% if config.PADDLE_ENVIRONMENT == 'sandbox' %}
-  Paddle.Environment.set('sandbox');
-  {% endif %}
+  {% if config.PADDLE_ENVIRONMENT == 'sandbox' %}Paddle.Environment.set('sandbox');{% endif %}
   Paddle.Setup({ token: '{{ config.PADDLE_CLIENT_TOKEN }}' });
 </script>
 {% endif %}

@@ -91,11 +91,11 @@
     {% if plan != 'free' %}
     <div class="mp-actions">
       <button onclick="showModal('cancel')" class="mp-btn mp-btn-danger">Cancel Plan</button>
-      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Change Payment Method</button>
+      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Payment Methods</button>
     </div>
     {% else %}
     <div class="mp-actions">
-      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Update Payment Method</button>
+      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Payment Methods</button>
     </div>
     {% endif %}
   </div>
@@ -275,9 +275,9 @@ function showModal(type) {
   } else if (type === 'payment') {
     icon.className = 'mp-modal-icon info';
     icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>';
-    title.textContent = 'Update Payment Method';
-    body.textContent = 'You\'ll be redirected to Paddle\'s secure portal where you can add, remove, or change your payment card.';
-    actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Cancel</button><button class="mp-btn mp-btn-upgrade" onclick="confirmUpdatePayment()">Continue to Paddle</button>';
+    title.textContent = 'Payment Methods';
+    body.innerHTML = 'Paddle manages your payment method securely. Supported methods:<br><br><strong>Cards</strong> (Visa, Mastercard, Amex), <strong>UPI</strong>, <strong>Net Banking</strong>, <strong>PayPal</strong>, <strong>Google Pay</strong>, <strong>Apple Pay</strong><br><br>To change your card or payment method, you can cancel your current plan and resubscribe — Paddle will prompt you to enter a new payment method during checkout.';
+    actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Got it</button>';
   } else if (type === 'success') {
     icon.className = 'mp-modal-icon success';
     icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
