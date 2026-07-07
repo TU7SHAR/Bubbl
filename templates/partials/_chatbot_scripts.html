@@ -318,38 +318,49 @@
   }
 
   function updateLivePreview() {
-    const name = document.getElementById('bot_name').value || "Y Combinator", 
-          color = document.getElementById('theme_color').value, 
-          opacity = document.getElementById('glass_opacity').value, 
-          blur = document.getElementById('glass_blur').value, 
-          theme = document.getElementById('theme_mode').value;
+    const nameEl = document.getElementById('bot_name');
+    const colorEl = document.getElementById('theme_color');
+    const opacityEl = document.getElementById('glass_opacity');
+    const blurEl = document.getElementById('glass_blur');
+    const themeEl = document.getElementById('theme_mode');
 
-    document.getElementById('preview-name').innerText = name; 
-    document.getElementById('hex-display').innerText = color.toUpperCase(); 
-    document.getElementById('val-opacity').innerText = opacity + "%"; 
-    document.getElementById('val-blur').innerText = blur + "px";
-    
-    document.getElementById('preview-bubble').style.backgroundColor = color; 
-    
+    const name = (nameEl && nameEl.value) || "Y Combinator";
+    const color = (colorEl && colorEl.value) || "#E8722A";
+    const opacity = (opacityEl && opacityEl.value) || 85;
+    const blur = (blurEl && blurEl.value) || 25;
+    const theme = (themeEl && themeEl.value) || "light";
+
+    const previewName = document.getElementById('preview-name');
+    const hexDisplay = document.getElementById('hex-display');
+    const valOpacity = document.getElementById('val-opacity');
+    const valBlur = document.getElementById('val-blur');
+    const previewBubble = document.getElementById('preview-bubble');
     const avatarPreview = document.getElementById('preview-avatar');
     const avatarSetting = document.getElementById('preview-avatar-setting');
+
+    if (previewName) previewName.innerText = name;
+    if (hexDisplay) hexDisplay.innerText = color.toUpperCase();
+    if (valOpacity) valOpacity.innerText = opacity + "%";
+    if (valBlur) valBlur.innerText = blur + "px";
+    if (previewBubble) previewBubble.style.backgroundColor = color;
     
-    if (!avatarPreview.style.backgroundImage) {
+    if (avatarPreview && !avatarPreview.style.backgroundImage) {
         avatarPreview.style.backgroundColor = color; 
         avatarPreview.innerText = name.charAt(0).toUpperCase();
     }
-    if (!avatarSetting.style.backgroundImage) {
+    if (avatarSetting && !avatarSetting.style.backgroundImage) {
         avatarSetting.style.backgroundColor = color;
         avatarSetting.innerText = name.charAt(0).toUpperCase();
     }
 
-    const widget = document.getElementById('mock-widget'), 
-          alpha = opacity / 100, 
-          bgColor = (theme === 'dark') ? `rgba(17, 24, 39, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
-          
-    widget.style.backgroundColor = bgColor; 
-    widget.style.backdropFilter = `blur(${blur}px)`; 
-    widget.style.webkitBackdropFilter = `blur(${blur}px)`;
+    const widget = document.getElementById('mock-widget');
+    if (widget) {
+        const alpha = opacity / 100;
+        const bgColor = (theme === 'dark') ? `rgba(17, 24, 39, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
+        widget.style.backgroundColor = bgColor; 
+        widget.style.backdropFilter = `blur(${blur}px)`; 
+        widget.style.webkitBackdropFilter = `blur(${blur}px)`;
+    }
   }
 
   function previewAvatar(event) {
