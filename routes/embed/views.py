@@ -342,6 +342,9 @@ def update_bot_security(bot_id):
 
 @views_bp.route('/bot/<int:bot_id>/widget/feedback', methods=['POST'])
 def submit_feedback(bot_id):  
+    if 'user_id' not in session:
+        return jsonify({"error": "Please login to give feedback"}), 401
+
     data = request.json
     
     rating = data.get('rating')

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session, current_app, redirect, url_for, flash
+from flask import Blueprint, request, jsonify, session, current_app, redirect, url_for, flash, render_template
 from models.models import db, Organization, User, Payment
 from utils.mail_helper import send_payment_receipt, send_sale_notification
 import hmac
@@ -234,16 +234,69 @@ def create_checkout_session():
 @payments_bp.route('/upgrade-callback')
 def upgrade_callback():
     """
-    Fallback: called via successUrl after Paddle checkout completes.
-    If the webhook hasn't arrived yet, we can't upgrade here (no txn data),
-    but we flash a message and redirect to dashboard.
-    The actual upgrade happens via webhook — this is just UX.
+    Called via successUrl after Paddle checkout completes.
+    Shows a proper success page with plan details.
     """
     if 'user_id' not in session:
-        return redirect(url_for('auth_bp.login'))
+        return redirect(url_for('auth.login'))
 
-    flash("Payment successful! Your plan will be active within a few seconds.", "success")
-    return redirect(url_for('views_bp.dashboard'))
+    from utils.plan_limits import PLAN_LIMITS
+
+    org = Organization.query.get(session.get('org_id'))
+    plan = org.plan if org else 'free'
+    limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
+
+    return render_template('payment_success.html',
+        plan_name=plan.capitalize(),
+        messages_limit=limits.get('messages', 0),
+        bots_limit=limits.get('bots', 1),
+        org_name=org.name if org else '—'
+    )
+
+
+@payments_bp.route('/manage')
+def manage_plan():
+    """Manage Plan page — shows current plan, usage, and full payment history."""
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    from utils.plan_limits import PLAN_LIMITS
+    from models.models import Bot
+
+    org = Organization.query.get(session.get('org_id'))
+    plan = (org.plan if org else 'free') or 'free'
+    limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
+
+    messages_used = org.messages_used if org else 0
+    messages_limit = limits.get('messages', 0)
+    bots_limit = limits.get('bots', 1)
+    bot_count = Bot.query.filter_by(created_by=session['user_id']).count()
+    usage_percent = min(int((messages_used / messages_limit) * 100), 100) if messages_limit > 0 else 0
+
+    reset_date = '—'
+    if org and org.messages_reset_at:
+        reset_date = org.messages_reset_at.strftime('%b %d, %Y')
+    else:
+        reset_date = 'Next billing cycle'
+
+    # Payment history for this org
+    payments = Payment.query.filter_by(org_id=org.id if org else 0).order_by(Payment.created_at.desc()).all()
+    total_spent = sum(p.amount or 0 for p in payments if p.status == 'completed')
+
+    return render_template('manage_plan.html',
+        plan=plan,
+        plan_name=plan.capitalize(),
+        messages_used=messages_used,
+        messages_limit=messages_limit,
+        bots_limit=bots_limit,
+        bot_count=bot_count,
+        usage_percent=usage_percent,
+        reset_date=reset_date,
+        subscription_id=org.paddle_subscription_id if org else None,
+        customer_id=org.paddle_customer_id if org else None,
+        total_spent=total_spent,
+        payments=payments,
+    )
 
 
 @payments_bp.route('/test-webhook', methods=['GET'])
