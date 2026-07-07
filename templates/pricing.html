@@ -12,7 +12,10 @@
 
 <section class="pricing-grid">
   <!-- Free Plan -->
-  <div class="pricing-card lg">
+  <div class="pricing-card lg {% if current_plan == 'free' %}current-plan{% endif %}">
+    {% if current_plan == 'free' %}
+    <div class="current-badge">Your Plan</div>
+    {% endif %}
     <div class="pricing-card-header">
       <h3 class="bricolage">Free</h3>
       <div class="pricing-amount">
@@ -28,11 +31,18 @@
       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Basic AI</li>
       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> No expiry</li>
     </ul>
-    <a href="/register" class="btn btn-solid pricing-btn">Get Started Free</a>
+    {% if current_plan == 'free' %}
+      <span class="pricing-btn btn-current">Current Plan</span>
+    {% else %}
+      <a href="/register" class="btn btn-solid pricing-btn">Get Started Free</a>
+    {% endif %}
   </div>
 
   <!-- Starter Plan -->
-  <div class="pricing-card lg">
+  <div class="pricing-card lg {% if current_plan == 'starter' %}current-plan{% endif %}">
+    {% if current_plan == 'starter' %}
+    <div class="current-badge">Your Plan</div>
+    {% endif %}
     <div class="pricing-card-header">
       <h3 class="bricolage">Starter</h3>
       <div class="pricing-amount">
@@ -49,12 +59,23 @@
       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Basic analytics</li>
       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Lead capture</li>
     </ul>
-    <button onclick="startCheckout('starter')" class="btn btn-solid pricing-btn">Subscribe</button>
+    {% if current_plan == 'starter' %}
+      <span class="pricing-btn btn-current">Current Plan</span>
+      <button onclick="cancelPlan()" class="pricing-btn btn-cancel">Cancel Plan</button>
+    {% elif current_plan in ['growth', 'pro'] %}
+      <span class="pricing-btn btn-disabled">—</span>
+    {% else %}
+      <button onclick="startCheckout('starter')" class="btn btn-solid pricing-btn">Subscribe</button>
+    {% endif %}
   </div>
 
   <!-- Growth Plan -->
-  <div class="pricing-card lg popular">
+  <div class="pricing-card lg popular {% if current_plan == 'growth' %}current-plan{% endif %}">
+    {% if current_plan == 'growth' %}
+    <div class="current-badge">Your Plan</div>
+    {% else %}
     <div class="popular-badge">Most Popular</div>
+    {% endif %}
     <div class="pricing-card-header">
       <h3 class="bricolage">Growth</h3>
       <div class="pricing-amount">
@@ -72,11 +93,21 @@
       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Lead gen</li>
       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Priority support</li>
     </ul>
-    <button onclick="startCheckout('growth')" class="btn btn-solid pricing-btn btn-popular">Subscribe</button>
+    {% if current_plan == 'growth' %}
+      <span class="pricing-btn btn-current btn-popular">Current Plan</span>
+      <button onclick="cancelPlan()" class="pricing-btn btn-cancel">Cancel Plan</button>
+    {% elif current_plan == 'pro' %}
+      <span class="pricing-btn btn-disabled">—</span>
+    {% else %}
+      <button onclick="startCheckout('growth')" class="btn btn-solid pricing-btn btn-popular">Subscribe</button>
+    {% endif %}
   </div>
 
   <!-- Pro Plan -->
-  <div class="pricing-card lg">
+  <div class="pricing-card lg {% if current_plan == 'pro' %}current-plan{% endif %}">
+    {% if current_plan == 'pro' %}
+    <div class="current-badge">Your Plan</div>
+    {% endif %}
     <div class="pricing-card-header">
       <h3 class="bricolage">Pro</h3>
       <div class="pricing-amount">
@@ -94,7 +125,12 @@
       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Custom integrations</li>
       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Dedicated support</li>
     </ul>
-    <button onclick="startCheckout('pro')" class="btn btn-solid pricing-btn">Subscribe</button>
+    {% if current_plan == 'pro' %}
+      <span class="pricing-btn btn-current">Current Plan</span>
+      <button onclick="cancelPlan()" class="pricing-btn btn-cancel">Cancel Plan</button>
+    {% else %}
+      <button onclick="startCheckout('pro')" class="btn btn-solid pricing-btn">Subscribe</button>
+    {% endif %}
   </div>
 </section>
 
@@ -336,6 +372,56 @@
   .pricing-btn.btn-popular:hover {
     background: #d4631f;
   }
+  .pricing-btn.btn-current {
+    background: rgba(34,197,94,0.08);
+    color: #16a34a;
+    border-color: rgba(34,197,94,0.3);
+    cursor: default;
+    font-weight: 700;
+  }
+  .pricing-btn.btn-current.btn-popular {
+    background: rgba(34,197,94,0.08);
+    color: #16a34a;
+    border-color: rgba(34,197,94,0.3);
+  }
+  .pricing-btn.btn-disabled {
+    background: rgba(0,0,0,0.03);
+    color: #ccc;
+    border-color: rgba(0,0,0,0.06);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .pricing-btn.btn-cancel {
+    margin-top: 8px;
+    background: rgba(239,68,68,0.06);
+    color: #dc2626;
+    border-color: rgba(239,68,68,0.25);
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
+  }
+  .pricing-btn.btn-cancel:hover {
+    background: rgba(239,68,68,0.12);
+    color: #b91c1c;
+  }
+  .pricing-card.current-plan {
+    border: 2px solid #16a34a;
+    box-shadow: 0 8px 40px rgba(34,197,94,0.08);
+  }
+  .current-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #16a34a;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.35rem 1rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
 
   /* Comparison Table */
   .pricing-comparison {
@@ -445,6 +531,27 @@ function startCheckout(plan) {
   .catch(err => {
     console.error(err);
     alert('Unable to start checkout. Please try again.');
+  });
+function cancelPlan() {
+  if (!confirm('Are you sure you want to cancel your plan?\n\nYour current plan will remain active until the end of this billing period. No extra charges will be made.')) {
+    return;
+  }
+  fetch('/payments/cancel-plan', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Plan cancelled. You will retain access until the end of your current billing period.');
+      window.location.reload();
+    } else {
+      alert(data.error || 'Unable to cancel plan. Please contact support.');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Unable to cancel plan. Please try again.');
   });
 }
 </script>
