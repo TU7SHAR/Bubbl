@@ -173,7 +173,8 @@ function startCheckout(plan) {
   }
   fetch('/payments/checkout-session', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'}
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ plan: plan })
   })
   .then(function(res) {
     if (res.status === 401) { window.location.href = '/login?next=/pricing'; return null; }
