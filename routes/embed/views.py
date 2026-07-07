@@ -137,7 +137,12 @@ def features():
 
 @views_bp.route('/pricing')
 def pricing():
-    return render_template('pricing.html')
+    current_plan = 'free'
+    if session.get('user_id') and session.get('org_id'):
+        org = Organization.query.get(session['org_id'])
+        if org and org.plan:
+            current_plan = org.plan
+    return render_template('pricing.html', current_plan=current_plan)
 
 @views_bp.route('/export_leads')
 def export_leads():

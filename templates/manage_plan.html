@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Plan | Bubbl.ooo{% endblock %}
+
+{% block content %}
+<meta name="robots" content="noindex, nofollow">
+
+<div style="max-width: 900px; margin: 40px auto; padding: 0 20px; font-family: 'Outfit', sans-serif;">
+
+  <!-- Current Plan Card -->
+  <div style="background: rgba(255,255,255,0.25); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; padding: 32px; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h1 style="margin: 0 0 8px; font-size: 1.8rem; font-weight: 700;">{{ plan_name }} Plan</h1>
+        {% if plan != 'free' %}
+          <span style="display: inline-block; background: rgba(34,197,94,0.15); color: #16a34a; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Active</span>
+        {% else %}
+          <span style="display: inline-block; background: rgba(156,163,175,0.2); color: #6b7280; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Free</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Usage Stats -->
+    <div style="margin-top: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 0.9rem; color: #555;">Messages Used</span>
+        <span style="font-size: 0.9rem; font-weight: 600;">{{ messages_used }} / {{ messages_limit }}</span>
+      </div>
+      <div style="width: 100%; height: 10px; background: rgba(0,0,0,0.06); border-radius: 8px; overflow: hidden;">
+        <div style="width: {{ usage_percent }}%; height: 100%; background: linear-gradient(90deg, #E8722A, #f59e0b); border-radius: 8px; transition: width 0.5s ease;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.85rem; color: #777;">
+        <span>Bots: {{ bot_count }} / {{ bots_limit }}</span>
+        <span>Resets: {{ reset_date }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscription Details -->
+  <div style="background: rgba(255,255,255,0.25); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; padding: 32px; margin-bottom: 24px;">
+    <h2 style="margin: 0 0 20px; font-size: 1.3rem; font-weight: 600;">Subscription Details</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      <div>
+        <p style="margin: 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Subscription ID</p>
+        <p style="margin: 4px 0 0; font-size: 0.95rem; font-weight: 500;">{{ subscription_id or 'N/A' }}</p>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Customer ID</p>
+        <p style="margin: 4px 0 0; font-size: 0.95rem; font-weight: 500;">{{ customer_id or 'N/A' }}</p>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Payment Method</p>
+        <p style="margin: 4px 0 0; font-size: 0.95rem; font-weight: 500;">Managed via Paddle</p>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Total Spent</p>
+        <p style="margin: 4px 0 0; font-size: 0.95rem; font-weight: 600; color: #E8722A;">${{ "%.2f"|format(total_spent) }}</p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap;">
+      {% if plan != 'free' %}
+      <button onclick="cancelPlan()" style="padding: 10px 24px; background: rgba(239,68,68,0.1); color: #dc2626; border: 1.5px solid rgba(239,68,68,0.3); border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+        CANCEL PLAN
+      </button>
+      {% endif %}
+      <button onclick="updatePaymentMethod()" style="padding: 10px 24px; background: rgba(232,114,42,0.1); color: #E8722A; border: 1.5px solid rgba(232,114,42,0.3); border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+        UPDATE PAYMENT METHOD
+      </button>
+    </div>
+
+    <p style="margin-top: 16px; font-size: 0.8rem; color: #999; line-height: 1.5;">
+      Cancellation takes effect at end of current billing period. No extra charges will be made.
+    </p>
+  </div>
+
+  <!-- Payment History -->
+  <div style="background: rgba(255,255,255,0.25); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.3); border-radius: 16px; padding: 32px; margin-bottom: 24px;">
+    <h2 style="margin: 0 0 20px; font-size: 1.3rem; font-weight: 600;">Payment History</h2>
+    
+    {% if payments %}
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+        <thead>
+          <tr style="border-bottom: 1px solid rgba(0,0,0,0.08);">
+            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Date</th>
+            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Plan</th>
+            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Amount</th>
+            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Status</th>
+            <th style="text-align: left; padding: 12px 8px; font-weight: 600; color: #555;">Transaction ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in payments %}
+          <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
+            <td style="padding: 12px 8px;">{{ payment.created_at.strftime('%b %d, %Y') if payment.created_at else 'N/A' }}</td>
+            <td style="padding: 12px 8px; text-transform: capitalize;">{{ payment.plan }}</td>
+            <td style="padding: 12px 8px; font-weight: 500;">{{ payment.amount }} {{ payment.currency }}</td>
+            <td style="padding: 12px 8px;">
+              {% if payment.status == 'completed' %}
+                <span style="display: inline-block; background: rgba(34,197,94,0.12); color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">Completed</span>
+              {% elif payment.status == 'failed' %}
+                <span style="display: inline-block; background: rgba(239,68,68,0.12); color: #dc2626; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">Failed</span>
+              {% elif payment.status == 'refunded' %}
+                <span style="display: inline-block; background: rgba(156,163,175,0.15); color: #6b7280; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">Refunded</span>
+              {% elif payment.status == 'pending' %}
+                <span style="display: inline-block; background: rgba(245,158,11,0.12); color: #d97706; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">Pending</span>
+              {% else %}
+                <span style="display: inline-block; background: rgba(156,163,175,0.15); color: #6b7280; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;">{{ payment.status }}</span>
+              {% endif %}
+            </td>
+            <td style="padding: 12px 8px; font-size: 0.82rem; color: #777;">{{ payment.paddle_transaction_id or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px 20px; color: #999;">
+      <p style="font-size: 1rem; margin: 0;">No payments yet.</p>
+      <p style="font-size: 0.85rem; margin-top: 8px;">Your payment history will appear here once you subscribe to a plan.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Back to Profile -->
+  <div style="text-align: center; margin-bottom: 40px;">
+    <a href="{{ url_for('profile_bp.profile') }}" style="color: #E8722A; font-size: 0.9rem; text-decoration: none; font-weight: 500;">← Back to Profile</a>
+  </div>
+
+</div>
+
+<script>
+function cancelPlan() {
+  if (!confirm('Are you sure you want to cancel your plan? Your access will continue until the end of the current billing period.')) {
+    return;
+  }
+  fetch('/payments/cancel-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message || 'Plan cancelled successfully.');
+      window.location.reload();
+    } else {
+      alert(data.error || 'Failed to cancel plan.');
+    }
+  })
+  .catch(err => {
+    alert('An error occurred. Please try again.');
+    console.error(err);
+  });
+}
+
+function updatePaymentMethod() {
+  fetch('/payments/update-payment-method', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success && data.url) {
+      window.location.href = data.url;
+    } else {
+      alert(data.error || 'Failed to get payment method update URL.');
+    }
+  })
+  .catch(err => {
+    alert('An error occurred. Please try again.');
+    console.error(err);
+  });
+}
+</script>
+{% endblock %}
