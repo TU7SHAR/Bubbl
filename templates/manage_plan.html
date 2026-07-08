@@ -21,8 +21,10 @@
     <div class="mp-card">
       <div class="mp-card-top">
         <span class="mp-label">Current Plan</span>
-        {% if plan != 'free' %}
-        <span class="mp-badge mp-badge-active">Active</span>
+        {% if sub_status == 'canceled' %}
+        <span class="mp-badge mp-badge-cancel">Canceled</span>
+        {% elif plan != 'free' %}
+        <span class="mp-badge mp-badge-active">Paid &middot; Active</span>
         {% else %}
         <span class="mp-badge mp-badge-free">Free Tier</span>
         {% endif %}
@@ -35,8 +37,17 @@
         {% else %}&#8377;0<span>/forever</span>
         {% endif %}
       </div>
-      {% if plan != 'pro' %}
+
+      {% if sub_status == 'canceled' and sub_ends %}
+      <div class="mp-notice mp-notice-warn">
+        Access continues until <strong>{{ sub_ends.strftime('%b %d, %Y') }} (11:59 PM)</strong>, then your account moves to Free.
+      </div>
+      {% endif %}
+
+      {% if plan != 'pro' and sub_status != 'canceled' %}
       <a href="/pricing" class="mp-btn mp-btn-upgrade">Upgrade Plan</a>
+      {% elif sub_status == 'canceled' %}
+      <button onclick="reactivatePlan()" class="mp-btn mp-btn-upgrade">Reactivate Plan</button>
       {% endif %}
     </div>
 
@@ -75,27 +86,54 @@
     </div>
     <div class="mp-billing-grid">
       <div class="mp-billing-item">
-        <span class="mp-billing-key">Subscription</span>
+        <span class="mp-billing-key">Status</span>
+        <span class="mp-billing-val">
+          {% if sub_status == 'canceled' %}
+          <span class="mp-status mp-status-refund">Canceled</span>
+          {% elif plan != 'free' %}
+          <span class="mp-status mp-status-ok">Paid</span>
+          {% else %}
+          <span class="mp-status mp-status-pending">Free</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="mp-billing-item">
+        <span class="mp-billing-key">Payment Method</span>
+        <span class="mp-billing-val">
+          {% if card_brand and card_last4 %}
+          <span style="display:inline-flex; align-items:center; gap:6px;">
+            <svg width="20" height="14" viewBox="0 0 24 16" fill="none"><rect width="24" height="16" rx="2" fill="#E8722A" opacity="0.15"></rect><rect x="0" y="4" width="24" height="3" fill="#E8722A" opacity="0.5"></rect></svg>
+            {{ card_brand|title }} &middot;&middot;&middot;&middot; {{ card_last4 }}
+          </span>
+          {% else %}{{ payment_method_label }}{% endif %}
+        </span>
+      </div>
+      <div class="mp-billing-item">
+        <span class="mp-billing-key">Start Date</span>
+        <span class="mp-billing-val">{{ sub_started.strftime('%b %d, %Y') if sub_started else '—' }}</span>
+      </div>
+      <div class="mp-billing-item">
+        <span class="mp-billing-key">{% if sub_status == 'canceled' %}Access Ends{% else %}Renews / Ends{% endif %}</span>
+        <span class="mp-billing-val">{{ sub_ends.strftime('%b %d, %Y') if sub_ends else '—' }}</span>
+      </div>
+      <div class="mp-billing-item">
+        <span class="mp-billing-key">Subscription ID</span>
         <span class="mp-billing-val mono">{{ subscription_id or '—' }}</span>
       </div>
       <div class="mp-billing-item">
-        <span class="mp-billing-key">Customer</span>
+        <span class="mp-billing-key">Customer ID</span>
         <span class="mp-billing-val mono">{{ customer_id or '—' }}</span>
-      </div>
-      <div class="mp-billing-item">
-        <span class="mp-billing-key">Payment</span>
-        <span class="mp-billing-val">Managed via Paddle</span>
       </div>
     </div>
 
-    {% if plan != 'free' %}
+    {% if plan != 'free' and sub_status != 'canceled' %}
     <div class="mp-actions">
-      <button onclick="showModal('cancel')" class="mp-btn mp-btn-danger">Cancel Plan</button>
-      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Payment Methods</button>
+      <button onclick="openCancelModal()" class="mp-btn mp-btn-danger">Cancel & Request Refund</button>
+      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Update Payment Method</button>
     </div>
     {% else %}
     <div class="mp-actions">
-      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Payment Methods</button>
+      <button onclick="showModal('payment')" class="mp-btn mp-btn-secondary">Update Payment Method</button>
     </div>
     {% endif %}
   </div>
@@ -116,7 +154,7 @@
             <th>Plan</th>
             <th>Amount</th>
             <th>Status</th>
-            <th>Transaction</th>
+            <th>Invoice</th>
           </tr>
         </thead>
         <tbody>
@@ -127,7 +165,12 @@
               <span class="mp-date-sub">{{ p.created_at.strftime('%I:%M %p') if p.created_at else '' }}</span>
             </td>
             <td><span class="mp-plan-pill">{{ (p.plan or '—')|capitalize }}</span></td>
-            <td class="mp-amount">&#8377;{{ '{:,.2f}'.format(p.amount or 0) }}</td>
+            <td class="mp-amount">
+              &#8377;{{ '{:,.2f}'.format(p.amount or 0) }}
+              {% if p.refund_amount and p.refund_amount > 0 %}
+              <span class="mp-date-sub" style="color:#dc2626;">- &#8377;{{ '{:,.2f}'.format(p.refund_amount) }} refunded</span>
+              {% endif %}
+            </td>
             <td>
               {% if p.status == 'completed' %}
               <span class="mp-status mp-status-ok">Paid</span>
@@ -135,11 +178,18 @@
               <span class="mp-status mp-status-fail">Failed</span>
               {% elif p.status == 'refunded' %}
               <span class="mp-status mp-status-refund">Refunded</span>
+              {% elif p.status == 'partially_refunded' %}
+              <span class="mp-status mp-status-refund">Part. Refund</span>
               {% else %}
               <span class="mp-status mp-status-pending">Pending</span>
               {% endif %}
             </td>
-            <td class="mono mp-txn">{{ p.paddle_transaction_id or '—' }}</td>
+            <td>
+              <a href="/payments/invoice/{{ p.id }}" target="_blank" class="mp-invoice-link" title="View / download invoice">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Invoice
+              </a>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -186,6 +236,20 @@
   .mp-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; }
   .mp-badge-active { background: #ecfdf5; color: #059669; }
   .mp-badge-free { background: #f3f4f6; color: #6b7280; }
+  .mp-badge-cancel { background: #fef2f2; color: #dc2626; }
+
+  .mp-notice { font-size: 12.5px; line-height: 1.5; padding: 10px 14px; border-radius: 10px; margin-bottom: 16px; }
+  .mp-notice-warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+  .mp-invoice-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #E8722A; text-decoration: none; padding: 5px 10px; border: 1px solid rgba(232,114,42,0.3); border-radius: 7px; transition: all 0.15s ease; }
+  .mp-invoice-link:hover { background: rgba(232,114,42,0.08); }
+
+  /* Refund calculation breakdown */
+  .mp-refund-calc { text-align: left; background: #f9fafb; border-radius: 10px; padding: 14px 16px; margin: 4px 0 20px; font-size: 13px; }
+  .mp-refund-calc .rc-row { display: flex; justify-content: space-between; padding: 5px 0; color: #4b5563; }
+  .mp-refund-calc .rc-row.rc-total { border-top: 1px dashed #d1d5db; margin-top: 6px; padding-top: 10px; font-weight: 800; color: #059669; font-size: 15px; }
+  .mp-refund-calc .rc-row.rc-deduct { color: #b45309; }
+  .mp-refund-formula { font-size: 11px; color: #9ca3af; margin-top: 10px; font-family: 'SF Mono','Fira Code',monospace; line-height: 1.5; }
 
   .mp-plan-name { font-size: 22px; font-weight: 700; color: #111; margin: 0 0 4px; }
   .mp-plan-price { font-size: 28px; font-weight: 800; color: #E8722A; margin-bottom: 16px; }
@@ -299,10 +363,64 @@ function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
 }
 
+// Opens the cancel modal AFTER fetching the proportionate refund preview
+function openCancelModal() {
+  var overlay = document.getElementById('modalOverlay');
+  var icon = document.getElementById('modalIcon');
+  var title = document.getElementById('modalTitle');
+  var body = document.getElementById('modalBody');
+  var actions = document.getElementById('modalActions');
+
+  icon.className = 'mp-modal-icon danger';
+  icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+  title.textContent = 'Cancel plan & request refund?';
+  body.innerHTML = '<div style="color:#888; font-size:13px;">Calculating your proportionate refund…</div>';
+  actions.innerHTML = '';
+  overlay.classList.add('active');
+
+  fetch('/payments/refund-preview', { method: 'GET', headers: { 'Content-Type': 'application/json' } })
+    .then(function(res) { return res.json(); })
+    .then(function(d) {
+      if (!d.success) {
+        body.innerHTML = '<div style="color:#dc2626;">' + (d.error || 'Could not calculate refund.') + '</div>';
+        actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Close</button>';
+        return;
+      }
+
+      var html = '';
+      if (d.has_payment && d.eligible) {
+        html += '<div style="font-size:13px; color:#555; margin-bottom:6px;">You\'re within the <strong>' + d.refund_window_days + '-day</strong> refund window. Here\'s your proportionate refund:</div>';
+        html += '<div class="mp-refund-calc">';
+        html += '<div class="rc-row"><span>' + d.plan + ' plan (this period)</span><span>₹' + d.plan_price.toFixed(2) + '</span></div>';
+        html += '<div class="rc-row"><span>Daily rate (₹' + d.plan_price.toFixed(2) + ' ÷ ' + d.billing_days + ')</span><span>₹' + d.daily_rate.toFixed(2) + '</span></div>';
+        html += '<div class="rc-row rc-deduct"><span>Used: ' + d.days_used + ' day' + (d.days_used > 1 ? 's' : '') + ' × ₹' + d.daily_rate.toFixed(2) + '</span><span>- ₹' + d.amount_consumed.toFixed(2) + '</span></div>';
+        html += '<div class="rc-row rc-total"><span>Refund to you</span><span>₹' + d.refund_amount.toFixed(2) + '</span></div>';
+        html += '<div class="mp-refund-formula">refund = plan_price − (daily_rate × days_used)<br>= ' + d.plan_price.toFixed(2) + ' − (' + d.daily_rate.toFixed(2) + ' × ' + d.days_used + ') = ₹' + d.refund_amount.toFixed(2) + '</div>';
+        html += '</div>';
+        html += '<div style="font-size:12.5px; color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 12px;">You keep full access until <strong>' + d.access_until + '</strong>.</div>';
+      } else if (d.has_payment && !d.eligible) {
+        html += '<div class="mp-refund-calc">';
+        html += '<div class="rc-row"><span>Purchased on</span><span>' + d.purchase_date + '</span></div>';
+        html += '<div class="rc-row"><span>Days used</span><span>' + d.days_used + '</span></div>';
+        html += '<div class="rc-row rc-total" style="color:#b45309;"><span>Refund</span><span>₹0.00</span></div>';
+        html += '</div>';
+        html += '<div style="font-size:12.5px; color:#92400e;">This is outside the ' + d.refund_window_days + '-day refund window' + (d.refund_amount === 0 ? ' or the period is fully consumed' : '') + ', so no refund applies. Your plan will still stay active until <strong>' + (d.access_until || 'the end of today') + '</strong>.</div>';
+      } else {
+        html += '<div style="font-size:13px; color:#555;">' + (d.message || 'Cancelling will stop future billing. Access continues until the end of today.') + '</div>';
+      }
+
+      body.innerHTML = html;
+      actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Keep Plan</button><button class="mp-btn mp-btn-danger" onclick="confirmCancel()">Confirm Cancel</button>';
+    })
+    .catch(function() {
+      body.innerHTML = '<div style="color:#dc2626;">Network error. Please try again.</div>';
+      actions.innerHTML = '<button class="mp-btn mp-btn-secondary" onclick="closeModal()">Close</button>';
+    });
+}
+
 function confirmCancel() {
   var btn = document.querySelector('#modalActions .mp-btn-danger');
-  btn.textContent = 'Cancelling...';
-  btn.disabled = true;
+  if (btn) { btn.textContent = 'Processing...'; btn.disabled = true; }
 
   fetch('/payments/cancel-plan', {
     method: 'POST',
@@ -310,10 +428,26 @@ function confirmCancel() {
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
-    closeModal();
     if (data.success) {
-      setTimeout(function() { showModal('success'); }, 200);
+      var icon = document.getElementById('modalIcon');
+      var title = document.getElementById('modalTitle');
+      var body = document.getElementById('modalBody');
+      var actions = document.getElementById('modalActions');
+
+      icon.className = 'mp-modal-icon success';
+      icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      title.textContent = 'Plan Cancelled';
+
+      var msg = '<div style="font-size:13.5px; color:#555; margin-bottom:10px;">' + (data.message || '') + '</div>';
+      if (data.refund && data.refund.eligible && data.refund.refund_amount > 0) {
+        msg += '<div class="mp-refund-calc"><div class="rc-row rc-total"><span>Refund issued</span><span>₹' + data.refund.refund_amount.toFixed(2) + '</span></div>';
+        msg += '<div class="mp-refund-formula">' + data.refund.plan_price.toFixed(2) + ' − (' + data.refund.daily_rate.toFixed(2) + ' × ' + data.refund.days_used + ' day' + (data.refund.days_used > 1 ? 's' : '') + ') = ₹' + data.refund.refund_amount.toFixed(2) + '</div></div>';
+        msg += '<div style="font-size:12px; color:#888;">The refund is processed by Paddle to your original payment method (5–10 business days).</div>';
+      }
+      body.innerHTML = msg;
+      actions.innerHTML = '<button class="mp-btn mp-btn-upgrade" onclick="window.location.reload()">Got it</button>';
     } else {
+      closeModal();
       window._modalErrorMsg = data.error || 'Failed to cancel plan.';
       setTimeout(function() { showModal('error'); }, 200);
     }
@@ -322,6 +456,26 @@ function confirmCancel() {
     closeModal();
     window._modalErrorMsg = 'Network error. Please check your connection.';
     setTimeout(function() { showModal('error'); }, 200);
+  });
+}
+
+function reactivatePlan() {
+  fetch('/payments/reactivate-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.success) {
+      window.location.reload();
+    } else {
+      window._modalErrorMsg = data.error || 'Could not reactivate. Please subscribe to a new plan.';
+      showModal('error');
+    }
+  })
+  .catch(function() {
+    window._modalErrorMsg = 'Network error. Please try again.';
+    showModal('error');
   });
 }
 

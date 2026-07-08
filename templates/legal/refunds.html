@@ -7,81 +7,93 @@
 <section class="legal-page">
   <div class="prose">
     <h1 class="bricolage">Refund Policy</h1>
-    <p class="legal-updated">Last updated: July 2026</p>
+    <p class="legal-updated">Last updated: July 8, 2026</p>
 
-    <p>At Bubbl.ooo, we want you to be completely satisfied with our service. This Refund Policy outlines the terms and conditions under which refunds are granted for paid subscriptions.</p>
+    <p>At Bubbl.ooo, we want you to be completely satisfied with our service. This Refund Policy explains our <strong>14-day proportionate (pro-rated) refund</strong> system, how refunds are calculated, and how cancellations affect your access.</p>
 
-    <h2>1. 7-Day Refund Window</h2>
-    <p>We offer a <strong>7-day refund window</strong> from the date of your initial subscription purchase. If you are not satisfied with the Service within the first 7 days of a new subscription, you may request a full refund with no questions asked.</p>
-    <p>This 7-day window applies only to:</p>
+    <h2>1. 14-Day Proportionate Refund Window</h2>
+    <p>We offer a <strong>14-day refund window</strong> from the date of your subscription purchase. If you cancel within 14 days, you are entitled to a <strong>proportionate (fractional) refund</strong> — you are only charged for the days you actually used, and the rest is refunded to you.</p>
+    <p>This window applies to first-time subscriptions and plan upgrades (Starter, Growth, Pro). The window is counted from the original purchase date and does not reset on renewal.</p>
+
+    <h2>2. How the Proportionate Refund Is Calculated</h2>
+    <p>Your refund is calculated on a <strong>per-day basis</strong>. We divide your plan's monthly price across a standard <strong>30-day billing period</strong> to get a daily rate, charge you only for the days used (the day of cancellation counts as a used day), and refund the remainder.</p>
+
+    <div style="background: #f9fafb; border: 1px solid #eee; border-radius: 10px; padding: 18px 20px; margin: 16px 0; font-family: 'SF Mono','Fira Code',monospace; font-size: 0.9rem; line-height: 1.8; color: #374151;">
+      daily_rate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= plan_price &divide; 30<br>
+      days_used&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= (cancel_day &minus; purchase_day) + 1<br>
+      amount_used&nbsp;&nbsp;= daily_rate &times; days_used<br>
+      <strong style="color:#059669;">refund&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= plan_price &minus; amount_used</strong>
+    </div>
+
+    <h3>Day Counting</h3>
     <ul>
-      <li>First-time subscriptions to a paid plan (Starter, Growth, or Pro)</li>
-      <li>Upgrades to a higher-tier plan (refund applies to the price difference)</li>
+      <li>The <strong>day you purchase counts as day 1</strong>.</li>
+      <li>The <strong>day you cancel is also counted as a used day</strong> (you retain access for the full day — see Section 4).</li>
+      <li>Only whole calendar days are counted.</li>
     </ul>
-    <p>The 7-day refund window does not reset upon renewal. It applies only to the initial purchase or upgrade.</p>
 
-    <h2>2. Cancellation Terms</h2>
-    <p>You may cancel your subscription at any time from your account profile settings. Upon cancellation:</p>
+    <h3>Worked Example</h3>
+    <p>Suppose you buy the <strong>Starter plan at &#8377;499</strong> today, then request a refund <strong>5 minutes later</strong> (same day):</p>
     <ul>
-      <li>Your subscription remains active until the end of the current billing period</li>
-      <li>You will not be charged for the next billing cycle</li>
-      <li>Your account will be automatically downgraded to the Free plan after the period ends</li>
-      <li>Your chatbot data and configuration will be preserved, but features beyond the Free plan limits will become inaccessible</li>
+      <li>daily_rate = &#8377;499 &divide; 30 = <strong>&#8377;16.63</strong></li>
+      <li>days_used = 1 (today counts) → amount_used = &#8377;16.63 &times; 1 = <strong>&#8377;16.63</strong></li>
+      <li>refund = &#8377;499.00 &minus; &#8377;16.63 = <strong style="color:#059669;">&#8377;482.37</strong></li>
     </ul>
-    <p>Cancellation does not automatically trigger a refund. If you wish to receive a refund, you must explicitly request one (see Section 3).</p>
+    <p>So we deduct only today's usage (&#8377;16.63) and refund the rest (&#8377;482.37). The exact breakdown is always shown to you on the "Manage Plan" page <em>before</em> you confirm the cancellation.</p>
 
-    <h2>3. How to Request a Refund</h2>
-    <p>To request a refund, please follow these steps:</p>
-    <ol>
-      <li>Send an email to <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a> with the subject line "Refund Request"</li>
-      <li>Include your registered email address and organization name</li>
-      <li>Briefly describe the reason for your refund request</li>
-      <li>Our team will review your request within 2 business days</li>
-    </ol>
-    <p>Once approved, refunds are processed through Paddle (our payment processor) and typically appear in your account within 5-10 business days, depending on your bank or payment provider.</p>
-
-    <h2>4. Paddle Processes Refunds</h2>
-    <p><strong>Paddle</strong> is our Merchant of Record and handles all payment processing, including refunds. When a refund is approved:</p>
+    <h2>3. Automatic Calculation at Cancellation</h2>
+    <p>You don't need to email us to get a proportionate refund within the window. When you click <strong>"Cancel &amp; Request Refund"</strong> on your Manage Plan page:</p>
     <ul>
-      <li>Paddle initiates the refund to your original payment method</li>
-      <li>You will receive a confirmation email from Paddle</li>
-      <li>The refund amount will appear on your statement from Paddle (not Bubbl.ooo)</li>
-      <li>Processing times vary by payment method and region</li>
+      <li>The system instantly computes your refund using the formula above</li>
+      <li>You see the full calculation (plan price, daily rate, days used, refund amount) before confirming</li>
+      <li>On confirmation, the refund is submitted to Paddle and recorded on your account</li>
     </ul>
-    <p>If you have questions about a refund's status after approval, you may contact Paddle's support directly or reach out to us at <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a>.</p>
 
-    <h2>5. Non-Refundable Items</h2>
+    <h2>4. Access Continues Until the End of the Cancellation Day</h2>
+    <p>When you cancel, your plan does <strong>not</strong> shut off immediately. You keep <strong>full access to your current plan until 11:59 PM (23:59) of the day you cancel</strong>. After that, your account automatically moves to the Free plan.</p>
+    <ul>
+      <li>Your subscription status will show as <strong>"Canceled"</strong> with the exact access end date and time</li>
+      <li>All paid features remain available until that day ends</li>
+      <li>Your chatbot data and configuration are preserved; only features above the Free plan limits become unavailable afterwards</li>
+    </ul>
+
+    <h2>5. Refunds After the 14-Day Window</h2>
+    <p>If you cancel <strong>after</strong> the 14-day window, no automatic refund is issued. Your subscription will simply not renew, and you retain access until the end of the current day. In exceptional cases (see Section 7), a discretionary refund may still be granted.</p>
+
+    <h2>6. Paddle Processes All Refunds</h2>
+    <p><strong>Paddle</strong> is our Merchant of Record and handles all payment processing, including refunds. When a refund is issued:</p>
+    <ul>
+      <li>Paddle returns the funds to your original payment method (card, UPI, PayPal, etc.)</li>
+      <li>You receive a confirmation email from Paddle</li>
+      <li>The refund appears on your statement from Paddle (not Bubbl.ooo)</li>
+      <li>Processing typically takes <strong>5–10 business days</strong> depending on your bank or provider</li>
+    </ul>
+
+    <h2>7. Exceptional Circumstances</h2>
+    <p>Outside the standard 14-day window, we may grant discretionary refunds in cases such as:</p>
+    <ul>
+      <li>Extended service outage (more than 48 consecutive hours) that materially impacts your business</li>
+      <li>Billing errors or duplicate charges</li>
+      <li>Advertised features not delivered within a reasonable timeframe</li>
+    </ul>
+    <p>Each case is reviewed individually. Email <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a> with the subject line "Refund Request" and your registered email address.</p>
+
+    <h2>8. Non-Refundable Items</h2>
     <p>The following are <strong>not eligible</strong> for refunds:</p>
     <ul>
-      <li>Subscription renewals beyond the 7-day initial window</li>
-      <li>Partial months of service (subscriptions are billed in full monthly cycles)</li>
+      <li>Cancellations made after the 14-day window (no pro-rated refund)</li>
       <li>Accounts terminated due to Terms of Service violations</li>
-      <li>Message overage charges (if applicable in future plans)</li>
       <li>Custom integration or development work performed on your behalf</li>
       <li>Free plan accounts (no payment was made)</li>
     </ul>
 
-    <h2>6. Exceptional Circumstances</h2>
-    <p>We understand that exceptional circumstances may arise. In the following situations, we may grant refunds outside the standard 7-day window at our discretion:</p>
-    <ul>
-      <li>Extended service outage (more than 48 consecutive hours) that materially impacts your business</li>
-      <li>Billing errors or duplicate charges</li>
-      <li>Service features that were advertised but not delivered within a reasonable timeframe</li>
-    </ul>
-    <p>Each case is reviewed individually. Please contact support with relevant details.</p>
+    <h2>9. Downgrades and Plan Changes</h2>
+    <p>If you downgrade to a lower-tier plan, the change takes effect at the start of your next billing cycle, and you retain access to your current tier's features until then. Proportionate refunds apply to full cancellations within the 14-day window, not to downgrades.</p>
 
-    <h2>7. Downgrades and Plan Changes</h2>
-    <p>If you downgrade to a lower-tier plan:</p>
-    <ul>
-      <li>The change takes effect at the start of your next billing cycle</li>
-      <li>No partial refund is issued for the remaining days on the higher-tier plan</li>
-      <li>You retain access to higher-tier features until the current period ends</li>
-    </ul>
-
-    <h2>8. Changes to This Policy</h2>
+    <h2>10. Changes to This Policy</h2>
     <p>We may update this Refund Policy from time to time. Changes will be posted on this page with an updated "Last updated" date. Material changes will be communicated via email to active subscribers.</p>
 
-    <h2>9. Contact Us</h2>
+    <h2>11. Contact Us</h2>
     <p>For refund requests or questions about this policy, please contact us at:</p>
     <p>
       <strong>Email:</strong> <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a><br>

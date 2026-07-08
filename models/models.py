@@ -11,6 +11,17 @@ class Organization(db.Model):
     messages_reset_at = db.Column(db.DateTime, nullable=True)  # When the monthly counter resets
     paddle_subscription_id = db.Column(db.String(255), nullable=True)
     paddle_customer_id = db.Column(db.String(255), nullable=True)
+
+    # --- SUBSCRIPTION LIFECYCLE ---
+    subscription_status = db.Column(db.String(20), default='free')   # free, active, canceled
+    subscription_started_at = db.Column(db.DateTime, nullable=True)  # When current paid plan began
+    subscription_ends_at = db.Column(db.DateTime, nullable=True)     # When access ends (23:59 of cancel day, or next billing)
+
+    # --- PAYMENT METHOD (from Paddle) ---
+    payment_method = db.Column(db.String(30), nullable=True)   # card, paypal, ideal, alipay, etc.
+    card_brand = db.Column(db.String(30), nullable=True)       # visa, mastercard, amex, rupay
+    card_last4 = db.Column(db.String(4), nullable=True)        # last 4 digits
+
     users = db.relationship('User', backref='organization', lazy=True)
 
 class User(db.Model):
@@ -83,7 +94,19 @@ class Payment(db.Model):
     customer_email = db.Column(db.String(120), nullable=True)
     paddle_transaction_id = db.Column(db.String(255), unique=True, nullable=True)
     paddle_customer_id = db.Column(db.String(255), nullable=True)
-    status = db.Column(db.String(30), default='completed')      # completed / refunded
+    paddle_subscription_id = db.Column(db.String(255), nullable=True)
+    product_id = db.Column(db.String(255), nullable=True)       # Paddle price/product id
+    status = db.Column(db.String(30), default='completed')      # completed / refunded / partially_refunded
+
+    # --- PAYMENT METHOD SNAPSHOT ---
+    payment_method = db.Column(db.String(30), nullable=True)    # card, paypal, upi, etc.
+    card_brand = db.Column(db.String(30), nullable=True)        # visa, mastercard, rupay
+    card_last4 = db.Column(db.String(4), nullable=True)
+
+    # --- REFUND TRACKING ---
+    refund_amount = db.Column(db.Float, default=0.0)            # amount refunded (major units)
+    refunded_at = db.Column(db.DateTime, nullable=True)
+
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class BotUI(db.Model):

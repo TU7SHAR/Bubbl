@@ -43,6 +43,110 @@ PLAN_LIMITS = {
 }
 
 
+# Monthly plan price in INR (used for proportionate refund maths)
+PLAN_PRICE_INR = {
+    'free': 0,
+    'starter': 499,
+    'growth': 1499,
+    'pro': 4999,
+}
+
+# Standard billing period length used for daily proration
+BILLING_DAYS = 30
+
+# Refund eligibility window (days from purchase)
+REFUND_WINDOW_DAYS = 14
+
+
+def _aware(dt):
+    """Return a timezone-aware (UTC) datetime, treating naive DB values as UTC."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def end_of_day(dt):
+    """Return 23:59:59 (UTC) of the given datetime's calendar day."""
+    dt = _aware(dt)
+    return dt.replace(hour=23, minute=59, second=59, microsecond=0)
+
+
+def enforce_subscription_expiry(org):
+    """
+    Lazily downgrade a canceled subscription once its access window has ended.
+
+    When a user cancels with a proportionate refund, we keep their plan active
+    until 23:59 of the cancellation day (stored in subscription_ends_at). This
+    function is called by the limit checks so that access is cut off correctly
+    without needing a cron job.
+    """
+    if not org:
+        return
+    if org.subscription_status == 'canceled' and org.subscription_ends_at:
+        now = datetime.now(timezone.utc)
+        ends = _aware(org.subscription_ends_at)
+        if now >= ends and (org.plan or 'free') != 'free':
+            org.plan = 'free'
+            org.subscription_status = 'free'
+            org.paddle_subscription_id = None
+            db.session.commit()
+
+
+def calculate_proportionate_refund(payment, plan_price=None, cancel_dt=None):
+    """
+    Compute a proportionate (fractional) refund for a cancellation.
+
+    Formula:
+        daily_rate      = plan_price / BILLING_DAYS
+        days_used       = (cancel_day - purchase_day) + 1   (current day counts)
+        amount_consumed = daily_rate * days_used
+        refund          = plan_price - amount_consumed      (floored at 0)
+
+    Returns a dict with the full breakdown so the UI can show the maths.
+    """
+    if cancel_dt is None:
+        cancel_dt = datetime.now(timezone.utc)
+    cancel_dt = _aware(cancel_dt)
+
+    purchase_dt = _aware(payment.created_at) if payment else cancel_dt
+    if plan_price is None:
+        plan_price = PLAN_PRICE_INR.get((payment.plan if payment else 'free'), 0)
+
+    # Whole calendar days between purchase day and cancel day, inclusive of today
+    days_elapsed = (cancel_dt.date() - purchase_dt.date()).days
+    days_used = days_elapsed + 1  # the current day is consumed
+    if days_used < 1:
+        days_used = 1
+
+    daily_rate = round(plan_price / BILLING_DAYS, 2)
+    amount_consumed = round(daily_rate * days_used, 2)
+    refund = round(plan_price - amount_consumed, 2)
+    if refund < 0:
+        refund = 0.0
+
+    within_window = days_elapsed < REFUND_WINDOW_DAYS
+    eligible = within_window and refund > 0
+
+    return {
+        'plan_price': round(plan_price, 2),
+        'daily_rate': daily_rate,
+        'billing_days': BILLING_DAYS,
+        'days_used': days_used,
+        'days_elapsed': days_elapsed,
+        'amount_consumed': amount_consumed,
+        'refund_amount': refund,
+        'within_window': within_window,
+        'refund_window_days': REFUND_WINDOW_DAYS,
+        'eligible': eligible,
+        'purchase_date': purchase_dt,
+        'cancel_date': cancel_dt,
+        'access_until': end_of_day(cancel_dt),
+        'currency': (payment.currency if payment else 'INR') or 'INR',
+    }
+
+
 def get_org_plan(org_id):
     """Get the organization's current plan name (defaults to 'free')."""
     org = Organization.query.get(org_id)
@@ -65,6 +169,9 @@ def check_message_limit(org_id):
     org = Organization.query.get(org_id)
     if not org:
         return False, 0, 0
+
+    # Downgrade if a canceled subscription's access window has ended
+    enforce_subscription_expiry(org)
 
     limits = PLAN_LIMITS.get(org.plan or 'free', PLAN_LIMITS['free'])
 
@@ -97,6 +204,8 @@ def check_bot_limit(org_id):
     org = Organization.query.get(org_id)
     if not org:
         return False, 0, 0
+
+    enforce_subscription_expiry(org)
 
     limits = PLAN_LIMITS.get(org.plan or 'free', PLAN_LIMITS['free'])
     current_bots = Bot.query.filter_by(org_id=org_id).count()
@@ -163,6 +272,8 @@ def get_usage_summary(org_id):
 
     from models.models import User
 
+    enforce_subscription_expiry(org)
+
     plan = org.plan or 'free'
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
 
@@ -196,4 +307,11 @@ def get_usage_summary(org_id):
         'scrape_pages_limit': limits['scrape_pages'],
         'file_size_mb': limits['file_size_mb'],
         'reset_date': reset_date,
+        # Subscription lifecycle
+        'subscription_status': org.subscription_status or ('active' if plan != 'free' else 'free'),
+        'subscription_started_at': org.subscription_started_at,
+        'subscription_ends_at': org.subscription_ends_at,
+        'payment_method': org.payment_method,
+        'card_brand': org.card_brand,
+        'card_last4': org.card_last4,
     }

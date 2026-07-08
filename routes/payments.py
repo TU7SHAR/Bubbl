@@ -24,6 +24,18 @@ def get_price_plan_map():
     return mapping
 
 
+def _parse_paddle_dt(value):
+    """Parse a Paddle ISO-8601 datetime string into a timezone-aware datetime."""
+    if not value:
+        return None
+    try:
+        # Paddle uses e.g. "2026-07-08T12:36:04.864538Z"
+        cleaned = value.replace('Z', '+00:00')
+        return datetime.fromisoformat(cleaned)
+    except (ValueError, AttributeError):
+        return None
+
+
 def _paddle_api_base():
     env = current_app.config.get('PADDLE_ENVIRONMENT', 'sandbox')
     if env == 'sandbox':
@@ -83,6 +95,35 @@ def _owner_email(org):
     return user.email if user else None
 
 
+def _extract_payment_method(payload):
+    """
+    Pull payment method details out of a Paddle transaction/subscription payload.
+
+    Paddle exposes this under data.payments[].method_details for transactions.
+    Returns (method_type, card_brand, card_last4) — any of which may be None.
+    """
+    method_type = None
+    card_brand = None
+    card_last4 = None
+    try:
+        payments = payload.get('payments') or []
+        if payments:
+            # Use the most recent captured payment
+            md = payments[-1].get('method_details') or {}
+            method_type = payments[-1].get('type') or md.get('type')
+            card = md.get('card') or {}
+            if card:
+                card_brand = card.get('type') or card.get('brand')
+                card_last4 = card.get('last4')
+        # Fallback: some payloads store it under payment_method_details
+        if not method_type:
+            pmd = payload.get('payment_method_details') or {}
+            method_type = pmd.get('type')
+    except Exception as e:
+        print(f"[paddle_webhook] payment method extract error: {e}")
+    return method_type, card_brand, card_last4
+
+
 # ═══════════════════════════════════════════
 # WEBHOOK
 # ═══════════════════════════════════════════
@@ -114,9 +155,17 @@ def paddle_webhook():
         org = _resolve_org(payload)
         if org and status in ('active', 'trialing'):
             org.plan = plan
+            org.subscription_status = 'active'
             org.paddle_subscription_id = subscription_id
             if customer_id:
                 org.paddle_customer_id = customer_id
+            # Subscription period dates
+            started = _parse_paddle_dt(payload.get('current_billing_period', {}).get('starts_at') or payload.get('started_at'))
+            ends = _parse_paddle_dt(payload.get('current_billing_period', {}).get('ends_at') or payload.get('next_billed_at'))
+            if started:
+                org.subscription_started_at = started
+            if ends:
+                org.subscription_ends_at = ends
             db.session.commit()
             print(f"[paddle_webhook] org {org.id} upgraded to plan={plan}")
 
@@ -124,7 +173,9 @@ def paddle_webhook():
         org = _resolve_org(payload)
         if org:
             org.plan = 'free'
+            org.subscription_status = 'free'
             org.paddle_subscription_id = None
+            org.subscription_ends_at = datetime.now(timezone.utc)
             db.session.commit()
             print(f"[paddle_webhook] org {org.id} downgraded to free")
 
@@ -138,9 +189,13 @@ def paddle_webhook():
         org = _resolve_org(payload)
         if org:
             org.plan = plan
+            org.subscription_status = 'active'
             org.paddle_subscription_id = subscription_id
             if customer_id:
                 org.paddle_customer_id = customer_id
+            ends = _parse_paddle_dt(payload.get('current_billing_period', {}).get('ends_at') or payload.get('next_billed_at'))
+            if ends:
+                org.subscription_ends_at = ends
             db.session.commit()
             print(f"[paddle_webhook] org {org.id} reactivated to plan={plan}")
 
@@ -162,12 +217,28 @@ def paddle_webhook():
 
         org = _resolve_org(payload)
         customer_id = payload.get('customer_id', '')
+        subscription_id = payload.get('subscription_id', '')
         customer_email = _owner_email(org)
+
+        # Payment method snapshot (card brand / last4 / method type)
+        method_type, card_brand, card_last4 = _extract_payment_method(payload)
 
         if org and plan != 'free':
             org.plan = plan
+            org.subscription_status = 'active'
             if customer_id:
                 org.paddle_customer_id = customer_id
+            if subscription_id:
+                org.paddle_subscription_id = subscription_id
+            if not org.subscription_started_at:
+                org.subscription_started_at = datetime.now(timezone.utc)
+            # Persist payment method on the org for quick display
+            if method_type:
+                org.payment_method = method_type
+            if card_brand:
+                org.card_brand = card_brand
+            if card_last4:
+                org.card_last4 = card_last4
             db.session.commit()
 
         payment = Payment(
@@ -176,6 +247,11 @@ def paddle_webhook():
             customer_email=customer_email,
             paddle_transaction_id=transaction_id,
             paddle_customer_id=customer_id,
+            paddle_subscription_id=subscription_id or None,
+            product_id=price_id or None,
+            payment_method=method_type,
+            card_brand=card_brand,
+            card_last4=card_last4,
             status='completed',
         )
         db.session.add(payment)
@@ -187,6 +263,25 @@ def paddle_webhook():
             send_sale_notification(plan, amount, currency, org_name=org.name if org else None, customer_email=customer_email, transaction_id=transaction_id)
         except Exception as e:
             print(f"[paddle_webhook] email send failed: {e}")
+
+    elif event_type in ('adjustment.created', 'adjustment.updated'):
+        # A refund (or credit) was issued via Paddle — mark the payment refunded.
+        action = payload.get('action', '')
+        txn_id = payload.get('transaction_id', '')
+        if action == 'refund' and txn_id:
+            pm = Payment.query.filter_by(paddle_transaction_id=txn_id).first()
+            if pm:
+                totals = (payload.get('totals', {}) or {})
+                raw = totals.get('total') or '0'
+                try:
+                    refunded = round(int(raw) / 100.0, 2)
+                except (ValueError, TypeError):
+                    refunded = pm.amount or 0.0
+                pm.refund_amount = refunded
+                pm.refunded_at = datetime.now(timezone.utc)
+                pm.status = 'refunded' if refunded >= (pm.amount or 0) else 'partially_refunded'
+                db.session.commit()
+                print(f"[paddle_webhook] payment {pm.id} marked refunded ({refunded})")
 
     return jsonify({"received": True}), 200
 
@@ -240,11 +335,35 @@ def upgrade_callback():
 
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
 
+    # Pull the most recent transaction for this org (webhook may have recorded it).
+    # Also allow Paddle's redirect query params as a fallback (?transaction_id=... etc.)
+    latest_payment = None
+    if org:
+        latest_payment = (Payment.query
+                          .filter_by(org_id=org.id)
+                          .order_by(Payment.created_at.desc())
+                          .first())
+
+    transaction_id = (latest_payment.paddle_transaction_id if latest_payment else None) \
+        or request.args.get('transaction_id') or '—'
+    customer_id = (org.paddle_customer_id if org else None) \
+        or request.args.get('customer_id') or '—'
+    product_id = (latest_payment.product_id if latest_payment else None) \
+        or request.args.get('product_id') \
+        or current_app.config.get(f'PADDLE_PRICE_{plan.upper()}') or '—'
+    amount_paid = latest_payment.amount if latest_payment else None
+    currency = latest_payment.currency if latest_payment else 'INR'
+
     return render_template('payment_success.html',
         plan_name=plan.capitalize(),
         messages_limit=limits.get('messages', 0),
         bots_limit=limits.get('bots', 1),
-        org_name=org.name if org else ''
+        org_name=org.name if org else '',
+        transaction_id=transaction_id,
+        customer_id=customer_id,
+        product_id=product_id,
+        amount_paid=amount_paid,
+        currency=currency,
     )
 
 
@@ -278,11 +397,24 @@ def manage_plan():
     
     # Payment history
     payments = Payment.query.filter_by(org_id=org.id if org else 0).order_by(Payment.created_at.desc()).all()
-    total_spent = sum(p.amount or 0 for p in payments if p.status == 'completed')
+    total_spent = sum((p.amount or 0) - (p.refund_amount or 0) for p in payments if p.status in ('completed', 'partially_refunded'))
 
     # Subscription status
     has_active_subscription = bool(org and org.paddle_subscription_id)
     is_paddle_customer = bool(org and org.paddle_customer_id and org.paddle_customer_id.startswith('ctm_'))
+
+    # Subscription lifecycle for display
+    sub_status = (org.subscription_status if org and org.subscription_status else ('active' if plan != 'free' else 'free'))
+    sub_started = org.subscription_started_at if org else None
+    sub_ends = org.subscription_ends_at if org else None
+
+    # Human-friendly payment method label
+    payment_method_label = 'Not on file'
+    if org and org.payment_method:
+        if org.card_brand and org.card_last4:
+            payment_method_label = f"{org.card_brand.title()} ···· {org.card_last4}"
+        else:
+            payment_method_label = org.payment_method.replace('_', ' ').title()
 
     return render_template('manage_plan.html',
         plan=plan, plan_name=plan.capitalize(),
@@ -296,43 +428,163 @@ def manage_plan():
         is_paddle_customer=is_paddle_customer,
         total_spent=total_spent, payments=payments,
         all_plans=PLAN_LIMITS,
-        usage=usage)
+        usage=usage,
+        sub_status=sub_status,
+        sub_started=sub_started,
+        sub_ends=sub_ends,
+        payment_method_label=payment_method_label,
+        card_brand=org.card_brand if org else None,
+        card_last4=org.card_last4 if org else None)
 
 
 # ═══════════════════════════════════════════
 # CANCEL / PAYMENT METHOD / PORTAL
 # ═══════════════════════════════════════════
 
-@payments_bp.route('/cancel-plan', methods=['POST'])
-def cancel_plan():
-    """Cancel subscription via Paddle API (effective at period end), fallback to local."""
+def _latest_completed_payment(org):
+    """Most recent non-refunded completed payment for an org (the one to refund against)."""
+    if not org:
+        return None
+    return (Payment.query
+            .filter_by(org_id=org.id, status='completed')
+            .order_by(Payment.created_at.desc())
+            .first())
+
+
+@payments_bp.route('/refund-preview', methods=['GET'])
+def refund_preview():
+    """
+    Return the proportionate refund calculation for the org's latest payment,
+    so the UI can show the exact maths BEFORE the user confirms cancellation.
+    """
     if 'user_id' not in session:
         return jsonify({"error": "Not logged in"}), 401
+
+    from utils.plan_limits import calculate_proportionate_refund, PLAN_PRICE_INR
+
+    org = Organization.query.get(session.get('org_id'))
+    if not org:
+        return jsonify({"error": "Organization not found"}), 404
+    if not org.plan or org.plan == 'free':
+        return jsonify({"error": "You are on the free plan — nothing to cancel."}), 400
+
+    payment = _latest_completed_payment(org)
+    if not payment:
+        # No recorded payment — cancel with no refund (period-end)
+        return jsonify({
+            "success": True,
+            "has_payment": False,
+            "message": "No recent payment found. Cancelling will stop future billing; access continues until the period ends.",
+        }), 200
+
+    calc = calculate_proportionate_refund(payment, plan_price=PLAN_PRICE_INR.get(payment.plan, 0))
+    return jsonify({
+        "success": True,
+        "has_payment": True,
+        "currency": calc['currency'],
+        "plan": (payment.plan or '').capitalize(),
+        "plan_price": calc['plan_price'],
+        "daily_rate": calc['daily_rate'],
+        "billing_days": calc['billing_days'],
+        "days_used": calc['days_used'],
+        "amount_consumed": calc['amount_consumed'],
+        "refund_amount": calc['refund_amount'],
+        "eligible": calc['eligible'],
+        "within_window": calc['within_window'],
+        "refund_window_days": calc['refund_window_days'],
+        "purchase_date": calc['purchase_date'].strftime('%b %d, %Y'),
+        "access_until": calc['access_until'].strftime('%b %d, %Y, 11:59 PM'),
+    }), 200
+
+
+@payments_bp.route('/cancel-plan', methods=['POST'])
+def cancel_plan():
+    """
+    Cancel the subscription with a PROPORTIONATE refund (14-day window).
+
+    - Computes the fractional refund for the current billing period.
+    - Keeps the plan active until 23:59 of the cancellation day.
+    - Issues the refund via Paddle (best-effort) and records it locally.
+    - After the day ends, enforce_subscription_expiry() downgrades to free.
+    """
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+
+    from utils.plan_limits import calculate_proportionate_refund, PLAN_PRICE_INR, end_of_day
+
     org = Organization.query.get(session.get('org_id'))
     if not org:
         return jsonify({"error": "Organization not found"}), 404
     if not org.plan or org.plan == 'free':
         return jsonify({"error": "You are already on the free plan"}), 400
 
-    # Try to cancel via Paddle API (effective_from = next_billing_period)
+    now = datetime.now(timezone.utc)
+    access_until = end_of_day(now)
+    payment = _latest_completed_payment(org)
+
+    calc = None
+    refund_issued = 0.0
+    if payment:
+        calc = calculate_proportionate_refund(payment, plan_price=PLAN_PRICE_INR.get(payment.plan, 0))
+
+        # Attempt the refund via Paddle (best-effort — works with real transactions)
+        if calc['eligible'] and payment.paddle_transaction_id and payment.paddle_transaction_id.startswith('txn_'):
+            try:
+                url = f"{_paddle_api_base()}/adjustments"
+                body = {
+                    "action": "refund",
+                    "transaction_id": payment.paddle_transaction_id,
+                    "reason": "Customer requested proportionate refund (14-day policy)",
+                    "type": "partial",
+                    "items": [],
+                }
+                resp = http_requests.post(url, headers=_paddle_headers(), json=body)
+                if resp.status_code in (200, 201):
+                    print(f"[cancel_plan] Paddle refund created for {payment.paddle_transaction_id}")
+                else:
+                    print(f"[cancel_plan] Paddle refund error: {resp.status_code} {resp.text[:200]}")
+            except Exception as e:
+                print(f"[cancel_plan] Paddle refund exception: {e}")
+
+        # Record the refund locally (source of truth for our reporting)
+        if calc['eligible']:
+            refund_issued = calc['refund_amount']
+            payment.refund_amount = refund_issued
+            payment.refunded_at = now
+            payment.status = 'refunded' if refund_issued >= (payment.amount or 0) else 'partially_refunded'
+
+    # Cancel the Paddle subscription (stops future billing)
     if org.paddle_subscription_id and org.paddle_subscription_id.startswith('sub_'):
         try:
             url = f"{_paddle_api_base()}/subscriptions/{org.paddle_subscription_id}/cancel"
-            resp = http_requests.post(url, headers=_paddle_headers(), json={"effective_from": "next_billing_period"})
-            if resp.status_code in (200, 201):
-                print(f"[cancel_plan] Paddle API cancelled sub {org.paddle_subscription_id}")
-                # Don't downgrade immediately — Paddle will send subscription.canceled webhook at period end
-                return jsonify({"success": True, "message": "Plan will be cancelled at end of billing period. You retain full access until then."}), 200
-            else:
-                print(f"[cancel_plan] Paddle API error: {resp.status_code} {resp.text[:200]}")
+            http_requests.post(url, headers=_paddle_headers(), json={"effective_from": "immediately"})
         except Exception as e:
-            print(f"[cancel_plan] Paddle API exception: {e}")
+            print(f"[cancel_plan] Paddle sub cancel exception: {e}")
 
-    # Fallback: downgrade locally (sandbox / no real sub)
-    org.plan = 'free'
-    org.paddle_subscription_id = None
+    # Keep the plan active until 23:59 of today, then auto-downgrade (lazy expiry)
+    org.subscription_status = 'canceled'
+    org.subscription_ends_at = access_until
     db.session.commit()
-    return jsonify({"success": True, "message": "Plan cancelled. Access continues until end of billing period."}), 200
+
+    response = {
+        "success": True,
+        "access_until": access_until.strftime('%b %d, %Y, 11:59 PM'),
+        "message": f"Your plan is cancelled. You keep full access until {access_until.strftime('%b %d, %Y')} (11:59 PM).",
+    }
+    if calc:
+        response["refund"] = {
+            "eligible": calc['eligible'],
+            "currency": calc['currency'],
+            "plan_price": calc['plan_price'],
+            "daily_rate": calc['daily_rate'],
+            "billing_days": calc['billing_days'],
+            "days_used": calc['days_used'],
+            "amount_consumed": calc['amount_consumed'],
+            "refund_amount": refund_issued,
+            "within_window": calc['within_window'],
+            "refund_window_days": calc['refund_window_days'],
+        }
+    return jsonify(response), 200
 
 
 @payments_bp.route('/customer-portal', methods=['POST'])
@@ -632,6 +884,57 @@ def subscription_status():
             print(f"[subscription_status] Paddle API error: {e}")
 
     return jsonify(result), 200
+
+
+@payments_bp.route('/invoice/<int:payment_id>')
+def invoice(payment_id):
+    """
+    Render a printable invoice for a single payment.
+    The user can print-to-PDF from the browser (Ctrl+P / Save as PDF).
+    Access is restricted to the payment's own organization.
+    """
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+
+    payment = Payment.query.get_or_404(payment_id)
+
+    # Ownership check — a user can only see their own org's invoices
+    if payment.org_id != session.get('org_id'):
+        flash("You are not authorized to view this invoice.", "error")
+        return redirect(url_for('payments_bp.manage_plan'))
+
+    org = Organization.query.get(payment.org_id)
+    user = User.query.get(session['user_id'])
+
+    company_first = current_app.config.get('COMPANY_NAME_FIRST', 'Bubbl')
+    company_last = current_app.config.get('COMPANY_LAST_NAME', 'ooo')
+    support_email = current_app.config.get('SUPPORT_EMAIL', 'support@bubbl.ooo')
+
+    # Amount breakdown (Paddle prices are tax-inclusive; show a simple summary)
+    gross = payment.amount or 0.0
+    is_refunded = payment.status in ('refunded', 'partially_refunded')
+
+    # Build a card/method label
+    method_label = 'Managed via Paddle'
+    if payment.payment_method:
+        if payment.card_brand and payment.card_last4:
+            method_label = f"{payment.card_brand.title()} ···· {payment.card_last4}"
+        else:
+            method_label = payment.payment_method.replace('_', ' ').title()
+
+    invoice_number = f"BUBBL-{payment.created_at.strftime('%Y%m%d')}-{payment.id:05d}" if payment.created_at else f"BUBBL-{payment.id:05d}"
+
+    return render_template('invoice.html',
+        payment=payment,
+        org=org,
+        user=user,
+        company_name=f"{company_first}.{company_last}",
+        support_email=support_email,
+        gross=gross,
+        is_refunded=is_refunded,
+        method_label=method_label,
+        invoice_number=invoice_number,
+    )
 
 
 @payments_bp.route('/test-webhook', methods=['GET'])

@@ -22,11 +22,15 @@
     </p>
 
     <!-- Plan Details -->
-    <div style="background: rgba(232,114,42,0.06); border: 1px solid rgba(232,114,42,0.15); border-radius: 12px; padding: 20px; margin-bottom: 28px; text-align: left;">
+    <div style="background: rgba(232,114,42,0.06); border: 1px solid rgba(232,114,42,0.15); border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: left;">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
         <div>
           <p style="margin: 0; font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Plan</p>
           <p style="margin: 4px 0 0; font-size: 1rem; font-weight: 600;">{{ plan_name }}</p>
+        </div>
+        <div>
+          <p style="margin: 0; font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Amount Paid</p>
+          <p style="margin: 4px 0 0; font-size: 1rem; font-weight: 600;">{% if amount_paid %}&#8377;{{ '{:,.2f}'.format(amount_paid) }}{% else %}—{% endif %}</p>
         </div>
         <div>
           <p style="margin: 0; font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Messages</p>
@@ -34,17 +38,32 @@
         </div>
         <div>
           <p style="margin: 0; font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Bots</p>
-          <p style="margin: 4px 0 0; font-size: 1rem; font-weight: 600;">{{ bots_limit }}</p>
+          <p style="margin: 4px 0 0; font-size: 1rem; font-weight: 600;">{% if bots_limit >= 999 %}Unlimited{% else %}{{ bots_limit }}{% endif %}</p>
         </div>
-        <div>
-          <p style="margin: 0; font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Organization</p>
-          <p style="margin: 4px 0 0; font-size: 1rem; font-weight: 600;">{{ org_name or 'N/A' }}</p>
+      </div>
+    </div>
+
+    <!-- Transaction Details -->
+    <div style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.06); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px; text-align: left;">
+      <p style="margin: 0 0 12px; font-size: 0.72rem; color: #999; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700;">Transaction Details</p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+          <span style="font-size: 0.82rem; color: #888;">Transaction ID</span>
+          <span style="font-size: 0.8rem; color: #333; font-family: 'Courier New', monospace; word-break: break-all; text-align: right;">{{ transaction_id }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+          <span style="font-size: 0.82rem; color: #888;">Customer ID</span>
+          <span style="font-size: 0.8rem; color: #333; font-family: 'Courier New', monospace; word-break: break-all; text-align: right;">{{ customer_id }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+          <span style="font-size: 0.82rem; color: #888;">Product ID</span>
+          <span style="font-size: 0.8rem; color: #333; font-family: 'Courier New', monospace; word-break: break-all; text-align: right;">{{ product_id }}</span>
         </div>
       </div>
     </div>
 
     <p style="margin: 0 0 28px; font-size: 0.85rem; color: #999;">
-      A receipt has been sent to your email. You can also view your billing details on the <a href="/payments/manage" style="color: #E8722A; text-decoration: none; font-weight: 500;">Manage Plan</a> page.
+      A receipt has been sent to your email. You can view or download your invoice on the <a href="/payments/manage" style="color: #E8722A; text-decoration: none; font-weight: 500;">Manage Plan</a> page.
     </p>
 
     <!-- Buttons -->
