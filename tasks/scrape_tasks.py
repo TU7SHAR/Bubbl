@@ -27,7 +27,7 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
 
     with app.app_context():
         from models.models import db, Bot, ScrapeJob, Document
-        from utils.scraper import scrape_single_url, extract_sitemap_urls, crawl_website_links
+        from utils.scraper import scrape_single_url, extract_sitemap_urls, crawl_website_links, is_safe_url
         from bot.cloud import upload_to_gemini
 
         job = ScrapeJob.query.get(job_id)
@@ -93,6 +93,13 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
         add_log(f"--- Starting Batch Scrape ({len(urls_to_scrape)} URLs) ---")
 
         for i, target_url in enumerate(urls_to_scrape):
+            # SSRF check on each discovered URL (spider may find internal links)
+            safe, safety_err = is_safe_url(target_url)
+            if not safe:
+                add_log(f"[{i+1}/{len(urls_to_scrape)}] BLOCKED (unsafe): {target_url} — {safety_err}")
+                error_logs.append(f"Blocked unsafe URL: {target_url}")
+                continue
+
             add_log(f"[{i+1}/{len(urls_to_scrape)}] Reading: {target_url}")
 
             try:

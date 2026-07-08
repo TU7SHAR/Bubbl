@@ -20,9 +20,31 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     otp = db.Column(db.String(6), nullable=True)
+    otp_created_at = db.Column(db.DateTime, nullable=True)  # OTP expiration tracking
     is_verified = db.Column(db.Boolean, default=False)
     bots = db.relationship('Bot', backref='owner', lazy=True)
     role = db.Column(db.String(20), nullable=False, default='member')
+
+    def is_otp_valid(self, submitted_otp, expiry_minutes=10):
+        """Check if OTP matches and hasn't expired (default: 10 min TTL)."""
+        if not self.otp or not self.otp_created_at:
+            return False
+        if self.otp != submitted_otp:
+            return False
+        elapsed = datetime.now(timezone.utc) - self.otp_created_at
+        if elapsed.total_seconds() > (expiry_minutes * 60):
+            return False
+        return True
+
+    def set_otp(self, otp_code):
+        """Set OTP with timestamp for expiration tracking."""
+        self.otp = otp_code
+        self.otp_created_at = datetime.now(timezone.utc)
+
+    def clear_otp(self):
+        """Clear OTP after successful verification."""
+        self.otp = None
+        self.otp_created_at = None
 
 class Bot(db.Model):
     id = db.Column(db.Integer, primary_key=True)

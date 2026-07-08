@@ -2,95 +2,269 @@
 
 {% block title %}Privacy Policy | Bubbl.ooo{% endblock %}
 {% block og_title %}Privacy Policy | Bubbl.ooo{% endblock %}
+{% block meta_description %}Bubbl.ooo Privacy Policy. Learn how we collect, use, store, and protect your personal data on our AI chatbot platform.{% endblock %}
 
 {% block content %}
 <section class="legal-page">
   <div class="prose">
     <h1 class="bricolage">Privacy Policy</h1>
-    <p class="legal-updated">Last updated: July 2026</p>
+    <p class="legal-updated">Last updated: July 8, 2026</p>
+    <p class="legal-updated">Effective date: July 8, 2026</p>
 
-    <p>Bubbl.ooo ("we", "our", or "us") operates the AI chatbot platform available at <strong>app.bubbl.ooo</strong>. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service. By accessing or using Bubbl.ooo, you agree to the terms of this Privacy Policy.</p>
+    <p>Bubbl.ooo ("Platform", "Service", "we", "our", or "us") is operated by ESS ENN Associates & 172 Tech. This Privacy Policy describes how we collect, use, disclose, store, and protect personal information when you use our AI chatbot platform accessible at <strong>app.bubbl.ooo</strong>.</p>
+
+    <p>By accessing or using Bubbl.ooo, you acknowledge that you have read and understood this Privacy Policy. If you do not agree with our data practices, please do not use the Service.</p>
+
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid rgba(0,0,0,0.08);">
 
     <h2>1. Information We Collect</h2>
 
-    <h3>1.1 Account Information</h3>
-    <p>When you register for an account, we collect your name, email address, organization name, and password (stored as a hashed value). If you subscribe to a paid plan, payment processing is handled by our merchant of record, Paddle (see Section 4).</p>
+    <h3>1.1 Information You Provide Directly</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Data Type</th><th>What We Collect</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Account Data</td><td>Name, email, organization name, password (hashed)</td><td>Authentication, account management</td></tr>
+        <tr><td>Training Data</td><td>Documents (PDF, DOCX, TXT, etc.), scraped website content, text snippets</td><td>Powering your chatbot's AI responses</td></tr>
+        <tr><td>Bot Configuration</td><td>Bot name, system prompts, UI settings, lead capture settings</td><td>Customizing chatbot behavior and appearance</td></tr>
+        <tr><td>Payment Data</td><td>Processed entirely by Paddle (we never see your card details)</td><td>Subscription billing</td></tr>
+        <tr><td>Support Communications</td><td>Emails, messages sent to our support team</td><td>Resolving your inquiries</td></tr>
+      </tbody>
+    </table>
 
-    <h3>1.2 Bot and Document Data</h3>
-    <p>We store the content you upload to train your chatbots, including documents, scraped website content, and manually entered text. This data is used solely to power your chatbot's responses.</p>
+    <h3>1.2 Information Collected Automatically</h3>
+    <table class="data-table">
+      <thead>
+        <tr><th>Data Type</th><th>What We Collect</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Usage Data</td><td>Pages visited, features used, session duration, click patterns</td><td>Platform improvement, analytics</td></tr>
+        <tr><td>Device Data</td><td>Browser type, OS, screen resolution, device type</td><td>Compatibility, debugging</td></tr>
+        <tr><td>Network Data</td><td>IP address, approximate location (city-level)</td><td>Security, rate limiting, fraud prevention</td></tr>
+        <tr><td>Performance Data</td><td>API response times, error rates, bot interaction counts</td><td>Service reliability monitoring</td></tr>
+      </tbody>
+    </table>
 
-    <h3>1.3 Conversation Data</h3>
-    <p>Messages exchanged between your chatbot and its end users are stored to provide conversation history, analytics, and lead capture functionality. This data belongs to your organization.</p>
+    <h3>1.3 Information from End Users of Your Bots</h3>
+    <p>When End Users interact with chatbots you deploy, we process:</p>
+    <ul>
+      <li><strong>Conversation messages</strong> — sent to Google Gemini for AI processing, not permanently stored on our servers beyond the session</li>
+      <li><strong>Lead information</strong> — name, email, phone, and custom fields captured via lead forms or conversational extraction, stored in your Organization's database</li>
+      <li><strong>Feedback ratings</strong> — star ratings and optional comments submitted about the chatbot experience</li>
+    </ul>
+    <p><strong>Important:</strong> As the bot owner, you are the data controller for End User data. You are responsible for providing appropriate privacy disclosures to your End Users and obtaining necessary consents.</p>
 
-    <h3>1.4 Usage and Analytics Data</h3>
-    <p>We automatically collect information about how you interact with our platform, including pages visited, features used, session duration, browser type, IP address, and device information.</p>
-
-    <h3>1.5 Lead Data</h3>
-    <p>When end users interact with your chatbot and provide their contact information (name, email, phone), this data is captured and stored within your organization's account.</p>
+    <h3>1.4 Information from Third Parties</h3>
+    <ul>
+      <li><strong>Paddle</strong> — customer ID, subscription status, transaction history (no card details)</li>
+      <li><strong>Google Analytics</strong> — aggregated usage statistics</li>
+    </ul>
 
     <h2>2. How We Use Your Information</h2>
-    <p>We use the collected information to:</p>
+
+    <h3>2.1 Service Delivery</h3>
     <ul>
-      <li>Provide, maintain, and improve the Bubbl.ooo platform</li>
-      <li>Process your account registration and manage your subscription</li>
-      <li>Power AI chatbot responses using your uploaded training data</li>
-      <li>Generate analytics and reports about chatbot performance</li>
-      <li>Send service-related communications (e.g., account alerts, billing updates)</li>
-      <li>Monitor platform health, prevent fraud, and ensure security</li>
-      <li>Comply with legal obligations</li>
+      <li>Operating and maintaining the Platform</li>
+      <li>Processing your Training Data to power AI chatbot responses</li>
+      <li>Managing your account, subscription, and billing</li>
+      <li>Storing and serving Lead Data captured by your bots</li>
+      <li>Providing customer support</li>
     </ul>
 
-    <h2>3. Data Retention</h2>
-    <p>We retain your account data for as long as your account is active. If you delete your account, we will remove your personal data within 30 days, except where we are required to retain it for legal or compliance purposes. Conversation logs and analytics data are retained for 12 months after account closure, then permanently deleted.</p>
+    <h3>2.2 Service Improvement</h3>
+    <ul>
+      <li>Analyzing usage patterns to improve features and user experience</li>
+      <li>Monitoring performance and fixing bugs</li>
+      <li>Developing new features based on aggregate usage data</li>
+    </ul>
 
-    <h2>4. Third-Party Services</h2>
-    <p>We integrate with the following third-party services to provide our platform:</p>
+    <h3>2.3 Security and Compliance</h3>
+    <ul>
+      <li>Detecting and preventing fraud, abuse, and unauthorized access</li>
+      <li>Enforcing rate limits and plan restrictions</li>
+      <li>Complying with legal obligations and responding to lawful requests</li>
+    </ul>
 
-    <h3>4.1 Google Gemini (AI)</h3>
-    <p>Conversation content is processed by Google's Gemini AI models to generate chatbot responses. Google's data processing terms apply to this usage. We do not use your data to train Google's models.</p>
+    <h3>2.4 Communications</h3>
+    <ul>
+      <li>Sending transactional emails (account verification, password reset, payment receipts)</li>
+      <li>Notifying you of service changes, security alerts, or billing issues</li>
+      <li>We do NOT send marketing emails without your explicit opt-in consent</li>
+    </ul>
 
-    <h3>4.2 Firecrawl (Web Scraping)</h3>
-    <p>When you use our website scraping feature to train your chatbot, Firecrawl processes the target URLs on our behalf. Only publicly accessible content is scraped.</p>
+    <h2>3. Legal Basis for Processing (GDPR)</h2>
+    <p>If you are in the European Economic Area (EEA), UK, or a jurisdiction requiring legal basis for processing:</p>
+    <table class="data-table">
+      <thead>
+        <tr><th>Processing Activity</th><th>Legal Basis</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Account management, service delivery</td><td>Performance of contract (Art. 6(1)(b))</td></tr>
+        <tr><td>Security, fraud prevention</td><td>Legitimate interest (Art. 6(1)(f))</td></tr>
+        <tr><td>Analytics and improvement</td><td>Legitimate interest (Art. 6(1)(f))</td></tr>
+        <tr><td>Legal compliance</td><td>Legal obligation (Art. 6(1)(c))</td></tr>
+        <tr><td>Marketing communications</td><td>Consent (Art. 6(1)(a))</td></tr>
+      </tbody>
+    </table>
 
-    <h3>4.3 Paddle (Payments)</h3>
-    <p>Paddle acts as our Merchant of Record for all paid subscriptions. When you subscribe to a paid plan, Paddle collects and processes your payment information (credit card details, billing address). We do not store your payment card data. Paddle's privacy policy governs payment data processing: <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">paddle.com/legal/privacy</a>.</p>
+    <h2>4. Data Sharing and Third-Party Services</h2>
+    <p>We share your data only with the following categories of recipients, and only as necessary to provide the Service:</p>
 
-    <h3>4.4 Google Analytics</h3>
-    <p>We use Google Analytics 4 to understand platform usage patterns. This service may collect cookies, IP addresses, and behavioral data. You can opt out using Google's browser add-on.</p>
+    <h3>4.1 AI Processing — Google Gemini</h3>
+    <ul>
+      <li><strong>What we share:</strong> Conversation messages, Training Data (for vector store indexing)</li>
+      <li><strong>Purpose:</strong> Generating AI chatbot responses and enabling semantic search</li>
+      <li><strong>Data use by Google:</strong> Subject to Google Cloud's data processing terms. Your data is NOT used to train Google's general models.</li>
+      <li><strong>Retention:</strong> Governed by Google's data retention policies for Gemini API usage</li>
+    </ul>
 
-    <h2>5. Cookies</h2>
-    <p>We use essential cookies for authentication and session management. We also use analytics cookies (Google Analytics, Microsoft Clarity, Meta Pixel) to understand usage patterns. Essential cookies cannot be disabled as they are required for the service to function. Analytics cookies can be blocked via your browser settings.</p>
+    <h3>4.2 Payment Processing — Paddle</h3>
+    <ul>
+      <li><strong>What they collect:</strong> Payment card details, billing address, transaction history</li>
+      <li><strong>What we receive:</strong> Customer ID, subscription status, transaction amounts (no card numbers)</li>
+      <li><strong>Privacy policy:</strong> <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener">paddle.com/legal/privacy</a></li>
+    </ul>
 
-    <h2>6. Data Security</h2>
-    <p>We implement industry-standard security measures including HTTPS encryption in transit, encrypted database storage, secure password hashing, session management, and regular security reviews. However, no method of electronic storage is 100% secure. We cannot guarantee absolute security.</p>
+    <h3>4.3 Web Scraping — Firecrawl</h3>
+    <ul>
+      <li><strong>What we share:</strong> URLs you submit for scraping</li>
+      <li><strong>Purpose:</strong> Extracting publicly accessible web content for bot training</li>
+      <li><strong>Note:</strong> Only publicly available content is processed</li>
+    </ul>
 
-    <h2>7. Your Rights (GDPR)</h2>
-    <p>If you are located in the European Economic Area (EEA) or a jurisdiction with similar privacy laws, you have the right to:</p>
+    <h3>4.4 Analytics Services</h3>
+    <ul>
+      <li><strong>Google Analytics 4</strong> — Page views, user journeys, conversion events. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a></li>
+      <li><strong>Microsoft Clarity</strong> — Heatmaps, session recordings, rage click detection. <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener">Microsoft Privacy Statement</a></li>
+      <li><strong>Meta Pixel</strong> — Conversion tracking for advertising. <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">Meta Privacy Policy</a></li>
+    </ul>
+    <p>All analytics tools are conditionally loaded — they only activate if configured in our environment. You can block analytics cookies via your browser settings.</p>
+
+    <h3>4.5 We Do NOT</h3>
+    <ul>
+      <li>Sell your personal data to third parties</li>
+      <li>Share your Training Data or Lead Data with other customers</li>
+      <li>Use your data for advertising purposes (beyond anonymous analytics)</li>
+      <li>Provide data to data brokers</li>
+    </ul>
+
+    <h2>5. Cookies and Tracking Technologies</h2>
+
+    <h3>5.1 Essential Cookies</h3>
+    <p>Required for authentication and session management. These cannot be disabled without breaking the Service.</p>
+    <ul>
+      <li><strong>Session cookie</strong> — Maintains your login state (expires on browser close or after inactivity)</li>
+    </ul>
+
+    <h3>5.2 Analytics Cookies (Optional)</h3>
+    <p>Used to understand how the Platform is used. These can be blocked via your browser's cookie settings.</p>
+    <ul>
+      <li><strong>Google Analytics</strong> — _ga, _ga_*, _gid cookies</li>
+      <li><strong>Microsoft Clarity</strong> — _clck, _clsk, CLID cookies</li>
+      <li><strong>Meta Pixel</strong> — _fbp cookie</li>
+    </ul>
+
+    <h3>5.3 localStorage</h3>
+    <p>We use browser localStorage to persist UTM attribution parameters across page navigation. This data is not sent to our servers unless you register an account.</p>
+
+    <h2>6. Data Retention</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>Data Category</th><th>Retention Period</th><th>After Deletion</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Account data</td><td>Duration of active account</td><td>Deleted within 30 days of account closure</td></tr>
+        <tr><td>Training Data (documents)</td><td>Duration of active account</td><td>Deleted from our servers and Gemini within 30 days</td></tr>
+        <tr><td>Lead Data</td><td>Duration of active account</td><td>Retained for 90 days post-closure, then deleted</td></tr>
+        <tr><td>Conversation logs</td><td>Not permanently stored (session-based)</td><td>N/A</td></tr>
+        <tr><td>Payment records</td><td>7 years (legal/tax requirement)</td><td>Retained by Paddle per their policies</td></tr>
+        <tr><td>Analytics data</td><td>26 months (Google Analytics default)</td><td>Automatically purged by analytics providers</td></tr>
+        <tr><td>Server logs</td><td>30 days</td><td>Automatically rotated</td></tr>
+      </tbody>
+    </table>
+
+    <h2>7. Data Security</h2>
+    <p>We implement the following security measures to protect your data:</p>
+    <ul>
+      <li><strong>Encryption in transit</strong> — All data transmitted via HTTPS/TLS</li>
+      <li><strong>Password security</strong> — Passwords hashed using bcrypt with salt (never stored in plaintext)</li>
+      <li><strong>Access control</strong> — Organization-level data isolation; users can only access their own org's data</li>
+      <li><strong>Rate limiting</strong> — Protection against brute-force attacks and API abuse</li>
+      <li><strong>OTP verification</strong> — Email-based verification codes with 10-minute expiry</li>
+      <li><strong>Input validation</strong> — URL safety checks, file type validation, and content sanitization</li>
+      <li><strong>Secure sessions</strong> — Cookies with SameSite=None, Secure=True flags</li>
+      <li><strong>Infrastructure</strong> — Database connection pooling with health checks, worker process isolation</li>
+    </ul>
+    <p>Despite these measures, no method of electronic transmission or storage is 100% secure. We cannot guarantee absolute security and encourage you to use strong, unique passwords.</p>
+
+    <h2>8. Your Rights</h2>
+
+    <h3>8.1 All Users</h3>
+    <p>Regardless of your location, you have the right to:</p>
     <ul>
       <li><strong>Access</strong> — Request a copy of your personal data</li>
-      <li><strong>Rectification</strong> — Correct inaccurate personal data</li>
-      <li><strong>Erasure</strong> — Request deletion of your personal data</li>
-      <li><strong>Portability</strong> — Receive your data in a machine-readable format</li>
-      <li><strong>Restriction</strong> — Restrict processing of your personal data</li>
-      <li><strong>Objection</strong> — Object to processing based on legitimate interests</li>
+      <li><strong>Correction</strong> — Update inaccurate personal information</li>
+      <li><strong>Deletion</strong> — Request deletion of your account and associated data</li>
+      <li><strong>Export</strong> — Download your Lead Data via CSV export</li>
     </ul>
-    <p>To exercise any of these rights, contact us at <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a>. We will respond within 30 days.</p>
 
-    <h2>8. Children's Privacy</h2>
-    <p>Bubbl.ooo is not intended for children under 16. We do not knowingly collect personal information from children. If you believe a child has provided us personal data, please contact us immediately.</p>
+    <h3>8.2 EEA/UK Residents (GDPR)</h3>
+    <p>In addition to the above, you have the right to:</p>
+    <ul>
+      <li><strong>Data portability</strong> — Receive your data in a structured, machine-readable format</li>
+      <li><strong>Restriction</strong> — Request that we limit processing of your data</li>
+      <li><strong>Objection</strong> — Object to processing based on legitimate interests</li>
+      <li><strong>Withdraw consent</strong> — Where processing is based on consent, withdraw it at any time</li>
+      <li><strong>Lodge a complaint</strong> — File a complaint with your local supervisory authority</li>
+    </ul>
 
-    <h2>9. International Data Transfers</h2>
-    <p>Your data may be processed in India and other jurisdictions where our service providers operate. We ensure appropriate safeguards are in place for international transfers.</p>
+    <h3>8.3 Indian Residents (DPDP Act 2023)</h3>
+    <p>Under India's Digital Personal Data Protection Act, 2023, you have the right to:</p>
+    <ul>
+      <li>Access a summary of your personal data and processing activities</li>
+      <li>Correction and erasure of your personal data</li>
+      <li>Grievance redressal — contact our Grievance Officer (details in Section 12)</li>
+      <li>Nominate another person to exercise your rights in case of death or incapacity</li>
+    </ul>
 
-    <h2>10. Changes to This Policy</h2>
-    <p>We may update this Privacy Policy from time to time. We will notify registered users of material changes via email. Continued use of the platform after changes constitutes acceptance of the updated policy.</p>
+    <h3>8.4 Exercising Your Rights</h3>
+    <p>To exercise any of these rights, email us at <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a> with the subject line "Privacy Rights Request". We will verify your identity and respond within 30 days. We may extend this period by an additional 30 days for complex requests, with notice.</p>
 
-    <h2>11. Contact Us</h2>
-    <p>If you have questions about this Privacy Policy or our data practices, please contact us at:</p>
+    <h2>9. Children's Privacy</h2>
+    <p>Bubbl.ooo is not directed at children under 16 years of age. We do not knowingly collect personal information from children. If you believe a child has provided us with personal data, please contact us immediately at support@bubbl.ooo. We will promptly investigate and delete any such data.</p>
+
+    <h2>10. International Data Transfers</h2>
+    <p>Your data may be processed in:</p>
+    <ul>
+      <li><strong>India</strong> — Where our servers and team are located</li>
+      <li><strong>United States</strong> — Where Google (Gemini AI, Analytics) and Firecrawl process data</li>
+      <li><strong>European Union</strong> — Where Paddle may process payment data</li>
+    </ul>
+    <p>For transfers outside your jurisdiction, we rely on:</p>
+    <ul>
+      <li>Standard Contractual Clauses (SCCs) where applicable</li>
+      <li>Data processing agreements with all sub-processors</li>
+      <li>Adequacy decisions where available</li>
+    </ul>
+
+    <h2>11. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. When we make material changes:</p>
+    <ul>
+      <li>We will notify registered users via email at least 14 days before changes take effect</li>
+      <li>The "Last updated" date at the top of this page will be revised</li>
+      <li>For significant changes, we may display a banner on the Platform</li>
+    </ul>
+    <p>Continued use of the Platform after the effective date constitutes acceptance of the updated policy. If you disagree with changes, you may close your account before the effective date.</p>
+
+    <h2>12. Contact Us</h2>
+    <p>For privacy-related questions, data requests, or concerns:</p>
     <p>
+      <strong>Data Controller:</strong> ESS ENN Associates & 172 Tech<br>
       <strong>Email:</strong> <a href="mailto:support@bubbl.ooo">support@bubbl.ooo</a><br>
-      <strong>Platform:</strong> Bubbl.ooo<br>
-      <strong>Operated by:</strong> ESS ENN Associates & 172 Tech
+      <strong>Platform:</strong> <a href="https://bubbl.ooo">bubbl.ooo</a><br>
+      <strong>Grievance Officer (India):</strong> Available upon request via email<br>
+      <strong>Response time:</strong> Within 30 days of receiving your request
     </p>
   </div>
 </section>
@@ -104,8 +278,9 @@
   .legal-updated {
     font-size: 0.88rem;
     color: var(--text-secondary, #777);
-    margin-bottom: 2rem;
+    margin-bottom: 0.25rem;
   }
+  .legal-updated + .legal-updated { margin-bottom: 2rem; }
   .prose h1 {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     font-weight: 800;
@@ -148,6 +323,26 @@
   }
   .prose strong {
     color: var(--text-primary);
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.88rem;
+  }
+  .data-table th, .data-table td {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border: 1px solid rgba(0,0,0,0.08);
+    color: var(--text-secondary, #444);
+  }
+  .data-table th {
+    background: rgba(0,0,0,0.03);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .data-table tr:hover td {
+    background: rgba(0,0,0,0.015);
   }
 </style>
 {% endblock %}

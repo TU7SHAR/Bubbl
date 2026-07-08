@@ -49,7 +49,7 @@ def login():
         # 5. Enforce Verification
         if not user.is_verified:
             otp_code = generate_otp()
-            user.otp = otp_code
+            user.set_otp(otp_code)
             db.session.commit()
             send_otp_email(user.email, otp_code)
             session['verify_email'] = user.email
@@ -83,9 +83,9 @@ def forgot_password():
     user = User.query.filter_by(email=email).first()
     
     if user:
-        # Generate OTP, save it, and email it
+        # Generate OTP, save it with timestamp, and email it
         otp_code = generate_otp()
-        user.otp = otp_code
+        user.set_otp(otp_code)
         db.session.commit()
         
         send_otp_email(user.email, otp_code)
@@ -113,17 +113,17 @@ def reset_password():
 
         user = User.query.filter_by(email=email).first()
         
-        if user and user.otp == otp_entered:
+        if user and user.is_otp_valid(otp_entered):
             hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             user.password_hash = hashed_password
-            user.otp = None
+            user.clear_otp()
             db.session.commit()
             
             session.pop('reset_email', None)
             flash("Password updated successfully! You can now log in.", "success")
             return redirect(url_for('auth.login'))
         else:
-            flash("Invalid or expired reset code.", "error")
+            flash("Invalid or expired reset code. Codes expire after 10 minutes.", "error")
 
     return render_template('reset_password.html', email=email)
 
