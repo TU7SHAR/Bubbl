@@ -1,156 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Invoice {{ invoice_number }} | {{ company_name }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #1f2937;
-      background: #f3f4f6;
-      padding: 32px 16px;
-      line-height: 1.5;
-    }
-    .invoice-box {
-      max-width: 760px;
-      margin: 0 auto;
-      background: #fff;
-      border-radius: 14px;
-      padding: 48px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
-    }
-    .inv-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; }
-    .inv-brand { font-size: 26px; font-weight: 800; color: #E8722A; }
-    .inv-brand span { color: #111; }
-    .inv-meta { text-align: right; font-size: 13px; color: #6b7280; }
-    .inv-meta strong { color: #111; font-size: 15px; display: block; margin-bottom: 4px; }
-    .inv-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 8px; }
-    .inv-tag.paid { background: #ecfdf5; color: #059669; }
-    .inv-tag.refunded { background: #fef2f2; color: #dc2626; }
-    .inv-parties { display: flex; justify-content: space-between; gap: 24px; margin-bottom: 36px; flex-wrap: wrap; }
+    body { font-family: 'Inter', -apple-system, sans-serif; color: #1a1a2e; background: #f0f2f5; padding: 40px 20px; line-height: 1.6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    
+    .inv-actions { max-width: 800px; margin: 0 auto 20px; display: flex; gap: 10px; justify-content: flex-end; }
+    .btn { padding: 10px 22px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
+    .btn-print { background: #1a1a2e; color: #fff; }
+    .btn-print:hover { background: #2d2d4e; }
+    .btn-back { background: #fff; color: #555; border: 1px solid #ddd; }
+    .btn-back:hover { background: #f5f5f5; }
+
+    .invoice { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.06); }
+    
+    .inv-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; padding: 40px 48px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .inv-brand { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .inv-brand span { color: #E8722A; }
+    .inv-header-right { text-align: right; }
+    .inv-header-right h2 { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
+    .inv-header-right .inv-num { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.9); font-family: 'SF Mono', monospace; }
+    .inv-header-right .inv-date { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+    .inv-status { display: inline-block; margin-top: 10px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .inv-status.paid { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .inv-status.refunded { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+    .inv-body { padding: 40px 48px; }
+    
+    .inv-parties { display: flex; justify-content: space-between; margin-bottom: 40px; gap: 30px; flex-wrap: wrap; }
     .inv-party { flex: 1; min-width: 200px; }
-    .inv-party h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #9ca3af; margin-bottom: 8px; }
-    .inv-party p { font-size: 14px; color: #374151; margin: 2px 0; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
-    thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #9ca3af; padding: 10px 12px; border-bottom: 2px solid #f3f4f6; }
-    thead th.right, tbody td.right { text-align: right; }
-    tbody td { padding: 16px 12px; font-size: 14px; border-bottom: 1px solid #f9fafb; color: #374151; }
-    .totals { margin-left: auto; width: 280px; }
-    .totals-row { display: flex; justify-content: space-between; padding: 8px 12px; font-size: 14px; color: #4b5563; }
-    .totals-row.grand { border-top: 2px solid #f3f4f6; margin-top: 6px; padding-top: 14px; font-size: 17px; font-weight: 800; color: #111; }
-    .totals-row.refund { color: #dc2626; }
-    .inv-method { margin-top: 32px; padding: 16px 20px; background: #f9fafb; border-radius: 10px; font-size: 13px; color: #4b5563; }
-    .inv-method strong { color: #111; }
-    .inv-footer { margin-top: 40px; padding-top: 24px; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af; text-align: center; line-height: 1.7; }
-    .inv-actions { max-width: 760px; margin: 0 auto 20px; display: flex; gap: 10px; justify-content: flex-end; }
-    .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-block; }
-    .btn-print { background: #E8722A; color: #fff; }
-    .btn-back { background: #f3f4f6; color: #374151; }
-    .mono { font-family: 'Courier New', monospace; font-size: 12px; }
+    .inv-party-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #999; margin-bottom: 10px; }
+    .inv-party-name { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+    .inv-party-detail { font-size: 13px; color: #666; line-height: 1.7; }
+    .inv-party-detail .mono { font-family: 'SF Mono', monospace; font-size: 11px; color: #999; }
+
+    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+    .inv-table thead { background: #f8f9fa; }
+    .inv-table th { text-align: left; padding: 12px 16px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #888; border-bottom: 1px solid #eee; }
+    .inv-table th:last-child { text-align: right; }
+    .inv-table td { padding: 20px 16px; font-size: 14px; color: #333; border-bottom: 1px solid #f5f5f5; vertical-align: top; }
+    .inv-table td:last-child { text-align: right; font-weight: 600; }
+    .inv-table .item-name { font-weight: 600; color: #1a1a2e; }
+    .inv-table .item-desc { font-size: 12px; color: #999; margin-top: 2px; }
+
+    .inv-totals { display: flex; justify-content: flex-end; margin-bottom: 36px; }
+    .inv-totals-box { width: 280px; }
+    .inv-totals-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: #666; }
+    .inv-totals-row.grand { border-top: 2px solid #1a1a2e; margin-top: 8px; padding-top: 14px; font-size: 18px; font-weight: 800; color: #1a1a2e; }
+    .inv-totals-row.refund { color: #ef4444; font-weight: 600; }
+    .inv-totals-row.net { border-top: 1px dashed #ddd; margin-top: 6px; padding-top: 10px; font-weight: 700; color: #1a1a2e; }
+
+    .inv-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8f9fa; border-radius: 10px; padding: 20px 24px; margin-bottom: 30px; }
+    .inv-meta-item { }
+    .inv-meta-label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #999; margin-bottom: 3px; }
+    .inv-meta-value { font-size: 12px; color: #333; font-family: 'SF Mono', monospace; word-break: break-all; }
+
+    .inv-footer { text-align: center; padding: 24px 48px 32px; border-top: 1px solid #f0f0f0; }
+    .inv-footer p { font-size: 11px; color: #aaa; line-height: 1.7; }
+
     @media print {
       body { background: #fff; padding: 0; }
-      .invoice-box { box-shadow: none; padding: 24px; }
-      .inv-actions { display: none; }
+      .invoice { box-shadow: none; border-radius: 0; }
+      .inv-actions { display: none !important; }
+      .inv-header { -webkit-print-color-adjust: exact; }
+    }
+    @media (max-width: 600px) {
+      .inv-header { flex-direction: column; gap: 16px; padding: 28px 24px; }
+      .inv-header-right { text-align: left; }
+      .inv-body { padding: 28px 24px; }
+      .inv-parties { flex-direction: column; gap: 20px; }
+      .inv-meta-grid { grid-template-columns: 1fr; }
+      .inv-totals-box { width: 100%; }
     }
   </style>
 </head>
 <body>
 
-  <div class="inv-actions">
-    <a href="/payments/manage" class="btn btn-back">&#8592; Back</a>
-    <button onclick="window.print()" class="btn btn-print">Download / Print PDF</button>
+<div class="inv-actions">
+  <a href="/payments/manage" class="btn btn-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back
+  </a>
+  <button onclick="window.print()" class="btn btn-print">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Download PDF
+  </button>
+</div>
+
+<div class="invoice">
+  <div class="inv-header">
+    <div>
+      <div class="inv-brand">bubbl<span>.ooo</span></div>
+      <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px;">AI Chatbot Platform</div>
+    </div>
+    <div class="inv-header-right">
+      <h2>Invoice</h2>
+      <div class="inv-num">{{ invoice_number }}</div>
+      <div class="inv-date">{{ payment.created_at.strftime('%B %d, %Y') if payment.created_at else 'N/A' }}</div>
+      {% if is_refunded %}
+      <span class="inv-status refunded">Refunded</span>
+      {% else %}
+      <span class="inv-status paid">Paid</span>
+      {% endif %}
+    </div>
   </div>
 
-  <div class="invoice-box">
-    <div class="inv-head">
-      <div>
-        <div class="inv-brand">{{ company_name.split('.')[0] }}<span>.{{ company_name.split('.')[1] if '.' in company_name else '' }}</span></div>
-        <p style="font-size: 12px; color: #9ca3af; margin-top: 4px;">AI Chatbot Platform</p>
-      </div>
-      <div class="inv-meta">
-        <strong>INVOICE</strong>
-        <span class="mono">{{ invoice_number }}</span><br>
-        {{ payment.created_at.strftime('%B %d, %Y') if payment.created_at else '—' }}
-        <br>
-        {% if is_refunded %}
-        <span class="inv-tag refunded">Refunded</span>
-        {% else %}
-        <span class="inv-tag paid">Paid</span>
-        {% endif %}
-      </div>
-    </div>
-
+  <div class="inv-body">
     <div class="inv-parties">
       <div class="inv-party">
-        <h4>Billed To</h4>
-        <p><strong>{{ user.name if user else '—' }}</strong></p>
-        <p>{{ payment.customer_email or (user.email if user else '—') }}</p>
-        {% if payment.paddle_customer_id %}<p class="mono">{{ payment.paddle_customer_id }}</p>{% endif %}
+        <div class="inv-party-label">Billed To</div>
+        <div class="inv-party-name">{{ user.name if user else 'Customer' }}</div>
+        <div class="inv-party-detail">
+          {{ payment.customer_email or (user.email if user else '') }}<br>
+          {% if org %}{{ org.name }}{% endif %}
+        </div>
       </div>
       <div class="inv-party" style="text-align: right;">
-        <h4>From</h4>
-        <p><strong>{{ company_name }}</strong></p>
-        <p>Sold by Paddle.com (Merchant of Record)</p>
-        <p>{{ support_email }}</p>
+        <div class="inv-party-label">From</div>
+        <div class="inv-party-name">{{ company_name }}</div>
+        <div class="inv-party-detail">
+          Sold via Paddle (Merchant of Record)<br>
+          {{ support_email }}
+        </div>
       </div>
     </div>
 
-    <table>
+    <table class="inv-table">
       <thead>
         <tr>
           <th>Description</th>
-          <th>Billing</th>
-          <th class="right">Amount</th>
+          <th>Period</th>
+          <th>Amount</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>
-            <strong>{{ (payment.plan or 'Plan')|capitalize }} Plan</strong><br>
-            <span style="font-size: 12px; color: #9ca3af;">Bubbl.ooo subscription</span>
+            <div class="item-name">{{ (payment.plan or 'Subscription')|capitalize }} Plan</div>
+            <div class="item-desc">Bubbl.ooo monthly subscription</div>
           </td>
           <td>Monthly</td>
-          <td class="right">&#8377;{{ '{:,.2f}'.format(gross) }}</td>
+          <td>&#8377;{{ '{:,.2f}'.format(gross) }}</td>
         </tr>
       </tbody>
     </table>
 
-    <div class="totals">
-      <div class="totals-row">
-        <span>Subtotal (tax incl.)</span>
-        <span>&#8377;{{ '{:,.2f}'.format(gross) }}</span>
+    <div class="inv-totals">
+      <div class="inv-totals-box">
+        <div class="inv-totals-row">
+          <span>Subtotal</span>
+          <span>&#8377;{{ '{:,.2f}'.format(gross) }}</span>
+        </div>
+        <div class="inv-totals-row">
+          <span>Tax (inclusive)</span>
+          <span>&#8377;0.00</span>
+        </div>
+        <div class="inv-totals-row grand">
+          <span>Total</span>
+          <span>&#8377;{{ '{:,.2f}'.format(gross) }}</span>
+        </div>
+        {% if is_refunded and payment.refund_amount %}
+        <div class="inv-totals-row refund">
+          <span>Refunded</span>
+          <span>- &#8377;{{ '{:,.2f}'.format(payment.refund_amount) }}</span>
+        </div>
+        <div class="inv-totals-row net">
+          <span>Net Charged</span>
+          <span>&#8377;{{ '{:,.2f}'.format(gross - payment.refund_amount) }}</span>
+        </div>
+        {% endif %}
       </div>
-      <div class="totals-row grand">
-        <span>Total Paid</span>
-        <span>&#8377;{{ '{:,.2f}'.format(gross) }}</span>
+    </div>
+
+    <div class="inv-meta-grid">
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Payment Method</div>
+        <div class="inv-meta-value">{{ method_label }}</div>
       </div>
-      {% if is_refunded and payment.refund_amount %}
-      <div class="totals-row refund">
-        <span>Refunded</span>
-        <span>- &#8377;{{ '{:,.2f}'.format(payment.refund_amount) }}</span>
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Transaction ID</div>
+        <div class="inv-meta-value">{{ payment.paddle_transaction_id or 'N/A' }}</div>
       </div>
-      <div class="totals-row grand">
-        <span>Net Charged</span>
-        <span>&#8377;{{ '{:,.2f}'.format(gross - payment.refund_amount) }}</span>
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Product ID</div>
+        <div class="inv-meta-value">{{ payment.product_id or 'N/A' }}</div>
+      </div>
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Customer ID</div>
+        <div class="inv-meta-value">{{ payment.paddle_customer_id or 'N/A' }}</div>
+      </div>
+      {% if payment.refunded_at %}
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Refunded On</div>
+        <div class="inv-meta-value">{{ payment.refunded_at.strftime('%B %d, %Y') }}</div>
       </div>
       {% endif %}
     </div>
-
-    <div class="inv-method">
-      <strong>Payment Method:</strong> {{ method_label }}<br>
-      <strong>Transaction ID:</strong> <span class="mono">{{ payment.paddle_transaction_id or '—' }}</span>
-      {% if payment.product_id %}<br><strong>Product ID:</strong> <span class="mono">{{ payment.product_id }}</span>{% endif %}
-      {% if payment.refunded_at %}<br><strong>Refunded On:</strong> {{ payment.refunded_at.strftime('%B %d, %Y') }}{% endif %}
-    </div>
-
-    <div class="inv-footer">
-      This invoice was generated by {{ company_name }}. Payments are processed by Paddle.com Market Ltd, our Merchant of Record.<br>
-      For any billing queries, contact {{ support_email }}. Thank you for your business!
-    </div>
   </div>
+
+  <div class="inv-footer">
+    <p>This invoice was generated by {{ company_name }}. All payments are processed by Paddle.com Market Ltd (Merchant of Record).<br>For billing inquiries: {{ support_email }}</p>
+  </div>
+</div>
 
 </body>
 </html>
