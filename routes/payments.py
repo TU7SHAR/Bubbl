@@ -312,49 +312,108 @@ def create_checkout_session():
 
 @payments_bp.route('/upgrade-callback')
 def upgrade_callback():
-    """Success page after Paddle checkout. Shows the plan they just bought."""
+    """
+    Success page after Paddle checkout.
+    
+    TIMING: The user lands here BEFORE the transaction.completed webhook fires.
+    So we can't rely on having a Payment record in DB yet.
+    
+    Strategy:
+    1. Check Paddle's redirect URL params (_ptxn, customer_id from session)
+    2. If webhook already fired → pull from Payment table (fast path)
+    3. If not → fetch transaction details directly from Paddle API (slow path)
+    4. Fallback → show what we know from session + org
+    """
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
     from utils.plan_limits import PLAN_LIMITS
+    import time
 
     org = Organization.query.get(session.get('org_id'))
 
-    # The webhook might not have arrived yet, so org.plan could still be 'free'.
-    # Try to get the plan from:
-    # 1. The org (webhook already fired)
-    # 2. The session checkout_plan (set during checkout-session)
-    # 3. Query params (fallback)
-    plan = org.plan if (org and org.plan and org.plan != 'free') else None
-    if not plan:
-        plan = session.pop('checkout_plan', None)
+    # --- Determine the plan ---
+    # Session checkout_plan takes PRIORITY — it's what the user JUST selected.
+    # org.plan may still reflect an old/cancelled plan if webhook hasn't fired yet.
+    plan = session.pop('checkout_plan', None)
     if not plan:
         plan = request.args.get('plan', '')
     if not plan:
-        plan = 'free'
+        plan = org.plan if (org and org.plan and org.plan != 'free') else 'free'
 
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
 
-    # Pull the most recent transaction for this org (webhook may have recorded it).
-    # Also allow Paddle's redirect query params as a fallback (?transaction_id=... etc.)
+    # --- Get transaction ID from Paddle redirect URL ---
+    # Paddle appends ?_ptxn=txn_xxx to the callback URL
+    paddle_txn_id = request.args.get('_ptxn') or request.args.get('transaction_id') or None
+
+    # --- Try to find the Payment record (webhook may have fired already) ---
     latest_payment = None
     if org:
-        latest_payment = (Payment.query
-                          .filter_by(org_id=org.id)
-                          .order_by(Payment.created_at.desc())
-                          .first())
+        # Small delay to give webhook a chance to arrive (it's usually <2s behind)
+        if paddle_txn_id:
+            latest_payment = Payment.query.filter_by(paddle_transaction_id=paddle_txn_id).first()
+        if not latest_payment:
+            latest_payment = (Payment.query
+                              .filter_by(org_id=org.id)
+                              .order_by(Payment.created_at.desc())
+                              .first())
 
-    transaction_id = (latest_payment.paddle_transaction_id if latest_payment else None) \
-        or request.args.get('transaction_id') or '—'
-    customer_id = (org.paddle_customer_id if org else None) \
-        or request.args.get('customer_id') or '—'
-    subscription_id = (org.paddle_subscription_id if org else None) \
-        or request.args.get('subscription_id') or '—'
+    # --- Build display values ---
+    transaction_id = paddle_txn_id or (latest_payment.paddle_transaction_id if latest_payment else None) or '—'
+    
+    # Customer ID: from org (webhook sets this), or session checkout data
+    customer_id = '—'
+    if org and org.paddle_customer_id and org.paddle_customer_id.startswith('ctm_'):
+        customer_id = org.paddle_customer_id
+    elif request.args.get('customer_id'):
+        customer_id = request.args.get('customer_id')
+
+    # Subscription ID: from org (set by subscription.created webhook)
+    subscription_id = '—'
+    if org and org.paddle_subscription_id and org.paddle_subscription_id.startswith('sub_'):
+        subscription_id = org.paddle_subscription_id
+
+    # Product/Price ID
     product_id = (latest_payment.product_id if latest_payment else None) \
-        or request.args.get('product_id') \
         or current_app.config.get(f'PADDLE_PRICE_{plan.upper()}') or '—'
+
+    # Amount
     amount_paid = latest_payment.amount if latest_payment else None
     currency = latest_payment.currency if latest_payment else 'INR'
+
+    # --- Fetch from Paddle API when we have _ptxn (always, for accurate data) ---
+    if paddle_txn_id and paddle_txn_id.startswith('txn_'):
+        try:
+            url = f"{_paddle_api_base()}/transactions/{paddle_txn_id}"
+            resp = http_requests.get(url, headers=_paddle_headers(), timeout=5)
+            if resp.status_code in (200, 201):
+                txn_data = resp.json().get('data', {})
+                transaction_id = txn_data.get('id', transaction_id)
+                if txn_data.get('subscription_id'):
+                    subscription_id = txn_data.get('subscription_id')
+                if txn_data.get('customer_id'):
+                    customer_id = txn_data.get('customer_id')
+                # Amount from Paddle (most accurate — reflects the actual charge)
+                totals = (txn_data.get('details', {}) or {}).get('totals', {}) or {}
+                raw = totals.get('grand_total') or totals.get('total') or '0'
+                try:
+                    amount_paid = round(int(raw) / 100.0, 2)
+                except (ValueError, TypeError):
+                    pass
+                # Detect plan from price_id (most accurate source of truth)
+                items = txn_data.get('items', [])
+                if items:
+                    fetched_price_id = items[0].get('price', {}).get('id', '')
+                    if fetched_price_id:
+                        product_id = fetched_price_id
+                        price_plan_map = get_price_plan_map()
+                        detected_plan = price_plan_map.get(fetched_price_id)
+                        if detected_plan:
+                            plan = detected_plan
+                            limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
+        except Exception as e:
+            print(f"[upgrade_callback] Paddle API fetch failed (non-critical): {e}")
 
     return render_template('payment_success.html',
         plan_name=plan.capitalize(),
@@ -662,20 +721,97 @@ def customer_portal():
             if portal_url:
                 return jsonify({"success": True, "url": portal_url}), 200
             else:
-                return jsonify({"error": "Portal URL not returned by Paddle. Try again later."}), 500
+                return jsonify({"error": "Portal URL not returned by Paddle. Try again later."}), 400
         else:
             error_msg = resp.json().get('error', {}).get('detail', resp.text[:200])
             print(f"[customer_portal] Paddle API error: {resp.status_code} {error_msg}")
-            return jsonify({"error": f"Paddle error: {error_msg}"}), 400
+            return jsonify({"error": "Payment method is managed by Paddle. This feature requires production Paddle keys. In sandbox mode, use Paddle's test dashboard to manage payment methods."}), 400
     except Exception as e:
         print(f"[customer_portal] exception: {e}")
-        return jsonify({"error": "Could not reach Paddle. Please try again later."}), 500
+        return jsonify({"error": "Could not connect to Paddle. Please try again later."}), 400
 
 
 @payments_bp.route('/update-payment-method', methods=['POST'])
 def update_payment_method():
     """Update payment method via Paddle customer portal."""
     return customer_portal()
+
+
+@payments_bp.route('/upgrade-preview', methods=['POST'])
+def upgrade_preview():
+    """
+    Show the prorated cost of upgrading from current plan to a new plan.
+    Formula: upgrade_cost = new_plan_price - credit_remaining
+    Where: credit_remaining = current_plan_price - (daily_rate × days_used)
+    """
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+
+    from utils.plan_limits import PLAN_PRICE_INR, BILLING_DAYS, _aware
+
+    org = Organization.query.get(session.get('org_id'))
+    if not org:
+        return jsonify({"error": "Organization not found"}), 404
+
+    data = request.json or {}
+    target_plan = data.get('plan', '').lower()
+
+    if target_plan not in ('starter', 'growth', 'pro'):
+        return jsonify({"error": "Invalid target plan."}), 400
+
+    current_plan = org.plan or 'free'
+    current_price = PLAN_PRICE_INR.get(current_plan, 0)
+    target_price = PLAN_PRICE_INR.get(target_plan, 0)
+
+    if target_price <= current_price:
+        return jsonify({"error": "You can only upgrade to a higher plan."}), 400
+
+    # Calculate days used on current plan
+    now = datetime.now(timezone.utc)
+    payment = _latest_completed_payment(org)
+    
+    if payment and payment.created_at:
+        purchase_date = _aware(payment.created_at)
+        days_elapsed = (now.date() - purchase_date.date()).days
+        days_used = days_elapsed + 1
+    elif org.subscription_started_at:
+        started = _aware(org.subscription_started_at)
+        days_elapsed = (now.date() - started.date()).days
+        days_used = days_elapsed + 1
+    else:
+        days_used = 1
+
+    if days_used < 1:
+        days_used = 1
+    if days_used > BILLING_DAYS:
+        days_used = BILLING_DAYS
+
+    # Calculate credit remaining from current plan
+    daily_rate_current = round(current_price / BILLING_DAYS, 2)
+    amount_consumed = round(daily_rate_current * days_used, 2)
+    credit_remaining = round(current_price - amount_consumed, 2)
+    if credit_remaining < 0:
+        credit_remaining = 0
+
+    # Calculate what user pays for upgrade
+    upgrade_cost = round(target_price - credit_remaining, 2)
+    if upgrade_cost < 0:
+        upgrade_cost = 0
+
+    return jsonify({
+        "success": True,
+        "current_plan": current_plan.capitalize(),
+        "current_price": current_price,
+        "target_plan": target_plan.capitalize(),
+        "target_price": target_price,
+        "days_used": days_used,
+        "billing_days": BILLING_DAYS,
+        "daily_rate_current": daily_rate_current,
+        "amount_consumed": amount_consumed,
+        "credit_remaining": credit_remaining,
+        "upgrade_cost": upgrade_cost,
+        "currency": "INR",
+    }), 200
 
 
 @payments_bp.route('/upgrade-plan', methods=['POST'])
@@ -770,8 +906,12 @@ def reactivate_plan():
     if not org:
         return jsonify({"error": "Organization not found"}), 404
 
-    if org.subscription_status != 'canceled':
-        return jsonify({"error": "Your subscription is not in a canceled state."}), 400
+    if not org.subscription_status or org.subscription_status not in ('canceled', 'free'):
+        # If subscription_status is None (column new/not set), check org.plan
+        if org.plan and org.plan != 'free':
+            return jsonify({"error": "Your subscription is already active. No reactivation needed."}), 400
+        else:
+            return jsonify({"error": "No active subscription to reactivate. Please subscribe to a plan."}), 400
 
     # Try Paddle API if we have a real sub ID
     paddle_success = False
