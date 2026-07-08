@@ -98,12 +98,15 @@ CREATE TABLE lead (
 -- FEEDBACK TABLE
 CREATE TABLE feedback (
     id SERIAL PRIMARY KEY,
-    bot_id INTEGER NOT NULL REFERENCES bot(id) ON DELETE CASCADE,
+    bot_id INTEGER REFERENCES bot(id) ON DELETE CASCADE,  -- nullable: NULL = platform feedback
     lead_id INTEGER REFERENCES lead(id) ON DELETE SET NULL,
     rating INTEGER NOT NULL,
     comment TEXT,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- MIGRATION for existing DBs: allow platform (bot-less) feedback
+-- ALTER TABLE feedback ALTER COLUMN bot_id DROP NOT NULL;
 
 -- PAYMENT TABLE
 CREATE TABLE payment (

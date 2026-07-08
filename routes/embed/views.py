@@ -377,6 +377,35 @@ def submit_feedback(bot_id):
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
+
+@views_bp.route('/api/platform-feedback', methods=['POST'])
+def submit_platform_feedback():
+    """
+    Feedback for the public/marketing Bubbl assistant (no specific bot attached).
+    No login required, no bot_id needed. Stored with bot_id = NULL.
+    """
+    data = request.json or {}
+    rating = data.get('rating')
+    comment = data.get('comment', '')
+
+    if not rating:
+        return jsonify({"error": "Missing rating"}), 400
+
+    try:
+        new_feedback = Feedback(
+            bot_id=None,   # Platform-level feedback
+            rating=int(rating),
+            comment=comment,
+            lead_id=None,
+        )
+        db.session.add(new_feedback)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Feedback saved."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
 @views_bp.route('/super_admin')
 def super_admin_dashboard():
     if session.get('role') != 'super_admin':
@@ -499,12 +528,19 @@ def super_admin_dashboard():
     valid_ratings = 0
 
     for fb in raw_feedbacks:
-        bot = Bot.query.get(fb.bot_id)
+        bot = Bot.query.get(fb.bot_id) if fb.bot_id else None
         lead = Lead.query.get(fb.lead_id) if fb.lead_id else None
-        
+
+        if fb.bot_id is None:
+            bot_label = 'Platform (Bubbl Assistant)'
+        elif bot:
+            bot_label = bot.bot_name
+        else:
+            bot_label = 'Deleted Bot'
+
         enriched_feedbacks.append({
             'created_at': fb.created_at,
-            'bot_name': bot.bot_name if bot else 'Deleted Bot',
+            'bot_name': bot_label,
             'lead_name': lead.name if lead else None,
             'lead_email': lead.email if lead else None,
             'rating': fb.rating,
