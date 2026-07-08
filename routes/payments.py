@@ -5,7 +5,7 @@ import hmac
 import hashlib
 import os
 import requests as http_requests
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 payments_bp = Blueprint('payments_bp', __name__, url_prefix='/payments')
 
@@ -348,6 +348,8 @@ def upgrade_callback():
         or request.args.get('transaction_id') or '—'
     customer_id = (org.paddle_customer_id if org else None) \
         or request.args.get('customer_id') or '—'
+    subscription_id = (org.paddle_subscription_id if org else None) \
+        or request.args.get('subscription_id') or '—'
     product_id = (latest_payment.product_id if latest_payment else None) \
         or request.args.get('product_id') \
         or current_app.config.get(f'PADDLE_PRICE_{plan.upper()}') or '—'
@@ -361,6 +363,7 @@ def upgrade_callback():
         org_name=org.name if org else '',
         transaction_id=transaction_id,
         customer_id=customer_id,
+        subscription_id=subscription_id,
         product_id=product_id,
         amount_paid=amount_paid,
         currency=currency,
@@ -478,6 +481,22 @@ def refund_preview():
         }), 200
 
     calc = calculate_proportionate_refund(payment, plan_price=PLAN_PRICE_INR.get(payment.plan, 0))
+
+    # Determine when access ends:
+    # - Within 14-day window: access till 23:59 today (refund day)
+    # - After 14 days: access till original billing period end (subscription_ends_at)
+    if calc['eligible']:
+        access_until_str = calc['access_until'].strftime('%b %d, %Y, 11:59 PM')
+    else:
+        # Use original subscription end date, or fallback to messages_reset_at, or 30 days from purchase
+        from utils.plan_limits import _aware
+        original_end = _aware(org.subscription_ends_at) if org.subscription_ends_at else None
+        if not original_end and org.messages_reset_at:
+            original_end = _aware(org.messages_reset_at)
+        if not original_end:
+            original_end = calc['purchase_date'] + timedelta(days=30)
+        access_until_str = original_end.strftime('%b %d, %Y, 11:59 PM')
+
     return jsonify({
         "success": True,
         "has_payment": True,
@@ -493,7 +512,7 @@ def refund_preview():
         "within_window": calc['within_window'],
         "refund_window_days": calc['refund_window_days'],
         "purchase_date": calc['purchase_date'].strftime('%b %d, %Y'),
-        "access_until": calc['access_until'].strftime('%b %d, %Y, 11:59 PM'),
+        "access_until": access_until_str,
     }), 200
 
 
@@ -519,7 +538,6 @@ def cancel_plan():
         return jsonify({"error": "You are already on the free plan"}), 400
 
     now = datetime.now(timezone.utc)
-    access_until = end_of_day(now)
     payment = _latest_completed_payment(org)
 
     calc = None
@@ -553,15 +571,34 @@ def cancel_plan():
             payment.refunded_at = now
             payment.status = 'refunded' if refund_issued >= (payment.amount or 0) else 'partially_refunded'
 
-    # Cancel the Paddle subscription (stops future billing)
+    # Determine access end date:
+    # - Within 14 days (refund eligible): plan ends at 23:59 today
+    # - After 14 days (no refund): plan stays till original billing period end
+    from utils.plan_limits import _aware
+    if calc and calc['eligible']:
+        access_until = end_of_day(now)
+    else:
+        # Use the existing subscription end date (original billing period)
+        original_end = _aware(org.subscription_ends_at) if org.subscription_ends_at else None
+        if not original_end and org.messages_reset_at:
+            original_end = _aware(org.messages_reset_at)
+        if not original_end and payment:
+            original_end = _aware(payment.created_at) + timedelta(days=30) if payment.created_at else end_of_day(now)
+        if not original_end:
+            original_end = end_of_day(now)
+        access_until = original_end
+
+    # Cancel the Paddle subscription (stops future billing, NOT immediate access removal)
     if org.paddle_subscription_id and org.paddle_subscription_id.startswith('sub_'):
         try:
             url = f"{_paddle_api_base()}/subscriptions/{org.paddle_subscription_id}/cancel"
-            http_requests.post(url, headers=_paddle_headers(), json={"effective_from": "immediately"})
+            # If within window (refund): cancel immediately. If not: cancel at period end.
+            effective = "immediately" if (calc and calc['eligible']) else "next_billing_period"
+            http_requests.post(url, headers=_paddle_headers(), json={"effective_from": effective})
         except Exception as e:
             print(f"[cancel_plan] Paddle sub cancel exception: {e}")
 
-    # Keep the plan active until 23:59 of today, then auto-downgrade (lazy expiry)
+    # Mark canceled + set the access end date
     org.subscription_status = 'canceled'
     org.subscription_ends_at = access_until
     db.session.commit()
