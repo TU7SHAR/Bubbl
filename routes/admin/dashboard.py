@@ -3,6 +3,7 @@ from flask import render_template, session, redirect, url_for, flash, request
 from models.models import db, Bot, Document, User
 from routes.auth.decorators import admin_required
 from utils.mail_helper import send_invite_email
+from utils.plan_limits import check_team_member_limit
 from . import admin_bp
 
 @admin_bp.route('/')
@@ -69,6 +70,12 @@ def select_bot(bot_id):
 def invite_member():
     if session.get('role') != 'admin':
         flash("Unauthorized action.", "error")
+        return redirect(url_for('views_bp.dashboard'))
+
+    # --- PLAN LIMIT: Check team member count ---
+    allowed, current_members, member_limit = check_team_member_limit(session.get('org_id'))
+    if not allowed:
+        flash(f"Team member limit reached ({current_members}/{member_limit}). Please upgrade your plan to add more members.", "error")
         return redirect(url_for('views_bp.dashboard'))
 
     name = request.form.get('name')

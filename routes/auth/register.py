@@ -47,8 +47,8 @@ def register():
                 password_hash=hashed_pwd, 
                 role='admin', 
                 is_verified=False,
-                otp=otp_code
             )
+            new_user.set_otp(otp_code)
             
             db.session.add(new_user)
             db.session.commit()
@@ -83,9 +83,9 @@ def verify_otp():
         user_otp = request.form.get('otp')
         user = User.query.filter_by(email=email).first()
 
-        if user and user.otp == user_otp:
+        if user and user.is_otp_valid(user_otp):
             user.is_verified = True
-            user.otp = None
+            user.clear_otp()
             db.session.commit()
 
             session['user_id'] = user.id
@@ -99,7 +99,7 @@ def verify_otp():
             flash(f"Account verified successfully! Welcome to {current_app.config.get('COMPANY_NAME_FIRST', 'Bubbl')}.{current_app.config.get('COMPANY_LAST_NAME', 'ooo')}", "success")
             return redirect(url_for('views_bp.dashboard'))
         else:
-            flash("Invalid or expired verification code.", "error")
+            flash("Invalid or expired verification code. Codes expire after 10 minutes.", "error")
 
     return render_template('verify_otp.html', email=email)
 
@@ -116,7 +116,7 @@ def resend_otp():
     
     if user and not user.is_verified:
         otp_code = generate_otp()
-        user.otp = otp_code
+        user.set_otp(otp_code)
         db.session.commit()
         
         email_sent = send_otp_email(user.email, otp_code)

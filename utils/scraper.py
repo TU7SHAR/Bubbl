@@ -1,9 +1,92 @@
-import os, requests
+import os, requests, socket, ipaddress
 from wsgiref import headers
 import xml.etree.ElementTree as ET
 from firecrawl import Firecrawl
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
+
+
+# =========================================
+# URL SAFETY VALIDATION — SSRF PREVENTION
+# =========================================
+
+# Blocked hostnames that should never be scraped
+BLOCKED_HOSTS = {
+    'localhost', '127.0.0.1', '0.0.0.0', '::1',
+    '169.254.169.254',          # Cloud metadata (AWS/GCP/DO)
+    'metadata.google.internal', # GCP metadata
+    'metadata.internal',        # Generic cloud metadata
+}
+
+# Blocked URL schemes
+ALLOWED_SCHEMES = {'http', 'https'}
+
+
+def is_safe_url(url):
+    """
+    Validates a URL is safe to scrape (prevents SSRF attacks).
+    
+    Blocks:
+    - Private/internal IP ranges (10.x, 172.16-31.x, 192.168.x, 127.x)
+    - Loopback addresses (localhost, 127.0.0.1, ::1)
+    - Link-local addresses (169.254.x.x)
+    - Cloud metadata endpoints (169.254.169.254, metadata.google.internal)
+    - Non-HTTP schemes (file://, ftp://, gopher://, etc.)
+    
+    Returns: (is_safe: bool, error_message: str or None)
+    """
+    if not url or not url.strip():
+        return False, "URL cannot be empty."
+    
+    url = url.strip()
+    
+    # 1. Parse URL
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False, "Invalid URL format."
+    
+    # 2. Scheme check
+    if parsed.scheme not in ALLOWED_SCHEMES:
+        return False, f"Invalid URL scheme '{parsed.scheme}'. Only http:// and https:// are allowed."
+    
+    # 3. Must have a hostname
+    hostname = parsed.hostname
+    if not hostname:
+        return False, "URL must contain a valid hostname."
+    
+    # 4. Block known dangerous hostnames
+    if hostname.lower() in BLOCKED_HOSTS:
+        return False, f"Scraping '{hostname}' is not allowed for security reasons."
+    
+    # 5. Resolve hostname to IP and check if it's private/internal
+    try:
+        resolved_ips = socket.getaddrinfo(hostname, None)
+        for entry in resolved_ips:
+            ip_str = entry[4][0]
+            try:
+                ip_obj = ipaddress.ip_address(ip_str)
+                if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
+                    return False, f"URL resolves to a private/internal address ({ip_str}). Scraping blocked."
+            except ValueError:
+                continue
+    except socket.gaierror:
+        return False, f"Could not resolve hostname '{hostname}'. Please check the URL."
+    except Exception:
+        # If DNS resolution fails for any other reason, allow it through
+        # (Firecrawl will handle the actual request and fail gracefully)
+        pass
+    
+    # 6. Block URLs with authentication credentials
+    if parsed.username or parsed.password:
+        return False, "URLs with embedded credentials are not allowed."
+    
+    # 7. Block extremely long URLs (potential abuse)
+    if len(url) > 2048:
+        return False, "URL exceeds maximum length (2048 characters)."
+    
+    return True, None
+
 
 def init_firecrawl():
     """Initializes the Firecrawl client using the API key from .env"""

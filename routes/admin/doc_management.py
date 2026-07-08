@@ -4,6 +4,7 @@ from flask import request, redirect, url_for, flash, current_app, session
 from werkzeug.utils import secure_filename
 from models.models import db, Bot, Document
 from bot.cloud import upload_to_gemini, delete_from_gemini
+from utils.plan_limits import check_document_limit
 from . import admin_bp
 
 def allowed_file(filename):
@@ -44,6 +45,12 @@ def upload_file():
             flash("Error: Active bot not found in database.", "error")
             return redirect(url_for('admin_bp.admin_dashboard'))
 
+        # --- PLAN LIMIT: Check document count ---
+        allowed, current_docs, doc_limit = check_document_limit(session['org_id'], user_bot.id)
+        if not allowed:
+            flash(f"Document limit reached ({current_docs}/{doc_limit}). Please upgrade your plan to add more files.", "error")
+            return redirect(url_for('admin_bp.admin_dashboard'))
+
         filename = secure_filename(file.filename)
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
@@ -62,7 +69,6 @@ def upload_file():
         
         if os.path.exists(file_path):
             os.remove(file_path)
-            print(f"Server Storage Freed: Deleted {filename} from local uploads folder.")
 
     else:
         flash('Invalid File Type')

@@ -16,6 +16,7 @@ CREATE TABLE "user" (
     email VARCHAR(120) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     otp VARCHAR(6),
+    otp_created_at TIMESTAMP WITHOUT TIME ZONE,
     is_verified BOOLEAN DEFAULT FALSE,
     role VARCHAR(20) NOT NULL DEFAULT 'member'
 );

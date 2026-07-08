@@ -577,22 +577,90 @@ def super_admin_dashboard():
     arr = mrr * 12  # Annual Recurring Revenue
     # --------
 
+    # --- 6. ORGANIZATION BREAKDOWN ---
+    enriched_orgs = []
+    for o in all_orgs:
+        org_users = User.query.filter_by(org_id=o.id).count()
+        org_bots_count = Bot.query.filter_by(org_id=o.id).count()
+        org_bot_ids = [b.id for b in Bot.query.filter_by(org_id=o.id).all()]
+        org_leads = Lead.query.filter(Lead.bot_id.in_(org_bot_ids)).count() if org_bot_ids else 0
+        org_leads_range = Lead.query.filter(
+            Lead.bot_id.in_(org_bot_ids), 
+            Lead.captured_at >= start_date, 
+            Lead.captured_at <= end_date
+        ).count() if org_bot_ids else 0
+        
+        org_tokens = sum(
+            b.tokens_used or 0 for b in Bot.query.filter_by(org_id=o.id).all()
+        )
+        org_interactions = sum(
+            b.interaction_count or 0 for b in Bot.query.filter_by(org_id=o.id).all()
+        )
+        org_owner = User.query.filter_by(org_id=o.id).order_by(User.id.asc()).first()
+        
+        enriched_orgs.append({
+            'id': o.id,
+            'name': o.name,
+            'plan': (o.plan or 'free').capitalize(),
+            'plan_raw': o.plan or 'free',
+            'users': org_users,
+            'bots': org_bots_count,
+            'leads_total': org_leads,
+            'leads_range': org_leads_range,
+            'tokens': org_tokens,
+            'interactions': org_interactions,
+            'messages_used': o.messages_used or 0,
+            'owner_email': org_owner.email if org_owner else 'N/A',
+            'subscription_id': o.paddle_subscription_id or None,
+        })
+
+    # --- 7. GROWTH & CONVERSION METRICS ---
+    # Users registered in the selected period
+    # (We don't have created_at on User, so use org count as proxy)
+    total_orgs_count = len(all_orgs)
+    
+    # Conversion rate: orgs on paid plans / total orgs
+    conversion_rate = round((active_subscriptions / total_orgs_count) * 100, 1) if total_orgs_count > 0 else 0
+    
+    # Average leads per bot (engagement metric)
+    avg_leads_per_bot = round(total_leads / total_bots, 1) if total_bots > 0 else 0
+    
+    # Average tokens per interaction
+    avg_tokens_per_interaction = int(total_tokens / total_interactions) if total_interactions > 0 else 0
+    
+    # Messages used across all orgs (current cycle)
+    total_messages_used = sum(o.messages_used or 0 for o in all_orgs)
+    total_messages_limit = sum(
+        plan_price.get(o.plan or 'free', 0) for o in all_orgs
+    )
+    
+    # Bot performance ranking (top 10 by leads)
+    bot_rankings = sorted(enriched_bots, key=lambda x: x['leads'], reverse=True)[:10]
+
     return render_template(
         'super_admin.html',
         mrr=mrr, arr=arr, active_subscriptions=active_subscriptions,
         total_revenue=total_revenue, revenue_in_range=revenue_in_range,
         revenue_by_plan=revenue_by_plan, plan_counts=plan_counts,
-        recent_payments=recent_payments, total_orgs=len(all_orgs),
+        recent_payments=recent_payments, total_orgs=total_orgs_count,
         chart_data=chart_data, total_leads=total_leads, total_users=total_users, 
         total_bots=total_bots, total_docs=total_docs, total_hits_today=total_hits_today,
         system_health=system_health, enriched_bots=enriched_bots,
         current_period=period, start_date=start_date.strftime('%Y-%m-%d'), 
         end_date=end_date.strftime('%Y-%m-%d'), days_count=days_count, is_custom=is_custom,
-        enriched_users=enriched_users,       # <--- FIXED: Now actually passing user metrics
-        recent_raw_leads=recent_raw_leads,   # <--- FIXED: Now passing recent API lead data
+        enriched_users=enriched_users,
+        recent_raw_leads=recent_raw_leads,
         total_tokens=total_tokens,
+        total_interactions=total_interactions,
         avg_latency_ms=avg_latency_ms,
-        feedbacks=enriched_feedbacks, avg_rating=avg_rating
+        feedbacks=enriched_feedbacks, avg_rating=avg_rating,
+        # --- NEW DETAILED METRICS ---
+        enriched_orgs=enriched_orgs,
+        conversion_rate=conversion_rate,
+        avg_leads_per_bot=avg_leads_per_bot,
+        avg_tokens_per_interaction=avg_tokens_per_interaction,
+        total_messages_used=total_messages_used,
+        bot_rankings=bot_rankings,
     )
 
 @views_bp.route('/api/bot_avatar/<int:bot_id>')
