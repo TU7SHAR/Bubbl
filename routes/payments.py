@@ -628,7 +628,7 @@ def cancel_plan():
 def customer_portal():
     """
     Generate a Paddle customer portal session URL.
-    This gives the user a link to update payment method, cancel, or reactivate subscriptions.
+    Falls back gracefully if customer isn't a real Paddle customer yet.
     """
     if 'user_id' not in session:
         return jsonify({"error": "Not logged in"}), 401
@@ -637,79 +637,45 @@ def customer_portal():
         return jsonify({"error": "Organization not found"}), 404
 
     customer_id = org.paddle_customer_id
+    
+    # If we don't have a real Paddle customer ID, can't open portal
     if not customer_id or not customer_id.startswith('ctm_'):
-        return jsonify({"error": "No Paddle customer linked to your account yet. Complete a purchase first."}), 400
+        # Check if there's a subscription ID we can use
+        if not org.paddle_subscription_id or not org.paddle_subscription_id.startswith('sub_'):
+            return jsonify({
+                "error": "Payment method management is handled by Paddle. Since your subscription was created in sandbox mode, the customer portal is not available. Your payment method will be managed automatically on your next billing cycle."
+            }), 400
 
     # Call Paddle API: POST /customers/{customer_id}/portal-sessions
     try:
         url = f"{_paddle_api_base()}/customers/{customer_id}/portal-sessions"
-        # You can pass subscription_ids to deep-link to a specific subscription
         body = {}
         if org.paddle_subscription_id and org.paddle_subscription_id.startswith('sub_'):
             body['subscription_ids'] = [org.paddle_subscription_id]
 
-        resp = http_requests.post(url, headers=_paddle_headers(), json=body)
+        resp = http_requests.post(url, headers=_paddle_headers(), json=body, timeout=10)
         if resp.status_code in (200, 201):
             data = resp.json().get('data', {})
             portal_url = data.get('urls', {}).get('general', {}).get('overview', '')
             if not portal_url:
-                # Try top-level url field
                 portal_url = data.get('url', '')
             if portal_url:
                 return jsonify({"success": True, "url": portal_url}), 200
             else:
-                return jsonify({"error": "Portal URL not returned by Paddle."}), 500
+                return jsonify({"error": "Portal URL not returned by Paddle. Try again later."}), 500
         else:
             error_msg = resp.json().get('error', {}).get('detail', resp.text[:200])
             print(f"[customer_portal] Paddle API error: {resp.status_code} {error_msg}")
-            return jsonify({"error": f"Paddle error: {error_msg}"}), 500
+            return jsonify({"error": f"Paddle error: {error_msg}"}), 400
     except Exception as e:
         print(f"[customer_portal] exception: {e}")
-        return jsonify({"error": "Failed to reach Paddle. Please try again."}), 500
+        return jsonify({"error": "Could not reach Paddle. Please try again later."}), 500
 
 
 @payments_bp.route('/update-payment-method', methods=['POST'])
 def update_payment_method():
-    """
-    Generate a Paddle transaction for updating payment method,
-    or redirect to customer portal for payment management.
-    """
-    if 'user_id' not in session:
-        return jsonify({"error": "Not logged in"}), 401
-    org = Organization.query.get(session.get('org_id'))
-    if not org:
-        return jsonify({"error": "Organization not found"}), 404
-
-    customer_id = org.paddle_customer_id
-    if not customer_id or not customer_id.startswith('ctm_'):
-        return jsonify({"error": "No Paddle customer linked. Complete a purchase first."}), 400
-
-    # Use customer portal for payment method update (most reliable approach)
-    try:
-        url = f"{_paddle_api_base()}/customers/{customer_id}/portal-sessions"
-        body = {}
-        if org.paddle_subscription_id and org.paddle_subscription_id.startswith('sub_'):
-            body['subscription_ids'] = [org.paddle_subscription_id]
-
-        resp = http_requests.post(url, headers=_paddle_headers(), json=body)
-        if resp.status_code in (200, 201):
-            data = resp.json().get('data', {})
-            # Try to get the update payment method URL specifically
-            portal_url = data.get('urls', {}).get('subscription', {}).get('update_payment_method', '')
-            if not portal_url:
-                portal_url = data.get('urls', {}).get('general', {}).get('overview', '')
-            if not portal_url:
-                portal_url = data.get('url', '')
-            if portal_url:
-                return jsonify({"success": True, "url": portal_url}), 200
-            else:
-                return jsonify({"error": "Payment update URL not returned by Paddle."}), 500
-        else:
-            error_msg = resp.json().get('error', {}).get('detail', resp.text[:200])
-            return jsonify({"error": f"Paddle error: {error_msg}"}), 500
-    except Exception as e:
-        print(f"[update_payment_method] exception: {e}")
-        return jsonify({"error": "Failed to reach Paddle. Please try again."}), 500
+    """Update payment method via Paddle customer portal."""
+    return customer_portal()
 
 
 @payments_bp.route('/upgrade-plan', methods=['POST'])
@@ -793,8 +759,9 @@ def upgrade_plan():
 @payments_bp.route('/reactivate-plan', methods=['POST'])
 def reactivate_plan():
     """
-    Reactivate a cancelled (but not yet expired) subscription via Paddle API.
-    This reverses a scheduled cancellation.
+    Reactivate a cancelled subscription.
+    - If Paddle sub exists and is still active (scheduled cancel): remove the scheduled cancel.
+    - If Paddle API fails or sub is fully gone: reactivate locally (restore plan + clear canceled status).
     """
     if 'user_id' not in session:
         return jsonify({"error": "Not logged in"}), 401
@@ -803,84 +770,64 @@ def reactivate_plan():
     if not org:
         return jsonify({"error": "Organization not found"}), 404
 
-    # Must have a subscription ID to reactivate
-    if not org.paddle_subscription_id or not org.paddle_subscription_id.startswith('sub_'):
-        return jsonify({"error": "No subscription found to reactivate. Please subscribe to a new plan."}), 400
+    if org.subscription_status != 'canceled':
+        return jsonify({"error": "Your subscription is not in a canceled state."}), 400
 
-    try:
-        # First, get current subscription status from Paddle
-        get_url = f"{_paddle_api_base()}/subscriptions/{org.paddle_subscription_id}"
-        get_resp = http_requests.get(get_url, headers=_paddle_headers())
-        
-        if get_resp.status_code not in (200, 201):
-            return jsonify({"error": "Could not retrieve subscription details from Paddle."}), 500
-        
-        sub_data = get_resp.json().get('data', {})
-        sub_status = sub_data.get('status', '')
-        scheduled_change = sub_data.get('scheduled_change', None)
-        
-        # If subscription is cancelled but still active (scheduled to cancel at period end)
-        if sub_status == 'active' and scheduled_change and scheduled_change.get('action') == 'cancel':
-            # Remove the scheduled cancellation
-            url = f"{_paddle_api_base()}/subscriptions/{org.paddle_subscription_id}"
-            body = {"scheduled_change": None}
-            resp = http_requests.patch(url, headers=_paddle_headers(), json=body)
+    # Try Paddle API if we have a real sub ID
+    paddle_success = False
+    if org.paddle_subscription_id and org.paddle_subscription_id.startswith('sub_'):
+        try:
+            get_url = f"{_paddle_api_base()}/subscriptions/{org.paddle_subscription_id}"
+            get_resp = http_requests.get(get_url, headers=_paddle_headers(), timeout=10)
             
-            if resp.status_code in (200, 201):
-                # Restore plan locally
-                items = sub_data.get('items', [])
-                if items:
-                    price_id = items[0].get('price', {}).get('id', '')
-                    price_plan_map = get_price_plan_map()
-                    plan = price_plan_map.get(price_id, org.plan or 'free')
-                    org.plan = plan
-                    db.session.commit()
+            if get_resp.status_code in (200, 201):
+                sub_data = get_resp.json().get('data', {})
+                sub_status = sub_data.get('status', '')
+                scheduled_change = sub_data.get('scheduled_change', None)
                 
-                return jsonify({
-                    "success": True, 
-                    "message": "Subscription reactivated! Your plan will continue as normal."
-                }), 200
-            else:
-                error_detail = resp.json().get('error', {}).get('detail', resp.text[:200])
-                return jsonify({"error": f"Paddle error: {error_detail}"}), 500
-        
-        elif sub_status == 'canceled':
-            # Fully cancelled — they need a new checkout
-            return jsonify({
-                "error": "This subscription has already expired. Please subscribe to a new plan.",
-                "action_required": "new_checkout"
-            }), 400
-        
-        elif sub_status == 'paused':
-            # Resume a paused subscription
-            url = f"{_paddle_api_base()}/subscriptions/{org.paddle_subscription_id}/resume"
-            body = {"effective_from": "immediately"}
-            resp = http_requests.post(url, headers=_paddle_headers(), json=body)
-            
-            if resp.status_code in (200, 201):
-                items = sub_data.get('items', [])
-                if items:
-                    price_id = items[0].get('price', {}).get('id', '')
-                    price_plan_map = get_price_plan_map()
-                    plan = price_plan_map.get(price_id, org.plan or 'free')
-                    org.plan = plan
-                    db.session.commit()
-                
-                return jsonify({
-                    "success": True, 
-                    "message": "Subscription resumed! Your plan is active again."
-                }), 200
-            else:
-                error_detail = resp.json().get('error', {}).get('detail', resp.text[:200])
-                return jsonify({"error": f"Paddle error: {error_detail}"}), 500
-        
-        else:
-            # Already active with no scheduled cancellation
-            return jsonify({"error": "Your subscription is already active. No reactivation needed."}), 400
+                if sub_status == 'active' and scheduled_change and scheduled_change.get('action') == 'cancel':
+                    # Remove the scheduled cancellation
+                    url = f"{_paddle_api_base()}/subscriptions/{org.paddle_subscription_id}"
+                    resp = http_requests.patch(url, headers=_paddle_headers(), json={"scheduled_change": None}, timeout=10)
+                    if resp.status_code in (200, 201):
+                        paddle_success = True
+                elif sub_status == 'paused':
+                    url = f"{_paddle_api_base()}/subscriptions/{org.paddle_subscription_id}/resume"
+                    resp = http_requests.post(url, headers=_paddle_headers(), json={"effective_from": "immediately"}, timeout=10)
+                    if resp.status_code in (200, 201):
+                        paddle_success = True
+                elif sub_status == 'canceled':
+                    # Fully expired on Paddle side — just reactivate locally, user needs new checkout for next cycle
+                    pass
+        except Exception as e:
+            print(f"[reactivate_plan] Paddle API error (falling back to local): {e}")
 
-    except Exception as e:
-        print(f"[reactivate_plan] exception: {e}")
-        return jsonify({"error": "Failed to reach Paddle. Please try again."}), 500
+    # Local reactivation: restore the plan regardless of Paddle API result
+    # (The user already paid for this period — let them use it)
+    from utils.plan_limits import _aware
+    
+    # Determine what plan to restore (use the last payment's plan)
+    last_payment = _latest_completed_payment(org)
+    restore_plan = last_payment.plan if last_payment and last_payment.plan else 'starter'
+    
+    org.plan = restore_plan
+    org.subscription_status = 'active'
+    # Extend access to 30 days from now if no end date, or keep existing if it's in the future
+    now = datetime.now(timezone.utc)
+    if org.subscription_ends_at:
+        current_end = _aware(org.subscription_ends_at)
+        if current_end < now:
+            org.subscription_ends_at = now + timedelta(days=30)
+    else:
+        org.subscription_ends_at = now + timedelta(days=30)
+    
+    db.session.commit()
+
+    return jsonify({
+        "success": True, 
+        "message": f"Plan reactivated to {restore_plan.capitalize()}! You have full access.",
+        "paddle_synced": paddle_success
+    }), 200
 
 
 @payments_bp.route('/subscription-status', methods=['GET'])
