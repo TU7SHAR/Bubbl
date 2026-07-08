@@ -333,13 +333,13 @@ def upgrade_callback():
     org = Organization.query.get(session.get('org_id'))
 
     # --- Determine the plan ---
-    plan = org.plan if (org and org.plan and org.plan != 'free') else None
-    if not plan:
-        plan = session.pop('checkout_plan', None)
+    # Session checkout_plan takes PRIORITY — it's what the user JUST selected.
+    # org.plan may still reflect an old/cancelled plan if webhook hasn't fired yet.
+    plan = session.pop('checkout_plan', None)
     if not plan:
         plan = request.args.get('plan', '')
     if not plan:
-        plan = 'free'
+        plan = org.plan if (org and org.plan and org.plan != 'free') else 'free'
 
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
 
@@ -382,29 +382,36 @@ def upgrade_callback():
     amount_paid = latest_payment.amount if latest_payment else None
     currency = latest_payment.currency if latest_payment else 'INR'
 
-    # --- If we don't have IDs yet, try fetching from Paddle API directly ---
-    if (transaction_id == '—' or subscription_id == '—') and paddle_txn_id:
+    # --- Fetch from Paddle API when we have _ptxn (always, for accurate data) ---
+    if paddle_txn_id and paddle_txn_id.startswith('txn_'):
         try:
             url = f"{_paddle_api_base()}/transactions/{paddle_txn_id}"
             resp = http_requests.get(url, headers=_paddle_headers(), timeout=5)
             if resp.status_code in (200, 201):
                 txn_data = resp.json().get('data', {})
-                if transaction_id == '—':
-                    transaction_id = txn_data.get('id', '—')
-                if subscription_id == '—':
-                    subscription_id = txn_data.get('subscription_id') or '—'
-                if customer_id == '—' or not customer_id.startswith('ctm_'):
-                    customer_id = txn_data.get('customer_id') or customer_id
-                if not amount_paid:
-                    totals = (txn_data.get('details', {}) or {}).get('totals', {}) or {}
-                    raw = totals.get('grand_total') or totals.get('total') or '0'
-                    try:
-                        amount_paid = round(int(raw) / 100.0, 2)
-                    except (ValueError, TypeError):
-                        pass
+                transaction_id = txn_data.get('id', transaction_id)
+                if txn_data.get('subscription_id'):
+                    subscription_id = txn_data.get('subscription_id')
+                if txn_data.get('customer_id'):
+                    customer_id = txn_data.get('customer_id')
+                # Amount from Paddle (most accurate — reflects the actual charge)
+                totals = (txn_data.get('details', {}) or {}).get('totals', {}) or {}
+                raw = totals.get('grand_total') or totals.get('total') or '0'
+                try:
+                    amount_paid = round(int(raw) / 100.0, 2)
+                except (ValueError, TypeError):
+                    pass
+                # Detect plan from price_id (most accurate source of truth)
                 items = txn_data.get('items', [])
-                if items and product_id == '—':
-                    product_id = items[0].get('price', {}).get('id', '—')
+                if items:
+                    fetched_price_id = items[0].get('price', {}).get('id', '')
+                    if fetched_price_id:
+                        product_id = fetched_price_id
+                        price_plan_map = get_price_plan_map()
+                        detected_plan = price_plan_map.get(fetched_price_id)
+                        if detected_plan:
+                            plan = detected_plan
+                            limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
         except Exception as e:
             print(f"[upgrade_callback] Paddle API fetch failed (non-critical): {e}")
 
