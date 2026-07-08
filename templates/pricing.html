@@ -165,12 +165,60 @@ var PADDLE_PRICES = {
   growth: '{{ config.PADDLE_PRICE_GROWTH or "" }}',
   pro: '{{ config.PADDLE_PRICE_PRO or "" }}'
 };
+var CURRENT_PLAN = '{{ current_plan }}';
 
+// --- MODAL SYSTEM ---
+function showPricingModal(icon, title, body, actions) {
+  var existing = document.getElementById('pricingModal');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'pricingModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+  var modal = document.createElement('div');
+  modal.style.cssText = 'background:#fff;border-radius:16px;padding:32px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.15);animation:scaleIn 0.2s ease';
+  modal.innerHTML = '<div style="margin-bottom:16px;">' + icon + '</div>' +
+    '<h3 style="font-size:18px;font-weight:700;color:#111;margin:0 0 10px;">' + title + '</h3>' +
+    '<div style="font-size:14px;color:#555;line-height:1.6;margin:0 0 24px;">' + body + '</div>' +
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">' + actions + '</div>';
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function closePricingModal() {
+  var m = document.getElementById('pricingModal');
+  if (m) m.remove();
+}
+
+function modalBtn(text, style, onclick) {
+  var base = 'padding:10px 22px;font-size:13px;font-weight:600;border-radius:8px;border:none;cursor:pointer;transition:all 0.15s;';
+  if (style === 'primary') base += 'background:#E8722A;color:#fff;';
+  else if (style === 'danger') base += 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;';
+  else base += 'background:#f5f5f5;color:#555;border:1px solid #e5e5e5;';
+  return '<button style="' + base + '" onclick="' + onclick + '">' + text + '</button>';
+}
+
+var upgradeIcon = '<div style="width:52px;height:52px;margin:0 auto;background:rgba(232,114,42,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8722A" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg></div>';
+var errorIcon = '<div style="width:52px;height:52px;margin:0 auto;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>';
+var successIcon = '<div style="width:52px;height:52px;margin:0 auto;background:#ecfdf5;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>';
+
+// --- CHECKOUT LOGIC ---
 function startCheckout(plan) {
   if (!PADDLE_PRICES[plan]) {
-    alert('This plan is not available right now. Contact support.');
+    showPricingModal(errorIcon, 'Plan Unavailable', 'This plan is not configured yet. Please contact support.', modalBtn('OK', 'secondary', 'closePricingModal()'));
     return;
   }
+
+  // If user has a paid plan and is upgrading to a HIGHER plan
+  if (CURRENT_PLAN && CURRENT_PLAN !== 'free' && CURRENT_PLAN !== plan) {
+    startUpgrade(plan);
+    return;
+  }
+
+  // Fresh checkout for free-tier users
   fetch('/payments/checkout-session', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -187,15 +235,115 @@ function startCheckout(plan) {
         items: [{ priceId: PADDLE_PRICES[plan], quantity: 1 }],
         customer: { email: data.email },
         customData: { org_id: String(data.org_id) },
-        settings: { successUrl: window.location.origin + '/payments/upgrade-callback', displayMode: 'overlay' }
+        settings: { successUrl: window.location.origin + '/payments/upgrade-callback?_ptxn={transaction_id}', displayMode: 'overlay' }
       });
     } else {
-      alert('Payment system loading. Try again in a moment.');
+      showPricingModal(errorIcon, 'Loading', 'Payment system is still loading. Please try again in a moment.', modalBtn('OK', 'secondary', 'closePricingModal()'));
     }
   })
-  .catch(function(err) { console.error(err); alert('Checkout error. Please retry.'); });
+  .catch(function() {
+    showPricingModal(errorIcon, 'Error', 'Could not start checkout. Please check your connection and try again.', modalBtn('OK', 'secondary', 'closePricingModal()'));
+  });
+}
+
+function startUpgrade(plan) {
+  // Show loading state
+  showPricingModal(upgradeIcon, 'Calculating...', '<div style="color:#999;font-size:13px;">Fetching your prorated upgrade cost...</div>', '');
+
+  fetch('/payments/upgrade-preview', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ plan: plan })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(d) {
+    if (!d.success) {
+      // If it's a "can only upgrade to higher plan" error, just open fresh checkout
+      closePricingModal();
+      openFreshCheckout(plan);
+      return;
+    }
+
+    // Build proration breakdown HTML
+    var body = '<div style="text-align:left;background:#f9fafb;border-radius:10px;padding:16px;margin-bottom:16px;font-size:13px;">';
+    body += '<div style="display:flex;justify-content:space-between;padding:5px 0;color:#333;"><span>' + d.target_plan + ' plan</span><span style="font-weight:600;">₹' + d.target_price.toFixed(2) + '/mo</span></div>';
+    body += '<div style="display:flex;justify-content:space-between;padding:5px 0;color:#059669;"><span>Credit from ' + d.current_plan + '</span><span>- ₹' + d.credit_remaining.toFixed(2) + '</span></div>';
+    body += '<div style="font-size:11px;color:#999;padding:2px 0 8px;">(' + d.current_plan + ' ₹' + d.current_price.toFixed(2) + ' − ' + d.days_used + ' day' + (d.days_used > 1 ? 's' : '') + ' × ₹' + d.daily_rate_current.toFixed(2) + ')</div>';
+    body += '<div style="display:flex;justify-content:space-between;padding:10px 0 0;border-top:1px dashed #ddd;font-size:16px;font-weight:800;color:#111;"><span>You pay today</span><span>₹' + d.upgrade_cost.toFixed(2) + '</span></div>';
+    body += '</div>';
+
+    var actions = modalBtn('Keep Current Plan', 'secondary', 'closePricingModal()') +
+                  modalBtn('Confirm Upgrade', 'primary', 'confirmUpgrade("' + plan + '")');
+
+    showPricingModal(upgradeIcon, 'Upgrade to ' + d.target_plan, body, actions);
+  })
+  .catch(function() {
+    // If preview fails, just open fresh checkout
+    closePricingModal();
+    openFreshCheckout(plan);
+  });
+}
+
+function confirmUpgrade(plan) {
+  showPricingModal(upgradeIcon, 'Processing...', '<div style="color:#999;">Upgrading your subscription...</div>', '');
+
+  fetch('/payments/upgrade-plan', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ plan: plan })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(result) {
+    if (result.success && result.method === 'subscription_update') {
+      showPricingModal(successIcon, 'Upgraded!', 'Your plan has been upgraded to <strong>' + plan.charAt(0).toUpperCase() + plan.slice(1) + '</strong>. Changes take effect immediately.', modalBtn('Go to Billing', 'primary', 'window.location.href="/payments/manage"'));
+    } else if (result.success && result.method === 'new_checkout') {
+      // Paddle couldn't patch — open new checkout
+      closePricingModal();
+      if (typeof Paddle !== 'undefined') {
+        Paddle.Checkout.open({
+          items: [{ priceId: result.price_id, quantity: 1 }],
+          customer: { email: result.email },
+          customData: { org_id: String(result.org_id) },
+          settings: { successUrl: window.location.origin + '/payments/upgrade-callback?_ptxn={transaction_id}', displayMode: 'overlay' }
+        });
+      }
+    } else if (result.error) {
+      // Paddle API error (sandbox limitation) — fall back to fresh checkout
+      closePricingModal();
+      openFreshCheckout(plan);
+    }
+  })
+  .catch(function() {
+    closePricingModal();
+    openFreshCheckout(plan);
+  });
+}
+
+function openFreshCheckout(plan) {
+  // Fallback: open a new Paddle checkout (ignores existing sub)
+  fetch('/payments/checkout-session', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ plan: plan })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data && typeof Paddle !== 'undefined') {
+      Paddle.Checkout.open({
+        items: [{ priceId: PADDLE_PRICES[plan], quantity: 1 }],
+        customer: { email: data.email },
+        customData: { org_id: String(data.org_id) },
+        settings: { successUrl: window.location.origin + '/payments/upgrade-callback?_ptxn={transaction_id}', displayMode: 'overlay' }
+      });
+    }
+  });
 }
 </script>
+
+<style>
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.95) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+</style>
 
 {% if config.PADDLE_CLIENT_TOKEN %}
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
