@@ -235,22 +235,22 @@
 
   function submitFeedback() {
       if (currentRating === 0) {
-          alert("Please select a star rating first.");
+          showFeedbackModal("Please select a star rating first.", false);
           return;
       }
 
-      // Check if bot ID exists (user must be logged in with an active bot)
-      if (!window.EMBEDDED_BOT_ID) {
-          showFeedbackModal('Please log in first to give feedback.', true);
-          return;
-      }
-      
       const comment = document.getElementById('feedback-comment').value;
       const btn = document.getElementById('submit-feedback-btn');
       btn.innerText = "Sending...";
       btn.disabled = true;
 
-      fetch(`/bot/${window.EMBEDDED_BOT_ID}/widget/feedback`, {
+      // If there's a specific bot, attach feedback to it.
+      // Otherwise (public marketing assistant), send as platform feedback — no login needed.
+      var feedbackUrl = window.EMBEDDED_BOT_ID
+          ? `/bot/${window.EMBEDDED_BOT_ID}/widget/feedback`
+          : `/api/platform-feedback`;
+
+      fetch(feedbackUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
