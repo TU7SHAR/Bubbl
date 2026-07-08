@@ -165,12 +165,21 @@ var PADDLE_PRICES = {
   growth: '{{ config.PADDLE_PRICE_GROWTH or "" }}',
   pro: '{{ config.PADDLE_PRICE_PRO or "" }}'
 };
+var CURRENT_PLAN = '{{ current_plan }}';
 
 function startCheckout(plan) {
   if (!PADDLE_PRICES[plan]) {
     alert('This plan is not available right now. Contact support.');
     return;
   }
+
+  // If user already has a paid plan, show prorated upgrade flow
+  if (CURRENT_PLAN && CURRENT_PLAN !== 'free' && CURRENT_PLAN !== plan) {
+    startUpgrade(plan);
+    return;
+  }
+
+  // Fresh checkout for free-tier users or same-plan re-subscribe
   fetch('/payments/checkout-session', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -194,6 +203,60 @@ function startCheckout(plan) {
     }
   })
   .catch(function(err) { console.error(err); alert('Checkout error. Please retry.'); });
+}
+
+function startUpgrade(plan) {
+  // Show proration preview first
+  fetch('/payments/upgrade-preview', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ plan: plan })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(d) {
+    if (!d.success) {
+      alert(d.error || 'Could not calculate upgrade cost.');
+      return;
+    }
+
+    var msg = 'Upgrade: ' + d.current_plan + ' → ' + d.target_plan + '\n';
+    msg += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+    msg += d.target_plan + ' plan:           ₹' + d.target_price.toFixed(2) + '/mo\n';
+    msg += 'Credit remaining:     - ₹' + d.credit_remaining.toFixed(2) + '\n';
+    msg += '  (' + d.current_plan + ' ₹' + d.current_price.toFixed(2) + ' − ' + d.days_used + ' days × ₹' + d.daily_rate_current.toFixed(2) + ')\n';
+    msg += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+    msg += 'You pay now:          ₹' + d.upgrade_cost.toFixed(2) + '\n\n';
+    msg += 'Proceed?';
+
+    if (confirm(msg)) {
+      fetch('/payments/upgrade-plan', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ plan: plan })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(result) {
+        if (result.success && result.method === 'subscription_update') {
+          alert('Upgraded to ' + plan.charAt(0).toUpperCase() + plan.slice(1) + '! Changes are immediate.');
+          window.location.href = '/payments/manage';
+        } else if (result.success && result.method === 'new_checkout') {
+          // Paddle couldn't patch existing sub — open new checkout
+          if (typeof Paddle !== 'undefined') {
+            Paddle.Checkout.open({
+              items: [{ priceId: result.price_id, quantity: 1 }],
+              customer: { email: result.email },
+              customData: { org_id: String(result.org_id) },
+              settings: { successUrl: window.location.origin + '/payments/upgrade-callback?_ptxn={transaction_id}', displayMode: 'overlay' }
+            });
+          }
+        } else {
+          alert(result.error || 'Upgrade failed. Please try again.');
+        }
+      })
+      .catch(function() { alert('Network error. Please try again.'); });
+    }
+  })
+  .catch(function() { alert('Could not load upgrade preview. Try again.'); });
 }
 </script>
 
