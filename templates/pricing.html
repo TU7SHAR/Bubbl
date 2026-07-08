@@ -312,6 +312,19 @@ function confirmUpgrade(plan) {
       closePricingModal();
       openFreshCheckout(plan);
     }
+
+    // Build proration breakdown HTML
+    var body = '<div style="text-align:left;background:#f9fafb;border-radius:10px;padding:16px;margin-bottom:16px;font-size:13px;">';
+    body += '<div style="display:flex;justify-content:space-between;padding:5px 0;color:#333;"><span>' + d.target_plan + ' plan</span><span style="font-weight:600;">₹' + d.target_price.toFixed(2) + '/mo</span></div>';
+    body += '<div style="display:flex;justify-content:space-between;padding:5px 0;color:#059669;"><span>Credit from ' + d.current_plan + '</span><span>- ₹' + d.credit_remaining.toFixed(2) + '</span></div>';
+    body += '<div style="font-size:11px;color:#999;padding:2px 0 8px;">(' + d.current_plan + ' ₹' + d.current_price.toFixed(2) + ' − ' + d.days_used + ' day' + (d.days_used > 1 ? 's' : '') + ' × ₹' + d.daily_rate_current.toFixed(2) + ')</div>';
+    body += '<div style="display:flex;justify-content:space-between;padding:10px 0 0;border-top:1px dashed #ddd;font-size:16px;font-weight:800;color:#111;"><span>You pay today</span><span>₹' + d.upgrade_cost.toFixed(2) + '</span></div>';
+    body += '</div>';
+
+    var actions = modalBtn('Keep Current Plan', 'secondary', 'closePricingModal()') +
+                  modalBtn('Confirm Upgrade', 'primary', 'confirmUpgrade("' + plan + '")');
+
+    showPricingModal(upgradeIcon, 'Upgrade to ' + d.target_plan, body, actions);
   })
   .catch(function() {
     closePricingModal();
@@ -337,60 +350,6 @@ function openFreshCheckout(plan) {
       });
     }
   });
-}
-
-function startUpgrade(plan) {
-  // Show proration preview first
-  fetch('/payments/upgrade-preview', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ plan: plan })
-  })
-  .then(function(res) { return res.json(); })
-  .then(function(d) {
-    if (!d.success) {
-      alert(d.error || 'Could not calculate upgrade cost.');
-      return;
-    }
-
-    var msg = 'Upgrade: ' + d.current_plan + ' → ' + d.target_plan + '\n';
-    msg += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-    msg += d.target_plan + ' plan:           ₹' + d.target_price.toFixed(2) + '/mo\n';
-    msg += 'Credit remaining:     - ₹' + d.credit_remaining.toFixed(2) + '\n';
-    msg += '  (' + d.current_plan + ' ₹' + d.current_price.toFixed(2) + ' − ' + d.days_used + ' days × ₹' + d.daily_rate_current.toFixed(2) + ')\n';
-    msg += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-    msg += 'You pay now:          ₹' + d.upgrade_cost.toFixed(2) + '\n\n';
-    msg += 'Proceed?';
-
-    if (confirm(msg)) {
-      fetch('/payments/upgrade-plan', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ plan: plan })
-      })
-      .then(function(res) { return res.json(); })
-      .then(function(result) {
-        if (result.success && result.method === 'subscription_update') {
-          alert('Upgraded to ' + plan.charAt(0).toUpperCase() + plan.slice(1) + '! Changes are immediate.');
-          window.location.href = '/payments/manage';
-        } else if (result.success && result.method === 'new_checkout') {
-          // Paddle couldn't patch existing sub — open new checkout
-          if (typeof Paddle !== 'undefined') {
-            Paddle.Checkout.open({
-              items: [{ priceId: result.price_id, quantity: 1 }],
-              customer: { email: result.email },
-              customData: { org_id: String(result.org_id) },
-              settings: { successUrl: window.location.origin + '/payments/upgrade-callback?_ptxn={transaction_id}', displayMode: 'overlay' }
-            });
-          }
-        } else {
-          alert(result.error || 'Upgrade failed. Please try again.');
-        }
-      })
-      .catch(function() { alert('Network error. Please try again.'); });
-    }
-  })
-  .catch(function() { alert('Could not load upgrade preview. Try again.'); });
 }
 </script>
 
