@@ -347,10 +347,12 @@ def update_bot_security(bot_id):
 
 @views_bp.route('/bot/<int:bot_id>/widget/feedback', methods=['POST'])
 def submit_feedback(bot_id):  
-    if 'user_id' not in session:
-        return jsonify({"error": "Please login to give feedback"}), 401
+    # Feedback can come from:
+    # 1. Logged-in admin/user testing their bot (has session)
+    # 2. End-user in the embed widget (no session, but has lead_id)
+    # Both are allowed — no login required for widget feedback.
 
-    data = request.json
+    data = request.json or {}
     
     rating = data.get('rating')
     comment = data.get('comment', '')
