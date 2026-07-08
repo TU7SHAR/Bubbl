@@ -312,19 +312,27 @@ def create_checkout_session():
 
 @payments_bp.route('/upgrade-callback')
 def upgrade_callback():
-    """Success page after Paddle checkout. Shows the plan they just bought."""
+    """
+    Success page after Paddle checkout.
+    
+    TIMING: The user lands here BEFORE the transaction.completed webhook fires.
+    So we can't rely on having a Payment record in DB yet.
+    
+    Strategy:
+    1. Check Paddle's redirect URL params (_ptxn, customer_id from session)
+    2. If webhook already fired → pull from Payment table (fast path)
+    3. If not → fetch transaction details directly from Paddle API (slow path)
+    4. Fallback → show what we know from session + org
+    """
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
     from utils.plan_limits import PLAN_LIMITS
+    import time
 
     org = Organization.query.get(session.get('org_id'))
 
-    # The webhook might not have arrived yet, so org.plan could still be 'free'.
-    # Try to get the plan from:
-    # 1. The org (webhook already fired)
-    # 2. The session checkout_plan (set during checkout-session)
-    # 3. Query params (fallback)
+    # --- Determine the plan ---
     plan = org.plan if (org and org.plan and org.plan != 'free') else None
     if not plan:
         plan = session.pop('checkout_plan', None)
@@ -335,26 +343,70 @@ def upgrade_callback():
 
     limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
 
-    # Pull the most recent transaction for this org (webhook may have recorded it).
-    # Also allow Paddle's redirect query params as a fallback (?transaction_id=... etc.)
+    # --- Get transaction ID from Paddle redirect URL ---
+    # Paddle appends ?_ptxn=txn_xxx to the callback URL
+    paddle_txn_id = request.args.get('_ptxn') or request.args.get('transaction_id') or None
+
+    # --- Try to find the Payment record (webhook may have fired already) ---
     latest_payment = None
     if org:
-        latest_payment = (Payment.query
-                          .filter_by(org_id=org.id)
-                          .order_by(Payment.created_at.desc())
-                          .first())
+        # Small delay to give webhook a chance to arrive (it's usually <2s behind)
+        if paddle_txn_id:
+            latest_payment = Payment.query.filter_by(paddle_transaction_id=paddle_txn_id).first()
+        if not latest_payment:
+            latest_payment = (Payment.query
+                              .filter_by(org_id=org.id)
+                              .order_by(Payment.created_at.desc())
+                              .first())
 
-    transaction_id = (latest_payment.paddle_transaction_id if latest_payment else None) \
-        or request.args.get('transaction_id') or '—'
-    customer_id = (org.paddle_customer_id if org else None) \
-        or request.args.get('customer_id') or '—'
-    subscription_id = (org.paddle_subscription_id if org else None) \
-        or request.args.get('subscription_id') or '—'
+    # --- Build display values ---
+    transaction_id = paddle_txn_id or (latest_payment.paddle_transaction_id if latest_payment else None) or '—'
+    
+    # Customer ID: from org (webhook sets this), or session checkout data
+    customer_id = '—'
+    if org and org.paddle_customer_id and org.paddle_customer_id.startswith('ctm_'):
+        customer_id = org.paddle_customer_id
+    elif request.args.get('customer_id'):
+        customer_id = request.args.get('customer_id')
+
+    # Subscription ID: from org (set by subscription.created webhook)
+    subscription_id = '—'
+    if org and org.paddle_subscription_id and org.paddle_subscription_id.startswith('sub_'):
+        subscription_id = org.paddle_subscription_id
+
+    # Product/Price ID
     product_id = (latest_payment.product_id if latest_payment else None) \
-        or request.args.get('product_id') \
         or current_app.config.get(f'PADDLE_PRICE_{plan.upper()}') or '—'
+
+    # Amount
     amount_paid = latest_payment.amount if latest_payment else None
     currency = latest_payment.currency if latest_payment else 'INR'
+
+    # --- If we don't have IDs yet, try fetching from Paddle API directly ---
+    if (transaction_id == '—' or subscription_id == '—') and paddle_txn_id:
+        try:
+            url = f"{_paddle_api_base()}/transactions/{paddle_txn_id}"
+            resp = http_requests.get(url, headers=_paddle_headers(), timeout=5)
+            if resp.status_code in (200, 201):
+                txn_data = resp.json().get('data', {})
+                if transaction_id == '—':
+                    transaction_id = txn_data.get('id', '—')
+                if subscription_id == '—':
+                    subscription_id = txn_data.get('subscription_id') or '—'
+                if customer_id == '—' or not customer_id.startswith('ctm_'):
+                    customer_id = txn_data.get('customer_id') or customer_id
+                if not amount_paid:
+                    totals = (txn_data.get('details', {}) or {}).get('totals', {}) or {}
+                    raw = totals.get('grand_total') or totals.get('total') or '0'
+                    try:
+                        amount_paid = round(int(raw) / 100.0, 2)
+                    except (ValueError, TypeError):
+                        pass
+                items = txn_data.get('items', [])
+                if items and product_id == '—':
+                    product_id = items[0].get('price', {}).get('id', '—')
+        except Exception as e:
+            print(f"[upgrade_callback] Paddle API fetch failed (non-critical): {e}")
 
     return render_template('payment_success.html',
         plan_name=plan.capitalize(),
