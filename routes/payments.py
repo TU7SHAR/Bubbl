@@ -721,20 +721,97 @@ def customer_portal():
             if portal_url:
                 return jsonify({"success": True, "url": portal_url}), 200
             else:
-                return jsonify({"error": "Portal URL not returned by Paddle. Try again later."}), 500
+                return jsonify({"error": "Portal URL not returned by Paddle. Try again later."}), 400
         else:
             error_msg = resp.json().get('error', {}).get('detail', resp.text[:200])
             print(f"[customer_portal] Paddle API error: {resp.status_code} {error_msg}")
-            return jsonify({"error": f"Paddle error: {error_msg}"}), 400
+            return jsonify({"error": "Payment method is managed by Paddle. This feature requires production Paddle keys. In sandbox mode, use Paddle's test dashboard to manage payment methods."}), 400
     except Exception as e:
         print(f"[customer_portal] exception: {e}")
-        return jsonify({"error": "Could not reach Paddle. Please try again later."}), 500
+        return jsonify({"error": "Could not connect to Paddle. Please try again later."}), 400
 
 
 @payments_bp.route('/update-payment-method', methods=['POST'])
 def update_payment_method():
     """Update payment method via Paddle customer portal."""
     return customer_portal()
+
+
+@payments_bp.route('/upgrade-preview', methods=['POST'])
+def upgrade_preview():
+    """
+    Show the prorated cost of upgrading from current plan to a new plan.
+    Formula: upgrade_cost = new_plan_price - credit_remaining
+    Where: credit_remaining = current_plan_price - (daily_rate × days_used)
+    """
+    if 'user_id' not in session:
+        return jsonify({"error": "Not logged in"}), 401
+
+    from utils.plan_limits import PLAN_PRICE_INR, BILLING_DAYS, _aware
+
+    org = Organization.query.get(session.get('org_id'))
+    if not org:
+        return jsonify({"error": "Organization not found"}), 404
+
+    data = request.json or {}
+    target_plan = data.get('plan', '').lower()
+
+    if target_plan not in ('starter', 'growth', 'pro'):
+        return jsonify({"error": "Invalid target plan."}), 400
+
+    current_plan = org.plan or 'free'
+    current_price = PLAN_PRICE_INR.get(current_plan, 0)
+    target_price = PLAN_PRICE_INR.get(target_plan, 0)
+
+    if target_price <= current_price:
+        return jsonify({"error": "You can only upgrade to a higher plan."}), 400
+
+    # Calculate days used on current plan
+    now = datetime.now(timezone.utc)
+    payment = _latest_completed_payment(org)
+    
+    if payment and payment.created_at:
+        purchase_date = _aware(payment.created_at)
+        days_elapsed = (now.date() - purchase_date.date()).days
+        days_used = days_elapsed + 1
+    elif org.subscription_started_at:
+        started = _aware(org.subscription_started_at)
+        days_elapsed = (now.date() - started.date()).days
+        days_used = days_elapsed + 1
+    else:
+        days_used = 1
+
+    if days_used < 1:
+        days_used = 1
+    if days_used > BILLING_DAYS:
+        days_used = BILLING_DAYS
+
+    # Calculate credit remaining from current plan
+    daily_rate_current = round(current_price / BILLING_DAYS, 2)
+    amount_consumed = round(daily_rate_current * days_used, 2)
+    credit_remaining = round(current_price - amount_consumed, 2)
+    if credit_remaining < 0:
+        credit_remaining = 0
+
+    # Calculate what user pays for upgrade
+    upgrade_cost = round(target_price - credit_remaining, 2)
+    if upgrade_cost < 0:
+        upgrade_cost = 0
+
+    return jsonify({
+        "success": True,
+        "current_plan": current_plan.capitalize(),
+        "current_price": current_price,
+        "target_plan": target_plan.capitalize(),
+        "target_price": target_price,
+        "days_used": days_used,
+        "billing_days": BILLING_DAYS,
+        "daily_rate_current": daily_rate_current,
+        "amount_consumed": amount_consumed,
+        "credit_remaining": credit_remaining,
+        "upgrade_cost": upgrade_cost,
+        "currency": "INR",
+    }), 200
 
 
 @payments_bp.route('/upgrade-plan', methods=['POST'])
@@ -829,8 +906,12 @@ def reactivate_plan():
     if not org:
         return jsonify({"error": "Organization not found"}), 404
 
-    if org.subscription_status != 'canceled':
-        return jsonify({"error": "Your subscription is not in a canceled state."}), 400
+    if not org.subscription_status or org.subscription_status not in ('canceled', 'free'):
+        # If subscription_status is None (column new/not set), check org.plan
+        if org.plan and org.plan != 'free':
+            return jsonify({"error": "Your subscription is already active. No reactivation needed."}), 400
+        else:
+            return jsonify({"error": "No active subscription to reactivate. Please subscribe to a plan."}), 400
 
     # Try Paddle API if we have a real sub ID
     paddle_success = False
