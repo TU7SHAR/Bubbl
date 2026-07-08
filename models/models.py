@@ -31,7 +31,12 @@ class User(db.Model):
             return False
         if self.otp != submitted_otp:
             return False
-        elapsed = datetime.now(timezone.utc) - self.otp_created_at
+        # Handle both timezone-aware and naive datetimes from DB
+        now = datetime.now(timezone.utc)
+        otp_time = self.otp_created_at
+        if otp_time.tzinfo is None:
+            otp_time = otp_time.replace(tzinfo=timezone.utc)
+        elapsed = now - otp_time
         if elapsed.total_seconds() > (expiry_minutes * 60):
             return False
         return True
