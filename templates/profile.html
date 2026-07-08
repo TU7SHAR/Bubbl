@@ -31,14 +31,6 @@
         <span style="font-size: 12px; color: #888; font-weight: 500; display: block; margin-bottom: 3px;">Account ID</span>
         <span style="font-size: 14px; color: #444; font-family: 'Courier New', monospace; background: rgba(0,0,0,0.04); padding: 2px 8px; border-radius: 4px;">usr_{{ user.id if user else '000' }}</span>
       </div>
-      <div>
-        <span style="font-size: 12px; color: #888; font-weight: 500; display: block; margin-bottom: 3px;">Organization</span>
-        <span style="font-size: 15px; color: #222; font-weight: 500;">{{ org.name if org else '—' }}</span>
-      </div>
-      <div>
-        <span style="font-size: 12px; color: #888; font-weight: 500; display: block; margin-bottom: 3px;">Role</span>
-        <span style="font-size: 15px; color: #222; font-weight: 500;">{{ session.get('role', '—') }}</span>
-      </div>
     </div>
   </div>
 
@@ -129,25 +121,6 @@
 
     <p style="font-size: 12px; color: #888; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06);">All billing, invoices, and cancellations are handled through Paddle.</p>
   </div>
-
-  <!-- Section 4: Organization Members (admin only) -->
-  {% if session.get('role') == 'admin' and org_members %}
-  <div style="background: rgba(255,255,255,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 28px 28px 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
-    <h3 style="font-size: 15px; font-weight: 700; color: #111; margin: 0 0 18px; text-transform: uppercase; letter-spacing: 0.5px;">Organization Members</h3>
-
-    {% for member in org_members %}
-    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 10px;">
-      <div style="display: flex; flex-direction: column;">
-        <span style="font-size: 14px; color: #222; font-weight: 600;">{{ member.name }}</span>
-        <span style="font-size: 12px; color: #888; margin-top: 3px;">{{ member.email }} · <strong style="color: #8a6535;">{{ member.role|upper }}</strong></span>
-      </div>
-      <form action="{{ url_for('profile_bp.remove_member', member_id=member.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently remove {{ member.name }}?');" style="margin: 0;">
-        <button type="submit" style="padding: 6px 14px; font-size: 12px; font-weight: 600; color: #dc2626; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; cursor: pointer; transition: background 0.2s ease;">Remove</button>
-      </form>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
 
   <!-- Section 5: Actions -->
   <div style="background: rgba(255,255,255,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 28px 28px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">

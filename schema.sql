@@ -5,7 +5,18 @@
 -- ORGANIZATION TABLE
 CREATE TABLE organization (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    name VARCHAR(100) NOT NULL,
+    plan VARCHAR(20) DEFAULT 'free',
+    messages_used INTEGER DEFAULT 0,
+    messages_reset_at TIMESTAMP WITHOUT TIME ZONE,
+    paddle_subscription_id VARCHAR(255),
+    paddle_customer_id VARCHAR(255),
+    subscription_status VARCHAR(20) DEFAULT 'free',
+    subscription_started_at TIMESTAMP WITHOUT TIME ZONE,
+    subscription_ends_at TIMESTAMP WITHOUT TIME ZONE,
+    payment_method VARCHAR(30),
+    card_brand VARCHAR(30),
+    card_last4 VARCHAR(4)
 );
 
 -- USER TABLE
@@ -93,3 +104,42 @@ CREATE TABLE feedback (
     comment TEXT,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- PAYMENT TABLE
+CREATE TABLE payment (
+    id SERIAL PRIMARY KEY,
+    org_id INTEGER REFERENCES organization(id) ON DELETE SET NULL,
+    plan VARCHAR(20),
+    amount DOUBLE PRECISION DEFAULT 0.0,
+    currency VARCHAR(10) DEFAULT 'INR',
+    customer_email VARCHAR(120),
+    paddle_transaction_id VARCHAR(255) UNIQUE,
+    paddle_customer_id VARCHAR(255),
+    paddle_subscription_id VARCHAR(255),
+    product_id VARCHAR(255),
+    status VARCHAR(30) DEFAULT 'completed',
+    payment_method VARCHAR(30),
+    card_brand VARCHAR(30),
+    card_last4 VARCHAR(4),
+    refund_amount DOUBLE PRECISION DEFAULT 0.0,
+    refunded_at TIMESTAMP WITHOUT TIME ZONE,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- MIGRATION: add new columns to EXISTING databases
+-- (run these if the tables already exist)
+-- ==========================================
+-- ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'free';
+-- ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMP WITHOUT TIME ZONE;
+-- ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMP WITHOUT TIME ZONE;
+-- ALTER TABLE organization ADD COLUMN IF NOT EXISTS payment_method VARCHAR(30);
+-- ALTER TABLE organization ADD COLUMN IF NOT EXISTS card_brand VARCHAR(30);
+-- ALTER TABLE organization ADD COLUMN IF NOT EXISTS card_last4 VARCHAR(4);
+-- ALTER TABLE payment ADD COLUMN IF NOT EXISTS paddle_subscription_id VARCHAR(255);
+-- ALTER TABLE payment ADD COLUMN IF NOT EXISTS product_id VARCHAR(255);
+-- ALTER TABLE payment ADD COLUMN IF NOT EXISTS payment_method VARCHAR(30);
+-- ALTER TABLE payment ADD COLUMN IF NOT EXISTS card_brand VARCHAR(30);
+-- ALTER TABLE payment ADD COLUMN IF NOT EXISTS card_last4 VARCHAR(4);
+-- ALTER TABLE payment ADD COLUMN IF NOT EXISTS refund_amount DOUBLE PRECISION DEFAULT 0.0;
+-- ALTER TABLE payment ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMP WITHOUT TIME ZONE;
