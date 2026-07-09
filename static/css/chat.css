@@ -25,8 +25,10 @@
   cursor: pointer;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-top: 10px;
+  margin-top: -60px;
   pointer-events: auto;
+  position: relative;
+  z-index: 2;
 }
 
 #chat-open-btn {
