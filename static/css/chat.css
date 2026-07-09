@@ -216,12 +216,12 @@
 }
 
 #bot-sprite {
-  width: 120px;
-  height: 66px;
+  width: 200px;
+  height: 110px;
   background-image: url("/static/images/spritesheet.webp");
-  background-size: 48000px 66px;
+  background-size: 80000px 110px;
   pointer-events: none;
-  transform: scale(1.6);
+  transform: scale(2);
   transform-origin: bottom center;
   margin-bottom: 8px;
 }
