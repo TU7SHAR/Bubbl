@@ -18,7 +18,11 @@ REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
 def make_celery():
     """Create and configure the Celery application."""
-    app = Celery('bubbl')
+    # `include` explicitly imports task modules so their @celery.task functions
+    # register with the worker. autodiscover_tasks(['tasks']) alone looks for
+    # tasks/tasks.py (related_name='tasks') and MISSES tasks/scrape_tasks.py,
+    # which caused: KeyError: 'tasks.scrape_tasks.async_scrape_task'.
+    app = Celery('bubbl', include=['tasks.scrape_tasks'])
 
     app.conf.update(
         # --- BROKER (where tasks are queued) ---
@@ -55,8 +59,9 @@ def make_celery():
         result_expires=3600,              # Results expire after 1 hour
     )
 
-    # Auto-discover tasks in the 'tasks' package
-    app.autodiscover_tasks(['tasks'])
+    # Discover tasks in the 'tasks' package. related_name matches our actual
+    # module name (scrape_tasks.py), not the default 'tasks.py'.
+    app.autodiscover_tasks(['tasks'], related_name='scrape_tasks')
 
     return app
 
