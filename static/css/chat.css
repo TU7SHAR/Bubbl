@@ -203,6 +203,8 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
+  width: 150px;
+  height: 140px;
   cursor: pointer;
   text-align: center;
   z-index: 1001;

@@ -95,14 +95,21 @@ def init_firecrawl():
         raise ValueError("FIRECRAWL_API_KEY is missing from environment variables.")
     return Firecrawl(api_key=api_key)
 
-def scrape_single_url(url):
+def scrape_single_url(url, timeout_ms=45000):
     """
     Scrapes a single webpage and returns the markdown content.
+    Hard timeout (default 45s) so a slow/heavy site can't hang the worker forever.
     """
     try:
         app = init_firecrawl()
-        
-        result = app.scrape(url, formats=['markdown'])
+
+        # Firecrawl v4 accepts `timeout` in milliseconds. Pass it so heavy JS
+        # sites (e.g. bmw.in) fail fast instead of hanging indefinitely.
+        try:
+            result = app.scrape(url, formats=['markdown'], timeout=timeout_ms)
+        except TypeError:
+            # Older SDK signature without timeout kwarg — fall back gracefully.
+            result = app.scrape(url, formats=['markdown'])
         
         if hasattr(result, 'markdown') and result.markdown:
             title = 'Scraped Document'

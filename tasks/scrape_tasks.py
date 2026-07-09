@@ -10,18 +10,23 @@ import uuid
 import time
 from datetime import datetime, timezone
 from celery.utils.log import get_task_logger
+from celery.exceptions import SoftTimeLimitExceeded
 from celery_app import celery
 
 logger = get_task_logger(__name__)
 
 
-@celery.task(bind=True, max_retries=3, default_retry_delay=60)
+# soft_time_limit: raise SoftTimeLimitExceeded so we can mark the job failed cleanly.
+# time_limit: hard kill a few seconds later if soft handling doesn't return.
+@celery.task(bind=True, max_retries=3, default_retry_delay=60,
+             soft_time_limit=600, time_limit=660)
 def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
     """
     Background scrape task — replaces the old threading.Thread approach.
-    
+
     Runs entirely inside the Celery worker process. Cannot affect gunicorn.
     Auto-retries up to 3 times on failure with 60s delay.
+    Has a 10-minute soft time limit so a hung scrape is marked failed, not stuck forever.
     """
     from app import app
 
