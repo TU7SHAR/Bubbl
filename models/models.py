@@ -147,7 +147,7 @@ class Lead(db.Model):
 
 class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=False)
+    bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=True)  # Null = platform/public-bot feedback
     lead_id = db.Column(db.Integer, db.ForeignKey('lead.id'), nullable=True) # Optional
     
     rating = db.Column(db.Integer, nullable=False) # 1 to 5 stars

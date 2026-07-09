@@ -588,17 +588,30 @@
                   const scrapeData = await scrapeRes.json();
                   if(scrapeData.job_id) {
                       await new Promise((resolve) => {
+                          let pollCount = 0;
+                          const MAX_POLLS = 240; // ~8 minutes at 2s intervals
                           const poll = setInterval(async () => {
                               if (abortProcess) { clearInterval(poll); resolve(); return; }
-                              const sRes = await fetch(`/admin/api/scrape/status/${scrapeData.job_id}`);
-                              const sData = await sRes.json();
-                              updateScrapeLogs(sData.logs);
-                              if(sData.status === 'completed' || sData.status === 'failed') {
+                              pollCount++;
+                              if (pollCount > MAX_POLLS) {
                                   clearInterval(poll);
-                                  updateScrapeLogs("");
-                                  if(sData.logs) addLogLine(sData.logs, "#e2e8f0");
-                                  if (sData.status === 'failed') addLogLine(`[Error] Job failed: ${sData.error}`, "#ef4444");
+                                  addLogLine("[Timeout] Scraping is taking longer than expected. It will continue in the background — you can finish and check this bot's knowledge base later.", "#f59e0b");
                                   resolve();
+                                  return;
+                              }
+                              try {
+                                  const sRes = await fetch(`/admin/api/scrape/status/${scrapeData.job_id}`);
+                                  const sData = await sRes.json();
+                                  updateScrapeLogs(sData.logs);
+                                  if(sData.status === 'completed' || sData.status === 'failed') {
+                                      clearInterval(poll);
+                                      updateScrapeLogs("");
+                                      if(sData.logs) addLogLine(sData.logs, "#e2e8f0");
+                                      if (sData.status === 'failed') addLogLine(`[Error] Job failed: ${sData.error}`, "#ef4444");
+                                      resolve();
+                                  }
+                              } catch (e) {
+                                  // Transient network error during polling — keep trying until MAX_POLLS
                               }
                           }, 2000);
                       });
