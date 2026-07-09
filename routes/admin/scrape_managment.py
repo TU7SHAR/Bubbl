@@ -5,6 +5,7 @@ from models.models import db, Bot, ScrapeJob
 from tasks.scrape_tasks import async_scrape_task
 from utils.scraper import is_safe_url
 from utils.plan_limits import check_scrape_limit
+from extensions import limiter
 from . import admin_bp
 
 @admin_bp.route('/api/scrape/start', methods=['POST'])
@@ -55,6 +56,7 @@ def start_scrape():
     return jsonify({"success": True, "job_id": new_job.id, "message": f"Scraping started (max {max_urls} pages)."})
 
 @admin_bp.route('/api/scrape/status/<int:job_id>', methods=['GET'])
+@limiter.exempt
 def check_scrape_status(job_id):
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
