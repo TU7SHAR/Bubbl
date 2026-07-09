@@ -24,23 +24,11 @@
   border-radius: 50px;
   cursor: pointer;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-top: -60px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform;
   pointer-events: auto;
   position: relative;
   z-index: 2;
-}
-
-#chat-open-btn {
-  /* Keep your existing pill button styles, but make sure this transition is there: */
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  will-change: transform;
-}
-
-#chat-open-btn {
-  /* Keep your existing pill button styles, but make sure this transition is there: */
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  will-change: transform;
 }
 
 #chat-open-btn:hover {
@@ -50,11 +38,7 @@
 }
 
 #chat-open-btn:active {
-  transform: scale(0.95) !important; /* Satisfying click depression */
-}
-
-#chat-open-btn:active {
-  transform: scale(0.95) !important; /* Satisfying click depression */
+  transform: scale(0.95) !important;
 }
 
 #chat-window-popup {
@@ -211,11 +195,10 @@
   background: #333;
 }
 
-/* 6. SPRITE CONTAINER */
-/* The container is a COMPACT click zone pinned to the corner. The mascot
-   (#bot-sprite) is scaled up and overflows visually, but it does NOT capture
-   clicks — only this small corner zone does. This prevents the large,
-   mostly-transparent sprite frame from blocking page buttons behind it. */
+/* 6. SPRITE + PILL CONTAINER
+   Layout: sprite is centered above the pill button.
+   The container is compact — pointer-events only on the pill + sprite visual area.
+   The sprite is purely decorative (pointer-events:none) so it can't block page buttons. */
 #sprite-ask-container {
   position: fixed;
   bottom: 20px;
@@ -225,23 +208,22 @@
   cursor: pointer;
   text-align: center;
   z-index: 1001;
-  transform-origin: bottom right;
+  transform-origin: bottom center;
   pointer-events: none;
-  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 #bot-sprite {
-  width: 200px;
-  height: 110px;
+  width: 120px;
+  height: 66px;
   background-image: url("/static/images/spritesheet.webp");
-  background-size: 80000px 110px;
-  margin: 0 auto -5px auto;
-  /* Visual only — clicks handled by the small container zone so the
-     transparent parts of the scaled frame don't eat clicks on page buttons. */
+  background-size: 48000px 66px;
   pointer-events: none;
-
-  transform: scale(1.7);
+  transform: scale(1.6);
   transform-origin: bottom center;
+  margin-bottom: 8px;
 }
 
 #sprite-ask-container.chat-open {
@@ -267,8 +249,7 @@
   pointer-events: auto !important;
 }
 
-/* Mascot is decorative — clicks go through the compact container zone only,
-   so its large transparent frame never blocks page buttons. */
+/* Sprite is decorative — clicks pass through to page buttons behind it */
 #bot-sprite {
   pointer-events: none !important;
 }

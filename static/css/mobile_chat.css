@@ -8,6 +8,21 @@
     right: 15px;
   }
 
+  /* Smaller sprite on mobile */
+  #sprite-ask-container {
+    bottom: 15px;
+    right: 15px;
+  }
+
+  #bot-sprite {
+    transform: scale(1.2);
+  }
+
+  #chat-open-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
   /* 1. Make the window cover the whole screen */
   #chat-window-popup {
     position: fixed;
@@ -18,18 +33,17 @@
     bottom: 0 !important;
     right: 0 !important;
     margin: 0 !important;
-    border-radius: 0 !important; /* Remove curves for full-screen feel */
+    border-radius: 0 !important;
     z-index: 9999;
   }
 
   /* 2. Fix the header for touch */
   .chat-header {
     padding: 20px 15px;
-    padding-top: env(safe-area-inset-top, 20px); /* iPhone Notch support */
+    padding-top: env(safe-area-inset-top, 20px);
   }
 
   /* 3. Hide the giant sprite when chat is open on mobile */
-  /* (It takes up 50% of the screen otherwise) */
   #sprite-ask-container.chat-open {
     display: none !important;
   }
@@ -54,7 +68,7 @@
 
   /* 6. Ensure the window shows correctly when toggled */
   #chat-window-popup.hidden {
-    transform: translateY(100%); /* Slide down instead of shrinking */
+    transform: translateY(100%);
     opacity: 0;
   }
 }
