@@ -177,7 +177,8 @@ def check_message_limit(org_id):
 
     # Check if we need to reset the monthly counter
     now = datetime.now(timezone.utc)
-    if org.messages_reset_at is None or now >= org.messages_reset_at:
+    reset_at = _aware(org.messages_reset_at)
+    if reset_at is None or now >= reset_at:
         # Reset counter and set next reset date (1 month from now)
         org.messages_used = 0
         org.messages_reset_at = now + timedelta(days=30)
