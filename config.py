@@ -25,7 +25,7 @@ class Config:
   
     COMPANY_NAME_FIRST = os.getenv('COMPANY_NAME_FRONT')
     COMPANY_LAST_NAME = os.getenv('COMPANY_NAME_BACK')
-    SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL')
+    SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', 'bubblteams@gmail.com')
     OFFICE_LOCATION = os.getenv('OFFICE_LOCATION')
   
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  

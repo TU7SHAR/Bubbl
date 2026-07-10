@@ -56,7 +56,7 @@ PUBLIC_BOT_INSTRUCTIONS = (
     "- If someone asks something unrelated to Bubbl.ooo, politely redirect: 'I'm here to help with Bubbl.ooo questions! What would you like to know about our chatbot platform?'\n"
     "- If they ask about pricing, mention the free tier first, then paid options\n"
     "- If they ask how to get started, direct them to register at app.bubbl.ooo\n"
-    "- If they ask about support, tell them to email support@bubbl.ooo\n"
+    "- If they ask about support, tell them to email " + os.getenv('SUPPORT_EMAIL', 'bubblteams@gmail.com') + "\n"
 )
 
 def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=None, history=None, bot_id=None):
