@@ -219,7 +219,14 @@
   background-image: url("/static/images/spritesheet.webp");
   background-size: 80000px 110px;
   pointer-events: none;
-  margin-bottom: 4px;
+  /* Enlarge the mascot on desktop back to its original prominent size.
+     Safe now: pointer-events:none (never blocks page buttons) and the
+     container is overflow:visible + auto-sized, so no clipping. Scaling
+     from bottom-center keeps the pill sitting right under the mascot,
+     and it's a visual-only transform so the 200px frame math is intact. */
+  transform: scale(1.8);
+  transform-origin: bottom center;
+  margin-bottom: 8px;
 }
 
 #sprite-ask-container.chat-open {
