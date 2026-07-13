@@ -196,15 +196,12 @@
 }
 
 /* 6. SPRITE + PILL CONTAINER
-   Layout: sprite is centered above the pill button.
-   The container is compact — pointer-events only on the pill + sprite visual area.
-   The sprite is purely decorative (pointer-events:none) so it can't block page buttons. */
+   Flexbox column: sprite on top, pill below. Auto-sized to content.
+   Sprite is decorative (pointer-events:none) — never blocks page buttons. */
 #sprite-ask-container {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 150px;
-  height: 140px;
   cursor: pointer;
   text-align: center;
   z-index: 1001;
@@ -213,6 +210,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow: visible;
 }
 
 #bot-sprite {
@@ -221,9 +219,7 @@
   background-image: url("/static/images/spritesheet.webp");
   background-size: 80000px 110px;
   pointer-events: none;
-  transform: scale(2);
-  transform-origin: bottom center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 #sprite-ask-container.chat-open {
