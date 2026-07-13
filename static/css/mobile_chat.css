@@ -4,23 +4,21 @@
 
 @media (max-width: 480px) {
   #chat-widget-container {
-    bottom: 15px;
-    right: 15px;
+    bottom: 10px;
+    right: 10px;
   }
 
-  /* Smaller sprite on mobile */
+  /* Scale the whole sprite+pill unit down on mobile */
   #sprite-ask-container {
-    bottom: 15px;
-    right: 15px;
-  }
-
-  #bot-sprite {
-    transform: scale(1.5);
+    bottom: 10px;
+    right: 10px;
+    transform: scale(0.75);
+    transform-origin: bottom right;
   }
 
   #chat-open-btn {
-    padding: 10px 20px;
-    font-size: 13px;
+    padding: 8px 16px;
+    font-size: 12px;
   }
 
   /* 1. Make the window cover the whole screen */
