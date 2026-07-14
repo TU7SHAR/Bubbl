@@ -219,7 +219,12 @@
   background-image: url("/static/images/spritesheet.webp");
   background-size: 80000px 110px;
   pointer-events: none;
-  margin-bottom: 4px;
+  transform: scale(1.5);
+  transform-origin: bottom center;
+  will-change: transform;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: pixelated;
+  margin-bottom: -15px;
 }
 
 #sprite-ask-container.chat-open {
