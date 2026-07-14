@@ -25,9 +25,14 @@
         right: 10px !important;
       }
 
-      /* Hide the sprite in the embed — it's only for the main site corner */
-      #bot-sprite,
-      #sprite-ask-container {
+      /* Show the animated sprite + pill in the embed corner.
+         Hide the invisible hit-area (the pill is the clicker here), and
+         hide the sprite when the chat is open so it doesn't float in the
+         tall transparent iframe. */
+      #sprite-hit-area {
+        display: none !important;
+      }
+      #sprite-ask-container.chat-open {
         display: none !important;
       }
     </style>
@@ -41,6 +46,8 @@
       window.LEAD_TIMING = "{{ bot.lead_capture_timing }}";
     </script>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <!-- Animate the mascot sprite in the embed (was missing = static/no sprite) -->
+    <script src="{{ url_for('static', filename='js/sprite.js') }}"></script>
   </body>
 </html>
 
