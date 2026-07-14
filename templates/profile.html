@@ -35,7 +35,6 @@
   </div>
 
   <!-- Section 2: Current Plan & Usage -->
-  {% set plan = (org.plan if org and org.plan else 'free')|lower %}
   {% set usage_percent = ((messages_used / messages_limit * 100) if messages_limit and messages_limit > 0 else 0)|int %}
   <div style="background: rgba(255,255,255,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 28px 28px 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
