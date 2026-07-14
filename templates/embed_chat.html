@@ -32,7 +32,7 @@
       #bot-sprite {
         width: 200px !important;
         height: 110px !important;
-        background-image: url("{{ request.host_url }}static/images/sprite-mobile.webp") !important;
+        background-image: url("{{ url_for('static', filename='images/sprite-mobile.webp') }}") !important;
         background-size: contain !important;
         background-repeat: no-repeat !important;
         background-position: center bottom !important;
