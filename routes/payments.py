@@ -347,17 +347,29 @@ def upgrade_callback():
     # Paddle appends ?_ptxn=txn_xxx to the callback URL
     paddle_txn_id = request.args.get('_ptxn') or request.args.get('transaction_id') or None
 
-    # --- Try to find the Payment record (webhook may have fired already) ---
+    # --- Wait for webhook to populate data (usually arrives within 2-4 seconds) ---
     latest_payment = None
-    if org:
-        # Small delay to give webhook a chance to arrive (it's usually <2s behind)
-        if paddle_txn_id:
+    if org and paddle_txn_id:
+        # Poll up to 5 seconds for the Payment record to appear (webhook creates it)
+        for _ in range(10):
             latest_payment = Payment.query.filter_by(paddle_transaction_id=paddle_txn_id).first()
-        if not latest_payment:
-            latest_payment = (Payment.query
-                              .filter_by(org_id=org.id)
-                              .order_by(Payment.created_at.desc())
-                              .first())
+            if latest_payment:
+                break
+            time.sleep(0.5)
+            db.session.expire_all()  # Clear SQLAlchemy cache to see new rows
+
+        # Also refresh org to pick up webhook-set fields (customer_id, subscription_id)
+        if not org.paddle_subscription_id or not org.paddle_subscription_id.startswith('sub_'):
+            for _ in range(6):
+                db.session.refresh(org)
+                if org.paddle_subscription_id and org.paddle_subscription_id.startswith('sub_'):
+                    break
+                time.sleep(0.5)
+    elif org:
+        latest_payment = (Payment.query
+                          .filter_by(org_id=org.id)
+                          .order_by(Payment.created_at.desc())
+                          .first())
 
     # --- Build display values ---
     transaction_id = paddle_txn_id or (latest_payment.paddle_transaction_id if latest_payment else None) or '—'
