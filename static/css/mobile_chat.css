@@ -10,11 +10,17 @@
     right: 10px;
   }
 
+  /* On mobile, show a single STATIC mascot frame instead of the animated
+     filmstrip. The 80000px-wide animation strip exceeds iOS Safari's image
+     decode/dimension limits and renders blank. This small 400x220 frame
+     always displays. Animation is disabled on mobile in sprite.js. */
   #bot-sprite {
     width: 200px;
     height: 110px;
-    background-image: url("/static/images/spritesheet-mobile.png");
-    background-size: 80000px 110px;
+    background-image: url("/static/images/sprite-mobile-static.png") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center bottom !important;
     margin-bottom: 2px;
   }
 
