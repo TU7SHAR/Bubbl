@@ -3,6 +3,10 @@
 {% set glass_opacity = bot.ui_settings.glass_opacity if (bot and bot.ui_settings) else session.get('glass_opacity', 35) %}
 {% set glass_blur = bot.ui_settings.glass_blur if (bot and bot.ui_settings) else session.get('glass_blur', 25) %}
 {% set active_bot_name = bot.bot_name if bot else session.get('active_bot_name', '') %}
+{# Name shown INSIDE the chat (header + greeting). Falls back to 'Bubbl' (the
+   public assistant) when no bot is active. The pill still uses active_bot_name
+   directly so it stays hidden when there's no bot. #}
+{% set chat_display_name = active_bot_name if active_bot_name else 'Bubbl' %}
 
 <style>
   /* 1. PILL BUTTON SYNC */
@@ -141,7 +145,7 @@
         </div>
         <div>
             <span class="status-dot"></span>
-            <span class="chat-header-title">{{ active_bot_name | upper }}</span>
+            <span class="chat-header-title">{{ chat_display_name | upper }}</span>
         </div>
       </div>
       
@@ -153,7 +157,7 @@
 
     <div id="chat-display">
   <div class="msg bot">
-    Hi! I am <strong>{{ active_bot_name }}</strong>. How can I help you today?
+    Hi! I am <strong>{{ chat_display_name }}</strong>. How can I help you today?
   </div>
 </div>
 
