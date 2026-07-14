@@ -8,10 +8,9 @@
     right: 10px;
   }
 
-  /* Smaller sprite on mobile */
+  /* Sprite at natural size on mobile (no scale = crisp) */
   #bot-sprite {
-    transform: scale(1);
-    margin-bottom: -5px;
+    margin-bottom: 2px;
   }
 
   #sprite-ask-container {
