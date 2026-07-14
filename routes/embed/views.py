@@ -309,7 +309,7 @@ def embed_bot(bot_id):
     response.headers.pop('X-Frame-Options', None)
     
     # 2. Enforce the Domain Lock
-    allowed = getattr(target_bot, 'allowed_domains', '').strip()
+    allowed = (target_bot.allowed_domains or '').strip()
     
     if allowed:
         # If domains are listed, lock it to those domains
