@@ -214,15 +214,12 @@
 }
 
 #bot-sprite {
-  width: 400px;
-  height: 220px;
+  width: 300px;
+  height: 165px;
   background-image: url("/static/images/spritesheet.webp");
-  background-size: 160000px 220px;
+  background-size: 120000px 165px;
   pointer-events: none;
-  /* Element is 400x220 = the full visual size we want (no transform:scale).
-     Source image is 160000x220 so the browser maps it 1:1 to background-size
-     = pixel-crisp GPU rendering with zero blur. */
-  margin-bottom: -50px;
+  margin-bottom: -30px;
 }
 
 #sprite-ask-container.chat-open {
