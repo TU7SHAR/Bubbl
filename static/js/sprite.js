@@ -58,37 +58,41 @@ const SpriteBot = {
 
     let startPosition, endPosition, duration;
 
-    // Each state = 80 frames × 400px = 32000px (element is 400px wide)
+    // Calculate frame width dynamically from element size
+    // (supports responsive: 300px desktop, 200px mobile)
+    const frameWidth = this.element.offsetWidth;
+    const stateLength = 80 * frameWidth; // 80 frames per state
+
     switch (stateName) {
       case "hover":
         startPosition = 0;
-        endPosition = -32000;
-        duration = 3;
-        break;
-      case "thinking":
-        startPosition = -32000;
-        endPosition = -64000;
-        duration = 5;
-        break;
-      case "idle":
-        startPosition = -64000;
-        endPosition = -96000;
-        duration = 6;
-        break;
-      case "talking":
-        startPosition = -96000;
-        endPosition = -128000;
-        duration = 3;
-        break;
-      case "rolling":
-        startPosition = -128000;
-        endPosition = -160000;
+        endPosition = -stateLength;
         duration = 4;
         break;
-      default:
-        startPosition = -64000;
-        endPosition = -96000;
+      case "thinking":
+        startPosition = -stateLength;
+        endPosition = -stateLength * 2;
         duration = 6;
+        break;
+      case "idle":
+        startPosition = -stateLength * 2;
+        endPosition = -stateLength * 3;
+        duration = 8;
+        break;
+      case "talking":
+        startPosition = -stateLength * 3;
+        endPosition = -stateLength * 4;
+        duration = 4;
+        break;
+      case "rolling":
+        startPosition = -stateLength * 4;
+        endPosition = -stateLength * 5;
+        duration = 5;
+        break;
+      default:
+        startPosition = -stateLength * 2;
+        endPosition = -stateLength * 3;
+        duration = 8;
     }
 
     gsap.set(this.element, { backgroundPositionX: `${startPosition}px` });
