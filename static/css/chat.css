@@ -277,10 +277,11 @@
     right: 15px;
   }
 
-  /* Shrink the chat window to fit mobile screens */
+  /* Shrink the chat window to fit smaller screens */
   #chat-window-popup {
-    width: calc(100vw - 30px); /* Leaves a 15px gap on both sides */
-    height: 380px; /* Much shorter so the keyboard doesn't crush it */
+    width: calc(100vw - 30px);
+    max-width: 380px;
+    height: 450px;
     margin-bottom: 10px;
   }
 
