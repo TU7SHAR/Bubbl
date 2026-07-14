@@ -10,10 +10,8 @@
 
   /* Smaller sprite on mobile */
   #bot-sprite {
-    width: 200px;
-    height: 110px;
-    background-size: 80000px 110px;
-    margin-bottom: -15px;
+    transform: scale(1);
+    margin-bottom: -5px;
   }
 
   #sprite-ask-container {
