@@ -13,7 +13,7 @@
   #bot-sprite {
     width: 200px;
     height: 110px;
-    background-image: url("/static/images/spritesheet-mobile.webp");
+    background-image: url("/static/images/spritesheet-mobile.png");
     background-size: 80000px 110px;
     margin-bottom: 2px;
   }
