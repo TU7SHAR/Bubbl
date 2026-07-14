@@ -2,7 +2,7 @@
 {% set theme_mode = bot.ui_settings.theme_mode if (bot and bot.ui_settings) else session.get('theme_mode', 'light') %}
 {% set glass_opacity = bot.ui_settings.glass_opacity if (bot and bot.ui_settings) else session.get('glass_opacity', 35) %}
 {% set glass_blur = bot.ui_settings.glass_blur if (bot and bot.ui_settings) else session.get('glass_blur', 25) %}
-{% set active_bot_name = bot.bot_name if bot else session.get('active_bot_name', 'Bubbl') %}
+{% set active_bot_name = bot.bot_name if bot else session.get('active_bot_name', '') %}
 
 <style>
   /* 1. PILL BUTTON SYNC */
