@@ -214,17 +214,16 @@
 }
 
 #bot-sprite {
-  width: 200px;
-  height: 110px;
+  width: 300px;
+  height: 165px;
   background-image: url("/static/images/spritesheet.webp");
-  background-size: 80000px 110px;
+  background-size: 120000px 165px;
   pointer-events: none;
-  transform: scale(1.5);
-  transform-origin: bottom center;
-  will-change: transform;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: pixelated;
-  margin-bottom: -15px;
+  margin-bottom: -20px;
+  /* CRISP: source image is 240000x330 (600px/frame). Browser DOWNSCALES it
+     to 300px/frame for display, which is always sharp. No transform:scale
+     (upscaling a small image is what caused the blur before). On retina/2x
+     screens, 300 CSS px = 600 device px = 1:1 with the source = perfect. */
 }
 
 #sprite-ask-container.chat-open {

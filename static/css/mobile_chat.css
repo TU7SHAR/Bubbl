@@ -8,8 +8,14 @@
     right: 10px;
   }
 
-  /* Sprite at natural size on mobile (no scale = crisp) */
+  /* On mobile, swap to the smaller 80000x110 image (8.8MP) which decodes on
+     phones (the 79MP desktop image exceeds mobile decode limits). Smaller
+     element too, so it fits the phone corner. */
   #bot-sprite {
+    width: 200px;
+    height: 110px;
+    background-image: url("/static/images/spritesheet-mobile.webp");
+    background-size: 80000px 110px;
     margin-bottom: 2px;
   }
 
