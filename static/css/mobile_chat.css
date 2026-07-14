@@ -2,7 +2,7 @@
    MOBILE RESPONSIVENESS (Screens < 480px)
    ========================================= */
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
 
   /* === SPRITE + PILL (corner widget) === */
   #chat-widget-container {
