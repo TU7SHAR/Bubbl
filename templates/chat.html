@@ -122,7 +122,7 @@
   <div id="sprite-ask-container">
     <div id="bot-sprite"></div>
     <button id="chat-open-btn" onclick="toggleChat()">
-      Ask: {{ active_bot_name if active_bot_name else 'Bubbl' }}
+      {% if active_bot_name %}Ask: {{ active_bot_name }}{% else %}Chat with us{% endif %}
     </button>
   </div>
 
