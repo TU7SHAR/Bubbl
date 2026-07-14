@@ -231,7 +231,8 @@
   opacity: 0.9;
 }
 
-#sprite-ask-container.chat-open #chat-open-btn {
+#sprite-ask-container.chat-open #chat-open-btn,
+#sprite-ask-container.chat-open #sprite-hit-area {
   display: none;
 }
 
@@ -245,6 +246,25 @@
 
 #chat-open-btn {
   pointer-events: auto !important;
+}
+
+/* Clickable circle over the visible mascot — opens the chat.
+   Small (120px) and centered on the mascot so it doesn't block page
+   buttons elsewhere. This is the only clickable part of the sprite. */
+#sprite-hit-area {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto !important;
+  z-index: 3;
 }
 
 /* Container is pointer-events:none so it never blocks page buttons.
