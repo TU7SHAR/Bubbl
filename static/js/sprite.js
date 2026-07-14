@@ -14,10 +14,16 @@ const SpriteBot = {
 
     if (!this.element || !this.container) return;
 
-    // On mobile, the sprite is a single static image (the animated filmstrip
-    // is too large for mobile browsers to decode). Skip all animation.
+    // On real mobile devices the sprite is a single static image (the animated
+    // filmstrip is too large for mobile browsers to decode). Skip animation.
+    // Exception: the embed widget runs in a ~450px iframe (which would look
+    // like "mobile" by width) but is usually on a desktop host — so it should
+    // still animate. Detect the embed via window.EMBEDDED_BOT_ID.
+    const isEmbed = !!window.EMBEDDED_BOT_ID;
     this.isMobile =
-      window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+      !isEmbed &&
+      window.matchMedia &&
+      window.matchMedia("(max-width: 768px)").matches;
     if (this.isMobile) return;
 
     this.setState("idle");
