@@ -214,12 +214,14 @@
 }
 
 #bot-sprite {
-  width: 300px;
-  height: 165px;
+  width: 200px;
+  height: 110px;
   background-image: url("/static/images/spritesheet.webp");
-  background-size: 120000px 165px;
+  background-size: 80000px 110px;
   pointer-events: none;
-  margin-bottom: -30px;
+  transform: scale(1.5);
+  transform-origin: bottom center;
+  margin-bottom: -15px;
 }
 
 #sprite-ask-container.chat-open {
