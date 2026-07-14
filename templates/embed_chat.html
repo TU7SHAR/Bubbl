@@ -25,10 +25,22 @@
         right: 10px !important;
       }
 
-      /* Show the animated sprite + pill in the embed corner.
-         Hide the invisible hit-area (the pill is the clicker here), and
-         hide the sprite when the chat is open so it doesn't float in the
-         tall transparent iframe. */
+      /* Use the self-playing animated WebP for the mascot in the embed.
+         It plays natively on any device/host (no giant filmstrip, no JS
+         needed) — so the sprite reliably shows + animates on third-party
+         sites. */
+      #bot-sprite {
+        width: 200px !important;
+        height: 110px !important;
+        background-image: url("{{ request.host_url }}static/images/sprite-mobile.webp") !important;
+        background-size: contain !important;
+        background-repeat: no-repeat !important;
+        background-position: center bottom !important;
+        transform: none !important;
+        margin-bottom: 2px !important;
+      }
+      /* Hide the invisible hit-area (pill is the clicker), and hide the
+         sprite when the chat is open so it doesn't float in the tall iframe. */
       #sprite-hit-area {
         display: none !important;
       }
@@ -46,8 +58,9 @@
       window.LEAD_TIMING = "{{ bot.lead_capture_timing }}";
     </script>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
-    <!-- Animate the mascot sprite in the embed (was missing = static/no sprite) -->
-    <script src="{{ url_for('static', filename='js/sprite.js') }}"></script>
+    <!-- No sprite.js in the embed: the mascot is a self-playing animated
+         WebP (set in the CSS above), which needs no JS and works on every
+         host/device. sprite.js would fight it by moving the background. -->
   </body>
 </html>
 
