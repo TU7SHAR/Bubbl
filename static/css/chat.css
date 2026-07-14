@@ -202,7 +202,6 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  cursor: pointer;
   text-align: center;
   z-index: 1001;
   transform-origin: bottom center;
@@ -244,9 +243,15 @@
   pointer-events: none !important;
 }
 
-#chat-open-btn,
-#sprite-ask-container {
+#chat-open-btn {
   pointer-events: auto !important;
+}
+
+/* Container is pointer-events:none so it never blocks page buttons.
+   Only the pill button (#chat-open-btn) is clickable. The sprite is
+   purely decorative — clicks pass through its transparent padding. */
+#sprite-ask-container {
+  pointer-events: none !important;
 }
 
 /* Sprite is decorative — clicks pass through to page buttons behind it */
