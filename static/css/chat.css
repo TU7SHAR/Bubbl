@@ -280,14 +280,8 @@
     margin-bottom: 10px;
   }
 
-  /* Make the Sprite and Text smaller */
-  #bot-sprite {
-    width: 100px;
-    height: 55px;
-    /* Math: 400 frames * 100px = 40000px */
-    background-size: 40000px 55px;
-    margin: 0 auto -5px auto;
-  }
+  /* Sprite stays at desktop size on tablets (300x165).
+     At 480px, mobile_chat.css hides it entirely. */
 
   #chat-open-btn {
     padding: 8px 14px;

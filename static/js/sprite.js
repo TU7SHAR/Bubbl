@@ -58,36 +58,40 @@ const SpriteBot = {
 
     let startPosition, endPosition, duration;
 
-    // Each state = 80 frames × 300px = 24000px (element is 300px wide)
+    // Calculate frame width dynamically from element size
+    // (supports responsive: 300px desktop, 200px mobile)
+    const frameWidth = this.element.offsetWidth;
+    const stateLength = 80 * frameWidth; // 80 frames per state
+
     switch (stateName) {
       case "hover":
         startPosition = 0;
-        endPosition = -24000;
+        endPosition = -stateLength;
         duration = 4;
         break;
       case "thinking":
-        startPosition = -24000;
-        endPosition = -48000;
+        startPosition = -stateLength;
+        endPosition = -stateLength * 2;
         duration = 6;
         break;
       case "idle":
-        startPosition = -48000;
-        endPosition = -72000;
+        startPosition = -stateLength * 2;
+        endPosition = -stateLength * 3;
         duration = 8;
         break;
       case "talking":
-        startPosition = -72000;
-        endPosition = -96000;
+        startPosition = -stateLength * 3;
+        endPosition = -stateLength * 4;
         duration = 4;
         break;
       case "rolling":
-        startPosition = -96000;
-        endPosition = -120000;
+        startPosition = -stateLength * 4;
+        endPosition = -stateLength * 5;
         duration = 5;
         break;
       default:
-        startPosition = -48000;
-        endPosition = -72000;
+        startPosition = -stateLength * 2;
+        endPosition = -stateLength * 3;
         duration = 8;
     }
 

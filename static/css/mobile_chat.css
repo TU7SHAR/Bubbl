@@ -8,10 +8,12 @@
     right: 10px;
   }
 
-  /* Hide sprite on mobile — image is 35MP, exceeds mobile decode limits.
-     Just show the pill button (standard for chat widgets on mobile). */
+  /* Smaller sprite on mobile */
   #bot-sprite {
-    display: none !important;
+    width: 200px;
+    height: 110px;
+    background-size: 80000px 110px;
+    margin-bottom: -15px;
   }
 
   #sprite-ask-container {
