@@ -15,23 +15,25 @@
      blank; a normal-sized animated WebP plays natively on iOS 14+/Android.
      sprite.js skips its JS animation on mobile so it doesn't interfere. */
   #bot-sprite {
-    width: 200px;
-    height: 110px;
+    width: 120px;
+    height: 66px;
     background-image: url("/static/images/sprite-mobile.webp") !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
     background-position: center bottom !important;
-    margin-bottom: 2px;
+    margin-bottom: 0;
   }
 
+  /* Tuck the whole widget into the bottom-right corner, right-aligned */
   #sprite-ask-container {
     bottom: 12px;
     right: 12px;
+    align-items: flex-end;
   }
 
   #chat-open-btn {
-    padding: 8px 16px;
-    font-size: 12px;
+    padding: 6px 14px;
+    font-size: 11px;
   }
 
   /* Hide sprite when chat is open */
