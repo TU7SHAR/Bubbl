@@ -58,37 +58,37 @@ const SpriteBot = {
 
     let startPosition, endPosition, duration;
 
-    // Each state = 80 frames × 200px = 16000px
+    // Each state = 80 frames × 400px = 32000px (element is 400px wide)
     // Different states look best at different speeds
     switch (stateName) {
       case "hover":
         startPosition = 0;
-        endPosition = -16000;
+        endPosition = -32000;
         duration = 3;
         break;
       case "thinking":
-        startPosition = -16000;
-        endPosition = -32000;
+        startPosition = -32000;
+        endPosition = -64000;
         duration = 5;
         break;
       case "idle":
-        startPosition = -32000;
-        endPosition = -48000;
+        startPosition = -64000;
+        endPosition = -96000;
         duration = 6;
         break;
       case "talking":
-        startPosition = -48000;
-        endPosition = -64000;
+        startPosition = -96000;
+        endPosition = -128000;
         duration = 3;
         break;
       case "rolling":
-        startPosition = -64000;
-        endPosition = -80000;
+        startPosition = -128000;
+        endPosition = -160000;
         duration = 4;
         break;
       default:
-        startPosition = -32000;
-        endPosition = -48000;
+        startPosition = -64000;
+        endPosition = -96000;
         duration = 6;
     }
 
