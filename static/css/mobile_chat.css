@@ -10,14 +10,14 @@
     right: 10px;
   }
 
-  /* On mobile, show a single STATIC mascot frame instead of the animated
-     filmstrip. The 80000px-wide animation strip exceeds iOS Safari's image
-     decode/dimension limits and renders blank. This small 400x220 frame
-     always displays. Animation is disabled on mobile in sprite.js. */
+  /* On mobile, use an ANIMATED WebP (self-playing) instead of the 80000px
+     filmstrip. The filmstrip exceeds iOS image-dimension limits and renders
+     blank; a normal-sized animated WebP plays natively on iOS 14+/Android.
+     sprite.js skips its JS animation on mobile so it doesn't interfere. */
   #bot-sprite {
     width: 200px;
     height: 110px;
-    background-image: url("/static/images/sprite-mobile-static.png") !important;
+    background-image: url("/static/images/sprite-mobile.webp") !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
     background-position: center bottom !important;
