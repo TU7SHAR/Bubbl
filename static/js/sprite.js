@@ -58,38 +58,37 @@ const SpriteBot = {
 
     let startPosition, endPosition, duration;
 
-    // Each state = 80 frames × 200px = 16000px
-    // Different states look best at different speeds
+    // Each state = 80 frames × 300px = 24000px (element is 300px wide)
     switch (stateName) {
       case "hover":
         startPosition = 0;
-        endPosition = -16000;
-        duration = 3;
-        break;
-      case "thinking":
-        startPosition = -16000;
-        endPosition = -32000;
-        duration = 5;
-        break;
-      case "idle":
-        startPosition = -32000;
-        endPosition = -48000;
-        duration = 6;
-        break;
-      case "talking":
-        startPosition = -48000;
-        endPosition = -64000;
-        duration = 3;
-        break;
-      case "rolling":
-        startPosition = -64000;
-        endPosition = -80000;
+        endPosition = -24000;
         duration = 4;
         break;
-      default:
-        startPosition = -32000;
+      case "thinking":
+        startPosition = -24000;
         endPosition = -48000;
         duration = 6;
+        break;
+      case "idle":
+        startPosition = -48000;
+        endPosition = -72000;
+        duration = 8;
+        break;
+      case "talking":
+        startPosition = -72000;
+        endPosition = -96000;
+        duration = 4;
+        break;
+      case "rolling":
+        startPosition = -96000;
+        endPosition = -120000;
+        duration = 5;
+        break;
+      default:
+        startPosition = -48000;
+        endPosition = -72000;
+        duration = 8;
     }
 
     gsap.set(this.element, { backgroundPositionX: `${startPosition}px` });
