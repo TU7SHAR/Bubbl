@@ -127,7 +127,7 @@ async function submitLeadForm(prefix) {
   const botId = window.EMBEDDED_BOT_ID;
 
   if (!name || !email) {
-    alert("Name and email are required.");
+    showModal("Name and email are required.", "error");
     return;
   }
 
@@ -188,7 +188,7 @@ async function submitLeadForm(prefix) {
         setInputState(false);
       }
     } else {
-      alert(data.error || "There was an error saving your details.");
+      showModal(data.error || "There was an error saving your details.", "error");
       btn.innerText = "Submit";
       btn.disabled = false;
     }

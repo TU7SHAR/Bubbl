@@ -717,7 +717,7 @@ function applyPreset(val) {
 function applyCustomRange() {
     const start = document.getElementById('custom-start').value;
     const end = document.getElementById('custom-end').value;
-    if (!start || !end) return alert("Select both dates.");
+    if (!start || !end) return showModal('Please select both dates.', 'error');
     window.location.href = `?start=${start}&end=${end}`;
 }
 
