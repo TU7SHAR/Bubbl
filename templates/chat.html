@@ -121,6 +121,9 @@
 <div id="chat-widget-container">
   <div id="sprite-ask-container">
     <div id="bot-sprite"></div>
+    <!-- Clickable hit-area over the mascot — opens chat whether or not a bot
+         is selected. Small + centered so it doesn't block page buttons. -->
+    <button id="sprite-hit-area" onclick="toggleChat()" aria-label="Open chat"></button>
     {% if active_bot_name %}
     <button id="chat-open-btn" onclick="toggleChat()">
       Ask: {{ active_bot_name }}
