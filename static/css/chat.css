@@ -219,7 +219,18 @@
   background-image: url("/static/images/spritesheet.webp");
   background-size: 80000px 110px;
   pointer-events: none;
-  margin-bottom: 4px;
+  /* Enlarge the mascot on desktop back to a prominent size.
+     The visible character is only ~72x72px inside a 200x110 frame that is
+     mostly transparent padding — that's why it looked tiny and floated far
+     above the pill. scale(2) makes the bubble ~144px, and the negative
+     margin-bottom pulls the pill up to tuck snugly beneath the visible
+     mascot (the ~36px of scaled bottom padding is otherwise dead space).
+     Safe: pointer-events:none (never blocks page buttons), container is
+     overflow:visible + auto-sized (no clipping), and it's a visual-only
+     transform so the 200px-per-frame animation math is untouched. */
+  transform: scale(2);
+  transform-origin: bottom center;
+  margin-bottom: -40px;
 }
 
 #sprite-ask-container.chat-open {
