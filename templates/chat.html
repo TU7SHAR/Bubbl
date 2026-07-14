@@ -121,11 +121,9 @@
 <div id="chat-widget-container">
   <div id="sprite-ask-container">
     <div id="bot-sprite"></div>
-    {% if session.get('active_bot_name') %}
     <button id="chat-open-btn" onclick="toggleChat()">
-      Ask: {{ active_bot_name }}
+      Ask: {{ active_bot_name if active_bot_name else 'Bubbl' }}
     </button>
-    {% endif %}
   </div>
 
   <div id="chat-window-popup" class="hidden">
