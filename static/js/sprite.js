@@ -14,6 +14,12 @@ const SpriteBot = {
 
     if (!this.element || !this.container) return;
 
+    // On mobile, the sprite is a single static image (the animated filmstrip
+    // is too large for mobile browsers to decode). Skip all animation.
+    this.isMobile =
+      window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+    if (this.isMobile) return;
+
     this.setState("idle");
 
     // --- Global Mouse Movement Tracker ---
