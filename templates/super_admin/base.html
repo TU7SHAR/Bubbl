@@ -396,6 +396,7 @@
   <a href="{{ url_for('super_admin_bp.bots_page') }}" class="{% if 'bots' in (request.endpoint or '') %}active{% endif %}">Bots</a>
   <a href="{{ url_for('super_admin_bp.billing_page') }}" class="{% if 'billing' in (request.endpoint or '') %}active{% endif %}">Billing</a>
   <a href="{{ url_for('super_admin_bp.leads_page') }}" class="{% if 'leads' in (request.endpoint or '') %}active{% endif %}">Leads</a>
+  <a href="{{ url_for('super_admin_bp.feedback_page') }}" class="{% if 'feedback' in (request.endpoint or '') %}active{% endif %}">Feedback</a>
   <a href="{{ url_for('super_admin_bp.conversations_page') }}" class="{% if 'conversation' in (request.endpoint or '') %}active{% endif %}">Chats</a>
   <a href="{{ url_for('super_admin_bp.scrapes_page') }}" class="{% if 'scrapes' in (request.endpoint or '') %}active{% endif %}">Scrapes</a>
 </nav>

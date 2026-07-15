@@ -60,7 +60,7 @@
 function toggleBot(botId, name) {
   if (!confirm('Toggle status for bot: ' + name + '?')) return;
   fetch('/super_admin/bots/toggle', {
-    method: 'POST',
+    method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({bot_id: botId})
   })
