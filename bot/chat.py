@@ -84,13 +84,50 @@ PUBLIC_BOT_INSTRUCTIONS = (
     "[[BUTTONS: pricing:View Pricing|https://bubbl.ooo/pricing.html, action:Start Free|https://app.bubbl.ooo/register]]'\n"
 )
 
+
+def _get_public_bot_store_id():
+    """
+    Get the vector store ID for the dynamic public bot.
+
+    Discovery order:
+    1. Look for bot with bot_type='platform' in DB (managed via super admin)
+    2. Fall back to PUBLIC_BOT_ID env var (legacy/manual setup)
+    3. Return None -> uses hardcoded fallback instructions
+    """
+    # Option 1: Auto-discover from DB (super admin managed)
+    platform_bot = Bot.query.filter_by(bot_type='platform').first()
+    if platform_bot and platform_bot.store_id:
+        return platform_bot.store_id
+
+    # Option 2: Env var fallback (manual setup)
+    public_bot_id = os.getenv('PUBLIC_BOT_ID')
+    if not public_bot_id:
+        return None
+    try:
+        bot = Bot.query.get(int(public_bot_id))
+        if bot and bot.store_id:
+            return bot.store_id
+    except (ValueError, TypeError):
+        pass
+    return None
+
+
 def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=None, history=None, bot_id=None):
     start_ts = time.time()  # Start stopwatch
     try:
         if custom_prompt:
             system_instruction = BASE_GUARDRAILS + "SPECIFIC BOT INSTRUCTIONS:\n" + custom_prompt
         else:
-            system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_INSTRUCTIONS
+            # --- DYNAMIC PUBLIC BOT ---
+            # Check if a platform bot is configured (scraped site content)
+            public_store_id = _get_public_bot_store_id()
+            if public_store_id:
+                # Use full instructions WITH the scraped knowledge base
+                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_INSTRUCTIONS
+                target_store_id = public_store_id  # Feed the scraped content as RAG
+            else:
+                # Fallback: hardcoded knowledge only (no scrape configured yet)
+                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_INSTRUCTIONS
             
         tools = []
         if target_store_id:
