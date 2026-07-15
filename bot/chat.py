@@ -74,27 +74,22 @@ PUBLIC_BOT_PERSONALITY = (
     "[[BUTTONS: pricing:View Pricing|https://bubbl.ooo/pricing.html, action:Start Free|https://app.bubbl.ooo/register]]'\n"
 )
 
-# Legacy fallback — used only if PUBLIC_BOT_ID is NOT set in .env
-PUBLIC_BOT_INSTRUCTIONS = PUBLIC_BOT_PERSONALITY + (
-    "\nFALLBACK KNOWLEDGE (no vector store configured):\n"
-    "- Bubbl.ooo is an AI chatbot platform for businesses (especially Indian SMBs)\n"
-    "- Businesses can upload PDFs, scrape URLs, or paste text to train custom AI chatbots\n"
-    "- These chatbots can be deployed on websites via an embed widget (1 line of code)\n"
-    "- Key features: AI-powered chat, lead capture, analytics, multilingual support\n"
-    "- Pricing: Free (1 bot, 200 msgs/month), Starter Rs.499/mo, Growth Rs.1,499/mo, Pro Rs.4,999/mo\n"
-    "- No code needed. Upload content and bot is live in minutes.\n"
-    "- Built with Google Gemini AI for intelligent, context-aware responses\n"
-    "- Supports 50+ languages (Hindi, Tamil, Telugu, Bengali + more)\n"
-)
-
 
 def _get_public_bot_store_id():
     """
     Get the vector store ID for the dynamic public bot.
-    
-    Reads PUBLIC_BOT_ID from env, looks up the bot in DB, returns its store_id.
-    Returns None if not configured or bot not found (falls back to hardcoded).
+
+    Discovery order:
+    1. Look for bot with bot_type='platform' in DB (managed via super admin)
+    2. Fall back to PUBLIC_BOT_ID env var (legacy/manual setup)
+    3. Return None -> uses hardcoded fallback instructions
     """
+    # Option 1: Auto-discover from DB (super admin managed)
+    platform_bot = Bot.query.filter_by(bot_type='platform').first()
+    if platform_bot and platform_bot.store_id:
+        return platform_bot.store_id
+
+    # Option 2: Env var fallback (manual setup)
     public_bot_id = os.getenv('PUBLIC_BOT_ID')
     if not public_bot_id:
         return None
@@ -106,6 +101,7 @@ def _get_public_bot_store_id():
         pass
     return None
 
+
 def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=None, history=None, bot_id=None):
     start_ts = time.time()  # Start stopwatch
     try:
@@ -116,11 +112,11 @@ def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=Non
             # Check if a platform bot is configured (scraped site content)
             public_store_id = _get_public_bot_store_id()
             if public_store_id:
-                # Use personality + buttons instructions WITH the scraped knowledge base
-                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_PERSONALITY
+                # Use full instructions WITH the scraped knowledge base
+                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_INSTRUCTIONS
                 target_store_id = public_store_id  # Feed the scraped content as RAG
             else:
-                # Fallback: hardcoded knowledge (no scrape configured yet)
+                # Fallback: hardcoded knowledge only (no scrape configured yet)
                 system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_INSTRUCTIONS
             
         tools = []

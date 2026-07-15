@@ -1,0 +1,263 @@
+{% extends "super_admin/base.html" %}
+{% block page_title %}Public Bot{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Public Bot Management</h1>
+<p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">
+  This is the platform-wide AI assistant (Bubbl mascot). It reads from scraped site content to answer questions about bubbl.ooo.
+</p>
+
+<!-- Stats -->
+<div class="sa-grid">
+  <div class="sa-card">
+    <div class="sa-card-label">Documents</div>
+    <div class="sa-card-value">{{ docs|length }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Conversations</div>
+    <div class="sa-card-value">{{ total_conversations }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Messages</div>
+    <div class="sa-card-value">{{ total_messages }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Store ID</div>
+    <div class="sa-card-value" style="font-size:11px; word-break:break-all;">{{ bot.store_id[:30] }}...</div>
+  </div>
+</div>
+
+<!-- Scrape Section -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Scrape Website</h3>
+  </div>
+  <div style="padding:18px;">
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+      Scrape your marketing site to feed the public bot. It will use this content to answer user questions dynamically.
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+      <div style="flex:1; min-width:200px;">
+        <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">URL to scrape</label>
+        <input type="text" id="scrape-url" class="sa-input" style="width:100%;" placeholder="https://bubbl.ooo" value="https://bubbl.ooo">
+      </div>
+      <div>
+        <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">Max pages</label>
+        <input type="number" id="scrape-max" class="sa-input" style="width:80px;" value="50" min="1" max="100">
+      </div>
+      <div>
+        <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">Deep crawl</label>
+        <select id="scrape-spider" class="sa-select">
+          <option value="true">Yes (follow links)</option>
+          <option value="false">No (single page)</option>
+        </select>
+      </div>
+      <button class="sa-btn sa-btn-primary" onclick="startScrape()">Start Scrape</button>
+    </div>
+    <div id="scrape-status" style="margin-top:12px; font-size:12px; color:var(--text-muted);"></div>
+    <pre id="scrape-logs" style="display:none; margin-top:10px; background:var(--bg); padding:12px; border-radius:8px; font-size:11px; color:var(--green); max-height:200px; overflow-y:auto; white-space:pre-wrap;"></pre>
+  </div>
+</div>
+
+<!-- Personality Section -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Personality Override</h3>
+    <button class="sa-btn sa-btn-primary" onclick="savePersonality()">Save</button>
+  </div>
+  <div style="padding:18px;">
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+      Optional: Add extra personality instructions. Leave empty to use the default cheerful Bubbl persona.
+      This is appended to the base personality prompt.
+    </p>
+    <textarea id="personality-prompt" class="sa-input" style="width:100%; min-height:120px; resize:vertical; font-family:monospace; font-size:12px;">{{ bot.system_prompt or '' }}</textarea>
+    <div id="personality-status" style="margin-top:8px; font-size:12px;"></div>
+  </div>
+</div>
+
+<!-- Knowledge Base (Documents) -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Knowledge Base ({{ docs|length }} documents)</h3>
+    <button class="sa-btn sa-btn-danger" onclick="clearAll()">Clear All</button>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Added</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in docs %}
+        <tr id="doc-row-{{ doc.id }}">
+          <td style="font-family:monospace; font-size:12px;">{{ doc.filename[:60] }}</td>
+          <td>{{ doc.created_at.strftime('%b %d, %Y') if doc.created_at else '-' }}</td>
+          <td><button class="sa-btn sa-btn-danger" onclick="deleteDoc({{ doc.id }}, '{{ doc.filename[:30] }}')">Delete</button></td>
+        </tr>
+        {% endfor %}
+        {% if not docs %}
+        <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:30px;">No documents yet. Scrape your site to populate the knowledge base.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Scrape Jobs -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Recent Scrape Jobs</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>URL</th>
+          <th>Status</th>
+          <th>Pages</th>
+          <th>Started</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in scrape_jobs %}
+        <tr>
+          <td style="font-size:12px; max-width:300px; overflow:hidden; text-overflow:ellipsis;">{{ job.url[:60] }}</td>
+          <td>
+            {% if job.status == 'completed' %}<span class="sa-badge sa-badge-green">Completed</span>
+            {% elif job.status == 'failed' %}<span class="sa-badge sa-badge-red">Failed</span>
+            {% else %}<span class="sa-badge sa-badge-yellow">{{ job.status }}</span>{% endif %}
+          </td>
+          <td>{{ job.limit }}</td>
+          <td>{{ job.created_at.strftime('%b %d, %H:%M') if job.created_at else '-' }}</td>
+        </tr>
+        {% endfor %}
+        {% if not scrape_jobs %}
+        <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No scrape jobs yet.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function startScrape() {
+  var url = document.getElementById('scrape-url').value.trim();
+  var maxUrls = parseInt(document.getElementById('scrape-max').value) || 50;
+  var useSpider = document.getElementById('scrape-spider').value === 'true';
+  var statusEl = document.getElementById('scrape-status');
+  var logsEl = document.getElementById('scrape-logs');
+
+  if (!url) { statusEl.innerHTML = '<span style="color:var(--red);">Enter a URL.</span>'; return; }
+
+  statusEl.innerHTML = '<span style="color:var(--yellow);">Starting scrape...</span>';
+  logsEl.style.display = 'none';
+
+  fetch('/super_admin/public_bot/scrape', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ url: url, max_urls: maxUrls, use_spider: useSpider })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      statusEl.innerHTML = '<span style="color:var(--green);">Scrape job queued! Job ID: ' + d.job_id + '. Polling status...</span>';
+      logsEl.style.display = 'block';
+      logsEl.textContent = 'Initializing...\n';
+      pollScrapeStatus(d.job_id);
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--red);">' + (d.error || 'Failed to start scrape.') + '</span>';
+    }
+  })
+  .catch(function() {
+    statusEl.innerHTML = '<span style="color:var(--red);">Network error.</span>';
+  });
+}
+
+function pollScrapeStatus(jobId) {
+  var statusEl = document.getElementById('scrape-status');
+  var logsEl = document.getElementById('scrape-logs');
+
+  var interval = setInterval(function() {
+    fetch('/super_admin/public_bot/scrape_status/' + jobId, { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      logsEl.textContent = d.logs || 'Waiting for worker...';
+      logsEl.scrollTop = logsEl.scrollHeight;
+
+      if (d.status === 'completed') {
+        clearInterval(interval);
+        statusEl.innerHTML = '<span style="color:var(--green);">Scrape completed! Refresh page to see new documents.</span>';
+      } else if (d.status === 'failed') {
+        clearInterval(interval);
+        statusEl.innerHTML = '<span style="color:var(--red);">Scrape failed: ' + (d.error || 'Unknown error') + '</span>';
+      }
+    })
+    .catch(function() {
+      clearInterval(interval);
+      statusEl.innerHTML = '<span style="color:var(--red);">Lost connection to server.</span>';
+    });
+  }, 3000);
+}
+
+function deleteDoc(docId, name) {
+  if (!confirm('Delete "' + name + '" from knowledge base?')) return;
+  fetch('/super_admin/public_bot/delete_doc/' + docId, {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      var row = document.getElementById('doc-row-' + docId);
+      if (row) row.remove();
+    } else {
+      alert(d.error || 'Failed to delete.');
+    }
+  });
+}
+
+function clearAll() {
+  if (!confirm('DELETE ALL documents from the public bot knowledge base? This cannot be undone.')) return;
+  if (!confirm('Are you sure? This will remove ALL scraped content.')) return;
+
+  fetch('/super_admin/public_bot/clear_all', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      alert('Deleted ' + d.deleted + ' documents. Refreshing...');
+      location.reload();
+    } else {
+      alert(d.error || 'Failed.');
+    }
+  });
+}
+
+function savePersonality() {
+  var text = document.getElementById('personality-prompt').value;
+  var statusEl = document.getElementById('personality-status');
+
+  fetch('/super_admin/public_bot/update_personality', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ personality: text })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      statusEl.innerHTML = '<span style="color:var(--green);">Saved!</span>';
+      setTimeout(function() { statusEl.innerHTML = ''; }, 3000);
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--red);">' + (d.error || 'Failed.') + '</span>';
+    }
+  });
+}
+</script>
+{% endblock %}
