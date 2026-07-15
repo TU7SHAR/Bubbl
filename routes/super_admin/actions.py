@@ -8,16 +8,17 @@ from .decorators import super_admin_required
 @super_admin_bp.route('/migrate_db', methods=['POST'])
 @super_admin_required
 def migrate_db():
-    """Run safe DB migrations to add any missing columns."""
+    """Run safe DB migrations to add any missing columns + normalize relationships."""
     from sqlalchemy import text
     migrations = [
-        # Bot metrics
+        # ═══ BOT ═══
         "ALTER TABLE bot ADD COLUMN IF NOT EXISTS tokens_used INTEGER DEFAULT 0",
         "ALTER TABLE bot ADD COLUMN IF NOT EXISTS total_latency FLOAT DEFAULT 0.0",
         "ALTER TABLE bot ADD COLUMN IF NOT EXISTS interaction_count INTEGER DEFAULT 0",
         "ALTER TABLE bot ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE",
         "ALTER TABLE bot ADD COLUMN IF NOT EXISTS created_at TIMESTAMP",
-        # Organization subscription
+
+        # ═══ ORGANIZATION ═══
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'free'",
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMP",
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMP",
@@ -25,20 +26,42 @@ def migrate_db():
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS card_brand VARCHAR(30)",
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS card_last4 VARCHAR(4)",
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS created_at TIMESTAMP",
-        # User fields
-        "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE",
-        "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS created_at TIMESTAMP",
-        # Payment → User link
+
+        # ═══ USER ═══
+        'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE',
+        'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
+
+        # ═══ PAYMENT → USER (NORMALIZATION) ═══
+        # Add column if missing
         "ALTER TABLE payment ADD COLUMN IF NOT EXISTS user_id INTEGER",
-        # Document timestamp
+        # Add FK constraint if not exists (safe: DO NOTHING if already there)
+        """DO $$ BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.table_constraints
+                WHERE constraint_name = 'fk_payment_user' AND table_name = 'payment'
+            ) THEN
+                ALTER TABLE payment ADD CONSTRAINT fk_payment_user
+                FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE SET NULL;
+            END IF;
+        END $$""",
+        # Backfill: set user_id from customer_email matching user.email
+        """UPDATE payment SET user_id = u.id
+           FROM "user" u
+           WHERE payment.user_id IS NULL
+           AND payment.customer_email IS NOT NULL
+           AND lower(payment.customer_email) = lower(u.email)""",
+
+        # ═══ DOCUMENT ═══
         "ALTER TABLE document ADD COLUMN IF NOT EXISTS created_at TIMESTAMP",
-        # Feedback nullable bot_id
+
+        # ═══ FEEDBACK ═══
         "ALTER TABLE feedback ALTER COLUMN bot_id DROP NOT NULL",
-        # ChatMessage table (create if not exists)
+
+        # ═══ CHAT_MESSAGE TABLE ═══
         """CREATE TABLE IF NOT EXISTS chat_message (
             id SERIAL PRIMARY KEY,
-            bot_id INTEGER REFERENCES bot(id),
-            lead_id INTEGER REFERENCES lead(id),
+            bot_id INTEGER REFERENCES bot(id) ON DELETE SET NULL,
+            lead_id INTEGER REFERENCES lead(id) ON DELETE SET NULL,
             session_id VARCHAR(64) NOT NULL,
             role VARCHAR(10) NOT NULL,
             content TEXT NOT NULL,
@@ -46,14 +69,18 @@ def migrate_db():
             created_at TIMESTAMP DEFAULT NOW()
         )""",
         "CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)",
+        "CREATE INDEX IF NOT EXISTS idx_chat_message_bot ON chat_message(bot_id)",
+
+        # ═══ CLEANUP: Remove redundant Bot.theme_color (BotUI handles it) ═══
+        "ALTER TABLE bot DROP COLUMN IF EXISTS theme_color",
     ]
 
     results = []
     for sql in migrations:
         try:
             db.session.execute(text(sql))
-            results.append(f"OK: {sql[:70]}")
+            results.append(f"OK: {sql[:80]}")
         except Exception as e:
-            results.append(f"SKIP: {sql[:70]} ({str(e)[:50]})")
+            results.append(f"SKIP: {sql[:80]} ({str(e)[:60]})")
     db.session.commit()
     return jsonify({"success": True, "results": results})
