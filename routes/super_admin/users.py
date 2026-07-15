@@ -140,6 +140,58 @@ def send_email():
     return jsonify({"success": True, "email": user.email})
 
 
+@super_admin_bp.route('/users/generate_email', methods=['POST'])
+@super_admin_required
+def generate_email():
+    """Use AI (Gemini) to generate a professional email subject + message for a user."""
+    from bot.chat import get_response_from_gemini
+
+    data = request.get_json(silent=True) or {}
+    try:
+        user_id = int(data.get('user_id'))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid user ID."}), 400
+
+    purpose = (data.get('purpose') or 'general check-in').strip()
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    org = Organization.query.get(user.org_id) if user.org_id else None
+    plan = (org.plan if org else 'free') or 'free'
+    bot_count = Bot.query.filter_by(created_by=user.id).count()
+
+    prompt = f"""You are a professional SaaS email writer for Bubbl.ooo (an AI chatbot platform).
+Write a short, professional email to send to a user. Return ONLY a JSON object with "subject" and "message" keys. No markdown, no backticks.
+
+User context:
+- Name: {user.name}
+- Email: {user.email}
+- Plan: {plan}
+- Bots created: {bot_count}
+
+Purpose of email: {purpose}
+
+Requirements:
+- Subject: concise, under 60 chars
+- Message: 3-5 sentences, friendly but professional, from the Bubbl.ooo team
+- Don't include any HTML tags, just plain text
+- Sign off as "The Bubbl.ooo Team"
+
+Output ONLY valid JSON: {{"subject": "...", "message": "..."}}"""
+
+    try:
+        response = get_response_from_gemini(user_query="Generate email", custom_prompt=prompt)
+        # Parse the JSON response
+        import json
+        clean = response.strip().replace('```json', '').replace('```', '').strip()
+        result = json.loads(clean)
+        return jsonify({"success": True, "subject": result.get("subject", ""), "message": result.get("message", "")})
+    except Exception as e:
+        return jsonify({"error": f"AI generation failed: {str(e)[:100]}"}), 500
+
+
 # ═══════════════════════════════════════════
 # NEW ROUTES
 # ═══════════════════════════════════════════

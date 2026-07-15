@@ -114,13 +114,55 @@ function suspendUser(userId, userName) {
 function openEmailModal(userId, userName, email) {
   var html = '<p style="margin-bottom:12px; color:var(--text-muted);">To: ' + userName + ' (' + email + ')</p>' +
     '<input type="hidden" id="email-user-id" value="' + userId + '">' +
+    '<div style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">' +
+    '<select id="ai-purpose" class="sa-select" style="flex:1;">' +
+    '<option value="general check-in">General check-in</option>' +
+    '<option value="welcome new user">Welcome new user</option>' +
+    '<option value="upgrade nudge - show benefits of paid plan">Upgrade nudge</option>' +
+    '<option value="re-engage inactive user">Re-engage inactive</option>' +
+    '<option value="thank them for being a paying customer">Thank paying customer</option>' +
+    '<option value="announce new feature launch">New feature announcement</option>' +
+    '<option value="ask for feedback on their experience">Ask for feedback</option>' +
+    '</select>' +
+    '<button class="sa-btn sa-btn-ghost" onclick="generateWithAI()" id="ai-gen-btn">✨ Generate</button>' +
+    '</div>' +
     '<input class="sa-input" id="email-subject" placeholder="Subject" style="width:100%; margin-bottom:10px;">' +
     '<textarea id="email-message" rows="5" placeholder="Message..." style="width:100%; padding:10px 12px; border:1px solid var(--card-border); border-radius:8px; background:rgba(255,255,255,0.04); color:var(--text); font-size:14px; resize:vertical; margin-bottom:12px;"></textarea>' +
+    '<div id="email-status" style="font-size:12px; margin-bottom:8px;"></div>' +
     '<div style="display:flex; gap:8px;">' +
     '<button class="sa-btn sa-btn-primary" onclick="sendEmail()">Send</button>' +
     '<button class="sa-btn sa-btn-ghost" onclick="closeModal()">Cancel</button>' +
     '</div>';
   openModal('Send Email to ' + userName, html);
+}
+
+function generateWithAI() {
+  var userId = document.getElementById('email-user-id').value;
+  var purpose = document.getElementById('ai-purpose').value;
+  var btn = document.getElementById('ai-gen-btn');
+  var status = document.getElementById('email-status');
+  btn.disabled = true; btn.textContent = '⏳ Generating...';
+  status.innerHTML = '<span style="color:var(--text-muted);">Asking AI to write the email...</span>';
+  fetch('/super_admin/users/generate_email', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({user_id: userId, purpose: purpose})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    btn.disabled = false; btn.textContent = '✨ Generate';
+    if (data.success) {
+      document.getElementById('email-subject').value = data.subject;
+      document.getElementById('email-message').value = data.message;
+      status.innerHTML = '<span style="color:var(--green);">✓ Generated! Review and send.</span>';
+    } else {
+      status.innerHTML = '<span style="color:var(--red);">' + (data.error || 'Failed') + '</span>';
+    }
+  })
+  .catch(function(err){
+    btn.disabled = false; btn.textContent = '✨ Generate';
+    status.innerHTML = '<span style="color:var(--red);">Network error</span>';
+  });
 }
 
 function sendEmail() {
