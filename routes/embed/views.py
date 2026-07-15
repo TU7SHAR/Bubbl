@@ -8,7 +8,7 @@ from models.models import db, Bot, User, Document, Lead, ScrapeJob, BotUI, Feedb
 from utils.mail_helper import is_valid_email, send_contact_email, send_auto_reply
 from extensions import cache
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import io
 from sqlalchemy import func
 import psutil
@@ -505,12 +505,15 @@ def super_admin_dashboard():
         u_bots = Bot.query.filter_by(created_by=u.id).count()
         u_bot_ids = [bot.id for bot in Bot.query.filter_by(created_by=u.id).all()]
         u_leads = Lead.query.filter(Lead.bot_id.in_(u_bot_ids)).count() if u_bot_ids else 0
-        
+        u_org = Organization.query.get(u.org_id) if u.org_id else None
+
         enriched_users.append({
+            'id': u.id,
             'name': u.name,
             'email': u.email,
             'role': getattr(u, 'role', 'user'),
-            'org_id': getattr(u, 'org_id', 'N/A'),
+            'plan': ((u_org.plan if u_org else 'free') or 'free'),
+            'subscription_status': ((u_org.subscription_status if u_org else 'free') or 'free'),
             'bot_count': u_bots,
             'lead_count': u_leads
         })
@@ -615,43 +618,6 @@ def super_admin_dashboard():
     arr = mrr * 12  # Annual Recurring Revenue
     # --------
 
-    # --- 6. ORGANIZATION BREAKDOWN ---
-    enriched_orgs = []
-    for o in all_orgs:
-        org_users = User.query.filter_by(org_id=o.id).count()
-        org_bots_count = Bot.query.filter_by(org_id=o.id).count()
-        org_bot_ids = [b.id for b in Bot.query.filter_by(org_id=o.id).all()]
-        org_leads = Lead.query.filter(Lead.bot_id.in_(org_bot_ids)).count() if org_bot_ids else 0
-        org_leads_range = Lead.query.filter(
-            Lead.bot_id.in_(org_bot_ids), 
-            Lead.captured_at >= start_date, 
-            Lead.captured_at <= end_date
-        ).count() if org_bot_ids else 0
-        
-        org_tokens = sum(
-            b.tokens_used or 0 for b in Bot.query.filter_by(org_id=o.id).all()
-        )
-        org_interactions = sum(
-            b.interaction_count or 0 for b in Bot.query.filter_by(org_id=o.id).all()
-        )
-        org_owner = User.query.filter_by(org_id=o.id).order_by(User.id.asc()).first()
-        
-        enriched_orgs.append({
-            'id': o.id,
-            'name': o.name,
-            'plan': (o.plan or 'free').capitalize(),
-            'plan_raw': o.plan or 'free',
-            'users': org_users,
-            'bots': org_bots_count,
-            'leads_total': org_leads,
-            'leads_range': org_leads_range,
-            'tokens': org_tokens,
-            'interactions': org_interactions,
-            'messages_used': o.messages_used or 0,
-            'owner_email': org_owner.email if org_owner else 'N/A',
-            'subscription_id': o.paddle_subscription_id or None,
-        })
-
     # --- 7. GROWTH & CONVERSION METRICS ---
     # Users registered in the selected period
     # (We don't have created_at on User, so use org count as proxy)
@@ -693,13 +659,98 @@ def super_admin_dashboard():
         avg_latency_ms=avg_latency_ms,
         feedbacks=enriched_feedbacks, avg_rating=avg_rating,
         # --- NEW DETAILED METRICS ---
-        enriched_orgs=enriched_orgs,
         conversion_rate=conversion_rate,
         avg_leads_per_bot=avg_leads_per_bot,
         avg_tokens_per_interaction=avg_tokens_per_interaction,
         total_messages_used=total_messages_used,
         bot_rankings=bot_rankings,
     )
+
+@views_bp.route('/super_admin/upgrade_user', methods=['POST'])
+def super_admin_upgrade_user():
+    """Super admin: change a user's account plan (free <-> paid) and email them."""
+    if session.get('role') != 'super_admin':
+        return jsonify({"error": "Access denied"}), 403
+
+    from utils.plan_limits import PLAN_LIMITS
+    from utils.mail_helper import send_plan_upgrade_email
+
+    data = request.get_json(silent=True) or request.form
+    user_id = data.get('user_id')
+    new_plan = (data.get('plan') or '').strip().lower()
+
+    if new_plan not in PLAN_LIMITS:
+        return jsonify({"error": "Invalid plan selected."}), 400
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    org = Organization.query.get(user.org_id)
+    if not org:
+        return jsonify({"error": "Account not found for this user."}), 404
+
+    now = datetime.now(timezone.utc)
+    org.plan = new_plan
+    if new_plan == 'free':
+        org.subscription_status = 'free'
+        org.subscription_started_at = None
+        org.subscription_ends_at = None
+        org.paddle_subscription_id = None
+    else:
+        org.subscription_status = 'active'
+        org.subscription_started_at = now
+        org.subscription_ends_at = now + timedelta(days=30)
+    # Fresh billing cycle so the new message limit applies immediately.
+    org.messages_used = 0
+    org.messages_reset_at = now + timedelta(days=30)
+    db.session.commit()
+
+    emailed = False
+    try:
+        emailed = send_plan_upgrade_email(user.email, user.name, new_plan)
+    except Exception as e:
+        print(f"[super_admin_upgrade_user] email failed: {e}")
+
+    return jsonify({
+        "success": True,
+        "plan": new_plan,
+        "plan_label": new_plan.capitalize(),
+        "emailed": bool(emailed),
+        "email": user.email,
+    })
+
+
+@views_bp.route('/super_admin/send_email', methods=['POST'])
+def super_admin_send_email():
+    """Super admin: send a custom email to a specific user."""
+    if session.get('role') != 'super_admin':
+        return jsonify({"error": "Access denied"}), 403
+
+    from utils.mail_helper import send_custom_email
+
+    data = request.get_json(silent=True) or request.form
+    user_id = data.get('user_id')
+    subject = (data.get('subject') or '').strip()
+    message = (data.get('message') or '').strip()
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+    if not subject or not message:
+        return jsonify({"error": "Subject and message are both required."}), 400
+
+    try:
+        ok = send_custom_email(user.email, subject, message, user.name)
+    except Exception as e:
+        print(f"[super_admin_send_email] failed: {e}")
+        return jsonify({"error": "Failed to send email (server error)."}), 500
+
+    if not ok:
+        return jsonify({"error": "Email could not be sent (SMTP error)."}), 500
+
+    return jsonify({"success": True, "email": user.email})
+
 
 @views_bp.route('/api/bot_avatar/<int:bot_id>')
 def api_bot_avatar(bot_id):

@@ -245,3 +245,55 @@ def send_sale_notification(plan_name, amount, currency="INR", org_name=None, cus
     </div>
     """
     return _send_html_email(admin_email, f"[{platform_name}] New {plan_label} sale — {amount_str}", html_content)
+
+
+
+def send_plan_upgrade_email(to_email, user_name, plan_name):
+    """Notify a user that their plan was upgraded/changed by the team (super admin)."""
+    platform_name = f"{COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME}"
+    plan_label = (plan_name or "").capitalize()
+    greeting = f"Hi {user_name}," if user_name else "Hi there,"
+
+    if (plan_name or "").lower() == "free":
+        headline = "Your plan has been updated"
+        intro = f"Your <strong>{platform_name}</strong> account has been set to the <strong>Free</strong> plan."
+    else:
+        headline = "Your plan has been upgraded &#127881;"
+        intro = f"Great news! Your <strong>{platform_name}</strong> account has been upgraded to the <strong>{plan_label}</strong> plan."
+
+    html_content = f"""
+    <div style="font-family: sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eee; border-radius: 12px;">
+        <h2 style="color: #111827; margin-top: 0;">{headline}</h2>
+        <p style="color: #4b5563; font-size: 15px;">{greeting}</p>
+        <p style="color: #4b5563; font-size: 15px;">{intro}</p>
+        <div style="background: #f9fafb; padding: 18px 20px; border-radius: 10px; margin: 20px 0;">
+            <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 6px 0; color: #6b7280;">New Plan</td>
+                    <td style="padding: 6px 0; text-align: right; color: #E8722A; font-weight: 700;">{plan_label}</td>
+                </tr>
+            </table>
+        </div>
+        <p style="color: #4b5563; font-size: 14px;">Your new limits are active immediately. You can view your usage and plan details anytime from your profile dashboard.</p>
+        <p style="color: #9ca3af; font-size: 13px;">If you have any questions, just reply to this email.</p>
+        <p style="color: #4b5563; font-size: 14px; margin-top: 24px;">&mdash; The {platform_name} Team</p>
+    </div>
+    """
+    return _send_html_email(to_email, f"Your {platform_name} plan is now {plan_label}", html_content)
+
+
+def send_custom_email(to_email, subject, message, user_name=None):
+    """Send an arbitrary custom email to a user (composed from the super admin panel)."""
+    platform_name = f"{COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME}"
+    # Preserve line breaks from the composer as HTML line breaks.
+    safe_body = (message or "").replace("\n", "<br>")
+    greeting = f"<p style='color:#4b5563;font-size:15px;'>Hi {user_name},</p>" if user_name else ""
+
+    html_content = f"""
+    <div style="font-family: sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eee; border-radius: 12px;">
+        {greeting}
+        <div style="color: #374151; font-size: 15px; line-height: 1.6;">{safe_body}</div>
+        <p style="color: #9ca3af; font-size: 13px; margin-top: 28px; border-top: 1px solid #eee; padding-top: 14px;">Sent by the {platform_name} team.</p>
+    </div>
+    """
+    return _send_html_email(to_email, subject, html_content)
