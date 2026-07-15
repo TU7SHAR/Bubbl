@@ -21,10 +21,12 @@ def login():
         if super_admin_env_email and email.lower() == super_admin_env_email.lower():
             if super_admin_env_hash and bcrypt.checkpw(password.encode('utf-8'), super_admin_env_hash.encode('utf-8')):
                 # Super Admin Authenticated!
-                session['user_id'] = 0 
+                # Use -1 (not 0) because 0 is falsy in Python and breaks
+                # auth checks like `if not session.get('user_id')`.
+                session['user_id'] = -1
                 session['user_name'] = "Super Admin"
                 session['org_name'] = "Platform Admin"
-                session['org_id'] = 0 
+                session['org_id'] = -1
                 session['role'] = 'super_admin'
                 flash("God Mode Activated.", "success")
                 return redirect(url_for('super_admin_bp.dashboard'))
