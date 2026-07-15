@@ -55,20 +55,20 @@ app.register_blueprint(super_admin_bp)
 
 with app.app_context():
     db.create_all()
-    # Auto-run safe migrations (adds missing columns to existing tables)
+    # Auto-run safe migrations on startup (idempotent)
     _run_auto_migrations()
 
 
 def _run_auto_migrations():
-    """Idempotent migrations that run on every deploy. Safe to re-run."""
+    """Idempotent migrations — safe to run on every deploy."""
     from sqlalchemy import text
-    migrations = [
+    sqls = [
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS tokens_used INTEGER DEFAULT 0',
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS total_latency FLOAT DEFAULT 0.0',
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS interaction_count INTEGER DEFAULT 0',
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE',
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
-        'ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT \'free\'',
+        "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'free'",
         'ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMP',
         'ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMP',
         'ALTER TABLE organization ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
@@ -83,9 +83,9 @@ def _run_auto_migrations():
             created_at TIMESTAMP DEFAULT NOW())""",
         'CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)',
     ]
-    for sql in migrations:
+    for s in sqls:
         try:
-            db.session.execute(text(sql))
+            db.session.execute(text(s))
         except Exception:
             db.session.rollback()
     db.session.commit()

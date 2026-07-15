@@ -1,5 +1,8 @@
 """Super Admin — Leads viewer."""
-from flask import render_template, request
+import csv
+import io
+
+from flask import render_template, request, make_response
 from models.models import Lead, Bot, Feedback
 from . import super_admin_bp
 from .decorators import super_admin_required
@@ -49,3 +52,30 @@ def leads_page():
         page=page, total_pages=paginated.pages, total_leads=paginated.total,
         avg_rating=avg_rating, total_feedback=len(all_feedback),
     )
+
+
+# ═══════════════════════════════════════════
+# NEW ROUTES
+# ═══════════════════════════════════════════
+
+
+@super_admin_bp.route('/leads/export')
+@super_admin_required
+def export_leads_csv():
+    """Export all leads as a CSV download."""
+    all_leads = Lead.query.order_by(Lead.captured_at.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['name', 'email', 'phone', 'bot_name', 'priority', 'captured_at'])
+
+    for l in all_leads:
+        bot = Bot.query.get(l.bot_id)
+        bot_name = bot.bot_name if bot else 'Unknown'
+        priority = (l.custom_data or {}).get('Priority', 'Low')
+        writer.writerow([l.name, l.email, l.phone or '', bot_name, priority, str(l.captured_at or '')])
+
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = 'attachment; filename=leads_export.csv'
+    return response

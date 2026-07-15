@@ -1,0 +1,120 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Bot: {{ bot.bot_name }}{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Bot: {{ bot.bot_name }}</h1>
+
+<div class="grid">
+  <div class="card">
+    <div class="card-label">Owner</div>
+    <div class="card-value" style="font-size:14px;">{{ owner.name if owner else 'System' }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Type</div>
+    <div class="card-value" style="font-size:14px;">{{ bot.bot_type or 'general' }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Documents</div>
+    <div class="card-value">{{ docs | length }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Scrape Jobs</div>
+    <div class="card-value">{{ scrapes | length }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Leads</div>
+    <div class="card-value">{{ leads | length }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Messages</div>
+    <div class="card-value">{{ messages_count }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Interactions</div>
+    <div class="card-value">{{ bot.interaction_count or 0 }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Tokens Used</div>
+    <div class="card-value">{{ bot.tokens_used or 0 }}</div>
+  </div>
+</div>
+
+<!-- Documents Table -->
+<div class="table-wrap">
+  <div class="table-header"><h3>Documents ({{ docs | length }})</h3></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>ID</th><th>Filename</th><th>Created</th></tr></thead>
+      <tbody>
+        {% for d in docs %}
+        <tr>
+          <td>{{ d.id }}</td>
+          <td>{{ d.filename }}</td>
+          <td>{{ d.created_at or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Scrape Jobs Table -->
+<div class="table-wrap">
+  <div class="table-header"><h3>Scrape Jobs ({{ scrapes | length }})</h3></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>ID</th><th>URL</th><th>Status</th><th>Created</th></tr></thead>
+      <tbody>
+        {% for s in scrapes %}
+        <tr>
+          <td>{{ s.id }}</td>
+          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">{{ s.url }}</td>
+          <td><span class="badge {{ 'badge-green' if s.status=='completed' else 'badge-red' if s.status=='failed' else 'badge-orange' }}">{{ s.status }}</span></td>
+          <td>{{ s.created_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Feedback Table -->
+<div class="table-wrap">
+  <div class="table-header"><h3>Feedback ({{ feedback | length }})</h3></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>ID</th><th>Rating</th><th>Comment</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for f in feedback %}
+        <tr>
+          <td>{{ f.id }}</td>
+          <td>{{ f.rating }}/5</td>
+          <td>{{ f.comment or '—' }}</td>
+          <td>{{ f.created_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Leads Table -->
+<div class="table-wrap">
+  <div class="table-header"><h3>Leads ({{ leads | length }})</h3></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Captured</th></tr></thead>
+      <tbody>
+        {% for l in leads[:50] %}
+        <tr>
+          <td>{{ l.name }}</td>
+          <td>{{ l.email }}</td>
+          <td>{{ l.phone or '—' }}</td>
+          <td>{{ l.captured_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

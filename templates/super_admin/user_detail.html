@@ -1,0 +1,93 @@
+{% extends "super_admin/base.html" %}
+{% block title %}User: {{ user.name }}{% endblock %}
+
+{% block content %}
+<h1 class="page-title">User: {{ user.name }}</h1>
+
+<div class="grid">
+  <div class="card">
+    <div class="card-label">Email</div>
+    <div class="card-value" style="font-size:14px;">{{ user.email }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Role</div>
+    <div class="card-value" style="font-size:14px;">{{ user.role }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Plan</div>
+    <div class="card-value" style="font-size:14px;">{{ (org.plan if org else 'free') | capitalize }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Bots</div>
+    <div class="card-value">{{ bots | length }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Leads</div>
+    <div class="card-value">{{ leads | length }}</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Joined</div>
+    <div class="card-value" style="font-size:14px;">{{ user.created_at or 'N/A' }}</div>
+  </div>
+</div>
+
+<!-- Bots Table -->
+<div class="table-wrap">
+  <div class="table-header"><h3>Bots ({{ bots | length }})</h3></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Active</th></tr></thead>
+      <tbody>
+        {% for b in bots %}
+        <tr>
+          <td>{{ b.id }}</td>
+          <td><a href="{{ url_for('super_admin_bp.bot_detail', bot_id=b.id) }}">{{ b.bot_name }}</a></td>
+          <td>{{ b.bot_type or 'general' }}</td>
+          <td><span class="badge {{ 'badge-green' if b.is_active else 'badge-red' }}">{{ 'Yes' if b.is_active else 'No' }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Payments Table -->
+<div class="table-wrap">
+  <div class="table-header"><h3>Payments ({{ payments | length }})</h3></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td>{{ p.created_at }}</td>
+          <td>{{ (p.plan or 'N/A') | capitalize }}</td>
+          <td>₹{{ p.amount or 0 }}</td>
+          <td><span class="badge badge-green">{{ p.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Leads Table -->
+<div class="table-wrap">
+  <div class="table-header"><h3>Leads ({{ leads | length }})</h3></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Captured</th></tr></thead>
+      <tbody>
+        {% for l in leads[:50] %}
+        <tr>
+          <td>{{ l.name }}</td>
+          <td>{{ l.email }}</td>
+          <td>{{ l.phone or '—' }}</td>
+          <td>{{ l.captured_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
