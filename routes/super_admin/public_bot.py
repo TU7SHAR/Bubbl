@@ -181,3 +181,47 @@ def public_bot_scrape_status(job_id):
         "error": job.error_message,
         "logs": job.logs or "",
     })
+
+
+
+@super_admin_bp.route('/public_bot/links', methods=['GET'])
+@super_admin_required
+def public_bot_get_links():
+    """Get the current managed links for the platform bot."""
+    import json
+    bot = _get_or_create_platform_bot()
+    raw = (bot.custom_form_fields or "").strip()
+    links = []
+    if raw:
+        try:
+            links = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            links = []
+    return jsonify({"success": True, "links": links})
+
+
+@super_admin_bp.route('/public_bot/links', methods=['POST'])
+@super_admin_required
+def public_bot_save_links():
+    """Save the managed links for the platform bot (replaces all)."""
+    import json
+    data = request.get_json(silent=True) or {}
+    links = data.get('links', [])
+
+    # Validate: each link must have label, url, category
+    valid_categories = ['pricing', 'action', 'info', 'support', 'link']
+    cleaned = []
+    for link in links:
+        label = (link.get('label') or '').strip()
+        url = (link.get('url') or '').strip()
+        category = (link.get('category') or 'link').strip().lower()
+        if label and url:
+            if category not in valid_categories:
+                category = 'link'
+            cleaned.append({"label": label, "url": url, "category": category})
+
+    bot = _get_or_create_platform_bot()
+    bot.custom_form_fields = json.dumps(cleaned)
+    db.session.commit()
+
+    return jsonify({"success": True, "count": len(cleaned)})

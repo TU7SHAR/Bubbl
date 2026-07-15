@@ -33,7 +33,8 @@ BASE_GUARDRAILS = (
 # --- PUBLIC BOT: Personality + Button instructions ---
 # This is used ALONGSIDE the RAG knowledge base (scraped site content).
 # The factual info comes from the vector store; this just defines personality + button format.
-PUBLIC_BOT_PERSONALITY = (
+# NOTE: Available links are injected dynamically from the platform bot's managed links (DB).
+PUBLIC_BOT_PERSONALITY_BASE = (
     "PUBLIC PLATFORM ROLE: You are 'Bubbl', the official AI mascot and assistant for the Bubbl.ooo platform.\n"
     "You are friendly, energetic, and knowledgeable. You love helping people understand what Bubbl.ooo does.\n\n"
     "YOUR PERSONALITY:\n"
@@ -58,45 +59,68 @@ PUBLIC_BOT_PERSONALITY = (
     "- info (blue) — for features or how-to\n"
     "- support (purple) — for contact/help\n"
     "- link (gray) — general links\n\n"
-    "Available links (ONLY use these, do NOT invent URLs):\n"
-    "- https://bubbl.ooo — Main website\n"
-    "- https://app.bubbl.ooo/register — Sign up\n"
-    "- https://app.bubbl.ooo/login — Login\n\n"
+)
+
+PUBLIC_BOT_BUTTON_RULES = (
     "BUTTON RULES:\n"
     "- ANSWER THE QUESTION FIRST. Buttons are a supplement, not a replacement.\n"
     "- Only show buttons if the user would genuinely benefit from visiting a page\n"
     "- Do NOT show buttons for greetings, casual chat, or when you already answered fully\n"
     "- Max 1-2 buttons per response\n"
-    "- Do NOT make up URLs that don't exist\n"
+    "- ONLY use URLs from the 'Available links' list above. NEVER invent or guess URLs.\n"
+    "- If no link from the list is relevant, do NOT show any buttons.\n"
     "- The buttons tag must be the LAST thing in your response\n"
 )
 
 
-def _get_public_bot_store_id():
+def _get_platform_bot_config():
     """
-    Get the vector store ID for the dynamic public bot.
-
-    Discovery order:
-    1. Look for bot with bot_type='platform' in DB (managed via super admin)
-    2. Fall back to PUBLIC_BOT_ID env var (legacy/manual setup)
-    3. Return None -> uses hardcoded fallback instructions
+    Get the platform bot's store_id AND managed links.
+    Returns (store_id, links_text) or (None, "") if not configured.
     """
-    # Option 1: Auto-discover from DB (super admin managed)
+    import json
     platform_bot = Bot.query.filter_by(bot_type='platform').first()
     if platform_bot and platform_bot.store_id:
-        return platform_bot.store_id
+        # Links are stored as JSON in custom_form_fields
+        links_text = ""
+        raw = (platform_bot.custom_form_fields or "").strip()
+        if raw:
+            try:
+                links = json.loads(raw)
+                if isinstance(links, list):
+                    for link in links:
+                        label = link.get('label', '')
+                        url = link.get('url', '')
+                        category = link.get('category', 'link')
+                        if label and url:
+                            links_text += f"- {url} — {label} (category: {category})\n"
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return platform_bot.store_id, links_text
 
-    # Option 2: Env var fallback (manual setup)
+    # Env var fallback
     public_bot_id = os.getenv('PUBLIC_BOT_ID')
     if not public_bot_id:
-        return None
+        return None, ""
     try:
         bot = Bot.query.get(int(public_bot_id))
         if bot and bot.store_id:
-            return bot.store_id
+            return bot.store_id, ""
     except (ValueError, TypeError):
         pass
-    return None
+    return None, ""
+
+
+def _build_public_bot_prompt(links_text=""):
+    """Build the full public bot system prompt with dynamic links."""
+    prompt = PUBLIC_BOT_PERSONALITY_BASE
+    if links_text:
+        prompt += "Available links (ONLY use these, do NOT invent URLs):\n"
+        prompt += links_text + "\n"
+    else:
+        prompt += "Available links: NONE configured. Do NOT show any buttons.\n\n"
+    prompt += PUBLIC_BOT_BUTTON_RULES
+    return prompt
 
 
 def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=None, history=None, bot_id=None):
@@ -107,14 +131,14 @@ def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=Non
         else:
             # --- DYNAMIC PUBLIC BOT ---
             # Check if a platform bot is configured (scraped site content)
-            public_store_id = _get_public_bot_store_id()
+            public_store_id, links_text = _get_platform_bot_config()
             if public_store_id:
-                # Use personality + buttons instructions WITH the scraped knowledge base
-                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_PERSONALITY
+                # Build prompt with dynamic links from admin panel
+                system_instruction = BASE_GUARDRAILS + _build_public_bot_prompt(links_text)
                 target_store_id = public_store_id  # Feed the scraped content as RAG
             else:
-                # Fallback: no scrape configured yet — use personality prompt anyway
-                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_PERSONALITY
+                # Fallback: no scrape configured yet
+                system_instruction = BASE_GUARDRAILS + _build_public_bot_prompt("")
             
         tools = []
         if target_store_id:
