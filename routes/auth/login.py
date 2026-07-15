@@ -27,7 +27,7 @@ def login():
                 session['org_id'] = 0 
                 session['role'] = 'super_admin'
                 flash("God Mode Activated.", "success")
-                return redirect(url_for('views_bp.super_admin_dashboard'))
+                return redirect(url_for('super_admin_bp.dashboard'))
             else:
                 flash("Incorrect Super Admin password.", "error")
                 return redirect(url_for('auth.login'))
