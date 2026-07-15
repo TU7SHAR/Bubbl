@@ -232,13 +232,8 @@ def paddle_webhook():
                 org.paddle_subscription_id = subscription_id
             if not org.subscription_started_at:
                 org.subscription_started_at = datetime.now(timezone.utc)
-            # Persist payment method on the org for quick display
-            if method_type:
-                org.payment_method = method_type
-            if card_brand:
-                org.card_brand = card_brand
-            if card_last4:
-                org.card_last4 = card_last4
+            # Payment method stored on the Payment record (normalized)
+            # No longer duplicated on Organization
             db.session.commit()
 
         payment = Payment(
@@ -484,11 +479,15 @@ def manage_plan():
 
     # Human-friendly payment method label
     payment_method_label = 'Not on file'
-    if org and org.payment_method:
-        if org.card_brand and org.card_last4:
-            payment_method_label = f"{org.card_brand.title()} ···· {org.card_last4}"
-        else:
-            payment_method_label = org.payment_method.replace('_', ' ').title()
+    if org:
+        # Read from latest completed payment (normalized — not stored on org)
+        latest_pm = Payment.query.filter_by(org_id=org.id, status='completed')\
+            .order_by(Payment.created_at.desc()).first()
+        if latest_pm and latest_pm.payment_method:
+            if latest_pm.card_brand and latest_pm.card_last4:
+                payment_method_label = f"{latest_pm.card_brand.title()} ···· {latest_pm.card_last4}"
+            else:
+                payment_method_label = latest_pm.payment_method.replace('_', ' ').title()
 
     return render_template('manage_plan.html',
         plan=plan, plan_name=plan.capitalize(),

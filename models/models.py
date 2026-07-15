@@ -21,11 +21,6 @@ class Organization(db.Model):
     subscription_started_at = db.Column(db.DateTime, nullable=True)
     subscription_ends_at = db.Column(db.DateTime, nullable=True)
 
-    # --- PAYMENT METHOD (latest from Paddle webhook) ---
-    payment_method = db.Column(db.String(30), nullable=True)
-    card_brand = db.Column(db.String(30), nullable=True)
-    card_last4 = db.Column(db.String(4), nullable=True)
-
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     users = db.relationship('User', backref='organization', lazy=True)
