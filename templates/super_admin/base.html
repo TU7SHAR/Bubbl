@@ -1,174 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>{% block title %}Admin{% endblock %} | Bubbl.ooo</title>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --orange: #E8722A;
-      --orange-light: #f2943b;
-      --text: #111827;
-      --text-secondary: #4b5563;
-      --text-muted: #9ca3af;
-      --bg: #ffffff;
-      --bg-alt: #f9fafb;
-      --border: #e5e7eb;
-      --green: #059669;
-      --red: #dc2626;
-      --blue: #2563eb;
-      --purple: #7c3aed;
-      --radius: 8px;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text); background: var(--bg); }
-    a { color: var(--orange); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+{% extends 'base.html' %}
 
-    /* Header */
-    .header { border-bottom: none; background: var(--orange); }
-    .header-inner { max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
-    .brand { font-size: 16px; font-weight: 800; color: #fff; }
-    .brand span { color: #fff; opacity: 0.8; }
-    .header-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
-    .header-right a { color: #fff; text-decoration: none; padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; }
-    .header-right a:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); }
+{% block title %}{% block page_title %}Admin{% endblock %} | Super Admin{% endblock %}
 
-    /* Nav */
-    .nav { border-bottom: 1px solid var(--border); background: #fff3eb; }
-    .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; gap: 2px; overflow-x: auto; }
-    .nav-inner::-webkit-scrollbar { display: none; }
-    .nav a {
-      padding: 10px 14px; font-size: 13px; font-weight: 500; color: #8b5e3c;
-      border-bottom: 2px solid transparent; white-space: nowrap;
-    }
-    .nav a:hover { color: var(--orange); text-decoration: none; }
-    .nav a.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: 700; background: rgba(232,114,42,0.08); border-radius: 6px 6px 0 0; }
+{% block meta_description %}
+<meta name="robots" content="noindex, nofollow" />
+{% endblock %}
 
-    /* Page */
-    .page { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    .page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+{% block content %}
+<style>
+  /* Super admin horizontal nav — matches app style */
+  .sa-nav { display: flex; gap: 4px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+  .sa-nav::-webkit-scrollbar { display: none; }
+  .sa-nav a { padding: 8px 16px; font-size: 13px; font-weight: 500; color: #5c4a30; border-radius: 8px; white-space: nowrap; text-decoration: none; transition: all 0.15s; }
+  .sa-nav a:hover { background: rgba(232,114,42,0.06); color: #E8722A; }
+  .sa-nav a.active { background: #E8722A; color: #fff; font-weight: 600; }
 
-    /* Cards */
-    .grid, .sa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .card, .sa-card { background: #fff; border: 1px solid #fde0cc; border-radius: var(--radius); padding: 16px; border-left: 4px solid var(--orange); }
-    .card-label, .sa-card-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .card-value, .sa-card-value { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  /* Stat cards */
+  .sa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .sa-card { background: rgba(255,255,255,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 18px; }
+  .sa-card-label { font-size: 11px; font-weight: 600; color: #8a7558; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .sa-card-value { font-size: 24px; font-weight: 800; color: #1a1008; }
 
-    /* Tables */
-    .table-wrap, .sa-table-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; background: var(--bg); }
-    .table-header, .sa-table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #fff8f4; }
-    .table-header h3, .sa-table-header h3 { font-size: 14px; font-weight: 600; margin: 0; }
-    .table-scroll, .sa-table-scroll { overflow-x: auto; }
-    table, table.sa-table { width: 100%; border-collapse: collapse; }
-    th { padding: 8px 14px; font-size: 11px; font-weight: 700; color: #8b5e3c; text-transform: uppercase; text-align: left; border-bottom: 1px solid var(--border); background: #fff8f3; }
-    td { padding: 10px 14px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid #f3f4f6; }
-    tr:hover td { background: #fafafa; }
-    tr:last-child td { border-bottom: none; }
+  /* Tables */
+  .sa-table-wrap { background: rgba(255,255,255,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+  .sa-table-header { padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-between; }
+  .sa-table-header h3 { font-size: 15px; font-weight: 700; margin: 0; color: #1a1008; }
+  .sa-table-scroll { overflow-x: auto; }
+  table.sa-table { width: 100%; border-collapse: collapse; }
+  .sa-table th { padding: 10px 14px; font-size: 11px; font-weight: 700; color: #8a7558; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.06); }
+  .sa-table td { padding: 12px 14px; font-size: 13px; color: #5c4a30; border-bottom: 1px solid rgba(0,0,0,0.03); }
+  .sa-table tr:hover td { background: rgba(232,114,42,0.02); }
+  .sa-table tr:last-child td { border-bottom: none; }
 
-    /* Badges */
-    .badge, .sa-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-    .badge-orange, .sa-badge-orange { background: #fef3e8; color: var(--orange); }
-    .badge-green, .sa-badge-green { background: #ecfdf5; color: var(--green); }
-    .badge-red, .sa-badge-red { background: #fef2f2; color: var(--red); }
-    .badge-blue, .sa-badge-blue { background: #eff6ff; color: var(--blue); }
-    .badge-purple, .sa-badge-purple { background: #f5f3ff; color: var(--purple); }
-    .badge-gray, .sa-badge-gray { background: #f3f4f6; color: #6b7280; }
+  /* Badges */
+  .sa-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .sa-badge-orange { background: rgba(232,114,42,0.1); color: #E8722A; }
+  .sa-badge-green { background: rgba(16,185,129,0.1); color: #059669; }
+  .sa-badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+  .sa-badge-blue { background: rgba(59,130,246,0.1); color: #2563eb; }
+  .sa-badge-purple { background: rgba(139,92,246,0.1); color: #7c3aed; }
+  .sa-badge-gray { background: rgba(107,114,128,0.08); color: #6b7280; }
+  .sa-badge-yellow { background: rgba(245,158,11,0.1); color: #d97706; }
 
-    /* Buttons */
-    .btn, .sa-btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
-    .btn-primary, .sa-btn-primary { background: var(--orange); color: #fff; }
-    .btn-primary:hover, .sa-btn-primary:hover { background: var(--orange-light); }
-    .btn-outline, .sa-btn-outline, .sa-btn-ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
-    .btn-outline:hover, .sa-btn-outline:hover, .sa-btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
-    .btn-danger, .sa-btn-danger { background: #fef2f2; color: var(--red); border-color: #fecaca; }
-    .btn-danger:hover, .sa-btn-danger:hover { background: #fee2e2; }
-    .btn-success, .sa-btn-success { background: #ecfdf5; color: var(--green); border-color: #a7f3d0; }
+  /* Buttons */
+  .sa-btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .sa-btn-primary { background: #E8722A; color: #fff; }
+  .sa-btn-primary:hover { background: #f2943b; }
+  .sa-btn-ghost { background: rgba(0,0,0,0.04); color: #5c4a30; border: 1px solid rgba(0,0,0,0.08); }
+  .sa-btn-ghost:hover { border-color: #E8722A; color: #E8722A; }
+  .sa-btn-danger { background: rgba(239,68,68,0.08); color: #dc2626; }
+  .sa-btn-success { background: rgba(16,185,129,0.08); color: #059669; }
 
-    /* Forms */
-    .input, .select, .sa-input, .sa-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; }
-    .input:focus, .select:focus, .sa-input:focus, .sa-select:focus { border-color: var(--orange); }
-    .select option, .sa-select option { background: #fff; }
+  /* Forms */
+  .sa-select, .sa-input { padding: 6px 10px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; font-size: 13px; background: #fff; color: #1a1008; outline: none; }
+  .sa-select:focus, .sa-input:focus { border-color: #E8722A; }
 
-    /* Modal */
-    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
-    .modal-bg.open { display: flex; }
-    .modal { background: #fff; border: 1px solid var(--border); border-radius: 12px; max-width: 460px; width: 100%; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
-    .modal input, .modal textarea { width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; margin-bottom: 10px; outline: none; }
-    .modal input:focus, .modal textarea:focus { border-color: var(--orange); }
-    .modal textarea { resize: vertical; min-height: 100px; }
+  /* Filter bar */
+  .sa-filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
 
-    /* Pagination */
-    .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 16px 0; }
-    .pagination a, .pagination span { padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: 600; }
-    .pagination a { border: 1px solid var(--border); color: var(--text-muted); }
-    .pagination a:hover { border-color: var(--orange); color: var(--orange); text-decoration: none; }
-    .pagination .current { background: var(--orange); color: #fff; }
+  /* Pagination */
+  .sa-pagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 16px 0; }
+  .sa-pagination a, .sa-pagination span { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; }
+  .sa-pagination a { border: 1px solid rgba(0,0,0,0.08); color: #8a7558; }
+  .sa-pagination a:hover { border-color: #E8722A; color: #E8722A; }
+  .sa-pagination .current { background: #E8722A; color: #fff; }
 
-    /* Chat transcript */
-    .chat-msg { max-width: 70%; padding: 8px 12px; border-radius: 12px; margin-bottom: 6px; font-size: 13px; line-height: 1.4; }
-    .chat-user { background: #fff3ed; margin-left: auto; border-bottom-right-radius: 3px; }
-    .chat-bot { background: var(--bg-alt); border-bottom-left-radius: 3px; }
-    .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  /* Chat transcript */
+  .chat-bubble { max-width: 70%; padding: 8px 12px; border-radius: 12px; margin-bottom: 6px; font-size: 13px; line-height: 1.4; }
+  .chat-user { background: rgba(232,114,42,0.1); margin-left: auto; border-bottom-right-radius: 3px; }
+  .chat-bot { background: rgba(0,0,0,0.03); border-bottom-left-radius: 3px; }
+  .chat-meta { font-size: 10px; color: #8a7558; margin-top: 2px; }
 
-    /* Filter bar */
-    .filter-bar, .sa-filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  /* Modal override for admin actions */
+  .sa-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; padding: 20px; }
+  .sa-modal-bg.open { display: flex; }
+  .sa-modal { background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; max-width: 460px; width: 100%; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.12); }
+  .sa-modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #1a1008; }
+  .sa-modal input, .sa-modal textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; font-size: 14px; margin-bottom: 10px; outline: none; }
+  .sa-modal input:focus, .sa-modal textarea:focus { border-color: #E8722A; }
+  .sa-modal textarea { resize: vertical; min-height: 100px; }
+</style>
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .page { padding: 16px; }
-      .grid { grid-template-columns: repeat(2, 1fr); }
-      .header-right span { display: none; }
-    }
-  </style>
-  {% block head %}{% endblock %}
-</head>
-<body>
-  <header class="header">
-    <div class="header-inner">
-      <div class="brand">bubbl<span>.ooo</span> Admin</div>
-      <div class="header-right">
-        <span id="clock" style="color:rgba(255,255,255,0.7); font-size:12px;">--:--</span>
-        <a href="{{ url_for('views_bp.dashboard') }}">Back to App</a>
-        <a href="{{ url_for('auth.logout') }}">Logout</a>
-      </div>
-    </div>
-  </header>
-  <nav class="nav">
-    <div class="nav-inner">
-      <a href="{{ url_for('super_admin_bp.dashboard') }}" class="{% if request.endpoint == 'super_admin_bp.dashboard' %}active{% endif %}">Overview</a>
-      <a href="{{ url_for('super_admin_bp.users_page') }}" class="{% if 'users' in (request.endpoint or '') %}active{% endif %}">Users</a>
-      <a href="{{ url_for('super_admin_bp.bots_page') }}" class="{% if 'bots' in (request.endpoint or '') %}active{% endif %}">Bots</a>
-      <a href="{{ url_for('super_admin_bp.billing_page') }}" class="{% if 'billing' in (request.endpoint or '') %}active{% endif %}">Billing</a>
-      <a href="{{ url_for('super_admin_bp.leads_page') }}" class="{% if 'leads' in (request.endpoint or '') %}active{% endif %}">Leads</a>
-      <a href="{{ url_for('super_admin_bp.conversations_page') }}" class="{% if 'conversation' in (request.endpoint or '') %}active{% endif %}">Chats</a>
-      <a href="{{ url_for('super_admin_bp.scrapes_page') }}" class="{% if 'scrapes' in (request.endpoint or '') %}active{% endif %}">Scrapes</a>
-    </div>
-  </nav>
+<!-- Admin Nav Tabs -->
+<nav class="sa-nav">
+  <a href="{{ url_for('super_admin_bp.dashboard') }}" class="{% if request.endpoint == 'super_admin_bp.dashboard' %}active{% endif %}">Overview</a>
+  <a href="{{ url_for('super_admin_bp.users_page') }}" class="{% if 'users' in (request.endpoint or '') %}active{% endif %}">Users</a>
+  <a href="{{ url_for('super_admin_bp.bots_page') }}" class="{% if 'bots' in (request.endpoint or '') %}active{% endif %}">Bots</a>
+  <a href="{{ url_for('super_admin_bp.billing_page') }}" class="{% if 'billing' in (request.endpoint or '') %}active{% endif %}">Billing</a>
+  <a href="{{ url_for('super_admin_bp.leads_page') }}" class="{% if 'leads' in (request.endpoint or '') %}active{% endif %}">Leads</a>
+  <a href="{{ url_for('super_admin_bp.conversations_page') }}" class="{% if 'conversation' in (request.endpoint or '') %}active{% endif %}">Chats</a>
+  <a href="{{ url_for('super_admin_bp.scrapes_page') }}" class="{% if 'scrapes' in (request.endpoint or '') %}active{% endif %}">Scrapes</a>
+</nav>
 
-  <div class="page">
-    {% block content %}{% endblock %}
+{% block admin_content %}{% endblock %}
+
+<!-- Modal -->
+<div class="sa-modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="sa-modal">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
   </div>
+</div>
 
-  <!-- Modal -->
-  <div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
-    <div class="modal">
-      <h3 id="modal-title"></h3>
-      <div id="modal-body"></div>
-    </div>
-  </div>
-
-  <script>
-    // Clock (IST)
-    !function(){var c=document.getElementById('clock');function u(){var d=new Date(),i=new Date(d.getTime()+5.5*36e5);c.textContent=i.getUTCHours().toString().padStart(2,'0')+':'+i.getUTCMinutes().toString().padStart(2,'0')+' IST'}u();setInterval(u,60000)}();
-    // Modal
-    function openModal(t,h){document.getElementById('modal-title').textContent=t;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal').classList.add('open')}
-    function closeModal(){document.getElementById('modal').classList.remove('open')}
-  </script>
-  {% block scripts %}{% endblock %}
-</body>
-</html>
+<script>
+function openModal(t,h){document.getElementById('modal-title').textContent=t;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal').classList.add('open')}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+</script>
+{% block scripts %}{% endblock %}
+{% endblock %}
