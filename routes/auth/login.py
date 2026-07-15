@@ -113,6 +113,14 @@ def reset_password():
             flash("Please provide the OTP and a new password.", "error")
             return redirect(url_for('auth.reset_password'))
 
+        # --- PASSWORD STRENGTH CHECK ---
+        if len(new_password) < 8:
+            flash("Password must be at least 8 characters.", "error")
+            return redirect(url_for('auth.reset_password'))
+        if not any(c.isalpha() for c in new_password) or not any(c.isdigit() for c in new_password):
+            flash("Password must contain at least one letter and one number.", "error")
+            return redirect(url_for('auth.reset_password'))
+
         user = User.query.filter_by(email=email).first()
         
         if user and user.is_otp_valid(otp_entered):

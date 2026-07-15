@@ -2,7 +2,7 @@ import bcrypt
 from flask import config, render_template, request, redirect, url_for, session, flash, current_app
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
-from wtforms.validators import DataRequired, Email
+from wtforms.validators import DataRequired, Email, Length, ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from models.models import db, User, Organization
@@ -10,10 +10,24 @@ from utils.mail_helper import send_otp_email, generate_otp
 from extensions import limiter
 from . import auth_bp  
 
+
+def password_strength(form, field):
+    """Ensure password has at least one letter and one digit."""
+    pwd = field.data or ''
+    has_letter = any(c.isalpha() for c in pwd)
+    has_digit = any(c.isdigit() for c in pwd)
+    if not (has_letter and has_digit):
+        raise ValidationError("Password must contain at least one letter and one number.")
+
+
 class RegistrationForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
+    password = PasswordField("Password", validators=[
+        DataRequired(),
+        Length(min=8, message="Password must be at least 8 characters."),
+        password_strength,
+    ])
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", methods=["POST"])  # Prevents registration spam
