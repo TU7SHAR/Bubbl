@@ -1,5 +1,5 @@
-{% extends 'base.html' %} 
-{% block title %}Creator Mode | Platform Overview{% endblock %} 
+{% extends 'base.html' %}
+{% block title %}Super Admin | Bubbl.ooo{% endblock %}
 
 {% block meta_description %}
 <meta name="robots" content="noindex, nofollow" />
@@ -9,781 +9,619 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/super_admin.css') }}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div class="ambient-orb orb-1"></div>
-<div class="ambient-orb orb-2"></div>
-<div class="ambient-orb orb-3"></div>
-
-<div class="sa-layout">
-    <aside class="sa-sidebar glass-panel">
-        <div class="sa-brand">
-            <h2>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                Creator Mode
-            </h2>
-        </div>
-        <nav class="sa-nav">
-            <button class="sa-tab active" onclick="switchPane('pane-overview', 'Platform Dashboard')">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                Dashboard
-            </button>
-            <button class="sa-tab" onclick="switchPane('pane-revenue', 'Revenue & Billing')">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                Revenue
-            </button>
-            <button class="sa-tab" onclick="switchPane('pane-api', 'API & Resource Usage')">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-                API Usage
-            </button>
-            <button class="sa-tab" onclick="switchPane('pane-bots', 'Bot Ecosystem')">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                Bot Ecosystem
-            </button>
-            <button class="sa-tab" onclick="switchPane('pane-users', 'Platform Users')">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-                Platform Users
-            </button>
-            <button class="sa-tab" onclick="switchPane('pane-leads', 'Raw Interactions')">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                Interaction Stream
-            </button>
-            <button class="sa-tab" onclick="switchPane('pane-feedbacks', 'User Feedbacks')">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                </svg>
-                Feedbacks
-            </button>
-        </nav>
-    </aside>
-
-    <main class="sa-main glass-panel">
-        <header class="sa-header" style="flex-direction: column; align-items: flex-start; gap: 16px;">
-            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                <div>
-                    <h1 id="header-title" class="bricolage" style="font-size: 26px; margin: 0; color: #111827;">Platform Dashboard</h1>
-                    <p style="font-size: 14px; color: #6b7280; margin: 4px 0 0 0;">Deep metrics and global infrastructure overview.</p>
-                </div>
-                <div class="tag tag-green">
-                    <span style="width: 8px; height: 8px; background: #15803d; border-radius: 50%; display: inline-block;"></span>
-                    All Systems Online
-                </div>
-            </div>
-
-            <div class="glass-panel" style="width: 100%; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 16px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 13px; font-weight: 700; color: #4b5563;">Timeframe:</span>
-                    <select id="date-preset" onchange="applyPreset(this.value)" class="sa-tab" style="padding: 6px 12px; background: #fff; border: 1px solid #e5e7eb;">
-                        <option value="today" {% if current_period == 'today' %}selected{% endif %}>Today</option>
-                        <option value="week" {% if current_period == 'week' %}selected{% endif %}>Last 7 Days</option>
-                        <option value="month" {% if current_period == 'month' %}selected{% endif %}>Last 30 Days</option>
-                        <option value="quarter" {% if current_period == 'quarter' %}selected{% endif %}>Last Quarter</option>
-                        <option value="half_year" {% if current_period == 'half_year' %}selected{% endif %}>Last 6 Months</option>
-                        <option value="year" {% if current_period == 'year' %}selected{% endif %}>Last Year</option>
-                        <option value="all" {% if current_period == 'all' %}selected{% endif %}>Lifetime</option>
-                        {% if is_custom %}
-                            <option value="custom" selected>Custom Range</option>
-                        {% endif %}
-                    </select>
-                </div>
-                
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="date" id="custom-start" class="lead-input" style="width: 140px;" value="{{ start_date }}">
-                    <span style="color: #9ca3af;">→</span>
-                    <input type="date" id="custom-end" class="lead-input" style="width: 140px;" value="{{ end_date }}">
-                    <button onclick="applyCustomRange()" class="tag tag-purple" style="cursor: pointer; border: none; height: 32px;">Apply</button>
-                </div>
-            </div>
-        </header>
-
-        <div class="sa-content-wrapper" id="sa-scroll-container">
-            
-            <div id="pane-overview" class="sa-pane active">
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #f3e8ff; color: #8b5cf6;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg></div>
-                        <div class="m-value">{{ total_users }}</div>
-                        <div class="m-label">Registered Users</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #e0e7ff; color: #4f46e5;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg></div>
-                        <div class="m-value">{{ total_bots }}</div>
-                        <div class="m-label">Deployed Agents</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #dcfce7; color: #16a34a;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
-                        <div class="m-value">{{ total_leads }}</div>
-                        <div class="m-label">Leads Captured (Period)</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #ffedd5; color: #ea580c;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-                        <div class="m-value">{{ total_docs }}</div>
-                        <div class="m-label">Inserted Documents</div>
-                    </div>
-                </div>
-
-                <!-- SECOND ROW: Detailed KPIs -->
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #dcfce7; color: #16a34a;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
-                        <div class="m-value">{{ active_subscriptions }}</div>
-                        <div class="m-label">Paid Accounts</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #fce7f3; color: #db2777;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div>
-                        <div class="m-value">{{ "{:,}".format(total_interactions) }}</div>
-                        <div class="m-label">Total Chat Interactions</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #d1fae5; color: #059669;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></svg></div>
-                        <div class="m-value">{{ conversion_rate }}%</div>
-                        <div class="m-label">Paid Conversion Rate</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #ede9fe; color: #7c3aed;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
-                        <div class="m-value">{{ avg_leads_per_bot }}</div>
-                        <div class="m-label">Avg Leads / Bot</div>
-                    </div>
-                </div>
-
-                <!-- TOP PERFORMING BOTS -->
-                {% if bot_rankings %}
-                <div class="chart-box" style="height: auto; margin-bottom: 24px;">
-                    <h3 style="margin: 0 0 16px 0; font-size: 16px;">Top Performing Bots (by leads captured)</h3>
-                    <table class="sa-table" style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="text-align: left; color: #6b7280; font-size: 12px;">
-                                <th style="padding: 8px 12px;">#</th>
-                                <th style="padding: 8px 12px;">Bot Name</th>
-                                <th style="padding: 8px 12px;">Owner</th>
-                                <th style="padding: 8px 12px;">Leads (Period)</th>
-                                <th style="padding: 8px 12px;">Today</th>
-                                <th style="padding: 8px 12px;">Docs</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for b in bot_rankings %}
-                            {% if b.leads > 0 %}
-                            <tr style="border-top: 1px solid rgba(0,0,0,0.04);">
-                                <td style="padding: 10px 12px; font-weight: 700; color: #8b5cf6;">{{ loop.index }}</td>
-                                <td style="padding: 10px 12px; font-weight: 600; color: #111827;">{{ b.name }}</td>
-                                <td style="padding: 10px 12px; color: #6b7280;">{{ b.owner }}</td>
-                                <td style="padding: 10px 12px; font-weight: 700; color: #16a34a;">{{ b.leads }}</td>
-                                <td style="padding: 10px 12px;">{% if b.leads_today > 0 %}<span class="tag tag-green">+{{ b.leads_today }}</span>{% else %}<span style="color:#9ca3af;">0</span>{% endif %}</td>
-                                <td style="padding: 10px 12px;">{{ b.docs }}</td>
-                            </tr>
-                            {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% endif %}
-
-                <div class="chart-box">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                        <h3 style="margin: 0; font-size: 16px;">
-                            Lead Capture Trend ({% if current_period == 'today' %}Today{% else %}{{ days_count }} Days{% endif %})
-                        </h3>
-                        <span class="tag tag-green">{{ total_hits_today }} today</span>
-                    </div>
-                    <div style="height: 280px; width: 100%;">
-                        <canvas id="trafficChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div id="pane-revenue" class="sa-pane">
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #dcfce7; color: #16a34a;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
-                        <div class="m-value">&#8377;{{ '{:,.0f}'.format(mrr) }}</div>
-                        <div class="m-label">Monthly Recurring Revenue</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #dbeafe; color: #2563eb;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></svg></div>
-                        <div class="m-value">&#8377;{{ '{:,.0f}'.format(arr) }}</div>
-                        <div class="m-label">Annual Run Rate (ARR)</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #f3e8ff; color: #8b5cf6;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path></svg></div>
-                        <div class="m-value">{{ active_subscriptions }}</div>
-                        <div class="m-label">Active Subscriptions</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #ffedd5; color: #ea580c;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg></div>
-                        <div class="m-value">&#8377;{{ '{:,.2f}'.format(total_revenue) }}</div>
-                        <div class="m-label">Total Collected (lifetime)</div>
-                    </div>
-                </div>
-
-                <div class="chart-box" style="margin-top: 20px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
-                        <h3 style="margin: 0; font-size: 16px;">Revenue by Plan (MRR breakdown)</h3>
-                        <span class="tag tag-green" style="align-self: center;">&#8377;{{ '{:,.2f}'.format(revenue_in_range) }} collected in range</span>
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table class="sa-table" style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="text-align: left; color: #6b7280; font-size: 13px;">
-                                    <th style="padding: 10px 12px;">Plan</th>
-                                    <th style="padding: 10px 12px;">Subscribers</th>
-                                    <th style="padding: 10px 12px;">Price / mo</th>
-                                    <th style="padding: 10px 12px;">MRR</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for row in revenue_by_plan %}
-                                <tr style="border-top: 1px solid rgba(0,0,0,0.05);">
-                                    <td style="padding: 10px 12px; font-weight: 600; color: #111827;">{{ row.plan }}</td>
-                                    <td style="padding: 10px 12px;">{{ row.count }}</td>
-                                    <td style="padding: 10px 12px;">&#8377;{{ '{:,.0f}'.format(row.price) }}</td>
-                                    <td style="padding: 10px 12px; font-weight: 700; color: #16a34a;">&#8377;{{ '{:,.0f}'.format(row.mrr) }}</td>
-                                </tr>
-                                {% endfor %}
-                                <tr style="border-top: 2px solid rgba(0,0,0,0.1); font-weight: 700;">
-                                    <td style="padding: 10px 12px;">Total</td>
-                                    <td style="padding: 10px 12px;">{{ active_subscriptions }}</td>
-                                    <td style="padding: 10px 12px;">—</td>
-                                    <td style="padding: 10px 12px; color: #16a34a;">&#8377;{{ '{:,.0f}'.format(mrr) }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="chart-box" style="margin-top: 20px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
-                        <h3 style="margin: 0; font-size: 16px;">Payment History</h3>
-                        <span style="font-size: 13px; color: #6b7280;">{{ recent_payments|length }} transaction(s)</span>
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table class="sa-table" style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="text-align: left; color: #6b7280; font-size: 13px;">
-                                    <th style="padding: 10px 12px;">Date</th>
-                                    <th style="padding: 10px 12px;">Customer</th>
-                                    <th style="padding: 10px 12px;">Plan</th>
-                                    <th style="padding: 10px 12px;">Amount</th>
-                                    <th style="padding: 10px 12px;">Transaction</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for pm in recent_payments %}
-                                <tr style="border-top: 1px solid rgba(0,0,0,0.05);">
-                                    <td style="padding: 10px 12px; color: #4b5563;">{{ pm.created_at.strftime('%b %d, %Y %H:%M') if pm.created_at else '—' }}</td>
-                                    <td style="padding: 10px 12px;">{{ pm.email }}</td>
-                                    <td style="padding: 10px 12px;"><span class="tag tag-purple">{{ pm.plan }}</span></td>
-                                    <td style="padding: 10px 12px; font-weight: 700; color: #16a34a;">&#8377;{{ '{:,.2f}'.format(pm.amount) }}</td>
-                                    <td style="padding: 10px 12px; font-family: monospace; font-size: 12px; color: #9ca3af;">{{ pm.transaction_id }}</td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" style="padding: 30px 12px; text-align: center; color: #9ca3af;">
-                                        No payments recorded yet. Completed Paddle transactions will appear here automatically.
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="pane-api" class="sa-pane">
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #f3e8ff; color: #8b5cf6;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
-                        <div class="m-value">{{ "{:,}".format(total_tokens) }}</div> <div class="m-label">Gemini Tokens</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #e0e7ff; color: #4f46e5;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
-                        <div class="m-value">{{ total_hits_today }}</div>
-                        <div class="m-label">API Hits (Today)</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="m-icon" style="background: #dcfce7; color: #16a34a;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg></div>
-                        <div class="m-value">{{ avg_latency_ms }}ms</div> <div class="m-label">Avg Latency</div>
-                    </div>
-                    <div class="metric-card" style="background: #111827; border-color: #111827;">
-                        <div class="m-label" style="color: #9ca3af;">System (CPU / Mem)</div>
-                        <div class="m-value" style="color: #10b981; font-size: 24px; padding-top: 10px;">{{ system_health.cpu }} / {{ system_health.memory.split(' ')[0] }}</div>
-                    </div>
-                </div>
-
-                <h3 style="font-family: 'Sora', sans-serif; font-size: 18px; color: #111827; margin: 0 0 20px 0;">Bot Resource Consumption</h3>
-
-                <div class="premium-table-wrap">
-                    <table class="p-table">
-                        <thead>
-                            <tr>
-                                <th>Bot Entity</th>
-                                <th>Owner ID / Name</th>
-                                <th>Vector Storage Data</th>
-                                <th>Today's Requests</th>
-                                <th>Lifetime Requests</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for b in enriched_bots %}
-                            <tr>
-                                <td>
-                                    <strong style="color: #111827;">{{ b.name }}</strong>
-                                    <div style="font-size: 12px; font-family: monospace; color: #6b7280; margin-top: 4px;">ID: {{ b.id }}</div>
-                                </td>
-                                <td>
-                                    <div style="font-weight: 500;">{{ b.owner }}</div>
-                                </td>
-                                <td>
-                                    {% if b.docs > 0 %}
-                                        <span class="tag tag-blue">{{ b.docs }} Files Indexed</span>
-                                    {% else %}
-                                        <span class="tag tag-gray">0 Files</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if b.leads_today > 0 %}
-                                        <span class="tag tag-green" style="font-size: 12px;">+{{ b.leads_today }} Today</span>
-                                    {% else %}
-                                        <span style="color: #9ca3af; font-size: 13px;">0</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="usage-bar-bg">
-                                        <div class="usage-bar-fill" style="width: {{ (b.leads / 100 * 100) if b.leads < 100 else 100 }}%;"></div>
-                                    </div>
-                                    <strong style="font-size: 14px; color: #111827;">{{ b.leads }}</strong>
-                                </td>
-                                
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="pane-bots" class="sa-pane">
-                <div class="premium-table-wrap">
-                    <table class="p-table">
-                        <thead>
-                            <tr>
-                                <th>Bot Entity</th>
-                                <th>Owner & Context</th>
-                                <th>Knowledge Base</th>
-                                <th>Scrape Jobs</th>
-                                <th>Interactions</th>
-                                <th>Store ID</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for b in enriched_bots %}
-                            <tr>
-                                <td>
-                                    <strong style="color: #111827;">{{ b.name }}</strong>
-                                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Type: <span style="text-transform: capitalize;">{{ b.type }}</span></div>
-                                </td>
-                                <td>
-                                    <div style="font-weight: 500;">{{ b.owner }}</div>
-                                </td>
-                                <td>
-                                    {% if b.docs > 0 %}<span class="tag tag-blue">{{ b.docs }} Files Ingested</span>
-                                    {% else %}<span class="tag tag-gray">Empty</span>{% endif %}
-                                </td>
-                                <td>
-                                    {% if b.scrapes > 0 %}<span class="tag tag-purple">{{ b.scrapes }} URLs Indexed</span>
-                                    {% else %}<span style="color: #9ca3af;">—</span>{% endif %}
-                                </td>
-                                <td>
-                                    <strong style="font-size: 16px; color: #111827;">{{ b.leads }}</strong>
-                                </td>
-                                <td style="font-family: monospace; font-size: 12px; color: #9ca3af;">{{ b.store_id[:12] if b.store_id else 'None' }}...</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="pane-users" class="sa-pane">
-                <div class="premium-table-wrap">
-                    <table class="p-table">
-                        <thead>
-                            <tr>
-                                <th>User Profile</th>
-                                <th>Role</th>
-                                <th>Plan</th>
-                                <th>Owned Bots</th>
-                                <th>Traffic</th>
-                                <th>Manage Plan</th>
-                                <th>Contact</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for u in enriched_users %}
-                            <tr>
-                                <td>
-                                    <strong style="color: #111827;">{{ u.name }}</strong>
-                                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">{{ u.email }}</div>
-                                </td>
-                                <td>
-                                    {% if u.role == 'super_admin' %}<span class="tag tag-purple">Creator Mode</span>
-                                    {% else %}<span class="tag tag-gray" style="text-transform: capitalize;">{{ u.role }}</span>{% endif %}
-                                </td>
-                                <td>
-                                    {% if u.plan == 'pro' %}
-                                        <span class="tag" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">Pro</span>
-                                    {% elif u.plan == 'growth' %}
-                                        <span class="tag tag-purple">Growth</span>
-                                    {% elif u.plan == 'starter' %}
-                                        <span class="tag tag-blue">Starter</span>
-                                    {% else %}
-                                        <span class="tag tag-gray">Free</span>
-                                    {% endif %}
-                                    {% if u.subscription_status == 'canceled' %}
-                                        <div style="font-size: 10px; color: #dc2626; margin-top: 3px;">canceled</div>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <strong>{{ u.bot_count }}</strong> Deployed
-                                </td>
-                                <td>
-                                    <span class="tag tag-green">{{ u.lead_count }} Requests</span>
-                                </td>
-                                <td>
-                                    {% if u.role == 'super_admin' %}
-                                        <span style="color:#9ca3af; font-size:12px;">—</span>
-                                    {% else %}
-                                    <div style="display: flex; gap: 6px; align-items: center;">
-                                        <select id="plan-select-{{ u.id }}" class="sa-plan-select"
-                                            style="padding: 5px 8px; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 12px; background: #fff;">
-                                            <option value="free" {% if u.plan == 'free' %}selected{% endif %}>Free</option>
-                                            <option value="starter" {% if u.plan == 'starter' %}selected{% endif %}>Starter</option>
-                                            <option value="growth" {% if u.plan == 'growth' %}selected{% endif %}>Growth</option>
-                                            <option value="pro" {% if u.plan == 'pro' %}selected{% endif %}>Pro</option>
-                                        </select>
-                                        <button class="tag tag-purple" style="cursor: pointer; border: none;"
-                                            onclick="upgradeUser({{ u.id }}, '{{ u.name|e }}')">Apply</button>
-                                    </div>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if u.role == 'super_admin' %}
-                                        <span style="color:#9ca3af; font-size:12px;">—</span>
-                                    {% else %}
-                                    <button class="tag tag-blue" style="cursor: pointer; border: none;"
-                                        onclick="openEmailModal({{ u.id }}, '{{ u.name|e }}', '{{ u.email|e }}')">✉ Email</button>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="pane-leads" class="sa-pane">
-                <div class="premium-table-wrap">
-                    <table class="p-table">
-                        <thead>
-                            <tr>
-                                <th>Interaction ID</th>
-                                <th>Target Bot</th>
-                                <th>Payload Name</th>
-                                <th>Payload Email</th>
-                                <th>Lead Quality</th>
-                                <th>Timestamp (UTC)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for l in recent_raw_leads %}
-                            <tr>
-                                <td style="font-family: monospace; color: #9ca3af;">#{{ l.id }}</td>
-                                <td style="font-weight: 500; color: #8b5cf6;">Bot {{ l.bot_id }}</td>
-                                <td style="color: #111827; font-weight: 500;">{{ l.name }}</td>
-                                <td>{{ l.email }}</td>
-                                
-                                <td>
-                                    {% set priority = l.custom_data.get('Priority', 'Low') if l.custom_data else 'Low' %}
-                                    {% if priority == 'High' %}
-                                        <span class="tag tag-green">High</span>
-                                    {% elif priority == 'Medium' %}
-                                        <span class="tag tag-blue">Medium</span>
-                                    {% else %}
-                                        <span class="tag tag-gray">Low</span>
-                                    {% endif %}
-                                </td>
-
-                                <td style="font-size: 13px; color: #6b7280;">{{ l.captured_at.strftime('%Y-%m-%d %H:%M') if l.captured_at else 'Unknown' }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="pane-feedbacks" class="sa-pane">
-                
-               <div class="metrics-grid" style="margin-bottom: 20px;">
-    <div class="metric-card">
-        <div class="m-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-        </div>
-        <div class="m-value" style="display: flex; align-items: baseline; gap: 4px;">
-            {{ "%.1f"|format(avg_rating) if avg_rating else "N/A" }} 
-            <span style="font-size: 14px; color: #9ca3af; font-weight: normal;">/ 5.0</span>
-        </div>
-        <div class="m-label">Platform Average Rating</div>
+<div class="sa-wrapper">
+  <!-- ═══ HEADER ═══ -->
+  <header class="sa-header">
+    <div class="sa-brand">
+      <span class="sa-brand-dot"></span>
+      <h1>Bubbl.ooo &middot; Super Admin</h1>
     </div>
-
-    <div class="metric-card">
-        <div class="m-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        </div>
-        <div class="m-value">{{ feedbacks|length if feedbacks else 0 }}</div>
-        <div class="m-label">Total Feedbacks</div>
+    <div class="sa-header-right">
+      <span class="sa-clock" id="sa-ist-clock">--:--:-- IST</span>
+      <button class="sa-btn-refresh" onclick="location.reload()">
+        &#8635; Refresh
+      </button>
     </div>
-</div>
+  </header>
 
-                <div class="premium-table-wrap">
-                    <table class="p-table" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Date (UTC)</th>
-                                <th>Target Bot</th>
-                                <th>User / Lead Profile</th>
-                                <th>Rating</th>
-                                <th>User Comment</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for fb in feedbacks %}
-                            <tr>
-                                <td style="font-size: 13px; color: #6b7280; white-space: nowrap;">
-                                    {{ fb.created_at.strftime('%Y-%m-%d %H:%M') if fb.created_at else 'N/A' }}
-                                </td>
-                                <td>
-                                    <span class="tag tag-purple">{{ fb.bot_name }}</span>
-                                </td>
-                                <td>
-                                    {% if fb.lead_name %}
-                                        <strong style="color: #111827;">{{ fb.lead_name }}</strong>
-                                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">{{ fb.lead_email }}</div>
-                                    {% else %}
-                                        <span style="color: #9ca3af; font-style: italic;">Anonymous Chat</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span style="color: #f59e0b; font-size: 18px; letter-spacing: 2px;">
-                                        {% set safe_rating = fb.rating if fb.rating else 0 %}
-                                        {% for i in range(safe_rating) %}★{% endfor %}{% for i in range(5 - safe_rating) %}☆{% endfor %}
-                                    </span>
-                                </td>
-                                <td style="line-height: 1.5; color: #4b5563;">
-                                    {{ fb.comment or '<span style="color:#9ca3af; font-style:italic;">No comment left</span>'|safe }}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: #9ca3af; padding: 3rem;">No feedback collected yet.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-        </div>
-    </main>
-</div>
+  <!-- ═══ TAB BAR ═══ -->
+  <nav class="sa-tabs">
+    <button class="sa-tab-btn active" data-pane="pane-overview">&#x1F4CA; Overview</button>
+    <button class="sa-tab-btn" data-pane="pane-revenue">&#x1F4B0; Revenue</button>
+    <button class="sa-tab-btn" data-pane="pane-users">&#x1F465; Users</button>
+    <button class="sa-tab-btn" data-pane="pane-bots">&#x1F916; Bots</button>
+    <button class="sa-tab-btn" data-pane="pane-api">&#x1F4C8; API</button>
+    <button class="sa-tab-btn" data-pane="pane-leads">&#x1F4AC; Leads</button>
+    <button class="sa-tab-btn" data-pane="pane-feedbacks">&#x2B50; Feedback</button>
+  </nav>
 
-<!-- ═══ SUPER ADMIN ACTION MODAL (plan upgrade result + custom email) ═══ -->
-<div id="sa-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:100000; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:#fff; border-radius:16px; max-width:460px; width:100%; padding:28px; box-shadow:0 24px 60px rgba(0,0,0,0.25);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 id="sa-modal-title" style="margin:0; font-size:18px; color:#111827;">Send Email</h3>
-      <button onclick="closeSaModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#6b7280;">✕</button>
-    </div>
-    <div id="sa-modal-body"></div>
+
+  <!-- ═══ DATE FILTER BAR ═══ -->
+  <div class="sa-filter-bar">
+    <label>Period:</label>
+    <select id="date-preset" class="sa-select" onchange="applyPreset(this.value)">
+      <option value="today" {% if current_period == 'today' %}selected{% endif %}>Today</option>
+      <option value="week" {% if current_period == 'week' %}selected{% endif %}>7 Days</option>
+      <option value="month" {% if current_period == 'month' %}selected{% endif %}>30 Days</option>
+      <option value="quarter" {% if current_period == 'quarter' %}selected{% endif %}>Quarter</option>
+      <option value="year" {% if current_period == 'year' %}selected{% endif %}>Year</option>
+      <option value="all" {% if current_period == 'all' %}selected{% endif %}>All</option>
+      {% if is_custom %}<option value="custom" selected>Custom</option>{% endif %}
+    </select>
+    <input type="date" id="custom-start" class="sa-date-input" value="{{ start_date }}">
+    <span style="color: var(--sa-text-dim);">&rarr;</span>
+    <input type="date" id="custom-end" class="sa-date-input" value="{{ end_date }}">
+    <button class="sa-btn-apply" onclick="applyCustomRange()">Apply</button>
+    <button class="sa-btn-migrate" onclick="runMigration()">&#x1F527; Run DB Migration</button>
   </div>
-</div>
+
+
+  <!-- ═══ CONTENT AREA ═══ -->
+  <div class="sa-content">
+
+    <!-- ══ OVERVIEW PANE ══ -->
+    <div id="pane-overview" class="sa-pane active">
+      <div class="sa-stats-grid">
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:var(--sa-purple-dim); color:#a78bfa;">&#x1F465;</div>
+          <div class="sa-stat-value">{{ total_users }}</div>
+          <div class="sa-stat-label">Total Users</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa;">&#x1F916;</div>
+          <div class="sa-stat-value">{{ total_bots }}</div>
+          <div class="sa-stat-label">Deployed Bots</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:var(--sa-green-dim); color:#4ade80;">&#x1F4AC;</div>
+          <div class="sa-stat-value">{{ total_leads }}</div>
+          <div class="sa-stat-label">Leads (Period)</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(245,158,11,0.15); color:#fbbf24;">&#x1F4C4;</div>
+          <div class="sa-stat-value">{{ total_docs }}</div>
+          <div class="sa-stat-label">Documents</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:var(--sa-green-dim); color:#4ade80;">&#x1F4B0;</div>
+          <div class="sa-stat-value">{{ active_subscriptions }}</div>
+          <div class="sa-stat-label">Paid Accounts</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(236,72,153,0.15); color:#f472b6;">&#x20B9;</div>
+          <div class="sa-stat-value">&#8377;{{ '{:,.0f}'.format(mrr) }}</div>
+          <div class="sa-stat-label">MRR</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(14,165,233,0.15); color:#38bdf8;">&#x1F4C8;</div>
+          <div class="sa-stat-value">{{ conversion_rate }}%</div>
+          <div class="sa-stat-label">Conversion Rate</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(139,92,246,0.15); color:#a78bfa;">&#x26A1;</div>
+          <div class="sa-stat-value">{{ total_hits_today }}</div>
+          <div class="sa-stat-label">Hits Today</div>
+        </div>
+      </div>
+
+
+      <!-- Chart -->
+      <div class="sa-chart-box">
+        <div class="sa-chart-header">
+          <h3>Lead Capture Trend ({% if current_period == 'today' %}Today{% else %}{{ days_count }} Days{% endif %})</h3>
+          <span class="sa-badge sa-badge-green">+{{ total_hits_today }} today</span>
+        </div>
+        <div style="height: 280px; width: 100%;">
+          <canvas id="trafficChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Top Bots -->
+      {% if bot_rankings %}
+      <div class="sa-table-wrap">
+        <div class="sa-table-title">Top Performing Bots (by leads)</div>
+        <div class="sa-table-scroll">
+          <table class="sa-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Bot</th><th>Owner</th><th>Leads</th><th>Today</th><th>Docs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in bot_rankings %}{% if b.leads > 0 %}
+              <tr>
+                <td class="sa-text-purple sa-font-bold">{{ loop.index }}</td>
+                <td class="sa-text-white sa-font-bold">{{ b.name }}</td>
+                <td>{{ b.owner }}</td>
+                <td class="sa-text-green sa-font-bold">{{ b.leads }}</td>
+                <td>{% if b.leads_today > 0 %}<span class="sa-badge sa-badge-green">+{{ b.leads_today }}</span>{% else %}0{% endif %}</td>
+                <td>{{ b.docs }}</td>
+              </tr>
+              {% endif %}{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+
+    <!-- ══ REVENUE PANE ══ -->
+    <div id="pane-revenue" class="sa-pane">
+      <div class="sa-stats-grid">
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:var(--sa-green-dim); color:#4ade80;">&#x20B9;</div>
+          <div class="sa-stat-value">&#8377;{{ '{:,.0f}'.format(mrr) }}</div>
+          <div class="sa-stat-label">Monthly Recurring Revenue</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa;">&#x1F4C8;</div>
+          <div class="sa-stat-value">&#8377;{{ '{:,.0f}'.format(arr) }}</div>
+          <div class="sa-stat-label">Annual Run Rate (ARR)</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:var(--sa-purple-dim); color:#a78bfa;">&#x1F4B3;</div>
+          <div class="sa-stat-value">{{ active_subscriptions }}</div>
+          <div class="sa-stat-label">Active Subscriptions</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(245,158,11,0.15); color:#fbbf24;">&#x1F4B5;</div>
+          <div class="sa-stat-value">&#8377;{{ '{:,.2f}'.format(total_revenue) }}</div>
+          <div class="sa-stat-label">Total Collected (Lifetime)</div>
+        </div>
+      </div>
+
+      <!-- Plan Breakdown -->
+      <div class="sa-table-wrap">
+        <div class="sa-table-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Revenue by Plan (MRR Breakdown)</span>
+          <span class="sa-badge sa-badge-green">&#8377;{{ '{:,.2f}'.format(revenue_in_range) }} in period</span>
+        </div>
+        <div class="sa-table-scroll">
+          <table class="sa-table">
+            <thead><tr><th>Plan</th><th>Subscribers</th><th>Price/mo</th><th>MRR</th></tr></thead>
+            <tbody>
+              {% for row in revenue_by_plan %}
+              <tr>
+                <td class="sa-text-white sa-font-bold">{{ row.plan }}</td>
+                <td>{{ row.count }}</td>
+                <td>&#8377;{{ '{:,.0f}'.format(row.price) }}</td>
+                <td class="sa-text-green sa-font-bold">&#8377;{{ '{:,.0f}'.format(row.mrr) }}</td>
+              </tr>
+              {% endfor %}
+              <tr style="border-top: 1px solid var(--sa-card-border);">
+                <td class="sa-text-white sa-font-bold">Total</td>
+                <td class="sa-font-bold">{{ active_subscriptions }}</td>
+                <td>&mdash;</td>
+                <td class="sa-text-green sa-font-bold">&#8377;{{ '{:,.0f}'.format(mrr) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+      <!-- Payment History -->
+      <div class="sa-table-wrap">
+        <div class="sa-table-title">Payment History ({{ recent_payments|length }} transactions)</div>
+        <div class="sa-table-scroll">
+          <table class="sa-table">
+            <thead><tr><th>Date</th><th>Customer</th><th>Plan</th><th>Amount</th><th>Transaction</th></tr></thead>
+            <tbody>
+              {% for pm in recent_payments %}
+              <tr>
+                <td class="sa-text-sm">{{ pm.created_at.strftime('%b %d, %Y %H:%M') if pm.created_at else '—' }}</td>
+                <td>{{ pm.email }}</td>
+                <td><span class="sa-badge sa-badge-purple">{{ pm.plan }}</span></td>
+                <td class="sa-text-green sa-font-bold">&#8377;{{ '{:,.2f}'.format(pm.amount) }}</td>
+                <td class="sa-font-mono sa-text-dim">{{ pm.transaction_id }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--sa-text-dim);">No payments recorded yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ USERS PANE ══ -->
+    <div id="pane-users" class="sa-pane">
+      <div class="sa-table-wrap">
+        <div class="sa-table-title">Platform Users ({{ enriched_users|length }})</div>
+        <div class="sa-table-scroll">
+          <table class="sa-table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Plan</th><th>Bots</th><th>Leads</th><th>Change Plan</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {% for u in enriched_users %}
+              <tr>
+                <td class="sa-text-white sa-font-bold">{{ u.name }}</td>
+                <td class="sa-text-sm">{{ u.email }}</td>
+                <td>
+                  {% if u.plan == 'pro' %}<span class="sa-badge sa-badge-yellow">Pro</span>
+                  {% elif u.plan == 'growth' %}<span class="sa-badge sa-badge-purple">Growth</span>
+                  {% elif u.plan == 'starter' %}<span class="sa-badge sa-badge-blue">Starter</span>
+                  {% else %}<span class="sa-badge sa-badge-gray">Free</span>{% endif %}
+                  {% if u.subscription_status == 'canceled' %}<div class="sa-text-sm" style="color:var(--sa-red); margin-top:2px;">canceled</div>{% endif %}
+                </td>
+                <td>{{ u.bot_count }}</td>
+                <td>{{ u.lead_count }}</td>
+                <td>
+                  {% if u.role != 'super_admin' %}
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <select id="plan-select-{{ u.id }}" class="sa-plan-select">
+                      <option value="free" {% if u.plan == 'free' %}selected{% endif %}>Free</option>
+                      <option value="starter" {% if u.plan == 'starter' %}selected{% endif %}>Starter</option>
+                      <option value="growth" {% if u.plan == 'growth' %}selected{% endif %}>Growth</option>
+                      <option value="pro" {% if u.plan == 'pro' %}selected{% endif %}>Pro</option>
+                    </select>
+                    <button class="sa-btn sa-btn-purple" onclick="upgradeUser({{ u.id }}, '{{ u.name|e }}')">Apply</button>
+                  </div>
+                  {% else %}<span class="sa-text-dim sa-text-sm">&mdash;</span>{% endif %}
+                </td>
+                <td>
+                  {% if u.role != 'super_admin' %}
+                  <button class="sa-btn sa-btn-blue" onclick="openEmailModal({{ u.id }}, '{{ u.name|e }}', '{{ u.email|e }}')">&#x2709; Email</button>
+                  {% else %}<span class="sa-text-dim sa-text-sm">&mdash;</span>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ BOTS PANE ══ -->
+    <div id="pane-bots" class="sa-pane">
+      <div class="sa-table-wrap">
+        <div class="sa-table-title">Bot Ecosystem ({{ enriched_bots|length }} bots)</div>
+        <div class="sa-table-scroll">
+          <table class="sa-table">
+            <thead>
+              <tr><th>Name</th><th>Owner</th><th>Type</th><th>Docs</th><th>Scrapes</th><th>Interactions</th><th>Store ID</th></tr>
+            </thead>
+            <tbody>
+              {% for b in enriched_bots %}
+              <tr>
+                <td class="sa-text-white sa-font-bold">{{ b.name }}</td>
+                <td>{{ b.owner }}</td>
+                <td><span class="sa-badge sa-badge-gray" style="text-transform:capitalize;">{{ b.type }}</span></td>
+                <td>{% if b.docs > 0 %}<span class="sa-badge sa-badge-blue">{{ b.docs }}</span>{% else %}0{% endif %}</td>
+                <td>{% if b.scrapes > 0 %}<span class="sa-badge sa-badge-purple">{{ b.scrapes }}</span>{% else %}&mdash;{% endif %}</td>
+                <td class="sa-font-bold">{{ b.leads }}</td>
+                <td class="sa-font-mono sa-text-dim">{{ b.store_id[:12] if b.store_id else 'None' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ API PANE ══ -->
+    <div id="pane-api" class="sa-pane">
+      <div class="sa-stats-grid">
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:var(--sa-purple-dim); color:#a78bfa;">&#x1F4A0;</div>
+          <div class="sa-stat-value">{{ "{:,}".format(total_tokens) }}</div>
+          <div class="sa-stat-label">Gemini Tokens Used</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa;">&#x1F504;</div>
+          <div class="sa-stat-value">{{ "{:,}".format(total_interactions) }}</div>
+          <div class="sa-stat-label">Total Interactions</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:var(--sa-green-dim); color:#4ade80;">&#x26A1;</div>
+          <div class="sa-stat-value">{{ avg_latency_ms }}ms</div>
+          <div class="sa-stat-label">Avg Latency</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(239,68,68,0.12); color:#f87171;">&#x1F5A5;</div>
+          <div class="sa-stat-value" style="font-size:18px;">{{ system_health.cpu }} / {{ system_health.memory }}</div>
+          <div class="sa-stat-label">CPU / Memory</div>
+        </div>
+      </div>
+
+      <div class="sa-table-wrap">
+        <div class="sa-table-title">Bot Resource Consumption</div>
+        <div class="sa-table-scroll">
+          <table class="sa-table">
+            <thead>
+              <tr><th>Bot</th><th>Owner</th><th>Docs Indexed</th><th>Today</th><th>Lifetime Leads</th></tr>
+            </thead>
+            <tbody>
+              {% for b in enriched_bots %}
+              <tr>
+                <td>
+                  <span class="sa-text-white sa-font-bold">{{ b.name }}</span>
+                  <div class="sa-font-mono sa-text-dim" style="margin-top:2px;">ID: {{ b.id }}</div>
+                </td>
+                <td>{{ b.owner }}</td>
+                <td>{% if b.docs > 0 %}<span class="sa-badge sa-badge-blue">{{ b.docs }} files</span>{% else %}<span class="sa-text-dim">0</span>{% endif %}</td>
+                <td>{% if b.leads_today > 0 %}<span class="sa-badge sa-badge-green">+{{ b.leads_today }}</span>{% else %}0{% endif %}</td>
+                <td class="sa-font-bold">{{ b.leads }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ LEADS PANE ══ -->
+    <div id="pane-leads" class="sa-pane">
+      <div class="sa-table-wrap">
+        <div class="sa-table-title">Recent Interactions ({{ recent_raw_leads|length }})</div>
+        <div class="sa-table-scroll">
+          <table class="sa-table">
+            <thead>
+              <tr><th>ID</th><th>Bot</th><th>Name</th><th>Email</th><th>Priority</th><th>Timestamp</th></tr>
+            </thead>
+            <tbody>
+              {% for l in recent_raw_leads %}
+              <tr>
+                <td class="sa-font-mono sa-text-dim">#{{ l.id }}</td>
+                <td class="sa-text-purple">Bot {{ l.bot_id }}</td>
+                <td class="sa-text-white sa-font-bold">{{ l.name }}</td>
+                <td>{{ l.email }}</td>
+                <td>
+                  {% set priority = l.custom_data.get('Priority', 'Low') if l.custom_data else 'Low' %}
+                  {% if priority == 'High' %}<span class="sa-badge sa-badge-green">High</span>
+                  {% elif priority == 'Medium' %}<span class="sa-badge sa-badge-blue">Medium</span>
+                  {% else %}<span class="sa-badge sa-badge-gray">Low</span>{% endif %}
+                </td>
+                <td class="sa-text-sm sa-text-dim">{{ l.captured_at.strftime('%Y-%m-%d %H:%M') if l.captured_at else 'N/A' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ FEEDBACKS PANE ══ -->
+    <div id="pane-feedbacks" class="sa-pane">
+      <div class="sa-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:rgba(245,158,11,0.15); color:#fbbf24;">&#x2B50;</div>
+          <div class="sa-stat-value">{{ "%.1f"|format(avg_rating) if avg_rating else "N/A" }}<span style="font-size:14px; color:var(--sa-text-dim); font-weight:normal;"> / 5.0</span></div>
+          <div class="sa-stat-label">Avg Rating</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-icon" style="background:var(--sa-purple-dim); color:#a78bfa;">&#x1F4AC;</div>
+          <div class="sa-stat-value">{{ feedbacks|length if feedbacks else 0 }}</div>
+          <div class="sa-stat-label">Total Feedbacks</div>
+        </div>
+      </div>
+
+      <div class="sa-table-wrap">
+        <div class="sa-table-title">Feedback Entries</div>
+        <div class="sa-table-scroll">
+          <table class="sa-table">
+            <thead>
+              <tr><th>Date</th><th>Bot</th><th>User</th><th>Rating</th><th>Comment</th></tr>
+            </thead>
+            <tbody>
+              {% for fb in feedbacks %}
+              <tr>
+                <td class="sa-text-sm sa-text-dim" style="white-space:nowrap;">{{ fb.created_at.strftime('%Y-%m-%d %H:%M') if fb.created_at else 'N/A' }}</td>
+                <td><span class="sa-badge sa-badge-purple">{{ fb.bot_name }}</span></td>
+                <td>
+                  {% if fb.lead_name %}<span class="sa-text-white sa-font-bold">{{ fb.lead_name }}</span><div class="sa-text-sm sa-text-dim">{{ fb.lead_email }}</div>
+                  {% else %}<span class="sa-text-dim" style="font-style:italic;">Anonymous</span>{% endif %}
+                </td>
+                <td style="color:#fbbf24; font-size:16px; letter-spacing:2px;">
+                  {% set safe_rating = fb.rating if fb.rating else 0 %}
+                  {% for i in range(safe_rating) %}&#x2605;{% endfor %}{% for i in range(5 - safe_rating) %}&#x2606;{% endfor %}
+                </td>
+                <td style="max-width:300px; line-height:1.5;">{{ fb.comment if fb.comment else '<span class="sa-text-dim" style="font-style:italic;">No comment</span>'|safe }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--sa-text-dim);">No feedback collected yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end .sa-content -->
+
+
+  <!-- ═══ MODAL ═══ -->
+  <div id="sa-modal-overlay" class="sa-modal-overlay">
+    <div class="sa-modal">
+      <div class="sa-modal-header">
+        <h3 id="sa-modal-title">Action</h3>
+        <button class="sa-modal-close" onclick="closeSaModal()">&times;</button>
+      </div>
+      <div class="sa-modal-body" id="sa-modal-body"></div>
+    </div>
+  </div>
+
+</div><!-- end .sa-wrapper -->
+
 
 <script>
-  var SA_EMAIL_USER = { id: null, name: '', email: '' };
-
-  function closeSaModal() {
-    document.getElementById('sa-modal-overlay').style.display = 'none';
-  }
-
-  function openSaModal(title, bodyHtml) {
-    document.getElementById('sa-modal-title').innerHTML = title;
-    document.getElementById('sa-modal-body').innerHTML = bodyHtml;
-    document.getElementById('sa-modal-overlay').style.display = 'flex';
-  }
-
-  // --- Change / upgrade a user's plan ---
-  function upgradeUser(userId, userName) {
-    var sel = document.getElementById('plan-select-' + userId);
-    var plan = sel ? sel.value : null;
-    if (!plan) return;
-    if (!confirm('Set ' + userName + "'s plan to " + plan.charAt(0).toUpperCase() + plan.slice(1) + '? They will be emailed about the change.')) return;
-
-    fetch('/super_admin/upgrade_user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, plan: plan })
-    })
-    .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
-    .then(function(res){
-      if (res.ok && res.d.success) {
-        var mailNote = res.d.emailed
-          ? '<p style="color:#16a34a; font-size:13px;">✓ Confirmation email sent to ' + res.d.email + '</p>'
-          : '<p style="color:#d97706; font-size:13px;">Plan changed, but the email could not be sent (check SMTP).</p>';
-        openSaModal('Plan Updated',
-          '<p style="color:#4b5563; font-size:14px;">' + userName + ' is now on the <strong>' + res.d.plan_label + '</strong> plan.</p>'
-          + mailNote
-          + '<button onclick="location.reload()" style="margin-top:12px; padding:10px 20px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Refresh</button>');
-      } else {
-        openSaModal('Error', '<p style="color:#dc2626; font-size:14px;">' + (res.d.error || 'Something went wrong.') + '</p>');
-      }
-    })
-    .catch(function(){
-      openSaModal('Error', '<p style="color:#dc2626; font-size:14px;">Network error. Please try again.</p>');
-    });
-  }
-
-  // --- Compose a custom email to a user ---
-  function openEmailModal(userId, userName, userEmail) {
-    SA_EMAIL_USER = { id: userId, name: userName, email: userEmail };
-    openSaModal('Email ' + userName,
-      '<p style="color:#6b7280; font-size:13px; margin:0 0 12px;">To: <strong>' + userEmail + '</strong></p>'
-      + '<input id="sa-email-subject" placeholder="Subject" style="width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; margin-bottom:10px;">'
-      + '<textarea id="sa-email-message" placeholder="Write your message..." rows="6" style="width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; font-size:14px; resize:vertical;"></textarea>'
-      + '<div id="sa-email-status" style="font-size:13px; margin-top:8px;"></div>'
-      + '<button id="sa-email-send" onclick="sendCustomEmail()" style="margin-top:12px; padding:10px 22px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Send Email</button>');
-  }
-
-  function sendCustomEmail() {
-    var subject = document.getElementById('sa-email-subject').value.trim();
-    var message = document.getElementById('sa-email-message').value.trim();
-    var statusEl = document.getElementById('sa-email-status');
-    var btn = document.getElementById('sa-email-send');
-    if (!subject || !message) {
-      statusEl.innerHTML = '<span style="color:#dc2626;">Subject and message are both required.</span>';
-      return;
-    }
-    btn.disabled = true; btn.innerText = 'Sending...';
-    fetch('/super_admin/send_email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: SA_EMAIL_USER.id, subject: subject, message: message })
-    })
-    .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
-    .then(function(res){
-      if (res.ok && res.d.success) {
-        statusEl.innerHTML = '<span style="color:#16a34a;">✓ Email sent to ' + res.d.email + '</span>';
-        btn.innerText = 'Sent ✓';
-      } else {
-        statusEl.innerHTML = '<span style="color:#dc2626;">' + (res.d.error || 'Failed to send.') + '</span>';
-        btn.disabled = false; btn.innerText = 'Send Email';
-      }
-    })
-    .catch(function(){
-      statusEl.innerHTML = '<span style="color:#dc2626;">Network error.</span>';
-      btn.disabled = false; btn.innerText = 'Send Email';
-    });
-  }
-
-  // Close modal on overlay click
-  document.getElementById('sa-modal-overlay').addEventListener('click', function(e){
-    if (e.target === this) closeSaModal();
+// ═══ TAB SWITCHING ═══
+document.querySelectorAll('.sa-tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.sa-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.sa-pane').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.pane).classList.add('active');
   });
-</script>
-
-<script>
-    function switchPane(paneId, title) {
-        document.getElementById('header-title').innerText = title;
-        
-        document.querySelectorAll('.sa-tab').forEach(el => el.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-
-        document.querySelectorAll('.sa-pane').forEach(el => el.classList.remove('active'));
-        document.getElementById(paneId).classList.add('active');
-
-        document.getElementById('sa-scroll-container').scrollTop = 0;
-    }
-
-   document.addEventListener("DOMContentLoaded", function() {
-    const rawChartData = {{ chart_data | tojson | safe }};
-    const ctx = document.getElementById('trafficChart').getContext('2d');
-    
-    new Chart(ctx, {
-        type: 'line', // Changed to Line Graph
-        data: {
-            labels: rawChartData.labels,
-            datasets: [{
-                label: 'Interactions',
-                data: rawChartData.data,
-                borderColor: '#8b5cf6',
-                backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
 });
 
+// ═══ LIVE IST CLOCK ═══
+function updateClock() {
+  var now = new Date();
+  var ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+  var h = ist.getUTCHours().toString().padStart(2, '0');
+  var m = ist.getUTCMinutes().toString().padStart(2, '0');
+  var s = ist.getUTCSeconds().toString().padStart(2, '0');
+  document.getElementById('sa-ist-clock').textContent = h + ':' + m + ':' + s + ' IST';
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ═══ DATE FILTERS ═══
 function applyPreset(val) {
-    if(val === 'custom') return; // Don't reload if they just clicked the label
-    window.location.href = `?period=${val}`;
+  if (val === 'custom') return;
+  window.location.href = '?period=' + val;
 }
 
 function applyCustomRange() {
-    const start = document.getElementById('custom-start').value;
-    const end = document.getElementById('custom-end').value;
-    if (!start || !end) return showModal('Please select both dates.', 'error');
-    window.location.href = `?start=${start}&end=${end}`;
+  var start = document.getElementById('custom-start').value;
+  var end = document.getElementById('custom-end').value;
+  if (!start || !end) { alert('Please select both dates.'); return; }
+  window.location.href = '?start=' + start + '&end=' + end;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  if (window.innerWidth <= 950) {
-    const sidebar = document.querySelector('.sa-sidebar');
-    if (sidebar && !document.getElementById('sa-mobile-toggle')) {
-      const toggleBtn = document.createElement('button');
-      toggleBtn.id = 'sa-mobile-toggle';
-      toggleBtn.className = 'sa-mobile-toggle';
-      toggleBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
-      document.body.appendChild(toggleBtn);
 
-      toggleBtn.addEventListener('click', () => {
-        const isOpen = sidebar.classList.toggle('mobile-open');
-        toggleBtn.classList.toggle('mobile-open');
-        if (isOpen) {
-          toggleBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
-          document.body.style.overflow = 'hidden';
-        } else {
-          toggleBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
-          document.body.style.overflow = '';
-        }
-      });
-
-      sidebar.querySelectorAll('.sa-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          if (sidebar.classList.contains('mobile-open')) {
-            toggleBtn.click();
-          }
-        });
-      });
-    }
-  }
+// ═══ MODAL ═══
+function closeSaModal() {
+  document.getElementById('sa-modal-overlay').classList.remove('visible');
+}
+function openSaModal(title, bodyHtml) {
+  document.getElementById('sa-modal-title').textContent = title;
+  document.getElementById('sa-modal-body').innerHTML = bodyHtml;
+  document.getElementById('sa-modal-overlay').classList.add('visible');
+}
+document.getElementById('sa-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSaModal();
 });
 
+// ═══ UPGRADE USER ═══
+function upgradeUser(userId, userName) {
+  var sel = document.getElementById('plan-select-' + userId);
+  var plan = sel ? sel.value : null;
+  if (!plan) return;
+  if (!confirm('Set ' + userName + "'s plan to " + plan.charAt(0).toUpperCase() + plan.slice(1) + '?')) return;
+
+  fetch('/super_admin/upgrade_user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, plan: plan })
+  })
+  .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+  .then(function(res){
+    if (res.ok && res.d.success) {
+      var msg = '<p style="color:#4ade80; margin:0 0 12px;">' + userName + ' is now on <strong>' + res.d.plan_label + '</strong>.</p>';
+      if (res.d.emailed) msg += '<p style="color:var(--sa-text-muted); font-size:13px;">Confirmation email sent to ' + res.d.email + '</p>';
+      msg += '<button onclick="location.reload()" style="margin-top:16px; padding:10px 20px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Refresh</button>';
+      openSaModal('Plan Updated', msg);
+    } else {
+      openSaModal('Error', '<p style="color:#f87171;">' + (res.d.error || 'Something went wrong.') + '</p>');
+    }
+  })
+  .catch(function(){ openSaModal('Error', '<p style="color:#f87171;">Network error.</p>'); });
+}
+
+
+// ═══ EMAIL MODAL ═══
+var SA_EMAIL_USER = { id: null, name: '', email: '' };
+
+function openEmailModal(userId, userName, userEmail) {
+  SA_EMAIL_USER = { id: userId, name: userName, email: userEmail };
+  openSaModal('Email ' + userName,
+    '<p style="color:var(--sa-text-muted); font-size:13px; margin:0 0 12px;">To: <strong style="color:#fff;">' + userEmail + '</strong></p>'
+    + '<input id="sa-email-subject" placeholder="Subject" style="width:100%; box-sizing:border-box; padding:10px 14px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; background:rgba(255,255,255,0.05); color:#fff; font-size:14px; margin-bottom:12px; outline:none;">'
+    + '<textarea id="sa-email-message" placeholder="Write your message..." rows="5" style="width:100%; box-sizing:border-box; padding:10px 14px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; background:rgba(255,255,255,0.05); color:#fff; font-size:14px; resize:vertical; outline:none;"></textarea>'
+    + '<div id="sa-email-status" style="font-size:13px; margin-top:8px;"></div>'
+    + '<button id="sa-email-send" onclick="sendCustomEmail()" style="margin-top:12px; padding:10px 22px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Send Email</button>'
+  );
+}
+
+function sendCustomEmail() {
+  var subject = document.getElementById('sa-email-subject').value.trim();
+  var message = document.getElementById('sa-email-message').value.trim();
+  var statusEl = document.getElementById('sa-email-status');
+  var btn = document.getElementById('sa-email-send');
+  if (!subject || !message) { statusEl.innerHTML = '<span style="color:#f87171;">Subject and message required.</span>'; return; }
+  btn.disabled = true; btn.innerText = 'Sending...';
+  fetch('/super_admin/send_email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: SA_EMAIL_USER.id, subject: subject, message: message })
+  })
+  .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+  .then(function(res){
+    if (res.ok && res.d.success) {
+      statusEl.innerHTML = '<span style="color:#4ade80;">&#10003; Email sent to ' + res.d.email + '</span>';
+      btn.innerText = 'Sent ✓';
+    } else {
+      statusEl.innerHTML = '<span style="color:#f87171;">' + (res.d.error || 'Failed.') + '</span>';
+      btn.disabled = false; btn.innerText = 'Send Email';
+    }
+  })
+  .catch(function(){ statusEl.innerHTML = '<span style="color:#f87171;">Network error.</span>'; btn.disabled = false; btn.innerText = 'Send Email'; });
+}
+
+
+// ═══ DB MIGRATION ═══
+function runMigration() {
+  if (!confirm('Run database migration? This adds columns if missing.')) return;
+  openSaModal('Running Migration...', '<p style="color:var(--sa-text-muted);">Please wait...</p>');
+  fetch('/super_admin/migrate_db', { method: 'POST' })
+  .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+  .then(function(res){
+    if (res.ok && res.d.success) {
+      var html = '<p style="color:#4ade80; margin:0 0 12px;">Migration complete!</p><ul style="list-style:none; padding:0; margin:0;">';
+      res.d.results.forEach(function(r){
+        var color = r.startsWith('OK') ? '#4ade80' : '#fbbf24';
+        html += '<li style="font-size:12px; color:' + color + '; margin:4px 0; font-family:monospace;">' + r + '</li>';
+      });
+      html += '</ul>';
+      openSaModal('Migration Results', html);
+    } else {
+      openSaModal('Error', '<p style="color:#f87171;">' + (res.d.error || 'Migration failed.') + '</p>');
+    }
+  })
+  .catch(function(){ openSaModal('Error', '<p style="color:#f87171;">Network error.</p>'); });
+}
+
+// ═══ CHART ═══
+document.addEventListener("DOMContentLoaded", function() {
+  var rawChartData = {{ chart_data | tojson | safe }};
+  var ctx = document.getElementById('trafficChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: rawChartData.labels,
+      datasets: [{
+        label: 'Leads',
+        data: rawChartData.data,
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139, 92, 246, 0.08)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        pointBackgroundColor: '#8b5cf6'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6b7280', font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 11 } } }
+      }
+    }
+  });
+});
 </script>
 {% endblock %}
