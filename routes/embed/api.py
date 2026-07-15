@@ -323,14 +323,46 @@ def capture_lead():
     if not bot_id or not name or not email:
         return jsonify({"error": "Missing required fields"}), 400
 
+    # --- INPUT SANITIZATION (prevents prompt injection) ---
+    # Strip characters that could manipulate AI instructions
+    def sanitize_for_prompt(value, max_len=200):
+        """Remove prompt-injection patterns from user input before interpolating into AI prompt."""
+        if not value:
+            return ""
+        s = str(value)[:max_len]  # Length cap
+        # Remove patterns that could manipulate AI behavior
+        injection_patterns = [
+            'ignore previous', 'ignore above', 'disregard',
+            'new instructions', 'system:', 'assistant:',
+            'you are now', 'forget everything', 'override',
+            '[[', ']]', '{{', '}}',
+        ]
+        s_lower = s.lower()
+        for pattern in injection_patterns:
+            if pattern in s_lower:
+                s = s.replace(pattern, '').replace(pattern.upper(), '').replace(pattern.title(), '')
+        # Strip control characters and excessive whitespace
+        s = re.sub(r'[\x00-\x1f\x7f]', '', s)
+        s = re.sub(r'\s{3,}', ' ', s).strip()
+        return s
+
+    safe_name = sanitize_for_prompt(name, max_len=100)
+    safe_email = sanitize_for_prompt(email, max_len=120)
+    safe_phone = sanitize_for_prompt(phone, max_len=20)
+    # Custom data: sanitize each value, limit total size
+    safe_custom = {}
+    if isinstance(custom_data, dict):
+        for k, v in list(custom_data.items())[:10]:  # Max 10 fields
+            safe_custom[sanitize_for_prompt(k, 50)] = sanitize_for_prompt(str(v), 200)
+
     try:
         validation_prompt = f"""
         You are a strict data validator for a lead capture form.
         Evaluate this form submission:
-        Name: {name}
-        Email: {email}
-        Phone: {phone}
-        Custom Data: {custom_data}
+        Name: {safe_name}
+        Email: {safe_email}
+        Phone: {safe_phone}
+        Custom Data: {safe_custom}
         
         1. Check for obvious fakes, gibberish, or placeholders ('asdf', 'email@gmail.com', '1234567890', 'test', 'user').
         2. Score the intent. High (real, professional), Medium (standard data), Low (lazy/placeholder).
