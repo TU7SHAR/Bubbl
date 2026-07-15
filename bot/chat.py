@@ -47,31 +47,28 @@ PUBLIC_BOT_PERSONALITY = (
     "IMPORTANT: Answer questions using the information from your Knowledge Base (scraped site content).\n"
     "Your knowledge comes from the actual bubbl.ooo and app.bubbl.ooo websites.\n"
     "If something isn't in your knowledge base, say so honestly.\n\n"
-    "INTERACTIVE BUTTONS:\n"
-    "You can show clickable buttons below your message to help users navigate.\n"
-    "When relevant, append a BUTTONS tag at the END of your response (after your text).\n"
+    "INTERACTIVE BUTTONS (OPTIONAL):\n"
+    "You MAY show clickable buttons below your message to help users navigate.\n"
+    "Buttons are OPTIONAL — only use them when you're directing the user to a specific page.\n"
+    "ALWAYS answer the question FIRST with full information, then optionally add buttons.\n"
     "Format: [[BUTTONS: category:Label|URL, category:Label|URL]]\n\n"
-    "Available categories and their colors:\n"
-    "- pricing: for pricing/plans links (orange)\n"
-    "- action: for CTAs like register, create bot, start trial (green)\n"
-    "- info: for features, docs, how-it-works (blue)\n"
-    "- support: for contact, help, demo booking (purple)\n"
-    "- link: for external/general links (gray)\n\n"
-    "Available links you can use:\n"
-    "- https://bubbl.ooo/pricing.html — Pricing page\n"
-    "- https://app.bubbl.ooo/register — Sign up / Start free trial\n"
-    "- https://bubbl.ooo/features.html — Features overview\n"
-    "- https://bubbl.ooo/how-to.html — How it works guide\n"
-    "- https://bubbl.ooo/roadmap.html — Product roadmap\n"
-    "- https://bubbl.ooo/contact.html — Contact us\n"
-    "- https://bubbl.ooo — Main website\n\n"
+    "Available categories:\n"
+    "- pricing (orange) — only for pricing page\n"
+    "- action (green) — for sign up / register\n"
+    "- info (blue) — for features or how-to\n"
+    "- support (purple) — for contact/help\n"
+    "- link (gray) — general links\n\n"
+    "Available links (ONLY use these, do NOT invent URLs):\n"
+    "- https://bubbl.ooo — Main website\n"
+    "- https://app.bubbl.ooo/register — Sign up\n"
+    "- https://app.bubbl.ooo/login — Login\n\n"
     "BUTTON RULES:\n"
-    "- Show buttons when the user asks about pricing, features, getting started, or support\n"
-    "- Show 1-3 buttons max per response (don't overwhelm)\n"
-    "- Do NOT show buttons for simple greetings or casual chat\n"
+    "- ANSWER THE QUESTION FIRST. Buttons are a supplement, not a replacement.\n"
+    "- Only show buttons if the user would genuinely benefit from visiting a page\n"
+    "- Do NOT show buttons for greetings, casual chat, or when you already answered fully\n"
+    "- Max 1-2 buttons per response\n"
+    "- Do NOT make up URLs that don't exist\n"
     "- The buttons tag must be the LAST thing in your response\n"
-    "- Example: 'We have plans starting from free! Here are the details:\n\n"
-    "[[BUTTONS: pricing:View Pricing|https://bubbl.ooo/pricing.html, action:Start Free|https://app.bubbl.ooo/register]]'\n"
 )
 
 
@@ -116,7 +113,7 @@ def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=Non
                 system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_PERSONALITY
                 target_store_id = public_store_id  # Feed the scraped content as RAG
             else:
-                # Fallback: hardcoded knowledge only (no scrape configured yet)
+                # Fallback: no scrape configured yet — use personality prompt anyway
                 system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_PERSONALITY
             
         tools = []

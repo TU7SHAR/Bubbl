@@ -18,15 +18,30 @@ def _get_or_create_platform_bot():
     if bot:
         return bot
 
-    # Need a real org for FK constraint — create or reuse a "Platform" org
-    from models.models import Organization
+    # Need real FK references — Bot.org_id -> organization.id, Bot.created_by -> user.id
+    from models.models import Organization, User
+
+    # Get or create a platform org
     platform_org = Organization.query.filter_by(name='Bubbl Platform').first()
     if not platform_org:
         platform_org = Organization(name='Bubbl Platform', plan='pro')
         db.session.add(platform_org)
         db.session.flush()
 
-    # Auto-create the platform bot on first access
+    # created_by must reference a real user (FK to user.id)
+    first_user = User.query.order_by(User.id.asc()).first()
+    if not first_user:
+        # Edge case: no users exist yet — create a system user
+        import bcrypt
+        system_hash = bcrypt.hashpw(b'platform_system', bcrypt.gensalt()).decode('utf-8')
+        first_user = User(
+            org_id=platform_org.id, name='System', email='system@bubbl.ooo',
+            password_hash=system_hash, role='admin', is_verified=True
+        )
+        db.session.add(first_user)
+        db.session.flush()
+
+    # Auto-create the platform bot
     store_id = create_dynamic_store("Bubbl Platform Bot")
     if not store_id:
         store_id = f"platform_{uuid.uuid4().hex[:12]}"
@@ -36,8 +51,8 @@ def _get_or_create_platform_bot():
         bot_type='platform',
         visibility='public',
         system_prompt="",
-        created_by=platform_org.id,  # Use platform org's first user or org id
-        org_id=platform_org.id,      # Real org to satisfy FK
+        created_by=first_user.id,    # Real user ID (satisfies FK to user table)
+        org_id=platform_org.id,      # Real org ID (satisfies FK to organization table)
         store_id=store_id,
         is_active=True,
     )
