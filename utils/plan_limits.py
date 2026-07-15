@@ -312,7 +312,19 @@ def get_usage_summary(org_id):
         'subscription_status': org.subscription_status or ('active' if plan != 'free' else 'free'),
         'subscription_started_at': org.subscription_started_at,
         'subscription_ends_at': org.subscription_ends_at,
-        'payment_method': org.payment_method,
-        'card_brand': org.card_brand,
-        'card_last4': org.card_last4,
+        # Payment method: read from latest payment (normalized)
+        'payment_method': None,
+        'card_brand': None,
+        'card_last4': None,
     }
+
+    # Fetch latest payment method for display
+    from models.models import Payment as PaymentModel
+    latest_pm = PaymentModel.query.filter_by(org_id=org_id, status='completed')\
+        .order_by(PaymentModel.created_at.desc()).first()
+    if latest_pm:
+        result['payment_method'] = latest_pm.payment_method
+        result['card_brand'] = latest_pm.card_brand
+        result['card_last4'] = latest_pm.card_last4
+
+    return result

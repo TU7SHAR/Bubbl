@@ -71,7 +71,12 @@ def migrate_db():
         "CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)",
         "CREATE INDEX IF NOT EXISTS idx_chat_message_bot ON chat_message(bot_id)",
 
-        # ═══ CLEANUP: Remove redundant Bot.theme_color (BotUI handles it) ═══
+        # ═══ CLEANUP: Remove redundant columns ═══
+        # Payment method was duplicated on Organization (source of truth is Payment table)
+        "ALTER TABLE organization DROP COLUMN IF EXISTS payment_method",
+        "ALTER TABLE organization DROP COLUMN IF EXISTS card_brand",
+        "ALTER TABLE organization DROP COLUMN IF EXISTS card_last4",
+        # Bot.theme_color redundant with BotUI.theme_color
         "ALTER TABLE bot DROP COLUMN IF EXISTS theme_color",
     ]
 
