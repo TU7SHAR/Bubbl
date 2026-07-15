@@ -9,6 +9,7 @@ from routes.profile import profile_bp
 from routes.embed.views import views_bp
 from routes.embed.api import api_bp
 from routes.payments import payments_bp
+from routes.super_admin import super_admin_bp
 from flask_cors import CORS
 from extensions import limiter, cache
 
@@ -50,6 +51,7 @@ app.register_blueprint(profile_bp)
 app.register_blueprint(views_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(payments_bp)
+app.register_blueprint(super_admin_bp)
 
 with app.app_context():
     db.create_all()

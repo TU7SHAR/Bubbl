@@ -1,0 +1,58 @@
+{% extends 'super_admin/base.html' %}
+
+{% block page_title %}Conversations ({{ total_conversations }}){% endblock %}
+
+{% block content %}
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>All Conversations</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Session ID</th>
+          <th>Bot</th>
+          <th>Messages</th>
+          <th>Started</th>
+          <th>Last Activity</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr>
+          <td><code style="font-size:12px;">{{ s.session_id[:8] }}</code></td>
+          <td>{{ s.bot_name }}</td>
+          <td>{{ s.msg_count }}</td>
+          <td>{{ s.started_at.strftime('%b %d, %Y %H:%M') }}</td>
+          <td>{{ s.last_activity.strftime('%b %d, %Y %H:%M') }}</td>
+          <td>
+            <a href="/super_admin/conversations/{{ s.session_id }}" class="sa-btn sa-btn-ghost" style="padding:4px 10px; font-size:11px;">View</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="sa-pagination">
+  {% if page > 1 %}
+    <a href="?page={{ page - 1 }}">← Prev</a>
+  {% endif %}
+  {% for p in range(1, total_pages + 1) %}
+    {% if p == page %}
+      <span class="current">{{ p }}</span>
+    {% else %}
+      <a href="?page={{ p }}">{{ p }}</a>
+    {% endif %}
+  {% endfor %}
+  {% if page < total_pages %}
+    <a href="?page={{ page + 1 }}">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
