@@ -18,6 +18,14 @@ def _get_or_create_platform_bot():
     if bot:
         return bot
 
+    # Need a real org for FK constraint — create or reuse a "Platform" org
+    from models.models import Organization
+    platform_org = Organization.query.filter_by(name='Bubbl Platform').first()
+    if not platform_org:
+        platform_org = Organization(name='Bubbl Platform', plan='pro')
+        db.session.add(platform_org)
+        db.session.flush()
+
     # Auto-create the platform bot on first access
     store_id = create_dynamic_store("Bubbl Platform Bot")
     if not store_id:
@@ -28,8 +36,8 @@ def _get_or_create_platform_bot():
         bot_type='platform',
         visibility='public',
         system_prompt="",
-        created_by=-1,      # Super admin
-        org_id=-1,          # Platform-level (no real org)
+        created_by=platform_org.id,  # Use platform org's first user or org id
+        org_id=platform_org.id,      # Real org to satisfy FK
         store_id=store_id,
         is_active=True,
     )

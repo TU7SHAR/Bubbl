@@ -112,12 +112,12 @@ def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=Non
             # Check if a platform bot is configured (scraped site content)
             public_store_id = _get_public_bot_store_id()
             if public_store_id:
-                # Use full instructions WITH the scraped knowledge base
-                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_INSTRUCTIONS
+                # Use personality + buttons instructions WITH the scraped knowledge base
+                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_PERSONALITY
                 target_store_id = public_store_id  # Feed the scraped content as RAG
             else:
                 # Fallback: hardcoded knowledge only (no scrape configured yet)
-                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_INSTRUCTIONS
+                system_instruction = BASE_GUARDRAILS + PUBLIC_BOT_PERSONALITY
             
         tools = []
         if target_store_id:
