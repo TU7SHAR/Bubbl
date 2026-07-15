@@ -75,6 +75,23 @@
   </div>
 </div>
 
+<!-- Managed Links Section -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Managed Links (for Buttons)</h3>
+    <button class="sa-btn sa-btn-primary" onclick="saveLinks()">Save Links</button>
+  </div>
+  <div style="padding:18px;">
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+      These are the ONLY links the bot can use in button responses. If no links are added, the bot will NOT show any buttons.
+      Add your real, working URLs here.
+    </p>
+    <div id="links-container"></div>
+    <button class="sa-btn sa-btn-ghost" onclick="addLinkRow()" style="margin-top:10px;">+ Add Link</button>
+    <div id="links-status" style="margin-top:8px; font-size:12px;"></div>
+  </div>
+</div>
+
 <!-- Knowledge Base (Documents) -->
 <div class="sa-table-wrap">
   <div class="sa-table-header">
@@ -145,6 +162,78 @@
 
 {% block scripts %}
 <script>
+// --- MANAGED LINKS ---
+var currentLinks = [];
+
+function loadLinks() {
+  fetch('/super_admin/public_bot/links', { credentials: 'include' })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      currentLinks = d.links || [];
+      renderLinks();
+    }
+  });
+}
+
+function renderLinks() {
+  var container = document.getElementById('links-container');
+  container.innerHTML = '';
+  if (currentLinks.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">No links configured. Bot will NOT show any buttons.</p>';
+    return;
+  }
+  currentLinks.forEach(function(link, i) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center; flex-wrap:wrap;';
+    row.innerHTML = '<input class="sa-input" style="flex:2; min-width:150px;" placeholder="Label (e.g. View Pricing)" value="' + (link.label || '') + '" onchange="currentLinks[' + i + '].label=this.value">' +
+      '<input class="sa-input" style="flex:3; min-width:200px;" placeholder="URL (e.g. https://bubbl.ooo/pricing)" value="' + (link.url || '') + '" onchange="currentLinks[' + i + '].url=this.value">' +
+      '<select class="sa-select" onchange="currentLinks[' + i + '].category=this.value">' +
+      '<option value="pricing"' + (link.category === 'pricing' ? ' selected' : '') + '>Pricing (orange)</option>' +
+      '<option value="action"' + (link.category === 'action' ? ' selected' : '') + '>Action (green)</option>' +
+      '<option value="info"' + (link.category === 'info' ? ' selected' : '') + '>Info (blue)</option>' +
+      '<option value="support"' + (link.category === 'support' ? ' selected' : '') + '>Support (purple)</option>' +
+      '<option value="link"' + (link.category === 'link' ? ' selected' : '') + '>General (gray)</option>' +
+      '</select>' +
+      '<button class="sa-btn sa-btn-danger" onclick="removeLink(' + i + ')">X</button>';
+    container.appendChild(row);
+  });
+}
+
+function addLinkRow() {
+  currentLinks.push({ label: '', url: '', category: 'link' });
+  renderLinks();
+}
+
+function removeLink(index) {
+  currentLinks.splice(index, 1);
+  renderLinks();
+}
+
+function saveLinks() {
+  var statusEl = document.getElementById('links-status');
+  // Filter out empty rows
+  var valid = currentLinks.filter(function(l) { return l.label && l.url; });
+  fetch('/super_admin/public_bot/links', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ links: valid })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      statusEl.innerHTML = '<span style="color:var(--green);">Saved ' + d.count + ' links!</span>';
+      currentLinks = valid;
+      renderLinks();
+      setTimeout(function() { statusEl.innerHTML = ''; }, 3000);
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--red);">' + (d.error || 'Failed.') + '</span>';
+    }
+  });
+}
+
+// Load links on page load
+loadLinks();
 function startScrape() {
   var url = document.getElementById('scrape-url').value.trim();
   var maxUrls = parseInt(document.getElementById('scrape-max').value) || 50;
