@@ -97,6 +97,11 @@
         <div class="sa-content-wrapper" id="sa-scroll-container">
             
             <div id="pane-overview" class="sa-pane active">
+                <!-- DB Migration button (one-time, safe to re-run) -->
+                <div style="margin-bottom: 20px; padding: 12px 16px; background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 13px; color: #4b5563;">Missing columns in DB? Run this once after updates.</span>
+                    <button id="migrate-btn" onclick="runMigration()" class="tag tag-purple" style="cursor:pointer; border:none; padding: 8px 16px;">Run DB Migration</button>
+                </div>
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="m-icon" style="background: #f3e8ff; color: #8b5cf6;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg></div>
@@ -694,6 +699,22 @@
   document.getElementById('sa-modal-overlay').addEventListener('click', function(e){
     if (e.target === this) closeSaModal();
   });
+
+  function runMigration() {
+    var btn = document.getElementById('migrate-btn');
+    btn.innerText = 'Running...'; btn.disabled = true;
+    fetch('/super_admin/migrate_db', { method: 'POST' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.success) {
+        openSaModal('Migration Complete', '<pre style="font-size:12px; max-height:300px; overflow:auto; background:#f9fafb; padding:12px; border-radius:8px;">' + d.results.join('\n') + '</pre><button onclick="location.reload()" style="margin-top:12px; padding:10px 20px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Refresh</button>');
+      } else {
+        openSaModal('Error', '<p style="color:#dc2626;">' + (d.error || 'Failed') + '</p>');
+      }
+      btn.innerText = 'Run DB Migration'; btn.disabled = false;
+    })
+    .catch(function(){ btn.innerText = 'Run DB Migration'; btn.disabled = false; });
+  }
 </script>
 
 <script>
@@ -748,7 +769,7 @@ function applyPreset(val) {
 function applyCustomRange() {
     const start = document.getElementById('custom-start').value;
     const end = document.getElementById('custom-end').value;
-    if (!start || !end) return showModal('Please select both dates.', 'error');
+    if (!start || !end) return showModal("Please select both start and end dates.", "error");
     window.location.href = `?start=${start}&end=${end}`;
 }
 
