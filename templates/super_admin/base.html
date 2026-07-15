@@ -46,12 +46,12 @@
       justify-content: space-between;
       padding: 14px 24px;
       border-bottom: 1px solid var(--card-border);
-      background: var(--card-bg);
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
     }
     .sa-header-brand {
       font-size: 16px;
       font-weight: 700;
-      color: var(--accent);
+      color: #fff;
     }
     .sa-header-right {
       display: flex;
@@ -342,6 +342,39 @@
     }
     .sa-modal input:focus, .sa-modal textarea:focus { border-color: var(--accent); }
     .sa-modal textarea { resize: vertical; min-height: 100px; }
+    /* === UNPREFIXED ALIASES (some child templates use these) === */
+    .page-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+    .table-wrap { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+    .table-header { padding: 14px 18px; border-bottom: 1px solid var(--card-border); }
+    .table-header h3 { font-size: 15px; font-weight: 700; margin: 0; color: var(--text); }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    table th { padding: 10px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: left; border-bottom: 1px solid var(--card-border); }
+    table td { padding: 12px 14px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--card-border); }
+    table tr:hover td { background: rgba(232,114,42,0.04); }
+    table tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+    .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+    .badge-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+    .badge-purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+    .badge-gray { background: rgba(148,163,184,0.1); color: var(--text-muted); }
+    .badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: rgba(148,163,184,0.08); color: var(--text-muted); border: 1px solid var(--card-border); }
+    .btn-danger { background: rgba(239,68,68,0.12); color: var(--red); }
+    .btn-success { background: rgba(16,185,129,0.12); color: var(--green); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 18px; }
+    .card-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+    .card-value { font-size: 24px; font-weight: 800; color: var(--text); }
+    .select, .input { padding: 6px 10px; border: 1px solid var(--card-border); border-radius: 8px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; }
+    .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 16px 0; }
+    .pagination a, .pagination span { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; }
+    .pagination a { border: 1px solid var(--card-border); color: var(--text-muted); }
+    .pagination .current { background: var(--accent); color: #fff; }
   </style>
 </head>
 <body>
