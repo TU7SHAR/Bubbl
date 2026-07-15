@@ -506,8 +506,8 @@ def manage_plan():
         sub_started=sub_started,
         sub_ends=sub_ends,
         payment_method_label=payment_method_label,
-        card_brand=org.card_brand if org else None,
-        card_last4=org.card_last4 if org else None)
+        card_brand=None,
+        card_last4=None)
 
 
 # ═══════════════════════════════════════════
