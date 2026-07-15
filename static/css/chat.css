@@ -325,3 +325,97 @@
     padding: 8px 12px;
   }
 }
+
+
+/* =========================================
+   INTERACTIVE BUTTONS — Categorized Pills
+   ========================================= */
+
+.bubbl-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-self: flex-start;
+  max-width: 90%;
+  padding: 2px 0;
+}
+
+.bubbl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  border-radius: 50px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.15s ease;
+  border: none;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.bubbl-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.bubbl-btn:active {
+  transform: scale(0.96);
+}
+
+.bubbl-btn-arrow {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* --- Category Colors --- */
+
+/* Pricing — Orange (brand) */
+.bubbl-btn--pricing {
+  background: #E8722A;
+  color: #fff;
+}
+
+/* Action/CTA — Green */
+.bubbl-btn--action {
+  background: #10b981;
+  color: #fff;
+}
+
+/* Info/Learn — Blue */
+.bubbl-btn--info {
+  background: #3b82f6;
+  color: #fff;
+}
+
+/* Support/Contact — Purple */
+.bubbl-btn--support {
+  background: #8b5cf6;
+  color: #fff;
+}
+
+/* External/General — Gray */
+.bubbl-btn--link {
+  background: rgba(0, 0, 0, 0.08);
+  color: #374151;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.bubbl-btn--link:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* --- Mobile Responsive --- */
+@media screen and (max-width: 600px) {
+  .bubbl-btn-row {
+    gap: 6px;
+    max-width: 95%;
+  }
+
+  .bubbl-btn {
+    padding: 6px 11px;
+    font-size: 11px;
+  }
+}

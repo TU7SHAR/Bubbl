@@ -208,12 +208,76 @@ function appendUserMessage(msg) {
   display.scrollTop = display.scrollHeight;
 }
 
+function parseButtons(text) {
+  /**
+   * Extracts [[BUTTONS: category:Label|URL, ...]] from bot response.
+   * Returns { cleanText, buttons[] } where buttons have { category, label, url }.
+   */
+  const match = text.match(/\[\[BUTTONS:\s*(.*?)\]\]/s);
+  if (!match) return { cleanText: text, buttons: [] };
+
+  const cleanText = text.replace(/\s*\[\[BUTTONS:.*?\]\]\s*/s, "").trim();
+  const raw = match[1].trim();
+  const buttons = [];
+
+  // Split by comma, but be careful of URLs containing commas (unlikely but safe)
+  const parts = raw.split(/,\s*(?=[a-z]+:)/);
+  for (const part of parts) {
+    const btnMatch = part.trim().match(/^(\w+):(.+?)\|(.+)$/);
+    if (btnMatch) {
+      buttons.push({
+        category: btnMatch[1].toLowerCase(),
+        label: btnMatch[2].trim(),
+        url: btnMatch[3].trim(),
+      });
+    }
+  }
+
+  return { cleanText, buttons };
+}
+
+function renderButtons(buttons, container) {
+  /**
+   * Renders an array of button objects as styled pill buttons below a message.
+   * Each button opens its URL in a new tab.
+   */
+  if (!buttons || buttons.length === 0) return;
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "bubbl-btn-row";
+
+  for (const btn of buttons) {
+    const anchor = document.createElement("a");
+    anchor.href = btn.url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.className = "bubbl-btn bubbl-btn--" + btn.category;
+    anchor.innerHTML = btn.label + ' <span class="bubbl-btn-arrow">\u2197</span>';
+    btnRow.appendChild(anchor);
+  }
+
+  container.appendChild(btnRow);
+}
+
 function appendBotMessage(msg) {
   const display = document.getElementById("chat-display");
-  const botDiv = document.createElement("div");
-  botDiv.className = "msg bot";
-  botDiv.innerText = msg;
-  display.appendChild(botDiv);
+
+  // Parse buttons from the message (if any)
+  const { cleanText, buttons } = parseButtons(msg);
+
+  // Render the text message
+  if (cleanText) {
+    const botDiv = document.createElement("div");
+    botDiv.className = "msg bot";
+    botDiv.innerText = cleanText;
+    display.appendChild(botDiv);
+  }
+
+  // Render buttons below the message (separate container for flex layout)
+  if (buttons.length > 0) {
+    renderButtons(buttons, display);
+  }
+
   display.scrollTop = display.scrollHeight;
 }
 
