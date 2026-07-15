@@ -795,35 +795,6 @@ def super_admin_send_email():
     return jsonify({"success": True, "email": user.email})
 
 
-@views_bp.route('/super_admin/migrate_db', methods=['POST'])
-def super_admin_migrate_db():
-    """Super admin: run safe DB migrations to add columns if missing."""
-    if session.get('role') != 'super_admin':
-        return jsonify({"error": "Access denied"}), 403
-    from sqlalchemy import text
-    migrations = [
-        "ALTER TABLE bot ADD COLUMN IF NOT EXISTS tokens_used INTEGER DEFAULT 0",
-        "ALTER TABLE bot ADD COLUMN IF NOT EXISTS total_latency FLOAT DEFAULT 0.0",
-        "ALTER TABLE bot ADD COLUMN IF NOT EXISTS interaction_count INTEGER DEFAULT 0",
-        "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'free'",
-        "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMP",
-        "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMP",
-        "ALTER TABLE organization ADD COLUMN IF NOT EXISTS payment_method VARCHAR(30)",
-        "ALTER TABLE organization ADD COLUMN IF NOT EXISTS card_brand VARCHAR(30)",
-        "ALTER TABLE organization ADD COLUMN IF NOT EXISTS card_last4 VARCHAR(4)",
-        "ALTER TABLE feedback ALTER COLUMN bot_id DROP NOT NULL",
-    ]
-    results = []
-    for sql in migrations:
-        try:
-            db.session.execute(text(sql))
-            results.append(f"OK: {sql[:60]}")
-        except Exception as e:
-            results.append(f"SKIP: {sql[:60]} ({e})")
-    db.session.commit()
-    return jsonify({"success": True, "results": results})
-
-
 @views_bp.route('/api/bot_avatar/<int:bot_id>')
 def api_bot_avatar(bot_id):
     # Cached for 5 min — this endpoint is hit on every page load.
