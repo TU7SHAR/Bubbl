@@ -37,7 +37,7 @@
 <script>
 function retryScrape(jobId) {
   fetch('/super_admin/scrapes/retry', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({job_id: jobId})
   }).then(r => r.json()).then(d => {
     if (d.success) { document.getElementById('scrape-row-' + jobId).remove(); }
@@ -47,7 +47,7 @@ function retryScrape(jobId) {
 function deleteScrape(jobId) {
   if (!confirm('Delete this scrape job?')) return;
   fetch('/super_admin/scrapes/delete', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({job_id: jobId})
   }).then(r => r.json()).then(d => {
     if (d.success) { document.getElementById('scrape-row-' + jobId).remove(); }

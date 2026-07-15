@@ -81,8 +81,8 @@
 function upgradeUser(userId, userName) {
   var plan = document.getElementById('plan-' + userId).value;
   if (!confirm('Change ' + userName + ' to ' + plan + ' plan?')) return;
-  fetch('/super_admin/users/upgrade', {
-    method: 'POST',
+  fetch('/super_admin/users/upgrade', { credentials: 'include',
+    method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({user_id: userId, plan: plan})
   })
@@ -98,7 +98,7 @@ function upgradeUser(userId, userName) {
 function suspendUser(userId, userName) {
   if (!confirm('Toggle suspension for ' + userName + '?')) return;
   fetch('/super_admin/users/suspend', {
-    method: 'POST',
+    method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({user_id: userId})
   })
@@ -144,7 +144,7 @@ function generateWithAI() {
   btn.disabled = true; btn.textContent = '⏳ Generating...';
   status.innerHTML = '<span style="color:var(--text-muted);">Asking AI to write the email...</span>';
   fetch('/super_admin/users/generate_email', {
-    method: 'POST',
+    method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({user_id: userId, purpose: purpose})
   })
@@ -171,7 +171,7 @@ function sendEmail() {
   var message = document.getElementById('email-message').value;
   if (!subject || !message) { alert('Please fill in subject and message.'); return; }
   fetch('/super_admin/users/email', {
-    method: 'POST',
+    method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({user_id: userId, subject: subject, message: message})
   })

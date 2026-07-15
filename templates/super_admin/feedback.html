@@ -1,0 +1,61 @@
+{% extends 'super_admin/base.html' %}
+
+{% block page_title %}Feedback{% endblock %}
+
+{% block admin_content %}
+<!-- Stats -->
+<div class="sa-grid" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="sa-card">
+    <div class="sa-card-label">Avg Rating</div>
+    <div class="sa-card-value">{{ avg_rating }} ⭐</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Total Feedback</div>
+    <div class="sa-card-value">{{ total_feedback }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Response Rate</div>
+    <div class="sa-card-value">{{ ((total_feedback / 100) * 100)|int if total_feedback else 0 }}%</div>
+  </div>
+</div>
+
+<!-- Feedback Table -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header"><h3>All Feedback ({{ total_feedback }})</h3></div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Bot</th>
+          <th>User</th>
+          <th>Rating</th>
+          <th>Comment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fb in feedbacks %}
+        <tr>
+          <td style="white-space:nowrap;">{{ fb.created_at.strftime('%b %d, %Y %H:%M') if fb.created_at else 'N/A' }}</td>
+          <td><span class="sa-badge sa-badge-purple">{{ fb.bot_name }}</span></td>
+          <td>
+            {% if fb.lead_name %}
+              <strong>{{ fb.lead_name }}</strong><br>
+              <span style="font-size:11px; color:var(--text-muted);">{{ fb.lead_email }}</span>
+            {% else %}
+              <span style="color:var(--text-muted); font-style:italic;">Anonymous</span>
+            {% endif %}
+          </td>
+          <td style="color:#f59e0b; font-size:16px;">
+            {% for i in range(fb.rating or 0) %}★{% endfor %}{% for i in range(5 - (fb.rating or 0)) %}☆{% endfor %}
+          </td>
+          <td style="max-width:300px; line-height:1.5;">{{ fb.comment or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">No feedback yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
