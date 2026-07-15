@@ -19,7 +19,6 @@
   <input type="date" class="sa-input" id="start-date" value="{{ start_date }}" style="width:150px;">
   <input type="date" class="sa-input" id="end-date" value="{{ end_date }}" style="width:150px;">
   <button class="sa-btn sa-btn-primary" onclick="applyCustomRange()">Apply</button>
-  <button class="sa-btn sa-btn-ghost" onclick="runMigration()">Run Migration</button>
 </div>
 
 <!-- Stats Grid -->
@@ -78,22 +77,6 @@ function applyCustomRange() {
   if (start && end) {
     window.location.href = '?period=custom&start_date=' + start + '&end_date=' + end;
   }
-}
-
-function runMigration() {
-  if (!confirm('Run database migration?')) return;
-  fetch('/super_admin/migrate_db', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({})
-  })
-  .then(r => r.json())
-  .then(data => {
-    openModal('Migration Result', '<p>' + (data.message || JSON.stringify(data)) + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
-  })
-  .catch(err => {
-    openModal('Error', '<p style="color:#f87171;">' + err.message + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
-  });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
