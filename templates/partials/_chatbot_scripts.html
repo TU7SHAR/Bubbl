@@ -171,7 +171,7 @@
   function addTextSnippet() {
     const titleEl = document.getElementById('snippet_title'), textEl = document.getElementById('snippet_text');
     const title = titleEl.value.trim() || 'Untitled Snippet', text = textEl.value.trim();
-    if (!text) { alert("Please enter some text."); return; }
+    if (!text) { showModal('Please enter some text.', 'error'); return; }
     if (editingTextIndex >= 0) { tempTextSnippets[editingTextIndex] = { title, text }; editingTextIndex = -1; document.getElementById('btn-add-snippet').innerText = "+ Add Snippet"; } 
     else { tempTextSnippets.push({ title, text }); }
     titleEl.value = ''; textEl.value = ''; renderTextUI();
@@ -209,7 +209,7 @@
     const maxUrlsEl = document.getElementById('max_urls');
     
     let url = urlEl.value.trim();
-    if (!url) { alert("Please enter a valid URL."); return; }
+    if (!url) { showModal('Please enter a valid URL.', 'error'); return; }
     if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; }
 
     const isDeep = deepCrawlEl.checked;
@@ -443,7 +443,7 @@
 
   function validateAndNext() {
     const nameInput = document.getElementById('bot_name');
-    if (!nameInput.value.trim()) { alert("Please enter an Agent Name before continuing."); nameInput.focus(); return; }
+    if (!nameInput.value.trim()) { showModal('Please enter an Agent Name before continuing.', 'error'); nameInput.focus(); return; }
     switchCbTab('tab-settings');
   }
 
@@ -523,7 +523,7 @@
   document.getElementById("botPipelineForm").addEventListener("submit", async function (e) {
     e.preventDefault();
     const btn = document.getElementById('final-create-btn'), nameInput = document.getElementById('bot_name');
-    if (!nameInput.value.trim()) { switchCbTab('tab-ui'); nameInput.focus(); alert("Please enter a Chatbot Name in the User Interface tab."); return; }
+    if (!nameInput.value.trim()) { switchCbTab('tab-ui'); nameInput.focus(); showModal('Please enter a Chatbot Name in the User Interface tab.', 'error'); return; }
     btn.innerText = "Initializing Engine..."; btn.disabled = true;
     const formData = new FormData(this);
     formData.delete('file');
