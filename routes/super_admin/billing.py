@@ -1,6 +1,8 @@
 """Super Admin — Revenue & Billing."""
-from flask import render_template, current_app
-from models.models import Payment, Organization
+from flask import render_template, jsonify, current_app
+from sqlalchemy import extract, func
+from datetime import datetime, timezone
+from models.models import db, Payment, Organization
 from . import super_admin_bp
 from .decorators import super_admin_required
 
@@ -45,3 +47,53 @@ def billing_page():
         total_revenue=total_revenue, revenue_by_plan=revenue_by_plan,
         recent_payments=recent_payments, plan_counts=plan_counts,
     )
+
+
+# ═══════════════════════════════════════════
+# NEW ROUTES
+# ═══════════════════════════════════════════
+
+
+@super_admin_bp.route('/billing/chart')
+@super_admin_required
+def billing_chart():
+    """Return monthly revenue data for the last 12 months as JSON."""
+    now = datetime.now(timezone.utc)
+
+    # Query payments grouped by year-month for the last 12 months
+    results = db.session.query(
+        extract('year', Payment.created_at).label('year'),
+        extract('month', Payment.created_at).label('month'),
+        func.sum(Payment.amount).label('total')
+    ).filter(
+        Payment.status == 'completed',
+        Payment.created_at.isnot(None)
+    ).group_by(
+        extract('year', Payment.created_at),
+        extract('month', Payment.created_at)
+    ).order_by(
+        extract('year', Payment.created_at),
+        extract('month', Payment.created_at)
+    ).all()
+
+    # Build a dict of month -> revenue
+    monthly_data = {}
+    for row in results:
+        key = f"{int(row.year)}-{int(row.month):02d}"
+        monthly_data[key] = float(row.total or 0)
+
+    # Build the last 12 months labels
+    labels = []
+    values = []
+    for i in range(11, -1, -1):
+        # Go back i months from now
+        month = now.month - i
+        year = now.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        key = f"{year}-{month:02d}"
+        labels.append(key)
+        values.append(monthly_data.get(key, 0))
+
+    return jsonify({"success": True, "labels": labels, "values": values})

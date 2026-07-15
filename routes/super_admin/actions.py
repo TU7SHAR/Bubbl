@@ -1,5 +1,5 @@
-"""Super Admin — System actions (DB migration, etc.)."""
-from flask import jsonify
+"""Super Admin — System actions (DB migration, logs)."""
+from flask import jsonify, render_template
 from models.models import db
 from . import super_admin_bp
 from .decorators import super_admin_required
@@ -18,6 +18,7 @@ def migrate_db():
         "ALTER TABLE bot ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE",
         "ALTER TABLE bot ADD COLUMN IF NOT EXISTS created_at TIMESTAMP",
 
+
         # ═══ ORGANIZATION ═══
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'free'",
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMP",
@@ -31,10 +32,9 @@ def migrate_db():
         'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE',
         'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
 
+
         # ═══ PAYMENT → USER (NORMALIZATION) ═══
-        # Add column if missing
         "ALTER TABLE payment ADD COLUMN IF NOT EXISTS user_id INTEGER",
-        # Add FK constraint if not exists (safe: DO NOTHING if already there)
         """DO $$ BEGIN
             IF NOT EXISTS (
                 SELECT 1 FROM information_schema.table_constraints
@@ -44,7 +44,6 @@ def migrate_db():
                 FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE SET NULL;
             END IF;
         END $$""",
-        # Backfill: set user_id from customer_email matching user.email
         """UPDATE payment SET user_id = u.id
            FROM "user" u
            WHERE payment.user_id IS NULL
@@ -56,6 +55,7 @@ def migrate_db():
 
         # ═══ FEEDBACK ═══
         "ALTER TABLE feedback ALTER COLUMN bot_id DROP NOT NULL",
+
 
         # ═══ CHAT_MESSAGE TABLE ═══
         """CREATE TABLE IF NOT EXISTS chat_message (
@@ -72,13 +72,12 @@ def migrate_db():
         "CREATE INDEX IF NOT EXISTS idx_chat_message_bot ON chat_message(bot_id)",
 
         # ═══ CLEANUP: Remove redundant columns ═══
-        # Payment method was duplicated on Organization (source of truth is Payment table)
         "ALTER TABLE organization DROP COLUMN IF EXISTS payment_method",
         "ALTER TABLE organization DROP COLUMN IF EXISTS card_brand",
         "ALTER TABLE organization DROP COLUMN IF EXISTS card_last4",
-        # Bot.theme_color redundant with BotUI.theme_color
         "ALTER TABLE bot DROP COLUMN IF EXISTS theme_color",
     ]
+
 
     results = []
     for sql in migrations:
@@ -89,3 +88,15 @@ def migrate_db():
             results.append(f"SKIP: {sql[:80]} ({str(e)[:60]})")
     db.session.commit()
     return jsonify({"success": True, "results": results})
+
+
+# ═══════════════════════════════════════════
+# NEW ROUTES
+# ═══════════════════════════════════════════
+
+
+@super_admin_bp.route('/logs')
+@super_admin_required
+def system_logs():
+    """Display system logs page."""
+    return render_template('super_admin/logs.html')

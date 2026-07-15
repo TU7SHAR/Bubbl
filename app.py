@@ -55,6 +55,40 @@ app.register_blueprint(super_admin_bp)
 
 with app.app_context():
     db.create_all()
+    # Auto-run safe migrations on startup (idempotent)
+    _run_auto_migrations()
+
+
+def _run_auto_migrations():
+    """Idempotent migrations — safe to run on every deploy."""
+    from sqlalchemy import text
+    sqls = [
+        'ALTER TABLE bot ADD COLUMN IF NOT EXISTS tokens_used INTEGER DEFAULT 0',
+        'ALTER TABLE bot ADD COLUMN IF NOT EXISTS total_latency FLOAT DEFAULT 0.0',
+        'ALTER TABLE bot ADD COLUMN IF NOT EXISTS interaction_count INTEGER DEFAULT 0',
+        'ALTER TABLE bot ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE',
+        'ALTER TABLE bot ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
+        "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'free'",
+        'ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMP',
+        'ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMP',
+        'ALTER TABLE organization ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
+        'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE',
+        'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
+        'ALTER TABLE payment ADD COLUMN IF NOT EXISTS user_id INTEGER',
+        'ALTER TABLE document ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
+        """CREATE TABLE IF NOT EXISTS chat_message (
+            id SERIAL PRIMARY KEY, bot_id INTEGER, lead_id INTEGER,
+            session_id VARCHAR(64) NOT NULL, role VARCHAR(10) NOT NULL,
+            content TEXT NOT NULL, tokens_used INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT NOW())""",
+        'CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)',
+    ]
+    for s in sqls:
+        try:
+            db.session.execute(text(s))
+        except Exception:
+            db.session.rollback()
+    db.session.commit()
 
 @app.after_request
 def add_security_headers(response):

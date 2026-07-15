@@ -1,0 +1,18 @@
+{% extends "super_admin/base.html" %}
+{% block title %}System Logs{% endblock %}
+
+{% block content %}
+<h1 class="page-title">System Logs</h1>
+
+<div class="card" style="padding:24px;">
+  <p style="margin-bottom:12px;color:var(--text-secondary);">
+    Logs are available via the server's journal. SSH into the server and run:
+  </p>
+  <code style="display:block;background:var(--bg-alt);padding:12px;border-radius:6px;font-size:13px;border:1px solid var(--border);">
+    journalctl -u bubbl -n 100
+  </code>
+  <p style="margin-top:12px;color:var(--text-muted);font-size:12px;">
+    For real-time monitoring: <code>journalctl -u bubbl -f</code>
+  </p>
+</div>
+{% endblock %}

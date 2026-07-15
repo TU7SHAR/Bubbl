@@ -4,392 +4,171 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>{% block title %}Super Admin{% endblock %} | Bubbl.ooo</title>
+  <title>{% block title %}Admin{% endblock %} | Bubbl.ooo</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ═══ BUBBL ADMIN — Light glassmorphism theme matching main app ═══ */
     :root {
-      --orange: #e8722a;
+      --orange: #E8722A;
       --orange-light: #f2943b;
-      --text-primary: #1a1008;
-      --text-secondary: #5c4a30;
-      --text-muted: #8a7558;
-      --bg: #fffbf7;
-      --bg-alt: #fff7ef;
-      --card-bg: rgba(255, 255, 255, 0.6);
-      --card-border: rgba(0, 0, 0, 0.06);
-      --green: #10b981;
-      --red: #ef4444;
-      --blue: #3b82f6;
-      --purple: #8b5cf6;
-      --radius: 12px;
-      --radius-lg: 16px;
+      --text: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #9ca3af;
+      --bg: #ffffff;
+      --bg-alt: #f9fafb;
+      --border: #e5e7eb;
+      --green: #059669;
+      --red: #dc2626;
+      --blue: #2563eb;
+      --purple: #7c3aed;
+      --radius: 8px;
     }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      background-image:
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(232,114,42,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(245,200,66,0.06) 0%, transparent 50%);
-      color: var(--text-primary);
-      font-family: 'Outfit', -apple-system, sans-serif;
-      font-size: 14px;
-      line-height: 1.5;
-      min-height: 100vh;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text); background: var(--bg); }
     a { color: var(--orange); text-decoration: none; }
-    a:hover { color: var(--orange-light); }
+    a:hover { text-decoration: underline; }
 
-    /* ── Header + Horizontal Nav ── */
-    .sa-header {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--card-border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .sa-header-top {
-      max-width: 1300px;
-      margin: 0 auto;
-      padding: 14px 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .sa-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .sa-brand h1 {
-      font-family: 'Bricolage Grotesque', sans-serif;
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--text-primary);
-    }
-    .sa-brand h1 span { color: var(--orange); }
-    .sa-brand-badge {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--purple);
-      background: rgba(139,92,246,0.1);
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
-    .sa-header-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .sa-clock {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-variant-numeric: tabular-nums;
-    }
+    /* Header */
+    .header { border-bottom: 1px solid var(--border); background: var(--bg); }
+    .header-inner { max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { font-size: 16px; font-weight: 800; color: var(--text); }
+    .brand span { color: var(--orange); }
+    .header-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+    .header-right a { color: var(--text-secondary); text-decoration: none; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; }
+    .header-right a:hover { border-color: var(--orange); color: var(--orange); }
 
-    /* ── Horizontal Tab Nav ── */
-    .sa-tabs {
-      max-width: 1300px;
-      margin: 0 auto;
-      padding: 0 28px;
-      display: flex;
-      gap: 4px;
-      overflow-x: auto;
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    /* Nav */
+    .nav { border-bottom: 1px solid var(--border); background: var(--bg-alt); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; gap: 2px; overflow-x: auto; }
+    .nav-inner::-webkit-scrollbar { display: none; }
+    .nav a {
+      padding: 10px 14px; font-size: 13px; font-weight: 500; color: var(--text-secondary);
+      border-bottom: 2px solid transparent; white-space: nowrap;
     }
-    .sa-tabs::-webkit-scrollbar { display: none; }
-    .sa-tab {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 16px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-muted);
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .sa-tab:hover { color: var(--text-primary); }
-    .sa-tab.active {
-      color: var(--orange);
-      border-bottom-color: var(--orange);
-      font-weight: 600;
-    }
+    .nav a:hover { color: var(--text); text-decoration: none; }
+    .nav a.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: 600; }
 
-    /* ── Page Content ── */
-    .sa-page {
-      max-width: 1300px;
-      margin: 0 auto;
-      padding: 24px 28px;
-    }
+    /* Page */
+    .page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
 
-    /* ── Cards ── */
-    .sa-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 14px;
-      margin-bottom: 24px;
-    }
-    .sa-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      padding: 18px;
-      transition: all 0.2s;
-    }
-    .sa-card:hover { border-color: rgba(0,0,0,0.1); box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
-    .sa-card-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 6px;
-    }
-    .sa-card-value { font-size: 24px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
-    .sa-card-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    /* Cards */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .card-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .card-value { font-size: 22px; font-weight: 800; margin-top: 4px; }
 
-    /* ── Tables ── */
-    .sa-table-wrap {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      margin-bottom: 24px;
-    }
-    .sa-table-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--card-border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .sa-table-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
-    .sa-table-scroll { overflow-x: auto; }
-    table.sa-table { width: 100%; border-collapse: collapse; }
-    .sa-table th {
-      padding: 10px 14px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      text-align: left;
-      border-bottom: 1px solid var(--card-border);
-      background: rgba(0,0,0,0.015);
-    }
-    .sa-table td {
-      padding: 12px 14px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      border-bottom: 1px solid rgba(0,0,0,0.03);
-      vertical-align: middle;
-    }
-    .sa-table tr:hover td { background: rgba(232,114,42,0.02); }
-    .sa-table tr:last-child td { border-bottom: none; }
+    /* Tables */
+    .table-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; background: var(--bg); }
+    .table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .table-header h3 { font-size: 14px; font-weight: 600; margin: 0; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 8px 14px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg-alt); }
+    td { padding: 10px 14px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid #f3f4f6; }
+    tr:hover td { background: #fafafa; }
+    tr:last-child td { border-bottom: none; }
 
-    /* ── Badges ── */
-    .badge {
-      display: inline-flex;
-      padding: 3px 9px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .badge-orange { background: rgba(232,114,42,0.1); color: var(--orange); }
-    .badge-green { background: rgba(16,185,129,0.1); color: #059669; }
-    .badge-blue { background: rgba(59,130,246,0.1); color: #2563eb; }
-    .badge-purple { background: rgba(139,92,246,0.1); color: #7c3aed; }
-    .badge-gray { background: rgba(107,114,128,0.08); color: #6b7280; }
-    .badge-yellow { background: rgba(245,158,11,0.1); color: #d97706; }
-    .badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+    /* Badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-orange { background: #fef3e8; color: var(--orange); }
+    .badge-green { background: #ecfdf5; color: var(--green); }
+    .badge-red { background: #fef2f2; color: var(--red); }
+    .badge-blue { background: #eff6ff; color: var(--blue); }
+    .badge-purple { background: #f5f3ff; color: var(--purple); }
+    .badge-gray { background: #f3f4f6; color: #6b7280; }
 
-    /* ── Buttons ── */
-    .sa-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 7px 14px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.15s;
-      text-decoration: none;
-    }
-    .sa-btn-primary { background: var(--orange); color: #fff; }
-    .sa-btn-primary:hover { background: var(--orange-light); color: #fff; }
-    .sa-btn-ghost { background: transparent; color: var(--text-secondary); border-color: var(--card-border); }
-    .sa-btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
-    .sa-btn-danger { background: rgba(239,68,68,0.08); color: #dc2626; border-color: rgba(239,68,68,0.15); }
-    .sa-btn-success { background: rgba(16,185,129,0.08); color: #059669; border-color: rgba(16,185,129,0.15); }
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
+    .btn-primary { background: var(--orange); color: #fff; }
+    .btn-primary:hover { background: var(--orange-light); }
+    .btn-outline { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-danger { background: #fef2f2; color: var(--red); border-color: #fecaca; }
+    .btn-danger:hover { background: #fee2e2; }
+    .btn-success { background: #ecfdf5; color: var(--green); border-color: #a7f3d0; }
 
-    /* ── Forms ── */
-    .sa-select, .sa-input {
-      padding: 7px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--card-border);
-      background: #fff;
-      color: var(--text-primary);
-      font-size: 13px;
-      outline: none;
-    }
-    .sa-select:focus, .sa-input:focus { border-color: var(--orange); }
+    /* Forms */
+    .input, .select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--bg); color: var(--text); outline: none; }
+    .input:focus, .select:focus { border-color: var(--orange); }
+    .select option { background: #fff; }
 
-    /* ── Modal ── */
-    .sa-modal-bg {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.3);
-      backdrop-filter: blur(4px);
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .sa-modal-bg.open { display: flex; }
-    .sa-modal {
-      background: #fff;
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      max-width: 460px;
-      width: 100%;
-      padding: 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
-    }
-    .sa-modal h3 { font-size: 16px; font-weight: 700; margin: 0 0 16px; color: var(--text-primary); }
-    .sa-modal input, .sa-modal textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 10px 12px;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      background: #fff;
-      color: var(--text-primary);
-      font-size: 14px;
-      margin-bottom: 10px;
-      outline: none;
-      resize: vertical;
-    }
-    .sa-modal input:focus, .sa-modal textarea:focus { border-color: var(--orange); }
+    /* Modal */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+    .modal-bg.open { display: flex; }
+    .modal { background: #fff; border: 1px solid var(--border); border-radius: 12px; max-width: 460px; width: 100%; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+    .modal input, .modal textarea { width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; margin-bottom: 10px; outline: none; }
+    .modal input:focus, .modal textarea:focus { border-color: var(--orange); }
+    .modal textarea { resize: vertical; min-height: 100px; }
 
-    /* ── Pagination ── */
-    .sa-pagination { display: flex; gap: 8px; align-items: center; justify-content: center; padding: 16px 0; }
-    .sa-pagination a, .sa-pagination span {
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .sa-pagination a { background: #fff; border: 1px solid var(--card-border); color: var(--text-muted); }
-    .sa-pagination a:hover { border-color: var(--orange); color: var(--orange); }
-    .sa-pagination .current { background: var(--orange); color: #fff; border-radius: 6px; }
+    /* Pagination */
+    .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 16px 0; }
+    .pagination a, .pagination span { padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: 600; }
+    .pagination a { border: 1px solid var(--border); color: var(--text-muted); }
+    .pagination a:hover { border-color: var(--orange); color: var(--orange); text-decoration: none; }
+    .pagination .current { background: var(--orange); color: #fff; }
 
-    /* ── Chat bubbles ── */
-    .chat-bubble {
-      max-width: 75%;
-      padding: 10px 14px;
-      border-radius: 14px;
-      margin-bottom: 8px;
-      font-size: 13px;
-      line-height: 1.5;
-      word-wrap: break-word;
-    }
-    .chat-user { background: rgba(232,114,42,0.1); color: var(--text-primary); align-self: flex-end; border-bottom-right-radius: 4px; margin-left: auto; }
-    .chat-bot { background: rgba(0,0,0,0.03); color: var(--text-secondary); align-self: flex-start; border-bottom-left-radius: 4px; }
-    .chat-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    /* Chat transcript */
+    .chat-msg { max-width: 70%; padding: 8px 12px; border-radius: 12px; margin-bottom: 6px; font-size: 13px; line-height: 1.4; }
+    .chat-user { background: #fff3ed; margin-left: auto; border-bottom-right-radius: 3px; }
+    .chat-bot { background: var(--bg-alt); border-bottom-left-radius: 3px; }
+    .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
-    /* ── Filter bar ── */
-    .sa-filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    /* Filter bar */
+    .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
 
-    /* ── Responsive ── */
+    /* Responsive */
     @media (max-width: 768px) {
-      .sa-header-top { padding: 12px 16px; }
-      .sa-tabs { padding: 0 16px; }
-      .sa-page { padding: 16px; }
-      .sa-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .sa-clock { display: none; }
-    }
-    @media (max-width: 480px) {
-      .sa-grid { grid-template-columns: 1fr; }
+      .page { padding: 16px; }
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .header-right span { display: none; }
     }
   </style>
   {% block head %}{% endblock %}
 </head>
 <body>
-  <!-- ═══ HEADER ═══ -->
-  <header class="sa-header">
-    <div class="sa-header-top">
-      <div class="sa-brand">
-        <h1>bubbl<span>.ooo</span></h1>
-        <span class="sa-brand-badge">Admin</span>
-      </div>
-      <div class="sa-header-right">
-        <span class="sa-clock" id="sa-clock">--:--</span>
-        <button class="sa-btn sa-btn-ghost" onclick="location.reload()">↻ Refresh</button>
-        <a href="{{ url_for('views_bp.dashboard') }}" class="sa-btn sa-btn-ghost">← App</a>
-        <a href="{{ url_for('auth.logout') }}" class="sa-btn sa-btn-ghost">Logout</a>
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">bubbl<span>.ooo</span> Admin</div>
+      <div class="header-right">
+        <span id="clock" style="color:var(--text-muted); font-size:12px;">--:--</span>
+        <a href="{{ url_for('views_bp.dashboard') }}">Back to App</a>
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
       </div>
     </div>
-    <!-- Horizontal Tabs -->
-    <nav class="sa-tabs">
-      <a href="{{ url_for('super_admin_bp.dashboard') }}" class="sa-tab {% if request.endpoint == 'super_admin_bp.dashboard' %}active{% endif %}">📊 Overview</a>
-      <a href="{{ url_for('super_admin_bp.users_page') }}" class="sa-tab {% if 'users' in request.endpoint %}active{% endif %}">👥 Users</a>
-      <a href="{{ url_for('super_admin_bp.bots_page') }}" class="sa-tab {% if 'bots' in request.endpoint %}active{% endif %}">🤖 Bots</a>
-      <a href="{{ url_for('super_admin_bp.billing_page') }}" class="sa-tab {% if 'billing' in request.endpoint %}active{% endif %}">💰 Billing</a>
-      <a href="{{ url_for('super_admin_bp.leads_page') }}" class="sa-tab {% if 'leads' in request.endpoint %}active{% endif %}">📋 Leads</a>
-      <a href="{{ url_for('super_admin_bp.conversations_page') }}" class="sa-tab {% if 'conversation' in request.endpoint %}active{% endif %}">💬 Chats</a>
-    </nav>
   </header>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="{{ url_for('super_admin_bp.dashboard') }}" class="{% if request.endpoint == 'super_admin_bp.dashboard' %}active{% endif %}">Overview</a>
+      <a href="{{ url_for('super_admin_bp.users_page') }}" class="{% if 'users' in (request.endpoint or '') %}active{% endif %}">Users</a>
+      <a href="{{ url_for('super_admin_bp.bots_page') }}" class="{% if 'bots' in (request.endpoint or '') %}active{% endif %}">Bots</a>
+      <a href="{{ url_for('super_admin_bp.billing_page') }}" class="{% if 'billing' in (request.endpoint or '') %}active{% endif %}">Billing</a>
+      <a href="{{ url_for('super_admin_bp.leads_page') }}" class="{% if 'leads' in (request.endpoint or '') %}active{% endif %}">Leads</a>
+      <a href="{{ url_for('super_admin_bp.conversations_page') }}" class="{% if 'conversation' in (request.endpoint or '') %}active{% endif %}">Chats</a>
+      <a href="{{ url_for('super_admin_bp.scrapes_page') }}" class="{% if 'scrapes' in (request.endpoint or '') %}active{% endif %}">Scrapes</a>
+      <a href="{{ url_for('super_admin_bp.system_logs') }}" class="{% if 'logs' in (request.endpoint or '') %}active{% endif %}">Logs</a>
+    </div>
+  </nav>
 
-  <!-- ═══ PAGE CONTENT ═══ -->
-  <div class="sa-page">
+  <div class="page">
     {% block content %}{% endblock %}
   </div>
 
-  <!-- ═══ MODAL ═══ -->
-  <div class="sa-modal-bg" id="sa-modal" onclick="if(event.target===this)closeModal()">
-    <div class="sa-modal">
-      <h3 id="modal-title">Action</h3>
+  <!-- Modal -->
+  <div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3 id="modal-title"></h3>
       <div id="modal-body"></div>
     </div>
   </div>
 
   <script>
-    // IST Clock
-    function updateClock(){
-      var now=new Date();
-      var ist=new Date(now.getTime()+(5.5*60*60*1000));
-      document.getElementById('sa-clock').textContent=
-        ist.getUTCHours().toString().padStart(2,'0')+':'+
-        ist.getUTCMinutes().toString().padStart(2,'0')+':'+
-        ist.getUTCSeconds().toString().padStart(2,'0')+' IST';
-    }
-    updateClock(); setInterval(updateClock,1000);
-
+    // Clock (IST)
+    !function(){var c=document.getElementById('clock');function u(){var d=new Date(),i=new Date(d.getTime()+5.5*36e5);c.textContent=i.getUTCHours().toString().padStart(2,'0')+':'+i.getUTCMinutes().toString().padStart(2,'0')+' IST'}u();setInterval(u,60000)}();
     // Modal
-    function openModal(title,html){
-      document.getElementById('modal-title').textContent=title;
-      document.getElementById('modal-body').innerHTML=html;
-      document.getElementById('sa-modal').classList.add('open');
-    }
-    function closeModal(){ document.getElementById('sa-modal').classList.remove('open'); }
+    function openModal(t,h){document.getElementById('modal-title').textContent=t;document.getElementById('modal-body').innerHTML=h;document.getElementById('modal').classList.add('open')}
+    function closeModal(){document.getElementById('modal').classList.remove('open')}
   </script>
   {% block scripts %}{% endblock %}
 </body>

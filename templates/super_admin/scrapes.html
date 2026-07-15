@@ -1,0 +1,58 @@
+{% extends "super_admin/base.html" %}
+{% block title %}Failed Scrapes{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Failed Scrape Jobs</h1>
+
+<div class="table-wrap">
+  <div class="table-header"><h3>{{ scrapes | length }} failed jobs</h3></div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>URL</th><th>Error</th><th>Created</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for s in scrapes %}
+        <tr id="scrape-row-{{ s.id }}">
+          <td>{{ s.id }}</td>
+          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">{{ s.url }}</td>
+          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;color:var(--red);">{{ s.error_message or '—' }}</td>
+          <td>{{ s.created_at }}</td>
+          <td>
+            <button class="btn btn-outline" onclick="retryScrape({{ s.id }})">Retry</button>
+            <button class="btn btn-danger" onclick="deleteScrape({{ s.id }})">Delete</button>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not scrapes %}
+        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No failed scrape jobs.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function retryScrape(jobId) {
+  fetch('/super_admin/scrapes/retry', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({job_id: jobId})
+  }).then(r => r.json()).then(d => {
+    if (d.success) { document.getElementById('scrape-row-' + jobId).remove(); }
+    else { alert(d.error || 'Failed'); }
+  });
+}
+function deleteScrape(jobId) {
+  if (!confirm('Delete this scrape job?')) return;
+  fetch('/super_admin/scrapes/delete', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({job_id: jobId})
+  }).then(r => r.json()).then(d => {
+    if (d.success) { document.getElementById('scrape-row-' + jobId).remove(); }
+    else { alert(d.error || 'Failed'); }
+  });
+}
+</script>
+{% endblock %}
