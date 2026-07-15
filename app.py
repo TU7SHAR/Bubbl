@@ -53,11 +53,6 @@ app.register_blueprint(api_bp)
 app.register_blueprint(payments_bp)
 app.register_blueprint(super_admin_bp)
 
-with app.app_context():
-    db.create_all()
-    # Auto-run safe migrations on startup (idempotent)
-    _run_auto_migrations()
-
 
 def _run_auto_migrations():
     """Idempotent migrations — safe to run on every deploy."""
@@ -89,6 +84,11 @@ def _run_auto_migrations():
         except Exception:
             db.session.rollback()
     db.session.commit()
+
+
+with app.app_context():
+    db.create_all()
+    _run_auto_migrations()
 
 @app.after_request
 def add_security_headers(response):
