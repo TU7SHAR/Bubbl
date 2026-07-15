@@ -3,11 +3,30 @@ import re
 import logging
 from flask import Blueprint, request, jsonify, session, current_app
 from bot.chat import get_response_from_gemini
-from models.models import Bot, Lead, db
+from models.models import Bot, Lead, ChatMessage, db
 from extensions import limiter, cache
 from utils.plan_limits import check_message_limit, increment_message_count
+import uuid
 
 api_bp = Blueprint('api_bp', __name__)
+
+
+def _save_chat_message(bot_id, session_id, role, content, lead_id=None, tokens_used=0):
+    """Persist a single chat message to the database (fire-and-forget)."""
+    try:
+        msg = ChatMessage(
+            bot_id=bot_id,
+            session_id=session_id,
+            role=role,
+            content=content[:5000] if content else "",  # Cap at 5000 chars
+            lead_id=lead_id,
+            tokens_used=tokens_used,
+        )
+        db.session.add(msg)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logging.warning(f"[chat_persist] Failed to save message: {e}")
 
 
 def get_bot_config(bot_id):
@@ -118,11 +137,19 @@ def chat():
     user_message = data.get('message')
     bot_id = data.get('bot_id') or session.get('active_bot_id')
     history = data.get('history', [])
+    chat_session_id = data.get('session_id') or session.get('chat_session_id') or str(uuid.uuid4())
+
+    # Store session_id in Flask session for continuity
+    if 'chat_session_id' not in session:
+        session['chat_session_id'] = chat_session_id
 
     try:
         if not bot_id:
             reply = get_response_from_gemini(user_query=user_message, history=history)
-            return jsonify({"response": reply})
+            # Save public bot conversation
+            _save_chat_message(bot_id=None, session_id=chat_session_id, role='user', content=user_message)
+            _save_chat_message(bot_id=None, session_id=chat_session_id, role='bot', content=reply)
+            return jsonify({"response": reply, "session_id": chat_session_id})
 
         bot_cfg = get_bot_config(bot_id)
         if not bot_cfg["exists"]:
@@ -272,7 +299,11 @@ def chat():
         if bot_record:
             increment_message_count(bot_record.org_id)
 
-        return jsonify({"response": reply, "lead_id": lead_id})
+        # --- PERSIST CHAT TO DB ---
+        _save_chat_message(bot_id=bot_id, session_id=chat_session_id, role='user', content=user_message)
+        _save_chat_message(bot_id=bot_id, session_id=chat_session_id, role='bot', content=reply, lead_id=lead_id)
+
+        return jsonify({"response": reply, "lead_id": lead_id, "session_id": chat_session_id})
 
     except Exception as e:
         db.session.rollback()

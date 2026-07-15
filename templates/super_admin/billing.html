@@ -1,0 +1,95 @@
+{% extends 'super_admin/base.html' %}
+
+{% block page_title %}Revenue & Billing{% endblock %}
+
+{% block content %}
+<!-- Stats Grid -->
+<div class="sa-grid">
+  <div class="sa-card">
+    <div class="sa-card-label">MRR (₹)</div>
+    <div class="sa-card-value">₹{{ mrr | int }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">ARR (₹)</div>
+    <div class="sa-card-value">₹{{ arr | int }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Active Subs</div>
+    <div class="sa-card-value">{{ active_subscriptions }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Total Collected (₹)</div>
+    <div class="sa-card-value">₹{{ total_revenue | int }}</div>
+  </div>
+</div>
+
+<!-- Plan Breakdown -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Plan Breakdown</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th>Subscribers</th>
+          <th>Price/mo</th>
+          <th>MRR</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in revenue_by_plan %}
+        <tr>
+          <td><strong style="color:var(--text);">{{ r.plan }}</strong></td>
+          <td>{{ r.count }}</td>
+          <td>₹{{ r.price }}</td>
+          <td>₹{{ r.mrr }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Payment History -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Payment History</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Plan</th>
+          <th>Amount</th>
+          <th>Transaction ID</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in recent_payments %}
+        <tr>
+          <td>{{ p.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+          <td>{{ p.email }}</td>
+          <td>{{ p.plan }}</td>
+          <td>₹{{ p.amount }}</td>
+          <td><code style="font-size:11px; color:var(--text-dim);">{{ p.transaction_id }}</code></td>
+          <td>
+            {% if p.status == 'success' or p.status == 'captured' %}
+              <span class="badge badge-green">{{ p.status }}</span>
+            {% elif p.status == 'failed' %}
+              <span class="badge badge-red">{{ p.status }}</span>
+            {% else %}
+              <span class="badge badge-gray">{{ p.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

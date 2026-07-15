@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Super Admin{% endblock %} | Bubbl.ooo</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ═══ ADMIN BASE — Dark theme, no marketing, no trackers ═══ */
+    :root {
+      --bg: #070710;
+      --card: #11111f;
+      --card-border: rgba(255,255,255,0.08);
+      --text: #f1f1f1;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --accent: #8b5cf6;
+      --accent-hover: #a78bfa;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --blue: #3b82f6;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    /* ── Layout ── */
+    .sa-shell { display: flex; min-height: 100vh; }
+    .sa-sidebar {
+      width: 220px; flex-shrink: 0; background: rgba(17,17,31,0.6);
+      border-right: 1px solid var(--card-border); padding: 20px 0;
+      display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+      overflow-y: auto;
+    }
+    .sa-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .sa-topbar {
+      padding: 14px 28px; border-bottom: 1px solid var(--card-border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(7,7,16,0.85); backdrop-filter: blur(10px);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .sa-page { padding: 24px 28px; flex: 1; max-width: 1400px; width: 100%; margin: 0 auto; }
+
+    /* ── Sidebar ── */
+    .sa-brand { padding: 0 20px 20px; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; }
+    .sa-brand h1 { font-size: 16px; font-weight: 800; color: var(--accent); margin: 0; }
+    .sa-brand small { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+    .sa-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 10px; flex: 1; }
+    .sa-nav a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      border-radius: 8px; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); transition: all 0.15s;
+    }
+    .sa-nav a:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .sa-nav a.active { background: rgba(139,92,246,0.12); color: var(--accent); font-weight: 600; }
+    .sa-nav-icon { width: 18px; height: 18px; opacity: 0.7; }
+    .sa-nav-bottom { padding: 16px 20px; border-top: 1px solid var(--card-border); margin-top: auto; }
+    .sa-nav-bottom a { font-size: 12px; color: var(--text-dim); }
+
+    /* ── Topbar ── */
+    .sa-topbar-title { font-size: 18px; font-weight: 700; }
+    .sa-topbar-right { display: flex; align-items: center; gap: 12px; }
+    .sa-clock { font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+    .sa-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid transparent; transition: all 0.15s;
+    }
+    .sa-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .sa-btn-primary:hover { background: var(--accent-hover); }
+    .sa-btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--card-border); }
+    .sa-btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .sa-btn-danger { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.2); }
+    .sa-btn-success { background: rgba(16,185,129,0.1); color: #34d399; border-color: rgba(16,185,129,0.2); }
+
+    /* ── Cards ── */
+    .sa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .sa-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); padding: 18px; transition: border-color 0.2s;
+    }
+    .sa-card:hover { border-color: rgba(255,255,255,0.12); }
+    .sa-card-label { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .sa-card-value { font-size: 26px; font-weight: 800; line-height: 1.2; }
+    .sa-card-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+    /* ── Tables ── */
+    .sa-table-wrap {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px;
+    }
+    .sa-table-header {
+      padding: 14px 18px; border-bottom: 1px solid var(--card-border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sa-table-header h3 { font-size: 14px; font-weight: 600; margin: 0; }
+    .sa-table-scroll { overflow-x: auto; }
+    table.sa-table { width: 100%; border-collapse: collapse; }
+    .sa-table th {
+      padding: 10px 14px; font-size: 11px; font-weight: 700; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.04em; text-align: left;
+      border-bottom: 1px solid var(--card-border); background: rgba(255,255,255,0.02);
+    }
+    .sa-table td {
+      padding: 12px 14px; font-size: 13px; color: var(--text-muted);
+      border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle;
+    }
+    .sa-table tr:hover td { background: rgba(255,255,255,0.015); }
+    .sa-table tr:last-child td { border-bottom: none; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex; padding: 3px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;
+    }
+    .badge-purple { background: rgba(139,92,246,0.15); color: #a78bfa; }
+    .badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .badge-gray { background: rgba(107,114,128,0.15); color: #9ca3af; }
+    .badge-yellow { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    /* ── Forms ── */
+    .sa-select, .sa-input {
+      padding: 7px 12px; border-radius: 7px; border: 1px solid var(--card-border);
+      background: rgba(255,255,255,0.04); color: var(--text); font-size: 13px; outline: none;
+    }
+    .sa-select:focus, .sa-input:focus { border-color: var(--accent); }
+    .sa-select option { background: #1a1a2e; color: #fff; }
+
+    /* ── Modal ── */
+    .sa-modal-bg {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;
+    }
+    .sa-modal-bg.open { display: flex; }
+    .sa-modal {
+      background: #1a1a2e; border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+      max-width: 460px; width: 100%; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .sa-modal h3 { font-size: 16px; font-weight: 700; margin: 0 0 16px; }
+    .sa-modal input, .sa-modal textarea {
+      width: 100%; box-sizing: border-box; padding: 10px 12px;
+      border: 1px solid var(--card-border); border-radius: 8px;
+      background: rgba(255,255,255,0.04); color: var(--text); font-size: 14px;
+      margin-bottom: 10px; outline: none; resize: vertical;
+    }
+    .sa-modal input:focus, .sa-modal textarea:focus { border-color: var(--accent); }
+
+    /* ── Pagination ── */
+    .sa-pagination { display: flex; gap: 8px; align-items: center; justify-content: center; padding: 16px 0; }
+    .sa-pagination a, .sa-pagination span {
+      padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    }
+    .sa-pagination a { background: var(--card); border: 1px solid var(--card-border); color: var(--text-muted); }
+    .sa-pagination a:hover { border-color: var(--accent); color: var(--accent); }
+    .sa-pagination .current { background: var(--accent); color: #fff; }
+
+    /* ── Chat transcript ── */
+    .chat-bubble {
+      max-width: 75%; padding: 10px 14px; border-radius: 14px; margin-bottom: 8px;
+      font-size: 13px; line-height: 1.5; word-wrap: break-word;
+    }
+    .chat-user { background: rgba(139,92,246,0.15); color: #e0d4ff; align-self: flex-end; border-bottom-right-radius: 4px; margin-left: auto; }
+    .chat-bot { background: rgba(255,255,255,0.06); color: var(--text-muted); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .chat-meta { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+    /* ── Filter bar ── */
+    .sa-filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sa-sidebar { display: none; }
+      .sa-page { padding: 16px; }
+      .sa-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .sa-topbar { padding: 12px 16px; }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="sa-shell">
+    <!-- Sidebar -->
+    <aside class="sa-sidebar">
+      <div class="sa-brand">
+        <h1>Bubbl.ooo</h1>
+        <small>Super Admin</small>
+      </div>
+      <nav class="sa-nav">
+        <a href="{{ url_for('super_admin_bp.dashboard') }}" class="{% if request.endpoint == 'super_admin_bp.dashboard' %}active{% endif %}">
+          <span>📊</span> Overview
+        </a>
+        <a href="{{ url_for('super_admin_bp.users_page') }}" class="{% if 'users' in request.endpoint %}active{% endif %}">
+          <span>👥</span> Users
+        </a>
+        <a href="{{ url_for('super_admin_bp.bots_page') }}" class="{% if 'bots' in request.endpoint %}active{% endif %}">
+          <span>🤖</span> Bots
+        </a>
+        <a href="{{ url_for('super_admin_bp.billing_page') }}" class="{% if 'billing' in request.endpoint %}active{% endif %}">
+          <span>💰</span> Billing
+        </a>
+        <a href="{{ url_for('super_admin_bp.leads_page') }}" class="{% if 'leads' in request.endpoint %}active{% endif %}">
+          <span>📋</span> Leads
+        </a>
+        <a href="{{ url_for('super_admin_bp.conversations_page') }}" class="{% if 'conversation' in request.endpoint %}active{% endif %}">
+          <span>💬</span> Conversations
+        </a>
+      </nav>
+      <div class="sa-nav-bottom">
+        <a href="{{ url_for('views_bp.dashboard') }}">← Back to App</a>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="sa-main">
+      <header class="sa-topbar">
+        <span class="sa-topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
+        <div class="sa-topbar-right">
+          <span class="sa-clock" id="sa-clock">--:--</span>
+          <button class="sa-btn sa-btn-ghost" onclick="location.reload()">↻ Refresh</button>
+          <a href="{{ url_for('auth.logout') }}" class="sa-btn sa-btn-ghost">Logout</a>
+        </div>
+      </header>
+      <div class="sa-page">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal container -->
+  <div class="sa-modal-bg" id="sa-modal" onclick="if(event.target===this)closeModal()">
+    <div class="sa-modal">
+      <h3 id="modal-title">Action</h3>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // IST Clock
+    function updateClock(){
+      var now=new Date();
+      var ist=new Date(now.getTime()+(5.5*60*60*1000));
+      document.getElementById('sa-clock').textContent=
+        ist.getUTCHours().toString().padStart(2,'0')+':'+
+        ist.getUTCMinutes().toString().padStart(2,'0')+':'+
+        ist.getUTCSeconds().toString().padStart(2,'0')+' IST';
+    }
+    updateClock(); setInterval(updateClock,1000);
+
+    // Modal
+    function openModal(title,html){
+      document.getElementById('modal-title').textContent=title;
+      document.getElementById('modal-body').innerHTML=html;
+      document.getElementById('sa-modal').classList.add('open');
+    }
+    function closeModal(){ document.getElementById('sa-modal').classList.remove('open'); }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

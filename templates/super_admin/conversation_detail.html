@@ -1,0 +1,39 @@
+{% extends 'super_admin/base.html' %}
+
+{% block page_title %}Chat: {{ bot_name }}{% endblock %}
+
+{% block content %}
+<!-- Back Link -->
+<div style="margin-bottom:20px;">
+  <a href="/super_admin/conversations" class="sa-btn sa-btn-ghost">← Back to Conversations</a>
+</div>
+
+<!-- Session Info -->
+<div class="sa-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:24px;">
+  <div class="sa-card">
+    <div class="sa-card-label">Session ID</div>
+    <div class="sa-card-value" style="font-size:14px; font-family:monospace;">{{ session_id }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Bot</div>
+    <div class="sa-card-value" style="font-size:18px;">{{ bot_name }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Messages</div>
+    <div class="sa-card-value">{{ messages|length }}</div>
+  </div>
+</div>
+
+<!-- Chat Transcript -->
+<div class="sa-table-wrap" style="padding:20px;">
+  <h3 style="margin-bottom:16px; font-size:14px; font-weight:600;">Transcript</h3>
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    {% for msg in messages %}
+    <div class="chat-bubble {% if msg.role == 'user' %}chat-user{% else %}chat-bot{% endif %}">
+      {{ msg.content }}
+      <div class="chat-meta">{{ msg.created_at.strftime('%b %d, %Y %H:%M') }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'super_admin/base.html' %}
+
+{% block page_title %}Bots ({{ bots|length }}){% endblock %}
+
+{% block content %}
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>All Bots</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Owner</th>
+          <th>Type</th>
+          <th>Docs</th>
+          <th>Scrapes</th>
+          <th>Leads</th>
+          <th>Interactions</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bots %}
+        <tr>
+          <td><strong style="color:var(--text);">{{ b.name }}</strong></td>
+          <td>
+            {{ b.owner }}<br>
+            <span style="font-size:11px; color:var(--text-dim);">{{ b.owner_email }}</span>
+          </td>
+          <td>{{ b.type }}</td>
+          <td>{{ b.docs }}</td>
+          <td>{{ b.scrapes }}</td>
+          <td>{{ b.leads }}</td>
+          <td>{{ b.interactions }}</td>
+          <td>
+            {% if b.is_active %}
+              <span class="badge badge-green">Active</span>
+            {% else %}
+              <span class="badge badge-red">Disabled</span>
+            {% endif %}
+          </td>
+          <td>
+            <button class="sa-btn {% if b.is_active %}sa-btn-danger{% else %}sa-btn-success{% endif %}" style="padding:4px 10px; font-size:11px;" onclick="toggleBot('{{ b.id }}', '{{ b.name }}')">
+              {% if b.is_active %}Disable{% else %}Enable{% endif %}
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleBot(botId, name) {
+  if (!confirm('Toggle status for bot: ' + name + '?')) return;
+  fetch('/super_admin/bots/toggle', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bot_id: botId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    openModal('Bot Toggled', '<p>' + (data.message || JSON.stringify(data)) + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal(); location.reload();">OK</button>');
+  })
+  .catch(err => {
+    openModal('Error', '<p style="color:#f87171;">' + err.message + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
+  });
+}
+</script>
+{% endblock %}
