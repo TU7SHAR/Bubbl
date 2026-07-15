@@ -75,23 +75,48 @@ def end_of_day(dt):
 
 def enforce_subscription_expiry(org):
     """
-    Lazily downgrade a canceled subscription once its access window has ended.
+    Lazily downgrade an expired subscription once its access window has ended.
 
-    When a user cancels with a proportionate refund, we keep their plan active
-    until 23:59 of the cancellation day (stored in subscription_ends_at). This
-    function is called by the limit checks so that access is cut off correctly
+    Handles TWO cases:
+    1. Canceled subscription: user canceled → plan active until subscription_ends_at
+    2. Gifted/admin-granted plan: super admin upgraded → plan active for 30 days
+       (subscription_status='active' but no Paddle subscription backing it)
+
+    Called by the limit checks so that access is cut off correctly
     without needing a cron job.
     """
     if not org:
         return
-    if org.subscription_status == 'canceled' and org.subscription_ends_at:
-        now = datetime.now(timezone.utc)
-        ends = _aware(org.subscription_ends_at)
-        if now >= ends and (org.plan or 'free') != 'free':
-            org.plan = 'free'
-            org.subscription_status = 'free'
-            org.paddle_subscription_id = None
-            db.session.commit()
+    if not org.subscription_ends_at:
+        return
+    if (org.plan or 'free') == 'free':
+        return
+
+    now = datetime.now(timezone.utc)
+    ends = _aware(org.subscription_ends_at)
+
+    if now < ends:
+        return  # Still within the access window
+
+    # Plan has expired. Check if it's a real recurring Paddle subscription
+    # (those are renewed by webhooks and should NOT be auto-downgraded here).
+    has_paddle_sub = (
+        org.paddle_subscription_id
+        and org.paddle_subscription_id.startswith('sub_')
+    )
+
+    if org.subscription_status == 'canceled':
+        # Case 1: User canceled — always downgrade after expiry
+        org.plan = 'free'
+        org.subscription_status = 'free'
+        org.paddle_subscription_id = None
+        db.session.commit()
+    elif org.subscription_status == 'active' and not has_paddle_sub:
+        # Case 2: Gifted/admin-granted plan (no Paddle sub backing it)
+        # These have a fixed 30-day window set by super admin upgrade
+        org.plan = 'free'
+        org.subscription_status = 'free'
+        db.session.commit()
 
 
 def calculate_proportionate_refund(payment, plan_price=None, cancel_dt=None):
