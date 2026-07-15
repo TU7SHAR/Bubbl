@@ -739,7 +739,7 @@
 
   document.getElementById('scrape-btn').addEventListener('click', async function() {
       const url = document.getElementById('scrape_url').value;
-      if(!url) return alert("Enter URL");
+      if(!url) return showModal('Please enter a URL.', 'error');
 
       // Grab variables safely
       const isDeep = document.getElementById('use_deep_crawl').checked;

@@ -66,7 +66,7 @@
           {% if active_bot.visibility == 'private' %}
           <div style="background: rgba(220,38,38,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(220,38,38,0.2); display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: 800; color: #dc2626; font-size: 13px;">KEY: {{ active_bot.access_key }}</span>
-            <button class="glass-btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="navigator.clipboard.writeText('{{ active_bot.access_key }}'); alert('Key Copied!')">Copy</button>
+            <button class="glass-btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="navigator.clipboard.writeText('{{ active_bot.access_key }}'); showModal('Key Copied!', 'success')">Copy</button>
           </div>
           {% endif %}
 
