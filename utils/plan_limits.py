@@ -294,7 +294,7 @@ def get_usage_summary(org_id):
     # Reset date
     reset_date = org.messages_reset_at.strftime('%b %d, %Y') if org.messages_reset_at else 'Next billing cycle'
 
-    return {
+    result = {
         'plan': plan,
         'plan_name': plan.capitalize(),
         'messages_used': messages_used,
