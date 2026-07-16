@@ -388,7 +388,7 @@ def save_bot_links(bot_id):
     data = request.get_json(silent=True) or {}
     links = data.get('links', [])
 
-    valid_categories = ['pricing', 'action', 'info', 'support', 'link']
+    valid_categories = ['pricing', 'action', 'info', 'support', 'link', 'email', 'phone']
     cleaned = []
     for link in links:
         label = (link.get('label') or '').strip()

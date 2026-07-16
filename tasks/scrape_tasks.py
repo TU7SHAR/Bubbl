@@ -154,59 +154,129 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
             if error_logs:
                 job.error_message = f"Partial success ({success_count} scraped)."
 
-            # --- AUTO-EXTRACT LINKS FOR ALL BOTS ---
-            # Auto-populate managed_links from discovered URLs during scrape
+            # --- AUTO-EXTRACT LINKS, EMAILS, PHONES FROM ALL BOTS ---
+            # Extract from page content (markdown has [text](url) links, emails, phones)
             if urls_to_scrape:
-                from urllib.parse import urlparse
+                import re
+                from urllib.parse import urlparse, urljoin
 
                 existing_links = target_bot.managed_links or []
-                existing_urls = {link.get('url', '') for link in existing_links}
+                existing_values = {link.get('url', '') for link in existing_links}
 
-                # Auto-categorize URLs based on path keywords
                 def auto_categorize(url_path):
                     path = url_path.lower()
-                    if 'pricing' in path or 'plan' in path:
+                    if 'pricing' in path or 'plan' in path or 'buy' in path or 'shop' in path:
                         return 'pricing'
-                    elif 'register' in path or 'signup' in path or 'sign-up' in path or 'start' in path:
+                    elif 'register' in path or 'signup' in path or 'sign-up' in path or 'start' in path or 'order' in path:
                         return 'action'
-                    elif 'login' in path or 'signin' in path:
+                    elif 'login' in path or 'signin' in path or 'account' in path:
                         return 'action'
-                    elif 'contact' in path or 'support' in path or 'help' in path:
+                    elif 'contact' in path or 'support' in path or 'help' in path or 'faq' in path:
                         return 'support'
-                    elif 'feature' in path or 'how' in path or 'docs' in path or 'guide' in path:
+                    elif 'feature' in path or 'how' in path or 'docs' in path or 'guide' in path or 'about' in path or 'learn' in path:
                         return 'info'
                     else:
                         return 'link'
 
                 def make_label(url_str):
-                    """Generate a readable label from URL path."""
                     parsed = urlparse(url_str)
                     path = parsed.path.strip('/')
                     if not path:
-                        return parsed.netloc  # Root URL → use domain as label
-                    # Take last segment, clean it up
+                        return parsed.netloc
                     segment = path.split('/')[-1]
-                    segment = segment.replace('.html', '').replace('.htm', '').replace('-', ' ').replace('_', ' ')
-                    return segment.title()
+                    segment = segment.replace('.html', '').replace('.htm', '').replace('.php', '')
+                    segment = segment.replace('-', ' ').replace('_', ' ')
+                    return segment.title()[:50]
 
                 new_links_added = 0
+
+                # 1. Add all crawled/discovered URLs
                 for scraped_url in urls_to_scrape:
-                    if scraped_url not in existing_urls:
+                    if scraped_url not in existing_values:
                         parsed = urlparse(scraped_url)
-                        category = auto_categorize(parsed.path)
-                        label = make_label(scraped_url)
                         existing_links.append({
-                            "label": label,
+                            "label": make_label(scraped_url),
                             "url": scraped_url,
-                            "category": category,
+                            "category": auto_categorize(parsed.path),
                         })
-                        existing_urls.add(scraped_url)
+                        existing_values.add(scraped_url)
                         new_links_added += 1
+
+                # 2. Extract links, emails, phones from page CONTENT
+                # Read all scraped markdown files for this job
+                all_content = ""
+                for scraped_url in urls_to_scrape:
+                    # We already wrote the files — read them back for parsing
+                    pass  # Content was already processed above
+
+                # Parse links from markdown content (stored in uploads folder)
+                import glob
+                recent_files = sorted(
+                    glob.glob(os.path.join(scrape_dir, "*.md")),
+                    key=os.path.getmtime, reverse=True
+                )[:len(urls_to_scrape) + 5]  # Get recently created files
+
+                for fpath in recent_files:
+                    try:
+                        with open(fpath, 'r', encoding='utf-8') as f:
+                            content = f.read()
+
+                        # Extract URLs from markdown [text](url) and bare URLs
+                        found_urls = re.findall(r'https?://[^\s\)\]\>"\']+', content)
+                        base_domain = urlparse(url).netloc
+
+                        for found_url in found_urls:
+                            # Clean trailing punctuation
+                            found_url = found_url.rstrip('.,;:!?)')
+                            if found_url not in existing_values and len(found_url) < 300:
+                                parsed = urlparse(found_url)
+                                # Only add same-domain links or well-known external links
+                                if parsed.netloc == base_domain or parsed.netloc.endswith('.' + base_domain):
+                                    existing_links.append({
+                                        "label": make_label(found_url),
+                                        "url": found_url,
+                                        "category": auto_categorize(parsed.path),
+                                    })
+                                    existing_values.add(found_url)
+                                    new_links_added += 1
+
+                        # Extract email addresses
+                        emails = re.findall(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', content)
+                        for email in set(emails):
+                            mailto = f"mailto:{email}"
+                            if mailto not in existing_values and email not in existing_values:
+                                existing_links.append({
+                                    "label": email,
+                                    "url": mailto,
+                                    "category": "email",
+                                })
+                                existing_values.add(mailto)
+                                new_links_added += 1
+
+                        # Extract phone numbers (common formats)
+                        phones = re.findall(r'(?:\+?\d{1,3}[\s\-]?)?\(?\d{2,4}\)?[\s\-]?\d{3,4}[\s\-]?\d{3,4}', content)
+                        for phone in set(phones):
+                            phone_clean = phone.strip()
+                            # Only add if it looks like a real phone (7+ digits)
+                            digits_only = re.sub(r'\D', '', phone_clean)
+                            if len(digits_only) >= 7 and len(digits_only) <= 15:
+                                tel = f"tel:{digits_only}"
+                                if tel not in existing_values:
+                                    existing_links.append({
+                                        "label": phone_clean,
+                                        "url": tel,
+                                        "category": "phone",
+                                    })
+                                    existing_values.add(tel)
+                                    new_links_added += 1
+
+                    except Exception:
+                        continue
 
                 if new_links_added > 0:
                     target_bot.managed_links = existing_links
                     db.session.commit()
-                    add_log(f"[Links] Auto-added {new_links_added} URLs to managed links.")
+                    add_log(f"[Links] Auto-extracted {new_links_added} items (URLs + emails + phones).")
 
         else:
             job.status = 'failed'

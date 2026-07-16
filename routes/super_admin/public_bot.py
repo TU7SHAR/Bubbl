@@ -202,7 +202,7 @@ def public_bot_save_links():
     links = data.get('links', [])
 
     # Validate: each link must have label, url, category
-    valid_categories = ['pricing', 'action', 'info', 'support', 'link']
+    valid_categories = ['pricing', 'action', 'info', 'support', 'link', 'email', 'phone']
     cleaned = []
     for link in links:
         label = (link.get('label') or '').strip()

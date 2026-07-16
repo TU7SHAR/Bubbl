@@ -841,6 +841,8 @@ function renderLinks() {
       '<option value="action"'+(link.category==='action'?' selected':'')+'>Action</option>' +
       '<option value="info"'+(link.category==='info'?' selected':'')+'>Info</option>' +
       '<option value="support"'+(link.category==='support'?' selected':'')+'>Support</option>' +
+      '<option value="email"'+(link.category==='email'?' selected':'')+'>Email</option>' +
+      '<option value="phone"'+(link.category==='phone'?' selected':'')+'>Phone</option>' +
       '<option value="link"'+(link.category==='link'?' selected':'')+'>General</option></select>' +
       '<button type="button" style="background:rgba(239,68,68,0.1); color:#dc2626; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-weight:700; font-size:12px;" onclick="removeLink('+i+')">X</button>';
     c.appendChild(row);
