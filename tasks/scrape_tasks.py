@@ -230,7 +230,15 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                             found_url = found_url.rstrip('.,;:!?)')
                             if found_url not in existing_values and len(found_url) < 300:
                                 parsed = urlparse(found_url)
-                                # Only add same-domain links or well-known external links
+                                # Skip image/asset/media URLs
+                                skip_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.pdf', '.css', '.js', '.woff', '.woff2', '.ttf', '.mp4', '.mp3')
+                                if any(parsed.path.lower().endswith(ext) for ext in skip_extensions):
+                                    continue
+                                # Skip asset/CDN paths
+                                skip_paths = ('/dam/', '/assets/', '/static/', '/images/', '/media/', '/cdn/', '/_next/')
+                                if any(skip in parsed.path.lower() for skip in skip_paths):
+                                    continue
+                                # Only add same-domain links
                                 if parsed.netloc == base_domain or parsed.netloc.endswith('.' + base_domain):
                                     existing_links.append({
                                         "label": make_label(found_url),
@@ -240,9 +248,20 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                                     existing_values.add(found_url)
                                     new_links_added += 1
 
-                        # Extract email addresses
+                        # Extract email addresses (skip our own platform emails)
+                        platform_emails = {
+                            (os.getenv('EMAIL_ADDRESS') or '').lower(),
+                            (os.getenv('SUPPORT_EMAIL') or '').lower(),
+                            'bubblteams@gmail.com',
+                            'system@bubbl.ooo',
+                        }
                         emails = re.findall(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', content)
                         for email in set(emails):
+                            if email.lower() in platform_emails:
+                                continue  # Skip our own emails
+                            # Skip common no-reply/generic emails
+                            if any(skip in email.lower() for skip in ['noreply', 'no-reply', 'mailer-daemon', 'postmaster']):
+                                continue
                             mailto = f"mailto:{email}"
                             if mailto not in existing_values and email not in existing_values:
                                 existing_links.append({
@@ -253,14 +272,20 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                                 existing_values.add(mailto)
                                 new_links_added += 1
 
-                        # Extract phone numbers (common formats)
-                        phones = re.findall(r'(?:\+?\d{1,3}[\s\-]?)?\(?\d{2,4}\)?[\s\-]?\d{3,4}[\s\-]?\d{3,4}', content)
+                        # Extract phone numbers WITH country codes
+                        # Matches: +91 98765 43210, +1-800-123-4567, (022) 1234-5678, etc.
+                        phone_pattern = r'(?:\+\d{1,3}[\s\-]?)(?:\(?\d{2,5}\)?[\s\-]?)?\d{3,5}[\s\-]?\d{3,5}'
+                        phones = re.findall(phone_pattern, content)
                         for phone in set(phones):
                             phone_clean = phone.strip()
-                            # Only add if it looks like a real phone (7+ digits)
                             digits_only = re.sub(r'\D', '', phone_clean)
-                            if len(digits_only) >= 7 and len(digits_only) <= 15:
-                                tel = f"tel:{digits_only}"
+                            # Must be 10-15 digits (real phone numbers)
+                            # AND must not appear as part of a URL/asset path
+                            if len(digits_only) >= 10 and len(digits_only) <= 15:
+                                # Skip if this number appears inside a URL (likely an asset ID)
+                                if digits_only in ''.join(found_urls):
+                                    continue
+                                tel = f"tel:+{digits_only}" if not phone_clean.startswith('+') else f"tel:{phone_clean.replace(' ', '').replace('-', '')}"
                                 if tel not in existing_values:
                                     existing_links.append({
                                         "label": phone_clean,
