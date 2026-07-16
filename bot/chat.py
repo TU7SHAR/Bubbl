@@ -81,12 +81,12 @@ def _get_platform_bot_config():
     import json
     platform_bot = Bot.query.filter_by(bot_type='platform').first()
     if platform_bot and platform_bot.store_id:
-        # Links are stored as JSON in custom_form_fields
+        # Links are stored as JSONB in custom_form_fields
         links_text = ""
-        raw = (platform_bot.custom_form_fields or "").strip()
+        raw = platform_bot.custom_form_fields or []
         if raw:
             try:
-                links = json.loads(raw)
+                links = raw if isinstance(raw, list) else json.loads(raw)
                 if isinstance(links, list):
                     for link in links:
                         label = link.get('label', '')

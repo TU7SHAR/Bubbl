@@ -160,13 +160,8 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                 import json
                 from urllib.parse import urlparse
 
-                existing_raw = (target_bot.custom_form_fields or "").strip()
-                existing_links = []
-                if existing_raw:
-                    try:
-                        existing_links = json.loads(existing_raw)
-                    except (json.JSONDecodeError, TypeError):
-                        existing_links = []
+                existing_raw = target_bot.custom_form_fields or []
+                existing_links = existing_raw if isinstance(existing_raw, list) else []
 
                 existing_urls = {link.get('url', '') for link in existing_links}
 
@@ -212,7 +207,7 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                         new_links_added += 1
 
                 if new_links_added > 0:
-                    target_bot.custom_form_fields = json.dumps(existing_links)
+                    target_bot.custom_form_fields = existing_links
                     db.session.commit()
                     add_log(f"[Links] Auto-added {new_links_added} URLs to managed links for public bot.")
 
