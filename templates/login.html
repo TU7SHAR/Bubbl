@@ -1,256 +1,145 @@
-{% block title %}Login | bubbl.ooo{% endblock %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, follow">
-  <title>Login | bubbl.ooo</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+{% extends 'base.html' %} 
+{% block title %}Login to Bubbl.ooo | AI Chatbot Platform{% endblock %} 
 
-    :root {
-      --orange: #E8722A;
-      --orange-hover: #d4611f;
-      --cream: #fdfaf6;
-      --warm-bg: #fff8f3;
-      --text-dark: #1a1008;
-      --text-body: #5a4a3a;
-      --text-muted: #8a7a6a;
-      --border: #E8E2DC;
-      --input-bg: #fdfaf6;
-    }
+{% block meta_description %}
+<meta name="robots" content="noindex, follow" />
+{% endblock %}
 
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--cream);
-      color: var(--text-dark);
-      min-height: 100vh;
-      line-height: 1.5;
-    }
+{% block content %}
+<style>
+  .auth-split {
+    display: flex;
+    min-height: calc(100vh - 120px);
+    margin: -20px 0 0;
+    gap: 0;
+  }
 
-    a { color: inherit; text-decoration: none; }
+  .auth-left {
+    flex: 0 0 45%;
+    background: linear-gradient(160deg, #fff8f3 0%, #fff1e8 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 50px;
+    border-right: 1px solid #f0e8e0;
+  }
 
-    /* Minimal Header */
-    .auth-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 40px;
-      border-bottom: 1px solid var(--border);
-    }
+  .auth-left h1 {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1a1008;
+    line-height: 1.25;
+    margin-bottom: 14px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
 
-    .auth-header-logo {
-      font-family: 'Bricolage Grotesque', serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text-dark);
-    }
-    .auth-header-logo span { color: var(--orange); }
+  .auth-left p {
+    font-size: 15px;
+    color: #6b5a4a;
+    line-height: 1.6;
+    max-width: 340px;
+  }
 
-    .auth-header-back {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-    .auth-header-back:hover { color: var(--orange); }
+  .auth-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
 
-    /* Split Layout */
-    .auth-split {
-      display: flex;
-      min-height: calc(100vh - 73px);
-    }
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+  }
 
-    /* Left Panel — Minimal for login */
-    .auth-left {
-      flex: 0 0 48%;
-      background: var(--warm-bg);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 60px;
-      border-right: 1px solid var(--border);
-    }
+  .auth-card h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1008;
+    margin-bottom: 4px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
 
-    .auth-left-heading {
-      font-family: 'Bricolage Grotesque', serif;
-      font-size: 34px;
-      font-weight: 800;
-      color: var(--text-dark);
-      line-height: 1.2;
-      margin-bottom: 16px;
-    }
+  .auth-card .subtitle {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 24px;
+  }
 
-    .auth-left-sub {
-      font-size: 16px;
-      color: var(--text-body);
-      line-height: 1.6;
-      max-width: 360px;
-    }
+  .fg { margin-bottom: 16px; }
 
-    /* Right Panel — Form */
-    .auth-right {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-    }
+  .fg label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #5a4a3a;
+    margin-bottom: 5px;
+  }
 
-    .auth-card {
-      width: 100%;
-      max-width: 440px;
-    }
+  .fg input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid #E8E2DC;
+    background: #fdfaf6;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: #1a1008;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+  }
 
-    .auth-card-title {
-      font-family: 'Bricolage Grotesque', serif;
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--text-dark);
-      margin-bottom: 6px;
-    }
+  .fg input:focus {
+    outline: none;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,114,42,0.08);
+    background: #fff;
+  }
 
-    .auth-card-sub {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin-bottom: 28px;
-    }
+  .fg input::placeholder { color: #c5b8aa; }
 
-    /* Flash Messages */
-    .flash-msg {
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin-bottom: 16px;
-      font-weight: 500;
-    }
-    .flash-success { background: rgba(16,185,129,0.1); color: #059669; }
-    .flash-error { background: rgba(239,68,68,0.08); color: #dc2626; }
-    .flash-warning { background: rgba(245,158,11,0.1); color: #b45309; }
-    .flash-info { background: rgba(59,130,246,0.08); color: #2563eb; }
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 56px; }
+  .pw-toggle {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    font-size: 11px; font-weight: 700; color: var(--orange);
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .pw-toggle:hover { color: #1a1008; }
 
-    /* Form */
-    .form-group { margin-bottom: 16px; }
+  .forgot { display: block; text-align: right; font-size: 12px; color: #999; font-weight: 600; margin-top: 6px; text-decoration: none; }
+  .forgot:hover { color: var(--orange); }
 
-    .form-label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-body);
-      margin-bottom: 6px;
-    }
+  .auth-submit {
+    width: 100%; padding: 12px; font-size: 15px; font-weight: 700;
+    background: var(--orange); color: #fff; border: none; border-radius: 10px;
+    cursor: pointer; margin-top: 22px; transition: background 0.2s;
+  }
+  .auth-submit:hover { background: #d4611f; }
 
-    .form-input {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--input-bg);
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      color: var(--text-dark);
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
+  .auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: #999; }
+  .auth-footer a { color: #666; text-decoration: none; font-weight: 600; }
+  .auth-footer a span { color: var(--orange); }
 
-    .form-input:focus {
-      outline: none;
-      border-color: var(--orange);
-      box-shadow: 0 0 0 3px rgba(232,114,42,0.08);
-      background: #fff;
-    }
+  @media (max-width: 768px) {
+    .auth-split { flex-direction: column; }
+    .auth-left { display: none; }
+    .auth-right { padding: 30px 20px; }
+  }
+</style>
 
-    .form-input::placeholder { color: #bbb; }
-
-    .password-wrap { position: relative; }
-    .password-wrap input { padding-right: 56px; }
-
-    .pw-toggle {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--orange);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .pw-toggle:hover { color: var(--text-dark); }
-
-    .forgot-link {
-      display: block;
-      text-align: right;
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 600;
-      margin: 8px 0 0;
-      transition: color 0.2s;
-    }
-    .forgot-link:hover { color: var(--orange); }
-
-    .auth-btn {
-      width: 100%;
-      padding: 13px;
-      font-size: 15px;
-      font-weight: 700;
-      background: var(--orange);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 24px;
-    }
-    .auth-btn:hover { background: var(--orange-hover); }
-
-    .auth-footer {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-    .auth-footer a { font-weight: 600; }
-    .auth-footer a span { color: var(--orange); }
-
-    /* Mobile */
-    @media (max-width: 768px) {
-      .auth-header { padding: 16px 20px; }
-      .auth-split { flex-direction: column; }
-      .auth-left { display: none; }
-      .auth-right { padding: 30px 20px; min-height: calc(100vh - 73px); }
-      .auth-card { max-width: 100%; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- Minimal Header -->
-<header class="auth-header">
-  <a href="https://bubbl.ooo" class="auth-header-logo">bubbl<span>.ooo</span></a>
-  <a href="https://bubbl.ooo" class="auth-header-back">&larr; Back to website</a>
-</header>
-
-<!-- Split Layout -->
 <div class="auth-split">
-  <!-- Left: Minimal branding for login -->
   <div class="auth-left">
-    <h1 class="auth-left-heading">Welcome back to Bubbl</h1>
-    <p class="auth-left-sub">Your AI agents are ready when you are. Sign in to manage your chatbots, view analytics, and capture leads.</p>
+    <h1>Welcome back to Bubbl</h1>
+    <p>Your AI agents are ready when you are. Sign in to manage your chatbots, view analytics, and capture leads.</p>
   </div>
 
-  <!-- Right: Login Form -->
   <div class="auth-right">
     <div class="auth-card">
-      <h2 class="auth-card-title">Sign in</h2>
-      <p class="auth-card-sub">Enter your credentials to continue</p>
+      <h2>Sign in</h2>
+      <p class="subtitle">Enter your credentials to continue</p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -261,21 +150,21 @@
       {% endwith %}
 
       <form method="POST" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}">
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" name="email" class="form-input" required placeholder="you@company.com">
+        <div class="fg">
+          <label>Email</label>
+          <input type="email" name="email" required placeholder="you@company.com">
         </div>
 
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label">Password</label>
-          <div class="password-wrap">
-            <input type="password" name="password" id="pwInput" class="form-input" required placeholder="Enter your password">
+        <div class="fg" style="margin-bottom:0;">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" name="password" id="pwInput" required placeholder="Enter your password">
             <button type="button" class="pw-toggle" id="pwToggle">Show</button>
           </div>
-          <a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">Forgot password?</a>
+          <a href="{{ url_for('auth.forgot_password') }}" class="forgot">Forgot password?</a>
         </div>
 
-        <button type="submit" class="auth-btn">Sign In</button>
+        <button type="submit" class="auth-submit">Sign In</button>
       </form>
 
       <div class="auth-footer">
@@ -288,10 +177,8 @@
 <script>
   document.getElementById('pwToggle').addEventListener('click', function() {
     var inp = document.getElementById('pwInput');
-    var isHidden = inp.type === 'password';
-    inp.type = isHidden ? 'text' : 'password';
-    this.textContent = isHidden ? 'Hide' : 'Show';
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    this.textContent = inp.type === 'password' ? 'Show' : 'Hide';
   });
 </script>
-</body>
-</html>
+{% endblock %}
