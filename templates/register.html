@@ -1,62 +1,55 @@
-{% extends 'base.html' %} 
-{% block title %}Register | {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}{% endblock %} 
+{% extends 'base.html' %}
+{% block title %}Create account | bubbl.ooo{% endblock %}
 
 {% block meta_description %}
-<meta name="description" content="Create your Bubbl.ooo account. Build AI chatbots in minutes. No credit card required." />
+<meta name="description" content="Create your free Bubbl.ooo account. Build AI chatbots in minutes. No credit card required." />
+{% endblock %}
+
+{% block navbar_override %}
+<nav class="auth-nav">
+  <a href="https://bubbl.ooo" class="auth-nav-logo bricolage">bubbl<span>.ooo</span></a>
+  <div class="auth-nav-right">
+    <span>Already have an account?</span>
+    <a href="{{ url_for('auth.login') }}" class="auth-nav-link">Sign in</a>
+  </div>
+</nav>
 {% endblock %}
 
 {% block content %}
 <style>
-  .auth-split {
+  /* Auth Nav */
+  .auth-nav {
     display: flex;
-    min-height: calc(100vh - 120px);
-    margin: -20px 0 0;
-    gap: 0;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
   }
+  .auth-nav-logo { font-size: 20px; font-weight: 800; color: #1a1008; text-decoration: none; }
+  .auth-nav-logo span { color: var(--orange); }
+  .auth-nav-right { font-size: 13px; color: #888; }
+  .auth-nav-right a { color: var(--orange); font-weight: 700; margin-left: 4px; text-decoration: none; }
+  .auth-nav-right a:hover { text-decoration: underline; }
+
+  /* Split */
+  .auth-split { display: flex; min-height: calc(100vh - 140px); }
 
   .auth-left {
     flex: 0 0 45%;
-    background: linear-gradient(160deg, #fff8f3 0%, #fff1e8 100%);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 50px;
-    border-right: 1px solid #f0e8e0;
+    padding: 60px;
   }
-
   .auth-left h1 {
-    font-size: 30px;
-    font-weight: 800;
-    color: #1a1008;
-    line-height: 1.25;
-    margin-bottom: 14px;
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 30px; font-weight: 800; color: #1a1008; margin-bottom: 14px;
+    font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.25;
   }
+  .auth-left .desc { font-size: 15px; color: #6b5a4a; line-height: 1.6; margin-bottom: 30px; max-width: 360px; }
 
-  .auth-left .desc {
-    font-size: 15px;
-    color: #6b5a4a;
-    line-height: 1.6;
-    max-width: 340px;
-    margin-bottom: 30px;
-  }
-
-  .auth-stats { display: flex; gap: 28px; margin-bottom: 28px; }
-  .auth-stat-val { font-size: 24px; font-weight: 800; color: var(--orange); font-family: 'Bricolage Grotesque', sans-serif; }
-  .auth-stat-lbl { font-size: 10px; color: #8a7a6a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-
-  .auth-checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
-  .auth-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5a4a3a; font-weight: 500; }
-  .auth-check-dot { color: #059669; font-weight: 700; font-size: 14px; }
-
-  .auth-benefit {
-    background: #fff;
-    border: 1px solid #f0e8e0;
-    border-radius: 10px;
-    padding: 14px 16px;
-  }
-  .auth-benefit strong { font-size: 13px; color: #1a1008; display: block; margin-bottom: 3px; }
-  .auth-benefit span { font-size: 12px; color: #8a7a6a; }
+  .auth-checks { display: flex; flex-direction: column; gap: 10px; }
+  .auth-check { display: flex; align-items: center; gap: 9px; font-size: 14px; color: #4a3d30; font-weight: 500; }
+  .auth-check-icon { color: #059669; font-size: 14px; font-weight: 700; }
 
   .auth-right {
     flex: 1;
@@ -66,98 +59,76 @@
     padding: 40px;
   }
 
-  .auth-card { width: 100%; max-width: 420px; }
-
-  .auth-card h2 {
-    font-size: 22px; font-weight: 800; color: #1a1008; margin-bottom: 4px;
-    font-family: 'Bricolage Grotesque', sans-serif;
-  }
-
-  .auth-card .subtitle { font-size: 13px; color: #999; margin-bottom: 14px; }
+  .auth-card { width: 100%; max-width: 400px; }
+  .auth-card h2 { font-size: 22px; font-weight: 800; color: #1a1008; margin-bottom: 4px; font-family: 'Bricolage Grotesque', sans-serif; }
+  .auth-card .sub { font-size: 14px; color: #999; margin-bottom: 14px; }
 
   .free-badge {
     display: inline-block; background: rgba(5,150,105,0.08); color: #059669;
-    font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 16px; margin-bottom: 20px;
+    font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 16px; margin-bottom: 22px;
   }
 
-  .fg { margin-bottom: 14px; }
-  .fg label { display: block; font-size: 12px; font-weight: 600; color: #5a4a3a; margin-bottom: 5px; }
+  /* Flash */
+  .flash-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; font-weight: 500; }
+  .flash-success { background: rgba(16,185,129,0.1); color: #059669; }
+  .flash-error { background: rgba(239,68,68,0.08); color: #dc2626; }
+  .flash-warning { background: rgba(245,158,11,0.1); color: #b45309; }
+  .flash-info { background: rgba(59,130,246,0.08); color: #2563eb; }
+
+  /* Form */
+  .fg { margin-bottom: 16px; }
+  .fg label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
   .fg input {
-    width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #E8E2DC;
-    background: #fdfaf6; font-size: 14px; font-family: 'Inter', sans-serif; color: #1a1008;
-    transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box;
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid #E8E2DC; background: #fdfaf6;
+    font-size: 14px; font-family: 'Inter', sans-serif; color: #1a1008;
+    box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .fg input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,114,42,0.08); background: #fff; }
+  .fg input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,114,42,0.06); background: #fff; }
   .fg input::placeholder { color: #c5b8aa; }
 
   .pw-wrap { position: relative; }
-  .pw-wrap input { padding-right: 56px; }
+  .pw-wrap input { padding-right: 54px; }
   .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--orange); text-transform: uppercase; }
   .pw-toggle:hover { color: #1a1008; }
 
-  .auth-submit {
-    width: 100%; padding: 12px; font-size: 15px; font-weight: 700;
+  .auth-btn {
+    width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
     background: var(--orange); color: #fff; border: none; border-radius: 10px;
-    cursor: pointer; margin-top: 18px; transition: background 0.2s;
+    cursor: pointer; margin-top: 20px; transition: background 0.15s;
   }
-  .auth-submit:hover { background: #d4611f; }
+  .auth-btn:hover { background: #d4611f; }
 
-  .auth-terms { text-align: center; font-size: 11px; color: #aaa; margin-top: 12px; }
-  .auth-terms a { color: #888; text-decoration: underline; }
+  .auth-terms { text-align: center; font-size: 11px; color: #aaa; margin-top: 14px; line-height: 1.4; }
+  .auth-terms a { color: #777; text-decoration: underline; }
 
-  .auth-footer { text-align: center; margin-top: 16px; font-size: 13px; color: #999; }
-  .auth-footer a { color: #666; text-decoration: none; font-weight: 600; }
-  .auth-footer a span { color: var(--orange); }
+  .auth-footer { text-align: center; margin-top: 18px; font-size: 13px; color: #999; }
+  .auth-footer a { color: #666; text-decoration: none; }
+  .auth-footer a span { color: var(--orange); font-weight: 700; }
 
   @media (max-width: 768px) {
+    .auth-nav { padding: 14px 20px; }
     .auth-split { flex-direction: column; }
     .auth-left { display: none; }
-    .auth-right { padding: 30px 20px; }
+    .auth-right { padding: 40px 24px; align-items: flex-start; padding-top: 60px; }
   }
 </style>
 
-<div class="auth-wrapper">
-  <h2 class="bricolage auth-title">Create Account</h2>
-  <p class="auth-subtitle">AI Agents for Magical Customer Experiences</p>
-
-  {% with messages = get_flashed_messages(with_categories=true) %} 
-    {% if messages %} 
-      {% for category, message in messages %}
-        <div class="flash-msg flash-{{ category }}">{{ message }}</div>
-      {% endfor %} 
-    {% endif %} 
-  {% endwith %}
-
-  <form class="auth-form" method="POST" action="/register">
-    {{ form.csrf_token if form else '' }}
-    
-    <div class="form-group">
-      <label class="cb-label">Full Name</label>
-      <input type="text" name="name" class="dash-input" required placeholder="Full Name" />
-    </div>
-
-    <div class="auth-stats">
-      <div><div class="auth-stat-val">5 min</div><div class="auth-stat-lbl">Setup time</div></div>
-      <div><div class="auth-stat-val">50+</div><div class="auth-stat-lbl">Languages</div></div>
-      <div><div class="auth-stat-val">24/7</div><div class="auth-stat-lbl">Always on</div></div>
-    </div>
-
+<div class="auth-split">
+  <div class="auth-left">
+    <h1>Build your first AI agent in minutes</h1>
+    <p class="desc">Add your website or documents. Bubbl learns from your content and starts answering your visitors.</p>
     <div class="auth-checks">
-      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> No credit card required</div>
-      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> Cancel anytime</div>
-      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> 200 free messages every month</div>
-    </div>
-
-    <div class="auth-benefit">
-      <strong>No technical setup needed</strong>
-      <span>Add one line of code to your website and your AI agent is live.</span>
+      <div class="auth-check"><span class="auth-check-icon">&#10003;</span> No credit card required</div>
+      <div class="auth-check"><span class="auth-check-icon">&#10003;</span> 200 free messages every month</div>
+      <div class="auth-check"><span class="auth-check-icon">&#10003;</span> Live in minutes</div>
     </div>
   </div>
 
   <div class="auth-right">
     <div class="auth-card">
-      <h2>Get Started Free</h2>
-      <p class="subtitle">Build your first AI agent in less than 5 minutes.</p>
+      <h2>Create your account</h2>
+      <p class="sub">Start free. No credit card required.</p>
       <div class="free-badge">Free forever &middot; 200 messages/month</div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -181,32 +152,31 @@
         <div class="fg" style="margin-bottom:0;">
           <label>Password</label>
           <div class="pw-wrap">
-            <input type="password" name="password" id="pwInput" required placeholder="Min 8 chars (letter + number)">
-            <button type="button" class="pw-toggle" id="pwToggle">Show</button>
+            <input type="password" name="password" id="pw" required placeholder="At least 8 characters">
+            <button type="button" class="pw-toggle" id="pwT">Show</button>
           </div>
         </div>
-        <button type="submit" class="auth-submit">Create Free Account</button>
+        <button type="submit" class="auth-btn">Create free account</button>
       </form>
 
-      <div class="auth-terms">By signing up, you agree to our <a href="/legal/terms">Terms</a> and <a href="/legal/privacy">Privacy Policy</a></div>
+      <div class="auth-terms">By creating an account, you agree to our <a href="/legal/terms">Terms</a> and <a href="/legal/privacy">Privacy Policy</a>.</div>
       <div class="auth-footer"><a href="{{ url_for('auth.login') }}">Already have an account? <span>Sign in</span></a></div>
     </div>
   </div>
 </div>
 
 <script>
-  document.getElementById('pwToggle').addEventListener('click', function() {
-    var inp = document.getElementById('pwInput');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-    this.textContent = inp.type === 'password' ? 'Show' : 'Hide';
-  });
-  // UTM forwarding
-  (function() {
-    var utmKeys = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'];
-    var params = new URLSearchParams(window.location.search);
-    var hasNew = false;
-    utmKeys.forEach(function(k) { if (!params.has(k)) { var s = localStorage.getItem(k); if (s) { params.set(k, s); hasNew = true; } } });
-    if (hasNew && !window.location.search.includes('utm_')) { window.history.replaceState({}, '', window.location.pathname + '?' + params.toString()); }
-  })();
+document.getElementById('pwT').addEventListener('click', function() {
+  var i = document.getElementById('pw');
+  i.type = i.type === 'password' ? 'text' : 'password';
+  this.textContent = i.type === 'password' ? 'Show' : 'Hide';
+});
+(function() {
+  var utmKeys = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'];
+  var params = new URLSearchParams(window.location.search);
+  var hasNew = false;
+  utmKeys.forEach(function(k) { if (!params.has(k)) { var s = localStorage.getItem(k); if (s) { params.set(k,s); hasNew=true; } } });
+  if (hasNew && !window.location.search.includes('utm_')) { window.history.replaceState({},'',window.location.pathname+'?'+params.toString()); }
+})();
 </script>
 {% endblock %}
