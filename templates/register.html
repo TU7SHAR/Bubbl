@@ -1,363 +1,148 @@
-{% block title %}Register | bubbl.ooo{% endblock %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Create your Bubbl.ooo account. Start building powerful AI chatbots for your website in minutes. No credit card required.">
-  <title>Register | bubbl.ooo</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+{% extends 'base.html' %} 
+{% block title %}Register | {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}{% endblock %} 
 
-    :root {
-      --orange: #E8722A;
-      --orange-hover: #d4611f;
-      --cream: #fdfaf6;
-      --warm-bg: #fff8f3;
-      --text-dark: #1a1008;
-      --text-body: #5a4a3a;
-      --text-muted: #8a7a6a;
-      --border: #E8E2DC;
-      --input-bg: #fdfaf6;
-      --green: #059669;
-    }
+{% block meta_description %}
+<meta name="description" content="Create your Bubbl.ooo account. Build AI chatbots in minutes. No credit card required." />
+{% endblock %}
 
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--cream);
-      color: var(--text-dark);
-      min-height: 100vh;
-      line-height: 1.5;
-    }
+{% block content %}
+<style>
+  .auth-split {
+    display: flex;
+    min-height: calc(100vh - 120px);
+    margin: -20px 0 0;
+    gap: 0;
+  }
 
-    a { color: inherit; text-decoration: none; }
+  .auth-left {
+    flex: 0 0 45%;
+    background: linear-gradient(160deg, #fff8f3 0%, #fff1e8 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 50px;
+    border-right: 1px solid #f0e8e0;
+  }
 
-    /* Minimal Header */
-    .auth-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 40px;
-      border-bottom: 1px solid var(--border);
-    }
+  .auth-left h1 {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1a1008;
+    line-height: 1.25;
+    margin-bottom: 14px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
 
-    .auth-header-logo {
-      font-family: 'Bricolage Grotesque', serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text-dark);
-    }
-    .auth-header-logo span { color: var(--orange); }
+  .auth-left .desc {
+    font-size: 15px;
+    color: #6b5a4a;
+    line-height: 1.6;
+    max-width: 340px;
+    margin-bottom: 30px;
+  }
 
-    .auth-header-back {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-    .auth-header-back:hover { color: var(--orange); }
+  .auth-stats { display: flex; gap: 28px; margin-bottom: 28px; }
+  .auth-stat-val { font-size: 24px; font-weight: 800; color: var(--orange); font-family: 'Bricolage Grotesque', sans-serif; }
+  .auth-stat-lbl { font-size: 10px; color: #8a7a6a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
 
-    /* Split Layout */
-    .auth-split {
-      display: flex;
-      min-height: calc(100vh - 73px);
-    }
+  .auth-checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .auth-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5a4a3a; font-weight: 500; }
+  .auth-check-dot { color: #059669; font-weight: 700; font-size: 14px; }
 
-    /* Left Panel — Conversion focused */
-    .auth-left {
-      flex: 0 0 48%;
-      background: var(--warm-bg);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 60px;
-      border-right: 1px solid var(--border);
-    }
+  .auth-benefit {
+    background: #fff;
+    border: 1px solid #f0e8e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .auth-benefit strong { font-size: 13px; color: #1a1008; display: block; margin-bottom: 3px; }
+  .auth-benefit span { font-size: 12px; color: #8a7a6a; }
 
-    .auth-left-heading {
-      font-family: 'Bricolage Grotesque', serif;
-      font-size: 34px;
-      font-weight: 800;
-      color: var(--text-dark);
-      line-height: 1.2;
-      margin-bottom: 16px;
-    }
+  .auth-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
 
-    .auth-left-sub {
-      font-size: 15px;
-      color: var(--text-body);
-      line-height: 1.6;
-      margin-bottom: 36px;
-      max-width: 380px;
-    }
+  .auth-card { width: 100%; max-width: 420px; }
 
-    .auth-stats {
-      display: flex;
-      gap: 32px;
-      margin-bottom: 36px;
-    }
+  .auth-card h2 {
+    font-size: 22px; font-weight: 800; color: #1a1008; margin-bottom: 4px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
 
-    .auth-stat-value {
-      font-family: 'Bricolage Grotesque', serif;
-      font-size: 26px;
-      font-weight: 800;
-      color: var(--orange);
-    }
+  .auth-card .subtitle { font-size: 13px; color: #999; margin-bottom: 14px; }
 
-    .auth-stat-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
+  .free-badge {
+    display: inline-block; background: rgba(5,150,105,0.08); color: #059669;
+    font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 16px; margin-bottom: 20px;
+  }
 
-    .auth-checks {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+  .fg { margin-bottom: 14px; }
+  .fg label { display: block; font-size: 12px; font-weight: 600; color: #5a4a3a; margin-bottom: 5px; }
+  .fg input {
+    width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #E8E2DC;
+    background: #fdfaf6; font-size: 14px; font-family: 'Inter', sans-serif; color: #1a1008;
+    transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box;
+  }
+  .fg input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,114,42,0.08); background: #fff; }
+  .fg input::placeholder { color: #c5b8aa; }
 
-    .auth-check {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      color: var(--text-body);
-      font-weight: 500;
-    }
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 56px; }
+  .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--orange); text-transform: uppercase; }
+  .pw-toggle:hover { color: #1a1008; }
 
-    .auth-check-icon {
-      width: 20px;
-      height: 20px;
-      background: rgba(5,150,105,0.1);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      color: var(--green);
-      flex-shrink: 0;
-    }
+  .auth-submit {
+    width: 100%; padding: 12px; font-size: 15px; font-weight: 700;
+    background: var(--orange); color: #fff; border: none; border-radius: 10px;
+    cursor: pointer; margin-top: 18px; transition: background 0.2s;
+  }
+  .auth-submit:hover { background: #d4611f; }
 
-    .auth-benefit-card {
-      margin-top: 32px;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 20px;
-    }
+  .auth-terms { text-align: center; font-size: 11px; color: #aaa; margin-top: 12px; }
+  .auth-terms a { color: #888; text-decoration: underline; }
 
-    .auth-benefit-card-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-dark);
-      margin-bottom: 4px;
-    }
+  .auth-footer { text-align: center; margin-top: 16px; font-size: 13px; color: #999; }
+  .auth-footer a { color: #666; text-decoration: none; font-weight: 600; }
+  .auth-footer a span { color: var(--orange); }
 
-    .auth-benefit-card-text {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
+  @media (max-width: 768px) {
+    .auth-split { flex-direction: column; }
+    .auth-left { display: none; }
+    .auth-right { padding: 30px 20px; }
+  }
+</style>
 
-    /* Right Panel — Form */
-    .auth-right {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-    }
-
-    .auth-card {
-      width: 100%;
-      max-width: 440px;
-    }
-
-    .auth-card-title {
-      font-family: 'Bricolage Grotesque', serif;
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--text-dark);
-      margin-bottom: 4px;
-    }
-
-    .auth-card-sub {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin-bottom: 20px;
-    }
-
-    .free-badge {
-      display: inline-block;
-      background: rgba(5,150,105,0.08);
-      color: var(--green);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 5px 12px;
-      border-radius: 20px;
-      margin-bottom: 24px;
-    }
-
-    /* Flash Messages */
-    .flash-msg {
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin-bottom: 16px;
-      font-weight: 500;
-    }
-    .flash-success { background: rgba(16,185,129,0.1); color: #059669; }
-    .flash-error { background: rgba(239,68,68,0.08); color: #dc2626; }
-    .flash-warning { background: rgba(245,158,11,0.1); color: #b45309; }
-    .flash-info { background: rgba(59,130,246,0.08); color: #2563eb; }
-
-    /* Form */
-    .form-group { margin-bottom: 14px; }
-
-    .form-label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-body);
-      margin-bottom: 5px;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 11px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--input-bg);
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      color: var(--text-dark);
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: var(--orange);
-      box-shadow: 0 0 0 3px rgba(232,114,42,0.08);
-      background: #fff;
-    }
-
-    .form-input::placeholder { color: #bbb; }
-
-    .password-wrap { position: relative; }
-    .password-wrap input { padding-right: 56px; }
-
-    .pw-toggle {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--orange);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .pw-toggle:hover { color: var(--text-dark); }
-
-    .auth-btn {
-      width: 100%;
-      padding: 13px;
-      font-size: 15px;
-      font-weight: 700;
-      background: var(--orange);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 20px;
-    }
-    .auth-btn:hover { background: var(--orange-hover); }
-
-    .auth-terms {
-      text-align: center;
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 14px;
-      line-height: 1.4;
-    }
-    .auth-terms a { color: var(--text-body); text-decoration: underline; }
-
-    .auth-footer {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-    .auth-footer a { font-weight: 600; }
-    .auth-footer a span { color: var(--orange); }
-
-    /* Mobile */
-    @media (max-width: 768px) {
-      .auth-header { padding: 16px 20px; }
-      .auth-split { flex-direction: column; }
-      .auth-left { display: none; }
-      .auth-right { padding: 30px 20px; min-height: calc(100vh - 73px); }
-      .auth-card { max-width: 100%; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- Minimal Header -->
-<header class="auth-header">
-  <a href="https://bubbl.ooo" class="auth-header-logo">bubbl<span>.ooo</span></a>
-  <a href="https://bubbl.ooo" class="auth-header-back">&larr; Back to website</a>
-</header>
-
-<!-- Split Layout -->
 <div class="auth-split">
-  <!-- Left: Conversion-focused -->
   <div class="auth-left">
-    <h1 class="auth-left-heading">Your AI Agent, Live in Minutes</h1>
-    <p class="auth-left-sub">Upload your website or documents and let Bubbl answer customer questions, capture leads, and support visitors 24/7.</p>
+    <h1>Your AI Agent, Live in Minutes</h1>
+    <p class="desc">Upload your website or documents and let Bubbl answer customer questions, capture leads, and support visitors 24/7.</p>
 
     <div class="auth-stats">
-      <div>
-        <div class="auth-stat-value">5 min</div>
-        <div class="auth-stat-label">Setup time</div>
-      </div>
-      <div>
-        <div class="auth-stat-value">50+</div>
-        <div class="auth-stat-label">Languages</div>
-      </div>
-      <div>
-        <div class="auth-stat-value">24/7</div>
-        <div class="auth-stat-label">Always on</div>
-      </div>
+      <div><div class="auth-stat-val">5 min</div><div class="auth-stat-lbl">Setup time</div></div>
+      <div><div class="auth-stat-val">50+</div><div class="auth-stat-lbl">Languages</div></div>
+      <div><div class="auth-stat-val">24/7</div><div class="auth-stat-lbl">Always on</div></div>
     </div>
 
     <div class="auth-checks">
-      <div class="auth-check"><div class="auth-check-icon">&#10003;</div> No credit card required</div>
-      <div class="auth-check"><div class="auth-check-icon">&#10003;</div> Cancel anytime</div>
-      <div class="auth-check"><div class="auth-check-icon">&#10003;</div> 200 free messages every month</div>
+      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> No credit card required</div>
+      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> Cancel anytime</div>
+      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> 200 free messages every month</div>
     </div>
 
-    <div class="auth-benefit-card">
-      <div class="auth-benefit-card-title">No technical setup needed</div>
-      <div class="auth-benefit-card-text">Add one line of code to your website and your AI agent is live. Works on any platform.</div>
+    <div class="auth-benefit">
+      <strong>No technical setup needed</strong>
+      <span>Add one line of code to your website and your AI agent is live.</span>
     </div>
   </div>
 
-  <!-- Right: Register Form -->
   <div class="auth-right">
     <div class="auth-card">
-      <h2 class="auth-card-title">Get Started Free</h2>
-      <p class="auth-card-sub">Build your first AI agent in less than 5 minutes.</p>
+      <h2>Get Started Free</h2>
+      <p class="subtitle">Build your first AI agent in less than 5 minutes.</p>
       <div class="free-badge">Free forever &middot; 200 messages/month</div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -370,35 +155,26 @@
 
       <form method="POST" action="/register">
         {{ form.csrf_token if form else '' }}
-
-        <div class="form-group">
-          <label class="form-label">Full name</label>
-          <input type="text" name="name" class="form-input" required placeholder="Your name">
+        <div class="fg">
+          <label>Full name</label>
+          <input type="text" name="name" required placeholder="Your name">
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Work email</label>
-          <input type="email" name="email" class="form-input" required placeholder="you@company.com">
+        <div class="fg">
+          <label>Work email</label>
+          <input type="email" name="email" required placeholder="you@company.com">
         </div>
-
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label">Password</label>
-          <div class="password-wrap">
-            <input type="password" name="password" id="pwInput" class="form-input" required placeholder="Min 8 chars (letter + number)">
+        <div class="fg" style="margin-bottom:0;">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" name="password" id="pwInput" required placeholder="Min 8 chars (letter + number)">
             <button type="button" class="pw-toggle" id="pwToggle">Show</button>
           </div>
         </div>
-
-        <button type="submit" class="auth-btn">Create Free Account</button>
+        <button type="submit" class="auth-submit">Create Free Account</button>
       </form>
 
-      <div class="auth-terms">
-        By signing up, you agree to our <a href="/legal/terms">Terms</a> and <a href="/legal/privacy">Privacy Policy</a>
-      </div>
-
-      <div class="auth-footer">
-        <a href="{{ url_for('auth.login') }}">Already have an account? <span>Sign in</span></a>
-      </div>
+      <div class="auth-terms">By signing up, you agree to our <a href="/legal/terms">Terms</a> and <a href="/legal/privacy">Privacy Policy</a></div>
+      <div class="auth-footer"><a href="{{ url_for('auth.login') }}">Already have an account? <span>Sign in</span></a></div>
     </div>
   </div>
 </div>
@@ -406,26 +182,16 @@
 <script>
   document.getElementById('pwToggle').addEventListener('click', function() {
     var inp = document.getElementById('pwInput');
-    var isHidden = inp.type === 'password';
-    inp.type = isHidden ? 'text' : 'password';
-    this.textContent = isHidden ? 'Hide' : 'Show';
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    this.textContent = inp.type === 'password' ? 'Show' : 'Hide';
   });
-
   // UTM forwarding
   (function() {
-    var utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+    var utmKeys = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'];
     var params = new URLSearchParams(window.location.search);
     var hasNew = false;
-    utmKeys.forEach(function(key) {
-      if (!params.has(key)) {
-        var stored = localStorage.getItem(key);
-        if (stored) { params.set(key, stored); hasNew = true; }
-      }
-    });
-    if (hasNew && !window.location.search.includes('utm_')) {
-      window.history.replaceState({}, '', window.location.pathname + '?' + params.toString());
-    }
+    utmKeys.forEach(function(k) { if (!params.has(k)) { var s = localStorage.getItem(k); if (s) { params.set(k, s); hasNew = true; } } });
+    if (hasNew && !window.location.search.includes('utm_')) { window.history.replaceState({}, '', window.location.pathname + '?' + params.toString()); }
   })();
 </script>
-</body>
-</html>
+{% endblock %}
