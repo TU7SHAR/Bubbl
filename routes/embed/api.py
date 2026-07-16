@@ -162,7 +162,7 @@ def chat():
         if bot_record:
             allowed, remaining, limit = check_message_limit(bot_record.org_id)
             if not allowed:
-                return jsonify({"response": "This chatbot has reached its monthly message limit. Please ask the owner to upgrade their plan.", "lead_id": None})
+                return jsonify({"response": "I'm currently unavailable as this bot's message limit has been reached for this month. Please try again later or contact the website owner for assistance.", "lead_id": None})
 
         ai_prompt = bot_cfg["system_prompt"] or "You are a helpful assistant."
         timing = bot_cfg["lead_capture_timing"]

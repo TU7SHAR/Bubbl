@@ -432,3 +432,31 @@
   background: #4f46e5;
   color: #fff;
 }
+
+
+/* Powered by Bubbl — branding in chat widget */
+.powered-by-bubbl {
+  text-align: center;
+  padding: 6px 0 2px;
+  font-size: 10px;
+}
+
+.powered-by-bubbl a {
+  color: #9ca3af;
+  text-decoration: none;
+  font-weight: 400;
+  transition: color 0.2s;
+}
+
+.powered-by-bubbl a strong {
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.powered-by-bubbl a:hover {
+  color: #E8722A;
+}
+
+.powered-by-bubbl a:hover strong {
+  color: #E8722A;
+}
