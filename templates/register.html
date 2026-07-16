@@ -1,142 +1,159 @@
-{% extends 'base.html' %}
-{% block title %}Create account | bubbl.ooo{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create your free Bubbl.ooo account. Build AI chatbots in minutes. No credit card required.">
+  <title>Create account | bubbl.ooo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/static/images/spritesheet.webp" as="image">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/chat.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <style>
+    body { background: #fffbf7; }
 
-{% block meta_description %}
-<meta name="description" content="Create your free Bubbl.ooo account. Build AI chatbots in minutes. No credit card required." />
-{% endblock %}
+    /* Minimal Auth Header */
+    .auth-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 40px;
+    }
+    .auth-header-logo { font-family: 'Bricolage Grotesque', serif; font-size: 22px; font-weight: 800; color: #1a1008; text-decoration: none; }
+    .auth-header-logo span { color: #E8722A; }
+    .auth-header-right { font-size: 13px; color: #8a7a6a; }
+    .auth-header-right a { color: #E8722A; font-weight: 700; margin-left: 4px; text-decoration: none; }
+    .auth-header-right a:hover { text-decoration: underline; }
 
-{% block navbar_override %}
-<nav class="auth-nav">
-  <a href="https://bubbl.ooo" class="auth-nav-logo bricolage">bubbl<span>.ooo</span></a>
-  <div class="auth-nav-right">
+    /* Centered Split Card */
+    .auth-page { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 80px); padding: 20px; }
+
+    .auth-card-split {
+      display: flex;
+      width: 100%; max-width: 900px;
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    /* Left: Branding */
+    .auth-brand-side {
+      flex: 0 0 44%;
+      background: linear-gradient(150deg, #fff5ed 0%, #ffe8d4 100%);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 48px 44px;
+    }
+
+    .auth-brand-side h1 { font-family: 'Bricolage Grotesque', serif; font-size: 28px; font-weight: 800; color: #1a1008; line-height: 1.25; margin-bottom: 14px; }
+    .auth-brand-side .desc { font-size: 15px; color: #5a4a3a; line-height: 1.6; margin-bottom: 28px; max-width: 320px; }
+
+    .auth-checks { display: flex; flex-direction: column; gap: 10px; }
+    .auth-check { display: flex; align-items: center; gap: 9px; font-size: 13px; color: #4a3d30; font-weight: 500; }
+    .auth-check-icon { color: #059669; font-size: 14px; font-weight: 700; }
+
+    .auth-brand-slogan { font-size: 13px; color: #b08a60; margin-top: 28px; font-weight: 600; font-style: italic; }
+
+    /* Right: Form */
+    .auth-form-side {
+      flex: 1; padding: 44px 40px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+
+    .auth-form-side h2 { font-family: 'Bricolage Grotesque', serif; font-size: 22px; font-weight: 800; color: #1a1008; margin-bottom: 4px; }
+    .auth-form-side .sub { font-size: 14px; color: #8a7a6a; margin-bottom: 14px; }
+
+    .free-badge {
+      display: inline-block; background: rgba(5,150,105,0.08); color: #059669;
+      font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 16px; margin-bottom: 20px;
+    }
+
+    .fg { margin-bottom: 14px; }
+    .fg label { display: block; font-size: 13px; font-weight: 600; color: #4a3d30; margin-bottom: 5px; }
+    .fg input {
+      width: 100%; padding: 11px 14px; border-radius: 10px;
+      border: 1px solid #E8E2DC; background: #fdfaf6;
+      font-size: 14px; font-family: 'Inter', sans-serif; color: #1a1008;
+      box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .fg input:focus { outline: none; border-color: #E8722A; box-shadow: 0 0 0 3px rgba(232,114,42,0.06); background: #fff; }
+    .fg input::placeholder { color: #c5b8aa; }
+
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 56px; }
+    .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: #E8722A; text-transform: uppercase; letter-spacing: 0.3px; }
+    .pw-toggle:hover { color: #1a1008; }
+
+    .auth-btn {
+      width: 100%; padding: 12px; font-size: 15px; font-weight: 700;
+      background: #E8722A; color: #fff; border: none; border-radius: 10px;
+      cursor: pointer; margin-top: 18px; transition: background 0.15s;
+    }
+    .auth-btn:hover { background: #d4611f; }
+
+    .auth-terms { text-align: center; font-size: 11px; color: #aaa; margin-top: 12px; line-height: 1.4; }
+    .auth-terms a { color: #777; text-decoration: underline; }
+
+    .auth-footer { text-align: center; margin-top: 16px; font-size: 13px; color: #8a7a6a; }
+    .auth-footer a { color: #4a3d30; text-decoration: none; font-weight: 600; }
+    .auth-footer a span { color: #E8722A; }
+
+    /* Flash */
+    .flash-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; font-weight: 500; }
+    .flash-success { background: rgba(16,185,129,0.1); color: #059669; }
+    .flash-error { background: rgba(239,68,68,0.08); color: #dc2626; }
+    .flash-warning { background: rgba(245,158,11,0.1); color: #b45309; }
+    .flash-info { background: rgba(59,130,246,0.08); color: #2563eb; }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .auth-header { padding: 16px 20px; }
+      .auth-page { padding: 20px 16px; align-items: flex-start; padding-top: 40px; }
+      .auth-card-split { flex-direction: column; max-width: 100%; }
+      .auth-brand-side { display: none; }
+      .auth-form-side { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="auth-header">
+  <a href="https://bubbl.ooo" class="auth-header-logo">bubbl<span>.ooo</span></a>
+  <div class="auth-header-right">
     <span>Already have an account?</span>
-    <a href="{{ url_for('auth.login') }}" class="auth-nav-link">Sign in</a>
+    <a href="{{ url_for('auth.login') }}">Sign in</a>
   </div>
-</nav>
-{% endblock %}
+</header>
 
-{% block content %}
-<style>
-  /* Auth Nav */
-  .auth-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 32px;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-  }
-  .auth-nav-logo { font-size: 20px; font-weight: 800; color: #1a1008; text-decoration: none; }
-  .auth-nav-logo span { color: var(--orange); }
-  .auth-nav-right { font-size: 13px; color: #888; }
-  .auth-nav-right a { color: var(--orange); font-weight: 700; margin-left: 4px; text-decoration: none; }
-  .auth-nav-right a:hover { text-decoration: underline; }
+<div class="auth-page">
+  <div class="auth-card-split">
+    <!-- Left: Branding -->
+    <div class="auth-brand-side">
+      <h1>Build your first AI agent in minutes</h1>
+      <p class="desc">Add your website or documents. Bubbl learns from your content and starts answering your visitors.</p>
 
-  /* Split */
-  .auth-split { display: flex; min-height: calc(100vh - 140px); }
+      <div class="auth-checks">
+        <div class="auth-check"><span class="auth-check-icon">&#10003;</span> No credit card required</div>
+        <div class="auth-check"><span class="auth-check-icon">&#10003;</span> 200 free messages every month</div>
+        <div class="auth-check"><span class="auth-check-icon">&#10003;</span> Live in minutes</div>
+      </div>
 
-  .auth-left {
-    flex: 0 0 45%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 60px;
-  }
-  .auth-left h1 {
-    font-size: 30px; font-weight: 800; color: #1a1008; margin-bottom: 14px;
-    font-family: 'Bricolage Grotesque', sans-serif; line-height: 1.25;
-  }
-  .auth-left .desc { font-size: 15px; color: #6b5a4a; line-height: 1.6; margin-bottom: 30px; max-width: 360px; }
-
-  .auth-checks { display: flex; flex-direction: column; gap: 10px; }
-  .auth-check { display: flex; align-items: center; gap: 9px; font-size: 14px; color: #4a3d30; font-weight: 500; }
-  .auth-check-icon { color: #059669; font-size: 14px; font-weight: 700; }
-
-  .auth-right {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-  }
-
-  .auth-card { width: 100%; max-width: 400px; }
-  .auth-card h2 { font-size: 22px; font-weight: 800; color: #1a1008; margin-bottom: 4px; font-family: 'Bricolage Grotesque', sans-serif; }
-  .auth-card .sub { font-size: 14px; color: #999; margin-bottom: 14px; }
-
-  .free-badge {
-    display: inline-block; background: rgba(5,150,105,0.08); color: #059669;
-    font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 16px; margin-bottom: 22px;
-  }
-
-  /* Flash */
-  .flash-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; font-weight: 500; }
-  .flash-success { background: rgba(16,185,129,0.1); color: #059669; }
-  .flash-error { background: rgba(239,68,68,0.08); color: #dc2626; }
-  .flash-warning { background: rgba(245,158,11,0.1); color: #b45309; }
-  .flash-info { background: rgba(59,130,246,0.08); color: #2563eb; }
-
-  /* Form */
-  .fg { margin-bottom: 16px; }
-  .fg label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
-  .fg input {
-    width: 100%; padding: 12px 14px; border-radius: 10px;
-    border: 1px solid #E8E2DC; background: #fdfaf6;
-    font-size: 14px; font-family: 'Inter', sans-serif; color: #1a1008;
-    box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .fg input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,114,42,0.06); background: #fff; }
-  .fg input::placeholder { color: #c5b8aa; }
-
-  .pw-wrap { position: relative; }
-  .pw-wrap input { padding-right: 54px; }
-  .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--orange); text-transform: uppercase; }
-  .pw-toggle:hover { color: #1a1008; }
-
-  .auth-btn {
-    width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
-    background: var(--orange); color: #fff; border: none; border-radius: 10px;
-    cursor: pointer; margin-top: 20px; transition: background 0.15s;
-  }
-  .auth-btn:hover { background: #d4611f; }
-
-  .auth-terms { text-align: center; font-size: 11px; color: #aaa; margin-top: 14px; line-height: 1.4; }
-  .auth-terms a { color: #777; text-decoration: underline; }
-
-  .auth-footer { text-align: center; margin-top: 18px; font-size: 13px; color: #999; }
-  .auth-footer a { color: #666; text-decoration: none; }
-  .auth-footer a span { color: var(--orange); font-weight: 700; }
-
-  @media (max-width: 768px) {
-    .auth-nav { padding: 14px 20px; }
-    .auth-split { flex-direction: column; }
-    .auth-left { display: none; }
-    .auth-right { padding: 40px 24px; align-items: flex-start; padding-top: 60px; }
-  }
-</style>
-
-<div class="auth-split">
-  <div class="auth-left">
-    <h1>Build your first AI agent in minutes</h1>
-    <p class="desc">Add your website or documents. Bubbl learns from your content and starts answering your visitors.</p>
-    <div class="auth-checks">
-      <div class="auth-check"><span class="auth-check-icon">&#10003;</span> No credit card required</div>
-      <div class="auth-check"><span class="auth-check-icon">&#10003;</span> 200 free messages every month</div>
-      <div class="auth-check"><span class="auth-check-icon">&#10003;</span> Live in minutes</div>
+      <div class="auth-brand-slogan">Where conversations become customers.</div>
     </div>
-  </div>
 
-  <div class="auth-right">
-    <div class="auth-card">
+    <!-- Right: Form -->
+    <div class="auth-form-side">
       <h2>Create your account</h2>
       <p class="sub">Start free. No credit card required.</p>
       <div class="free-badge">Free forever &middot; 200 messages/month</div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="flash-msg flash-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+        {% endfor %}{% endif %}
       {% endwith %}
 
       <form method="POST" action="/register">
@@ -165,6 +182,11 @@
   </div>
 </div>
 
+<!-- Chatbot Mascot -->
+{% include 'chat.html' %}
+
+<script src="/static/js/sprite.js"></script>
+<script src="/static/js/chat.js"></script>
 <script>
 document.getElementById('pwT').addEventListener('click', function() {
   var i = document.getElementById('pw');
@@ -179,4 +201,5 @@ document.getElementById('pwT').addEventListener('click', function() {
   if (hasNew && !window.location.search.includes('utm_')) { window.history.replaceState({},'',window.location.pathname+'?'+params.toString()); }
 })();
 </script>
-{% endblock %}
+</body>
+</html>
