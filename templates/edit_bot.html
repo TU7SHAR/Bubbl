@@ -836,7 +836,7 @@ function renderLinks() {
     row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center; flex-wrap:wrap;';
     row.innerHTML = '<input class="dash-input" style="flex:2; min-width:120px; padding:9px 12px; font-size:13px;" placeholder="Label" value="' + (link.label||'') + '" onchange="currentLinks['+i+'].label=this.value">' +
       '<input class="dash-input" style="flex:3; min-width:180px; padding:9px 12px; font-size:13px;" placeholder="https://..." value="' + (link.url||'') + '" onchange="currentLinks['+i+'].url=this.value">' +
-      '<select class="dash-input" style="flex:1; min-width:100px; padding:9px 8px; font-size:12px;" onchange="currentLinks['+i+'].category=this.value">' +
+      '<select class="dash-input" style="flex:1; min-width:110px; padding:9px 8px; font-size:12px; appearance:none; -webkit-appearance:none; background-image:url(\'data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;%23666&quot; stroke-width=&quot;2&quot;><polyline points=&quot;6 9 12 15 18 9&quot;/></svg>\'); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; cursor:pointer;" onchange="currentLinks['+i+'].category=this.value">' +
       '<option value="pricing"'+(link.category==='pricing'?' selected':'')+'>Pricing</option>' +
       '<option value="action"'+(link.category==='action'?' selected':'')+'>Action</option>' +
       '<option value="info"'+(link.category==='info'?' selected':'')+'>Info</option>' +
