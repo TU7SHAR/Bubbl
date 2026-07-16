@@ -116,10 +116,25 @@
   }
 </style>
 
-<div class="auth-split">
-  <div class="auth-left">
-    <h1>Your AI Agent, Live in Minutes</h1>
-    <p class="desc">Upload your website or documents and let Bubbl answer customer questions, capture leads, and support visitors 24/7.</p>
+<div class="auth-wrapper">
+  <h2 class="bricolage auth-title">Create Account</h2>
+  <p class="auth-subtitle">AI Agents for Magical Customer Experiences</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %} 
+    {% if messages %} 
+      {% for category, message in messages %}
+        <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+      {% endfor %} 
+    {% endif %} 
+  {% endwith %}
+
+  <form class="auth-form" method="POST" action="/register">
+    {{ form.csrf_token if form else '' }}
+    
+    <div class="form-group">
+      <label class="cb-label">Full Name</label>
+      <input type="text" name="name" class="dash-input" required placeholder="Full Name" />
+    </div>
 
     <div class="auth-stats">
       <div><div class="auth-stat-val">5 min</div><div class="auth-stat-lbl">Setup time</div></div>

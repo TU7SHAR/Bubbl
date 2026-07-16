@@ -130,11 +130,24 @@
   }
 </style>
 
-<div class="auth-split">
-  <div class="auth-left">
-    <h1>Welcome back to Bubbl</h1>
-    <p>Your AI agents are ready when you are. Sign in to manage your chatbots, view analytics, and capture leads.</p>
-  </div>
+<div class="auth-wrapper">
+  <h2 class="bricolage auth-title">Login</h2>
+  <p style="text-align:center; color:#666; font-size:14px; margin-bottom:28px;">AI Agents for Magical Customer Experiences</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %} 
+    {% if messages %} 
+      {% for category, message in messages %}
+        <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+      {% endfor %} 
+    {% endif %} 
+  {% endwith %}
+
+  <form class="auth-form" method="POST" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}">
+    
+    <div class="form-group">
+      <label class="cb-label">Email</label>
+      <input type="email" name="email" class="dash-input" required placeholder="Email" />
+    </div>
 
   <div class="auth-right">
     <div class="auth-card">
