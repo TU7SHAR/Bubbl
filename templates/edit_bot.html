@@ -277,6 +277,10 @@
             <div id="tab-website" class="cb-pane">
               <h2 class="cb-content-title bricolage">Website Scraper</h2>
               <p class="cb-content-subtitle">Extract knowledge directly from live URLs.</p>
+
+              <div style="background: #fef3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: #856404; line-height: 1.5;">
+                <strong>Tip:</strong> Deep crawl may find fewer links on JavaScript-heavy sites (React, Angular, etc.). If this happens, try using the site's <strong>sitemap.xml</strong> URL instead (e.g. <code>https://site.com/sitemap.xml</code>). The system will also auto-fallback to sitemap if very few links are discovered.
+              </div>
               
               <label class="cb-label">Target URL</label>
               <input type="url" id="scrape_url" placeholder="https://example.com" class="dash-input" style="width: 100%; margin-bottom: 20px;" />

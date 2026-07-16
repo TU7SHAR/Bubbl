@@ -64,6 +64,41 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                 if spider_data['success']:
                     urls_to_scrape = spider_data['urls']
                     add_log(f"Spider complete. Found {len(urls_to_scrape)} valid links.")
+
+                    # AUTO-FALLBACK: If spider found very few links, the site is likely
+                    # JS-rendered. Try to find and use the sitemap instead.
+                    if len(urls_to_scrape) < 3:
+                        add_log(f"[Warning] Spider found only {len(urls_to_scrape)} link(s). Site may be JavaScript-heavy.")
+                        add_log(f"[Fallback] Attempting to find sitemap.xml...")
+
+                        from urllib.parse import urlparse
+                        parsed_base = urlparse(url)
+                        sitemap_candidates = [
+                            f"{parsed_base.scheme}://{parsed_base.netloc}/sitemap.xml",
+                            f"{parsed_base.scheme}://{parsed_base.netloc}/sitemap_index.xml",
+                            f"{parsed_base.scheme}://{parsed_base.netloc}/sitemap",
+                        ]
+
+                        sitemap_found = False
+                        for sitemap_url in sitemap_candidates:
+                            try:
+                                import requests as req
+                                resp = req.head(sitemap_url, timeout=5, allow_redirects=True,
+                                               headers={'User-Agent': 'Mozilla/5.0'})
+                                if resp.status_code == 200:
+                                    add_log(f"[Fallback] Found sitemap at: {sitemap_url}")
+                                    sitemap_data = extract_sitemap_urls(sitemap_url, max_urls=crawl_limit)
+                                    if sitemap_data['success'] and len(sitemap_data['urls_to_scrape']) > len(urls_to_scrape):
+                                        urls_to_scrape = sitemap_data['urls_to_scrape']
+                                        add_log(f"[Fallback] Sitemap has {len(urls_to_scrape)} URLs. Using sitemap instead of spider.")
+                                        sitemap_found = True
+                                        break
+                            except Exception:
+                                continue
+
+                        if not sitemap_found:
+                            add_log(f"[Fallback] No sitemap found. Proceeding with {len(urls_to_scrape)} spider URL(s).")
+
                 else:
                     job.status = 'failed'
                     job.error_message = spider_data.get('error', 'Spider failed')
