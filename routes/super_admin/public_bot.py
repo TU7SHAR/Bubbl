@@ -190,13 +190,8 @@ def public_bot_get_links():
     """Get the current managed links for the platform bot."""
     import json
     bot = _get_or_create_platform_bot()
-    raw = (bot.custom_form_fields or "").strip()
-    links = []
-    if raw:
-        try:
-            links = json.loads(raw)
-        except (json.JSONDecodeError, TypeError):
-            links = []
+    raw = bot.custom_form_fields or []
+    links = raw if isinstance(raw, list) else []
     return jsonify({"success": True, "links": links})
 
 
@@ -221,7 +216,7 @@ def public_bot_save_links():
             cleaned.append({"label": label, "url": url, "category": category})
 
     bot = _get_or_create_platform_bot()
-    bot.custom_form_fields = json.dumps(cleaned)
+    bot.custom_form_fields = cleaned
     db.session.commit()
 
     return jsonify({"success": True, "count": len(cleaned)})

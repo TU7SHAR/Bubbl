@@ -7,140 +7,126 @@
 
 {% block content %}
 <style>
-  /* 1. Container Alignment & Spacing */
-  .auth-wrapper {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
-    border-radius: 24px;
-    padding: 40px;
-    width: 100%;
-    max-width: 400px;
-    margin: 60px auto; /* Centers it perfectly */
+  .auth-split {
+    display: flex;
+    min-height: calc(100vh - 120px);
+    margin: -20px 0 0;
+    gap: 0;
   }
 
-  .auth-title {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 32px;
+  .auth-left {
+    flex: 0 0 45%;
+    background: linear-gradient(160deg, #fff8f3 0%, #fff1e8 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 50px;
+    border-right: 1px solid #f0e8e0;
+  }
+
+  .auth-left h1 {
+    font-size: 30px;
+    font-weight: 800;
     color: #1a1008;
+    line-height: 1.25;
+    margin-bottom: 14px;
+    font-family: 'Bricolage Grotesque', sans-serif;
   }
 
-  /* 2. Form Groups & Labels */
-  .form-group {
-    margin-bottom: 20px;
-  }
-
-  .cb-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #666;
-    margin-bottom: 8px;
-  }
-
-  /* 3. Perfected Inputs */
-  .dash-input {
-    width: 100%;
-    padding: 14px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: #fff;
-    font-family: 'Outfit', sans-serif;
+  .auth-left p {
     font-size: 15px;
-    transition: all 0.2s ease;
-    box-sizing: border-box; /* Crucial: stops padding from breaking the width */
+    color: #6b5a4a;
+    line-height: 1.6;
+    max-width: 340px;
   }
-  
-  .dash-input:focus {
+
+  .auth-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .auth-card h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1008;
+    margin-bottom: 4px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
+
+  .auth-card .subtitle {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 24px;
+  }
+
+  .fg { margin-bottom: 16px; }
+
+  .fg label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #5a4a3a;
+    margin-bottom: 5px;
+  }
+
+  .fg input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid #E8E2DC;
+    background: #fdfaf6;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: #1a1008;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+  }
+
+  .fg input:focus {
     outline: none;
     border-color: var(--orange);
-    box-shadow: 0 0 0 3px rgba(232, 114, 42, 0.1);
+    box-shadow: 0 0 0 3px rgba(232,114,42,0.08);
+    background: #fff;
   }
 
-  /* Override browser autofill blue/yellow background */
-  .dash-input:-webkit-autofill,
-  .dash-input:-webkit-autofill:hover,
-  .dash-input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
-    box-shadow: 0 0 0px 1000px #ffffff inset;
-    -webkit-text-fill-color: #111827;
-    border-color: rgba(0,0,0,0.08);
-    transition: background-color 5000s ease-in-out 0s;
+  .fg input::placeholder { color: #c5b8aa; }
+
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 56px; }
+  .pw-toggle {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    font-size: 11px; font-weight: 700; color: var(--orange);
+    text-transform: uppercase; letter-spacing: 0.3px;
   }
+  .pw-toggle:hover { color: #1a1008; }
 
-  /* 4. Password Specifics */
-  .password-wrapper {
-    position: relative;
-    width: 100%;
-    margin-bottom: 8px; 
+  .forgot { display: block; text-align: right; font-size: 12px; color: #999; font-weight: 600; margin-top: 6px; text-decoration: none; }
+  .forgot:hover { color: var(--orange); }
+
+  .auth-submit {
+    width: 100%; padding: 12px; font-size: 15px; font-weight: 700;
+    background: var(--orange); color: #fff; border: none; border-radius: 10px;
+    cursor: pointer; margin-top: 22px; transition: background 0.2s;
   }
+  .auth-submit:hover { background: #d4611f; }
 
-  .password-wrapper input {
-    padding-right: 60px; /* Room for the SHOW button */
-  }
+  .auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: #999; }
+  .auth-footer a { color: #666; text-decoration: none; font-weight: 600; }
+  .auth-footer a span { color: var(--orange); }
 
-  .text-toggle {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: "Outfit", sans-serif;
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--orange);
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    transition: color 0.2s;
-    padding: 0;
-  }
-
-  .text-toggle:hover { color: #1a1008; }
-
-  /* 5. Links & Buttons */
-  .forgot-link {
-    display: block;
-    text-align: right;
-    font-size: 13px;
-    color: #666;
-    text-decoration: none;
-    font-weight: 600;
-    margin-bottom: 24px;
-    transition: color 0.2s;
-  }
-
-  .forgot-link:hover { color: var(--orange); }
-
-  .auth-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 14px;
-    font-size: 16px;
-  }
-
-  /* 6. Footer section */
-  .auth-footer {
-    text-align: center;
-    margin-top: 25px;
-    font-size: 14px;
-  }
-
-  .auth-footer a {
-    color: #444;
-    text-decoration: none !important; /* Removes the ugly line */
-    font-weight: 500;
-  }
-
-  .auth-footer a span {
-    color: var(--orange);
-    font-weight: 700;
+  @media (max-width: 768px) {
+    .auth-split { flex-direction: column; }
+    .auth-left { display: none; }
+    .auth-right { padding: 30px 20px; }
   }
 </style>
 
@@ -163,32 +149,49 @@
       <input type="email" name="email" class="dash-input" required placeholder="Email" />
     </div>
 
-    <div class="form-group" style="margin-bottom: 0;">
-      <label class="cb-label">Password</label>
-      <div class="password-wrapper">
-        <input type="password" name="password" id="passwordInput" class="dash-input" required placeholder="Password" />
-        <button type="button" id="toggleBtn" class="text-toggle">Show</button>
+  <div class="auth-right">
+    <div class="auth-card">
+      <h2>Sign in</h2>
+      <p class="subtitle">Enter your credentials to continue</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}">
+        <div class="fg">
+          <label>Email</label>
+          <input type="email" name="email" required placeholder="you@company.com">
+        </div>
+
+        <div class="fg" style="margin-bottom:0;">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" name="password" id="pwInput" required placeholder="Enter your password">
+            <button type="button" class="pw-toggle" id="pwToggle">Show</button>
+          </div>
+          <a href="{{ url_for('auth.forgot_password') }}" class="forgot">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="auth-submit">Sign In</button>
+      </form>
+
+      <div class="auth-footer">
+        <a href="{{ url_for('auth.register') }}">Don't have an account? <span>Start free</span></a>
       </div>
     </div>
-    
-    <a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">Forgot Password?</a>
-
-    <button type="submit" class="btn btn-solid auth-btn" style="border-radius: 12px;">Login</button>
-  </form>
-
-  <div class="auth-footer">
-    <a href="{{ url_for('auth.register') }}">Don't have an account? <span>Register</span></a>
   </div>
 </div>
 
 <script>
-  const passwordInput = document.getElementById('passwordInput');
-  const toggleBtn = document.getElementById('toggleBtn');
-
-  toggleBtn.addEventListener('click', function () {
-    const isPassword = passwordInput.getAttribute('type') === 'password';
-    passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-    toggleBtn.textContent = isPassword ? 'Hide' : 'Show';
+  document.getElementById('pwToggle').addEventListener('click', function() {
+    var inp = document.getElementById('pwInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    this.textContent = inp.type === 'password' ? 'Show' : 'Hide';
   });
 </script>
 {% endblock %}

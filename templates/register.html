@@ -2,139 +2,117 @@
 {% block title %}Register | {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}{% endblock %} 
 
 {% block meta_description %}
-<meta name="description" content="Create your Bubbl.ooo account. Start building powerful AI chatbots for WhatsApp and your website in minutes. No credit card required." />
+<meta name="description" content="Create your Bubbl.ooo account. Build AI chatbots in minutes. No credit card required." />
 {% endblock %}
 
 {% block content %}
 <style>
-  /* 1. Container Alignment & Spacing */
-  .auth-wrapper {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
-    border-radius: 24px;
-    padding: 40px;
-    width: 100%;
-    max-width: 400px;
-    margin: 60px auto; /* Centers it perfectly */
+  .auth-split {
+    display: flex;
+    min-height: calc(100vh - 120px);
+    margin: -20px 0 0;
+    gap: 0;
   }
 
-  .auth-title {
-    text-align: center;
-    margin-bottom: 10px;
-    font-size: 32px;
-    color: #1a1008;
-  }
-
-  .auth-subtitle {
-    text-align: center;
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 30px;
-    font-weight: 400;
-  }
-
-  /* 2. Form Groups & Labels */
-  .form-group {
-    margin-bottom: 20px;
-  }
-
-  .cb-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #666;
-    margin-bottom: 8px;
-  }
-
-  /* 3. Perfected Inputs */
-  .dash-input {
-    width: 100%;
-    padding: 14px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: #fff;
-    font-family: 'Outfit', sans-serif;
-    font-size: 15px;
-    transition: all 0.2s ease;
-    box-sizing: border-box; /* Crucial: stops padding from breaking the width */
-  }
-  
-  .dash-input:focus {
-    outline: none;
-    border-color: var(--orange);
-    box-shadow: 0 0 0 3px rgba(232, 114, 42, 0.1);
-  }
-
-  /* Override browser autofill blue/yellow background */
-  .dash-input:-webkit-autofill,
-  .dash-input:-webkit-autofill:hover,
-  .dash-input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
-    box-shadow: 0 0 0px 1000px #ffffff inset;
-    -webkit-text-fill-color: #111827;
-    border-color: rgba(0,0,0,0.08);
-    transition: background-color 5000s ease-in-out 0s;
-  }
-
-  /* 4. Password Specifics */
-  .password-wrapper {
-    position: relative;
-    width: 100%;
-  }
-
-  .password-wrapper input {
-    padding-right: 60px; /* Room for the SHOW button */
-  }
-
-  .text-toggle {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: "Outfit", sans-serif;
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--orange);
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    transition: color 0.2s;
-    padding: 0;
-  }
-
-  .text-toggle:hover { color: #1a1008; }
-
-  /* 5. Buttons & Footer */
-  .auth-btn {
-    width: 100%;
+  .auth-left {
+    flex: 0 0 45%;
+    background: linear-gradient(160deg, #fff8f3 0%, #fff1e8 100%);
+    display: flex;
+    flex-direction: column;
     justify-content: center;
-    padding: 14px;
-    font-size: 16px;
-    margin-top: 24px;
+    padding: 50px;
+    border-right: 1px solid #f0e8e0;
   }
 
-  .auth-footer {
-    text-align: center;
-    margin-top: 25px;
-    font-size: 14px;
+  .auth-left h1 {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1a1008;
+    line-height: 1.25;
+    margin-bottom: 14px;
+    font-family: 'Bricolage Grotesque', sans-serif;
   }
 
-  .auth-footer a {
-    color: #444;
-    text-decoration: none !important; /* Removes the ugly line */
-    font-weight: 500;
+  .auth-left .desc {
+    font-size: 15px;
+    color: #6b5a4a;
+    line-height: 1.6;
+    max-width: 340px;
+    margin-bottom: 30px;
   }
 
-  .auth-footer a span {
-    color: var(--orange);
-    font-weight: 700;
+  .auth-stats { display: flex; gap: 28px; margin-bottom: 28px; }
+  .auth-stat-val { font-size: 24px; font-weight: 800; color: var(--orange); font-family: 'Bricolage Grotesque', sans-serif; }
+  .auth-stat-lbl { font-size: 10px; color: #8a7a6a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+  .auth-checks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .auth-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5a4a3a; font-weight: 500; }
+  .auth-check-dot { color: #059669; font-weight: 700; font-size: 14px; }
+
+  .auth-benefit {
+    background: #fff;
+    border: 1px solid #f0e8e0;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .auth-benefit strong { font-size: 13px; color: #1a1008; display: block; margin-bottom: 3px; }
+  .auth-benefit span { font-size: 12px; color: #8a7a6a; }
+
+  .auth-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  .auth-card { width: 100%; max-width: 420px; }
+
+  .auth-card h2 {
+    font-size: 22px; font-weight: 800; color: #1a1008; margin-bottom: 4px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
+
+  .auth-card .subtitle { font-size: 13px; color: #999; margin-bottom: 14px; }
+
+  .free-badge {
+    display: inline-block; background: rgba(5,150,105,0.08); color: #059669;
+    font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 16px; margin-bottom: 20px;
+  }
+
+  .fg { margin-bottom: 14px; }
+  .fg label { display: block; font-size: 12px; font-weight: 600; color: #5a4a3a; margin-bottom: 5px; }
+  .fg input {
+    width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #E8E2DC;
+    background: #fdfaf6; font-size: 14px; font-family: 'Inter', sans-serif; color: #1a1008;
+    transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box;
+  }
+  .fg input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,114,42,0.08); background: #fff; }
+  .fg input::placeholder { color: #c5b8aa; }
+
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 56px; }
+  .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: var(--orange); text-transform: uppercase; }
+  .pw-toggle:hover { color: #1a1008; }
+
+  .auth-submit {
+    width: 100%; padding: 12px; font-size: 15px; font-weight: 700;
+    background: var(--orange); color: #fff; border: none; border-radius: 10px;
+    cursor: pointer; margin-top: 18px; transition: background 0.2s;
+  }
+  .auth-submit:hover { background: #d4611f; }
+
+  .auth-terms { text-align: center; font-size: 11px; color: #aaa; margin-top: 12px; }
+  .auth-terms a { color: #888; text-decoration: underline; }
+
+  .auth-footer { text-align: center; margin-top: 16px; font-size: 13px; color: #999; }
+  .auth-footer a { color: #666; text-decoration: none; font-weight: 600; }
+  .auth-footer a span { color: var(--orange); }
+
+  @media (max-width: 768px) {
+    .auth-split { flex-direction: column; }
+    .auth-left { display: none; }
+    .auth-right { padding: 30px 20px; }
   }
 </style>
 
@@ -158,51 +136,77 @@
       <input type="text" name="name" class="dash-input" required placeholder="Full Name" />
     </div>
 
-    <div class="form-group">
-      <label class="cb-label">Email</label>
-      <input type="email" name="email" class="dash-input" required placeholder="Email" />
+    <div class="auth-stats">
+      <div><div class="auth-stat-val">5 min</div><div class="auth-stat-lbl">Setup time</div></div>
+      <div><div class="auth-stat-val">50+</div><div class="auth-stat-lbl">Languages</div></div>
+      <div><div class="auth-stat-val">24/7</div><div class="auth-stat-lbl">Always on</div></div>
     </div>
 
-    <div class="form-group" style="margin-bottom: 0;">
-      <label class="cb-label">Password</label>
-      <div class="password-wrapper">
-        <input type="password" name="password" id="regPasswordInput" class="dash-input" required placeholder="Password" />
-        <button type="button" id="regToggleBtn" class="text-toggle">Show</button>
-      </div>
+    <div class="auth-checks">
+      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> No credit card required</div>
+      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> Cancel anytime</div>
+      <div class="auth-check"><span class="auth-check-dot">&#10003;</span> 200 free messages every month</div>
     </div>
 
-    <button type="submit" class="btn btn-solid auth-btn" style="border-radius: 12px;">Register</button>
-  </form>
+    <div class="auth-benefit">
+      <strong>No technical setup needed</strong>
+      <span>Add one line of code to your website and your AI agent is live.</span>
+    </div>
+  </div>
 
-  <div class="auth-footer">
-    <a href="{{ url_for('auth.login') }}">Already have an account? <span>Login</span></a>
+  <div class="auth-right">
+    <div class="auth-card">
+      <h2>Get Started Free</h2>
+      <p class="subtitle">Build your first AI agent in less than 5 minutes.</p>
+      <div class="free-badge">Free forever &middot; 200 messages/month</div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="/register">
+        {{ form.csrf_token if form else '' }}
+        <div class="fg">
+          <label>Full name</label>
+          <input type="text" name="name" required placeholder="Your name">
+        </div>
+        <div class="fg">
+          <label>Work email</label>
+          <input type="email" name="email" required placeholder="you@company.com">
+        </div>
+        <div class="fg" style="margin-bottom:0;">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" name="password" id="pwInput" required placeholder="Min 8 chars (letter + number)">
+            <button type="button" class="pw-toggle" id="pwToggle">Show</button>
+          </div>
+        </div>
+        <button type="submit" class="auth-submit">Create Free Account</button>
+      </form>
+
+      <div class="auth-terms">By signing up, you agree to our <a href="/legal/terms">Terms</a> and <a href="/legal/privacy">Privacy Policy</a></div>
+      <div class="auth-footer"><a href="{{ url_for('auth.login') }}">Already have an account? <span>Sign in</span></a></div>
+    </div>
   </div>
 </div>
 
 <script>
-  const regPasswordInput = document.getElementById('regPasswordInput');
-  const regToggleBtn = document.getElementById('regToggleBtn');
-
-  regToggleBtn.addEventListener('click', function () {
-    const isPassword = regPasswordInput.getAttribute('type') === 'password';
-    regPasswordInput.setAttribute('type', isPassword ? 'text' : 'password');
-    regToggleBtn.textContent = isPassword ? 'Hide' : 'Show';
+  document.getElementById('pwToggle').addEventListener('click', function() {
+    var inp = document.getElementById('pwInput');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    this.textContent = inp.type === 'password' ? 'Show' : 'Hide';
   });
-
-  // --- UTM FORWARDING: If UTMs were stored from a landing page, append to URL ---
+  // UTM forwarding
   (function() {
-    const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-    const currentParams = new URLSearchParams(window.location.search);
-    let hasNew = false;
-    utmKeys.forEach(function(key) {
-      if (!currentParams.has(key)) {
-        const stored = localStorage.getItem(key);
-        if (stored) { currentParams.set(key, stored); hasNew = true; }
-      }
-    });
-    if (hasNew && !window.location.search.includes('utm_')) {
-      window.history.replaceState({}, '', window.location.pathname + '?' + currentParams.toString());
-    }
+    var utmKeys = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'];
+    var params = new URLSearchParams(window.location.search);
+    var hasNew = false;
+    utmKeys.forEach(function(k) { if (!params.has(k)) { var s = localStorage.getItem(k); if (s) { params.set(k, s); hasNew = true; } } });
+    if (hasNew && !window.location.search.includes('utm_')) { window.history.replaceState({}, '', window.location.pathname + '?' + params.toString()); }
   })();
 </script>
 {% endblock %}

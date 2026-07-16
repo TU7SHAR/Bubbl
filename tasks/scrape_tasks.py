@@ -153,6 +153,64 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
             add_log(f"\n--- INGESTION COMPLETE. {success_count} files vectorized. ---")
             if error_logs:
                 job.error_message = f"Partial success ({success_count} scraped)."
+
+            # --- AUTO-EXTRACT LINKS FOR PLATFORM BOT ---
+            # If this is the platform bot, auto-populate managed links from scraped URLs
+            if target_bot.bot_type == 'platform' and urls_to_scrape:
+                import json
+                from urllib.parse import urlparse
+
+                existing_raw = target_bot.custom_form_fields or []
+                existing_links = existing_raw if isinstance(existing_raw, list) else []
+
+                existing_urls = {link.get('url', '') for link in existing_links}
+
+                # Auto-categorize URLs based on path keywords
+                def auto_categorize(url_path):
+                    path = url_path.lower()
+                    if 'pricing' in path or 'plan' in path:
+                        return 'pricing'
+                    elif 'register' in path or 'signup' in path or 'sign-up' in path or 'start' in path:
+                        return 'action'
+                    elif 'login' in path or 'signin' in path:
+                        return 'action'
+                    elif 'contact' in path or 'support' in path or 'help' in path:
+                        return 'support'
+                    elif 'feature' in path or 'how' in path or 'docs' in path or 'guide' in path:
+                        return 'info'
+                    else:
+                        return 'link'
+
+                def make_label(url_str):
+                    """Generate a readable label from URL path."""
+                    parsed = urlparse(url_str)
+                    path = parsed.path.strip('/')
+                    if not path:
+                        return parsed.netloc  # Root URL → use domain as label
+                    # Take last segment, clean it up
+                    segment = path.split('/')[-1]
+                    segment = segment.replace('.html', '').replace('.htm', '').replace('-', ' ').replace('_', ' ')
+                    return segment.title()
+
+                new_links_added = 0
+                for scraped_url in urls_to_scrape:
+                    if scraped_url not in existing_urls:
+                        parsed = urlparse(scraped_url)
+                        category = auto_categorize(parsed.path)
+                        label = make_label(scraped_url)
+                        existing_links.append({
+                            "label": label,
+                            "url": scraped_url,
+                            "category": category,
+                        })
+                        existing_urls.add(scraped_url)
+                        new_links_added += 1
+
+                if new_links_added > 0:
+                    target_bot.custom_form_fields = existing_links
+                    db.session.commit()
+                    add_log(f"[Links] Auto-added {new_links_added} URLs to managed links for public bot.")
+
         else:
             job.status = 'failed'
             job.error_message = "Failed to scrape any URLs."

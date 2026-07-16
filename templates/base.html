@@ -210,9 +210,8 @@
                 <a href="{{ url_for('views_bp.leads_dashboard') }}" class="nav-link">Leads</a>
                 <a href="/payments/manage" class="nav-link">Billing</a>
                 {% if session.get('role') == 'super_admin' %}
-        <a href="{{ url_for('super_admin_bp.dashboard') }}" style="color: #8b5cf6; font-weight: 700;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -2px; margin-right: 4px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-            Creator Mode
+        <a href="{{ url_for('super_admin_bp.dashboard') }}" class="nav-link" style="color: #8b5cf6; font-weight: 700;">
+            Admin Panel
         </a>
     {% endif %}
                 <a href="{{ url_for('profile_bp.profile') }}" class="nav-link">Profile</a>
@@ -236,9 +235,6 @@
     <a href="{{ url_for('auth.logout') }}" class="btn btn-solid btn-nav" style="background: rgba(239,68,68,0.08); color: #dc2626; border: 1.5px solid rgba(239,68,68,0.35); border-radius: 8px; box-shadow: none;">Logout</a>
   {% else %}
     <a href="{{ url_for('auth.login') }}" class="btn btn-solid btn-nav" style="border-radius: 8px;">Get Started Free</a>
-  {% endif %}
-   {% if session.get('role') == 'super_admin' %}
-    <a href="{{ url_for('auth.logout') }}" class="btn btn-solid btn-nav" style="background: #fdf2f0; color: var(--orange); border-radius: 8px; box-shadow: none;">Logout</a>
   {% endif %}
 </div>
           </div>
