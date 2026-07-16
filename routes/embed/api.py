@@ -51,7 +51,7 @@ def get_bot_config(bot_id):
                 "exists": True,
                 "system_prompt": bot.system_prompt,
                 "lead_capture_timing": bot.lead_capture_timing,
-                "custom_form_fields": getattr(bot, "custom_form_fields", "") or "",
+                "custom_form_fields": getattr(bot, "custom_form_fields", []) or [],
                 "store_id": bot.store_id,
             }
         cache.set(cache_key, cfg, timeout=60)
@@ -166,7 +166,11 @@ def chat():
 
         ai_prompt = bot_cfg["system_prompt"] or "You are a helpful assistant."
         timing = bot_cfg["lead_capture_timing"]
-        custom_fields = (bot_cfg["custom_form_fields"] or "").strip()
+        custom_fields = bot_cfg["custom_form_fields"] or []
+        # Ensure it's a JSON string for the prompt builder (legacy compat)
+        if isinstance(custom_fields, list):
+            custom_fields = json.dumps(custom_fields)
+        custom_fields = custom_fields.strip() if isinstance(custom_fields, str) else ""
 
         if timing and timing != 'disabled' and timing != 'gatekeeper':
             ai_prompt += "\n\n--- LEAD CAPTURE INSTRUCTIONS ---\n"

@@ -1,4 +1,5 @@
 import os
+import json
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -241,7 +242,7 @@ def set_active_bot(bot_id):
             session['active_bot_id'] = target_bot.id
             session['active_bot_name'] = target_bot.bot_name
             session['lead_capture_timing'] = target_bot.lead_capture_timing
-            session['custom_form_fields'] = getattr(target_bot, 'custom_form_fields', '')
+            session['custom_form_fields'] = json.dumps(getattr(target_bot, 'custom_form_fields', []) or [])
             
             if hasattr(target_bot, 'ui_settings') and target_bot.ui_settings:
                 session['theme_color'] = target_bot.ui_settings.theme_color
