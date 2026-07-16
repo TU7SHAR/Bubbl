@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Conversation | {{ bot.bot_name }}{% endblock %}
+
+{% block content %}
+<style>
+  .chat-detail-container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+  .chat-detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .chat-detail-header h1 { font-size: 20px; font-weight: 800; color: #1a1008; }
+  .chat-detail-header a { font-size: 13px; color: #888; text-decoration: none; }
+  .chat-detail-header a:hover { color: #E8722A; }
+
+  .chat-detail-meta { font-size: 12px; color: #999; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f0e8e0; }
+  .chat-detail-meta span { margin-right: 16px; }
+
+  .chat-messages { display: flex; flex-direction: column; gap: 12px; }
+
+  .chat-msg {
+    max-width: 80%; padding: 12px 16px; border-radius: 16px;
+    font-size: 14px; line-height: 1.5; position: relative;
+  }
+
+  .chat-msg-user {
+    background: #1a1008; color: #fff; align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-msg-bot {
+    background: #f8f4f0; color: #333; align-self: flex-start;
+    border-bottom-left-radius: 4px; border: 1px solid #f0e8e0;
+  }
+
+  .chat-msg-time {
+    font-size: 10px; color: #bbb; margin-top: 4px;
+    text-align: right;
+  }
+
+  .chat-msg-bot .chat-msg-time { text-align: left; color: #aaa; }
+
+  .session-id-label {
+    font-family: monospace; font-size: 11px; color: #ccc;
+    background: #f9f6f3; padding: 4px 8px; border-radius: 6px;
+  }
+</style>
+
+<div class="chat-detail-container">
+  <div class="chat-detail-header">
+    <h1 class="bricolage">Conversation</h1>
+    <a href="{{ url_for('admin_bp.bot_chats', bot_id=bot.id) }}">&larr; All Conversations</a>
+  </div>
+
+  <div class="chat-detail-meta">
+    <span><strong>Bot:</strong> {{ bot.bot_name }}</span>
+    <span><strong>Messages:</strong> {{ messages|length }}</span>
+    <span><strong>Session:</strong> <span class="session-id-label">{{ session_id[:12] }}...</span></span>
+  </div>
+
+  <div class="chat-messages">
+    {% for msg in messages %}
+    <div class="chat-msg {{ 'chat-msg-user' if msg.role == 'user' else 'chat-msg-bot' }}">
+      {{ msg.content }}
+      <div class="chat-msg-time">{{ msg.created_at.strftime('%H:%M, %b %d') if msg.created_at else '' }}</div>
+    </div>
+    {% endfor %}
+
+    {% if not messages %}
+    <p style="text-align: center; color: #999; padding: 40px;">No messages in this conversation.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
