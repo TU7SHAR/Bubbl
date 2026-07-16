@@ -354,3 +354,53 @@ def delete_doc(doc_id):
         flash("Security Error: Unauthorized to delete this document.", "error")
 
     return redirect(url_for('admin_bp.edit_bot', bot_id=bot.id))
+
+
+
+# ═══════════════════════════════════════════
+# MANAGED LINKS — Clickable buttons for chat responses
+# ═══════════════════════════════════════════
+
+@admin_bp.route('/bot/<int:bot_id>/links', methods=['GET'])
+def get_bot_links(bot_id):
+    """Get managed links for a bot."""
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+    if not bot:
+        return jsonify({"error": "Bot not found"}), 404
+
+    links = bot.managed_links or []
+    return jsonify({"success": True, "links": links})
+
+
+@admin_bp.route('/bot/<int:bot_id>/links', methods=['POST'])
+def save_bot_links(bot_id):
+    """Save managed links for a bot (replaces all)."""
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+    if not bot:
+        return jsonify({"error": "Bot not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    links = data.get('links', [])
+
+    valid_categories = ['pricing', 'action', 'info', 'support', 'link', 'email', 'phone']
+    cleaned = []
+    for link in links:
+        label = (link.get('label') or '').strip()
+        url = (link.get('url') or '').strip()
+        category = (link.get('category') or 'link').strip().lower()
+        if label and url:
+            if category not in valid_categories:
+                category = 'link'
+            cleaned.append({"label": label, "url": url, "category": category})
+
+    bot.managed_links = cleaned
+    db.session.commit()
+    invalidate_bot_cache(bot_id)
+
+    return jsonify({"success": True, "count": len(cleaned)})

@@ -245,6 +245,14 @@ def chat():
                 )
                 
         # --- This executes safely for all bots regardless of lead capture settings ---
+        # Inject managed links (clickable buttons) into the bot's prompt
+        from bot.chat import _build_links_text, BUTTON_INSTRUCTIONS
+        bot_links = bot_record.managed_links if bot_record else []
+        if bot_links:
+            links_text = _build_links_text(bot_links)
+            ai_prompt += "\n\n" + BUTTON_INSTRUCTIONS
+            ai_prompt += "Available links (ONLY use these):\n" + links_text
+
         reply = get_response_from_gemini(
             user_query=user_message, 
             target_store_id=bot_cfg["store_id"], 
