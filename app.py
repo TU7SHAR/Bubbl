@@ -70,6 +70,7 @@ def _run_auto_migrations():
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS interaction_count INTEGER DEFAULT 0',
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE',
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
+        'ALTER TABLE bot ALTER COLUMN custom_form_fields TYPE TEXT',
         "ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'free'",
         'ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_started_at TIMESTAMP',
         'ALTER TABLE organization ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMP',

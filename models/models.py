@@ -86,7 +86,7 @@ class Bot(db.Model):
     bot_type = db.Column(db.String(50), default='general')
     system_prompt = db.Column(db.Text, nullable=True)
     lead_capture_timing = db.Column(db.String(20), default='disabled')
-    custom_form_fields = db.Column(db.String(500), default="")
+    custom_form_fields = db.Column(db.Text, default="")
     is_active = db.Column(db.Boolean, default=True)  # Admin can disable bots
 
     # --- USAGE METRICS ---
