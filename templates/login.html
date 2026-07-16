@@ -1,292 +1,280 @@
-{% extends 'base.html' %} 
-{% block title %}Login to Bubbl.ooo | AI Chatbot Platform{% endblock %} 
+{% block title %}Login | bubbl.ooo{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, follow">
+  <title>Login | bubbl.ooo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-{% block meta_description %}
-<meta name="robots" content="noindex, follow" />
-{% endblock %}
+    :root {
+      --orange: #E8722A;
+      --orange-hover: #d4611f;
+      --cream: #fdfaf6;
+      --warm-bg: #fff8f3;
+      --text-dark: #1a1008;
+      --text-body: #5a4a3a;
+      --text-muted: #8a7a6a;
+      --border: #E8E2DC;
+      --input-bg: #fdfaf6;
+    }
 
-{% block content %}
-<style>
-  .auth-split {
-    display: flex;
-    min-height: calc(100vh - 80px);
-    margin: -20px -20px 0;
-  }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--cream);
+      color: var(--text-dark);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
 
-  /* Left: Branding Panel */
-  .auth-brand {
-    flex: 1;
-    background: linear-gradient(160deg, #fff8f3 0%, #fff1e8 50%, #ffe8d6 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 60px;
-    position: relative;
-    overflow: hidden;
-  }
+    a { color: inherit; text-decoration: none; }
 
-  .auth-brand::before {
-    content: '';
-    position: absolute;
-    bottom: -30%;
-    right: -30%;
-    width: 80%;
-    height: 80%;
-    background: radial-gradient(circle, rgba(232,114,42,0.08) 0%, transparent 70%);
-    pointer-events: none;
-  }
+    /* Minimal Header */
+    .auth-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+    }
 
-  .auth-brand-logo {
-    font-size: 28px;
-    font-weight: 800;
-    color: #1a1008;
-    margin-bottom: 40px;
-    font-family: 'Bricolage Grotesque', sans-serif;
-  }
+    .auth-header-logo {
+      font-family: 'Bricolage Grotesque', serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-dark);
+    }
+    .auth-header-logo span { color: var(--orange); }
 
-  .auth-brand-logo span {
-    color: #E8722A;
-  }
+    .auth-header-back {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .auth-header-back:hover { color: var(--orange); }
 
-  .auth-brand-slogan {
-    font-size: 38px;
-    font-weight: 800;
-    color: #1a1008;
-    line-height: 1.2;
-    margin-bottom: 20px;
-    font-family: 'Bricolage Grotesque', sans-serif;
-  }
+    /* Split Layout */
+    .auth-split {
+      display: flex;
+      min-height: calc(100vh - 73px);
+    }
 
-  .auth-brand-sub {
-    font-size: 16px;
-    color: #5a4a3a;
-    line-height: 1.6;
-    margin-bottom: 40px;
-    max-width: 380px;
-  }
+    /* Left Panel — Minimal for login */
+    .auth-left {
+      flex: 0 0 48%;
+      background: var(--warm-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px;
+      border-right: 1px solid var(--border);
+    }
 
-  .auth-brand-features {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
+    .auth-left-heading {
+      font-family: 'Bricolage Grotesque', serif;
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--text-dark);
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
 
-  .auth-brand-feature {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #3d2e1f;
-    font-size: 14px;
-    font-weight: 500;
-  }
+    .auth-left-sub {
+      font-size: 16px;
+      color: var(--text-body);
+      line-height: 1.6;
+      max-width: 360px;
+    }
 
-  .auth-brand-feature-icon {
-    width: 32px;
-    height: 32px;
-    background: rgba(232,114,42,0.12);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    flex-shrink: 0;
-  }
+    /* Right Panel — Form */
+    .auth-right {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
 
-  /* Right: Form Panel */
-  .auth-form-panel {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    background: #fafaf9;
-  }
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+    }
 
-  .auth-wrapper {
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.04);
-    border-radius: 20px;
-    padding: 44px;
-    width: 100%;
-    max-width: 400px;
-  }
+    .auth-card-title {
+      font-family: 'Bricolage Grotesque', serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 6px;
+    }
 
-  .auth-title {
-    text-align: center;
-    margin-bottom: 8px;
-    font-size: 26px;
-    color: #1a1008;
-    font-weight: 800;
-  }
+    .auth-card-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
 
-  .auth-subtitle {
-    text-align: center;
-    color: #888;
-    font-size: 14px;
-    margin-bottom: 30px;
-  }
+    /* Flash Messages */
+    .flash-msg {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+    .flash-success { background: rgba(16,185,129,0.1); color: #059669; }
+    .flash-error { background: rgba(239,68,68,0.08); color: #dc2626; }
+    .flash-warning { background: rgba(245,158,11,0.1); color: #b45309; }
+    .flash-info { background: rgba(59,130,246,0.08); color: #2563eb; }
 
-  .form-group { margin-bottom: 18px; }
+    /* Form */
+    .form-group { margin-bottom: 16px; }
 
-  .cb-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #666;
-    margin-bottom: 6px;
-  }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-body);
+      margin-bottom: 6px;
+    }
 
-  .dash-input {
-    width: 100%;
-    padding: 13px 16px;
-    border-radius: 10px;
-    border: 1.5px solid rgba(0,0,0,0.08);
-    background: #fafaf9;
-    font-family: 'Outfit', sans-serif;
-    font-size: 15px;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-  }
-  
-  .dash-input:focus {
-    outline: none;
-    border-color: #E8722A;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(232, 114, 42, 0.08);
-  }
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
 
-  .dash-input:-webkit-autofill,
-  .dash-input:-webkit-autofill:hover,
-  .dash-input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0px 1000px #fafaf9 inset;
-    -webkit-text-fill-color: #111827;
-    transition: background-color 5000s ease-in-out 0s;
-  }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(232,114,42,0.08);
+      background: #fff;
+    }
 
-  .password-wrapper { position: relative; width: 100%; }
-  .password-wrapper input { padding-right: 60px; }
+    .form-input::placeholder { color: #bbb; }
 
-  .text-toggle {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 800;
-    color: #E8722A;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    padding: 0;
-  }
-  .text-toggle:hover { color: #1a1008; }
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 56px; }
 
-  .forgot-link {
-    display: block;
-    text-align: right;
-    font-size: 13px;
-    color: #888;
-    text-decoration: none;
-    font-weight: 600;
-    margin: 8px 0 24px;
-    transition: color 0.2s;
-  }
-  .forgot-link:hover { color: #E8722A; }
+    .pw-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .pw-toggle:hover { color: var(--text-dark); }
 
-  .auth-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 14px;
-    font-size: 15px;
-    font-weight: 700;
-    background: #E8722A;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .auth-btn:hover { background: #d4611f; }
+    .forgot-link {
+      display: block;
+      text-align: right;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin: 8px 0 0;
+      transition: color 0.2s;
+    }
+    .forgot-link:hover { color: var(--orange); }
 
-  .auth-footer {
-    text-align: center;
-    margin-top: 24px;
-    font-size: 14px;
-  }
-  .auth-footer a { color: #666; text-decoration: none; font-weight: 500; }
-  .auth-footer a span { color: #E8722A; font-weight: 700; }
+    .auth-btn {
+      width: 100%;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 700;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 24px;
+    }
+    .auth-btn:hover { background: var(--orange-hover); }
 
-  /* Mobile: Stack vertically, hide brand panel */
-  @media (max-width: 768px) {
-    .auth-split { flex-direction: column; min-height: auto; }
-    .auth-brand { display: none; }
-    .auth-form-panel { padding: 30px 20px; min-height: calc(100vh - 80px); }
-    .auth-wrapper { padding: 32px 24px; }
-  }
-</style>
+    .auth-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .auth-footer a { font-weight: 600; }
+    .auth-footer a span { color: var(--orange); }
 
+    /* Mobile */
+    @media (max-width: 768px) {
+      .auth-header { padding: 16px 20px; }
+      .auth-split { flex-direction: column; }
+      .auth-left { display: none; }
+      .auth-right { padding: 30px 20px; min-height: calc(100vh - 73px); }
+      .auth-card { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Minimal Header -->
+<header class="auth-header">
+  <a href="https://bubbl.ooo" class="auth-header-logo">bubbl<span>.ooo</span></a>
+  <a href="https://bubbl.ooo" class="auth-header-back">&larr; Back to website</a>
+</header>
+
+<!-- Split Layout -->
 <div class="auth-split">
-  <!-- Left: Branding -->
-  <div class="auth-brand">
-    <div class="auth-brand-logo">bubbl<span>.ooo</span></div>
-    <h1 class="auth-brand-slogan">AI Agents for Magical Customer Experiences</h1>
-    <p class="auth-brand-sub">
-      Build intelligent chatbots that understand your business, capture leads, and delight your customers — all in minutes, no code required.
-    </p>
-    <div class="auth-brand-features">
-      <div class="auth-brand-feature">
-        <div class="auth-brand-feature-icon">&#x26A1;</div>
-        <span>Live in 5 minutes — just upload docs or paste a URL</span>
-      </div>
-      <div class="auth-brand-feature">
-        <div class="auth-brand-feature-icon">&#x1F9E0;</div>
-        <span>Powered by Google Gemini AI — context-aware answers</span>
-      </div>
-      <div class="auth-brand-feature">
-        <div class="auth-brand-feature-icon">&#x1F4C8;</div>
-        <span>Built-in lead capture + analytics dashboard</span>
-      </div>
-      <div class="auth-brand-feature">
-        <div class="auth-brand-feature-icon">&#x1F30D;</div>
-        <span>50+ languages — auto-detects Hindi, Tamil, Bengali & more</span>
-      </div>
-    </div>
+  <!-- Left: Minimal branding for login -->
+  <div class="auth-left">
+    <h1 class="auth-left-heading">Welcome back to Bubbl</h1>
+    <p class="auth-left-sub">Your AI agents are ready when you are. Sign in to manage your chatbots, view analytics, and capture leads.</p>
   </div>
 
   <!-- Right: Login Form -->
-  <div class="auth-form-panel">
-    <div class="auth-wrapper">
-      <h2 class="bricolage auth-title">Welcome back</h2>
-      <p class="auth-subtitle">Sign in to your account</p>
+  <div class="auth-right">
+    <div class="auth-card">
+      <h2 class="auth-card-title">Sign in</h2>
+      <p class="auth-card-sub">Enter your credentials to continue</p>
 
-      {% with messages = get_flashed_messages(with_categories=true) %} 
-        {% if messages %} 
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
           {% for category, message in messages %}
             <div class="flash-msg flash-{{ category }}">{{ message }}</div>
-          {% endfor %} 
-        {% endif %} 
+          {% endfor %}
+        {% endif %}
       {% endwith %}
 
-      <form class="auth-form" method="POST" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}">
+      <form method="POST" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}">
         <div class="form-group">
-          <label class="cb-label">Email</label>
-          <input type="email" name="email" class="dash-input" required placeholder="you@company.com" />
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-input" required placeholder="you@company.com">
         </div>
 
         <div class="form-group" style="margin-bottom: 0;">
-          <label class="cb-label">Password</label>
-          <div class="password-wrapper">
-            <input type="password" name="password" id="passwordInput" class="dash-input" required placeholder="Enter your password" />
-            <button type="button" id="toggleBtn" class="text-toggle">Show</button>
+          <label class="form-label">Password</label>
+          <div class="password-wrap">
+            <input type="password" name="password" id="pwInput" class="form-input" required placeholder="Enter your password">
+            <button type="button" class="pw-toggle" id="pwToggle">Show</button>
           </div>
+          <a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">Forgot password?</a>
         </div>
-        
-        <a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">Forgot Password?</a>
+
         <button type="submit" class="auth-btn">Sign In</button>
       </form>
 
@@ -298,12 +286,12 @@
 </div>
 
 <script>
-  const passwordInput = document.getElementById('passwordInput');
-  const toggleBtn = document.getElementById('toggleBtn');
-  toggleBtn.addEventListener('click', function () {
-    const isPassword = passwordInput.getAttribute('type') === 'password';
-    passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-    toggleBtn.textContent = isPassword ? 'Hide' : 'Show';
+  document.getElementById('pwToggle').addEventListener('click', function() {
+    var inp = document.getElementById('pwInput');
+    var isHidden = inp.type === 'password';
+    inp.type = isHidden ? 'text' : 'password';
+    this.textContent = isHidden ? 'Hide' : 'Show';
   });
 </script>
-{% endblock %}
+</body>
+</html>
