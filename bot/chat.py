@@ -73,29 +73,45 @@ PUBLIC_BOT_BUTTON_RULES = (
 )
 
 
+def _build_links_text(links_list):
+    """Convert a managed_links list into text for the AI prompt."""
+    if not links_list:
+        return ""
+    text = ""
+    for link in links_list:
+        label = link.get('label', '')
+        url = link.get('url', '')
+        category = link.get('category', 'link')
+        if label and url:
+            text += f"- {url} — {label} (category: {category})\n"
+    return text
+
+
+BUTTON_INSTRUCTIONS = (
+    "INTERACTIVE BUTTONS (OPTIONAL):\n"
+    "You MAY show clickable buttons below your message to help users navigate.\n"
+    "Buttons are OPTIONAL — only use them when directing the user to a specific page.\n"
+    "ALWAYS answer the question FIRST, then optionally add buttons.\n"
+    "Format: [[BUTTONS: category:Label|URL, category:Label|URL]]\n\n"
+    "Categories: pricing (orange), action (green), info (blue), support (purple), link (gray)\n\n"
+    "RULES:\n"
+    "- ANSWER FIRST. Buttons are a supplement, not a replacement.\n"
+    "- ONLY use URLs from the 'Available links' list. NEVER invent URLs.\n"
+    "- Max 1-2 buttons per response.\n"
+    "- Do NOT show buttons for greetings or when you already answered fully.\n"
+    "- If no links are available, do NOT show any buttons.\n"
+    "- The buttons tag must be the LAST thing in your response.\n"
+)
+
+
 def _get_platform_bot_config():
     """
     Get the platform bot's store_id AND managed links.
     Returns (store_id, links_text) or (None, "") if not configured.
     """
-    import json
     platform_bot = Bot.query.filter_by(bot_type='platform').first()
     if platform_bot and platform_bot.store_id:
-        # Links are stored as JSONB in custom_form_fields
-        links_text = ""
-        raw = platform_bot.custom_form_fields or []
-        if raw:
-            try:
-                links = raw if isinstance(raw, list) else json.loads(raw)
-                if isinstance(links, list):
-                    for link in links:
-                        label = link.get('label', '')
-                        url = link.get('url', '')
-                        category = link.get('category', 'link')
-                        if label and url:
-                            links_text += f"- {url} — {label} (category: {category})\n"
-            except (json.JSONDecodeError, TypeError):
-                pass
+        links_text = _build_links_text(platform_bot.managed_links or [])
         return platform_bot.store_id, links_text
 
     # Env var fallback

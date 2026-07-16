@@ -211,6 +211,10 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             Lead Conventions
         </button>
+        <button type="button" class="cb-tab" onclick="switchCbTab('tab-links')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            Managed Links
+        </button>
       </div>
 
       <div class="cb-content">
@@ -428,6 +432,20 @@
 
               <div class="cb-bottom-bar">
                 <button type="submit" class="btn-premium">Update Master Config</button>
+              </div>
+            </div>
+
+            <!-- MANAGED LINKS TAB -->
+            <div id="tab-links" class="cb-pane">
+              <h2 class="cb-content-title bricolage">Managed Links</h2>
+              <p class="cb-content-subtitle">These links appear as clickable buttons in your bot's chat responses. Auto-populated from scrapes, editable here.</p>
+
+              <div id="links-container" style="margin-bottom: 16px;"></div>
+              <button type="button" class="btn btn-solid" style="border-radius: 8px; font-size: 13px; padding: 8px 14px;" onclick="addLinkRow()">+ Add Link</button>
+              <div id="links-status" style="margin-top: 10px; font-size: 12px;"></div>
+
+              <div class="cb-bottom-bar">
+                <button type="button" class="btn-premium" onclick="saveLinks()">Save Links</button>
               </div>
             </div>
 
@@ -792,5 +810,61 @@
     const savedTheme = document.getElementById('theme_mode').value || 'light';
     setPreviewTheme(savedTheme);
   });
+</script>
+
+<script>
+// --- MANAGED LINKS ---
+var botId = {{ bot.id }};
+var currentLinks = [];
+
+function loadLinks() {
+  fetch('/admin/bot/' + botId + '/links', { credentials: 'include' })
+  .then(function(r) { return r.json(); })
+  .then(function(d) { if (d.success) { currentLinks = d.links || []; renderLinks(); } });
+}
+
+function renderLinks() {
+  var c = document.getElementById('links-container');
+  if (!c) return;
+  c.innerHTML = '';
+  if (currentLinks.length === 0) {
+    c.innerHTML = '<p style="color:#888; font-size:13px;">No links yet. Scrape your website to auto-discover links, or add them manually.</p>';
+    return;
+  }
+  currentLinks.forEach(function(link, i) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center; flex-wrap:wrap;';
+    row.innerHTML = '<input class="dash-input" style="flex:2; min-width:120px; padding:9px 12px; font-size:13px;" placeholder="Label" value="' + (link.label||'') + '" onchange="currentLinks['+i+'].label=this.value">' +
+      '<input class="dash-input" style="flex:3; min-width:180px; padding:9px 12px; font-size:13px;" placeholder="https://..." value="' + (link.url||'') + '" onchange="currentLinks['+i+'].url=this.value">' +
+      '<select class="dash-input" style="flex:1; min-width:100px; padding:9px 8px; font-size:12px;" onchange="currentLinks['+i+'].category=this.value">' +
+      '<option value="pricing"'+(link.category==='pricing'?' selected':'')+'>Pricing</option>' +
+      '<option value="action"'+(link.category==='action'?' selected':'')+'>Action</option>' +
+      '<option value="info"'+(link.category==='info'?' selected':'')+'>Info</option>' +
+      '<option value="support"'+(link.category==='support'?' selected':'')+'>Support</option>' +
+      '<option value="link"'+(link.category==='link'?' selected':'')+'>General</option></select>' +
+      '<button type="button" style="background:rgba(239,68,68,0.1); color:#dc2626; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-weight:700; font-size:12px;" onclick="removeLink('+i+')">X</button>';
+    c.appendChild(row);
+  });
+}
+
+function addLinkRow() { currentLinks.push({label:'', url:'', category:'link'}); renderLinks(); }
+function removeLink(i) { currentLinks.splice(i, 1); renderLinks(); }
+
+function saveLinks() {
+  var s = document.getElementById('links-status');
+  var valid = currentLinks.filter(function(l) { return l.label && l.url; });
+  fetch('/admin/bot/' + botId + '/links', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ links: valid })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) { s.innerHTML = '<span style="color:#059669;">Saved ' + d.count + ' links!</span>'; currentLinks = valid; renderLinks(); setTimeout(function(){s.innerHTML='';}, 3000); }
+    else { s.innerHTML = '<span style="color:#dc2626;">' + (d.error||'Failed') + '</span>'; }
+  });
+}
+
+loadLinks();
 </script>
 {% endblock %}

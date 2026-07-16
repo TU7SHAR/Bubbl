@@ -87,6 +87,7 @@ class Bot(db.Model):
     system_prompt = db.Column(db.Text, nullable=True)
     lead_capture_timing = db.Column(db.String(20), default='disabled')
     custom_form_fields = db.Column(db.JSON, default=[])
+    managed_links = db.Column(db.JSON, default=[])  # Clickable button links for chat responses
     is_active = db.Column(db.Boolean, default=True)  # Admin can disable bots
 
     # --- USAGE METRICS ---

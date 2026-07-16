@@ -154,15 +154,12 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
             if error_logs:
                 job.error_message = f"Partial success ({success_count} scraped)."
 
-            # --- AUTO-EXTRACT LINKS FOR PLATFORM BOT ---
-            # If this is the platform bot, auto-populate managed links from scraped URLs
-            if target_bot.bot_type == 'platform' and urls_to_scrape:
-                import json
+            # --- AUTO-EXTRACT LINKS FOR ALL BOTS ---
+            # Auto-populate managed_links from discovered URLs during scrape
+            if urls_to_scrape:
                 from urllib.parse import urlparse
 
-                existing_raw = target_bot.custom_form_fields or []
-                existing_links = existing_raw if isinstance(existing_raw, list) else []
-
+                existing_links = target_bot.managed_links or []
                 existing_urls = {link.get('url', '') for link in existing_links}
 
                 # Auto-categorize URLs based on path keywords
@@ -207,9 +204,9 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                         new_links_added += 1
 
                 if new_links_added > 0:
-                    target_bot.custom_form_fields = existing_links
+                    target_bot.managed_links = existing_links
                     db.session.commit()
-                    add_log(f"[Links] Auto-added {new_links_added} URLs to managed links for public bot.")
+                    add_log(f"[Links] Auto-added {new_links_added} URLs to managed links.")
 
         else:
             job.status = 'failed'
