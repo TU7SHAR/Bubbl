@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Conversations | {{ bot.bot_name }}{% endblock %}
+
+{% block content %}
+<style>
+  .conv-list { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+
+  .conv-list-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+  .conv-list-header-left h1 { font-size: 24px; font-weight: 800; color: #1a1008; margin: 0 0 4px 0; }
+  .conv-list-header-left .breadcrumb { font-size: 12px; color: #999; }
+  .conv-list-header-left .breadcrumb a { color: #E8722A; text-decoration: none; font-weight: 600; }
+  .conv-list-header-left .breadcrumb a:hover { text-decoration: underline; }
+
+  .conv-list-header-right { display: flex; align-items: center; gap: 8px; }
+  .conv-bot-badge {
+    background: rgba(232,114,42,0.1); color: #E8722A;
+    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 12px;
+  }
+
+  .conv-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .conv-stat-card {
+    background: #fff; border: 1px solid #f0e8e0; border-radius: 12px;
+    padding: 16px 18px; text-align: center;
+  }
+  .conv-stat-card-val { font-size: 24px; font-weight: 800; color: #1a1008; }
+  .conv-stat-card-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-top: 2px; }
+
+  .conv-sessions { display: flex; flex-direction: column; gap: 10px; }
+
+  .conv-session-card {
+    background: #fff; border: 1px solid #f0e8e0; border-radius: 14px;
+    padding: 18px 22px; display: flex; align-items: center; gap: 16px;
+    text-decoration: none; color: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .conv-session-card:hover { border-color: #E8722A; box-shadow: 0 4px 16px rgba(232,114,42,0.06); }
+
+  .conv-sess-indicator {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .conv-sess-indicator.has-lead { background: #10b981; }
+  .conv-sess-indicator.no-lead { background: #e5e7eb; }
+
+  .conv-sess-body { flex: 1; min-width: 0; }
+  .conv-sess-preview { font-size: 14px; color: #333; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .conv-sess-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: #999; }
+  .conv-sess-meta span { display: flex; align-items: center; gap: 3px; }
+
+  .conv-sess-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+  .conv-sess-lead-badge {
+    background: #ecfdf5; color: #059669; font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 10px; white-space: nowrap;
+  }
+  .conv-sess-msgs { font-size: 12px; color: #888; font-weight: 600; background: #f5f0eb; padding: 3px 10px; border-radius: 10px; }
+  .conv-sess-duration { font-size: 11px; color: #bbb; }
+
+  .conv-empty-sessions { text-align: center; padding: 60px 20px; color: #999; }
+  .conv-empty-sessions h3 { font-size: 18px; color: #666; margin: 0 0 8px 0; }
+  .conv-empty-sessions p { font-size: 14px; }
+
+  @media (max-width: 640px) {
+    .conv-stats-row { grid-template-columns: repeat(2, 1fr); }
+    .conv-session-card { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .conv-sess-right { flex-direction: row; align-items: center; }
+  }
+</style>
+
+<div class="conv-list">
+  <div class="conv-list-header">
+    <div class="conv-list-header-left">
+      <h1 class="bricolage">{{ bot.bot_name }}</h1>
+      <div class="breadcrumb">
+        <a href="{{ url_for('views_bp.conversations_hub') }}">Conversations</a> / {{ bot.bot_name }}
+      </div>
+    </div>
+    <div class="conv-list-header-right">
+      <span class="conv-bot-badge">{{ bot.bot_type or 'General' | upper }}</span>
+    </div>
+  </div>
+
+  <div class="conv-stats-row">
+    <div class="conv-stat-card">
+      <div class="conv-stat-card-val">{{ total_conversations }}</div>
+      <div class="conv-stat-card-label">Total Sessions</div>
+    </div>
+    <div class="conv-stat-card">
+      <div class="conv-stat-card-val">{{ total_messages }}</div>
+      <div class="conv-stat-card-label">Total Messages</div>
+    </div>
+    <div class="conv-stat-card">
+      <div class="conv-stat-card-val">{{ total_leads }}</div>
+      <div class="conv-stat-card-label">Leads Captured</div>
+    </div>
+    <div class="conv-stat-card">
+      <div class="conv-stat-card-val">{{ avg_duration }}m</div>
+      <div class="conv-stat-card-label">Avg Duration</div>
+    </div>
+  </div>
+
+  {% if conversations %}
+  <div class="conv-sessions">
+    {% for conv in conversations %}
+    <a href="{{ url_for('views_bp.conversation_detail', bot_id=bot.id, session_id=conv.session_id) }}" class="conv-session-card">
+      <div class="conv-sess-indicator {{ 'has-lead' if conv.lead else 'no-lead' }}"></div>
+
+      <div class="conv-sess-body">
+        <div class="conv-sess-preview">{{ conv.preview }}</div>
+        <div class="conv-sess-meta">
+          <span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ conv.started_at.strftime('%b %d, %H:%M') if conv.started_at else '-' }}
+          </span>
+          <span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+            {{ conv.duration_mins }}m duration
+          </span>
+          <span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            {{ conv.user_messages }} user / {{ conv.bot_messages }} bot
+          </span>
+          {% if conv.total_tokens %}
+          <span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            {{ conv.total_tokens }} tokens
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="conv-sess-right">
+        {% if conv.lead %}
+        <span class="conv-sess-lead-badge">Lead: {{ conv.lead.name }}</span>
+        {% endif %}
+        <span class="conv-sess-msgs">{{ conv.message_count }} msgs</span>
+        <span class="conv-sess-duration">{{ conv.last_message_at.strftime('%b %d') if conv.last_message_at else '' }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="conv-empty-sessions">
+    <h3>No conversations yet</h3>
+    <p>When visitors chat with <strong>{{ bot.bot_name }}</strong>, their conversations will appear here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

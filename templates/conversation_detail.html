@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% block title %}Chat Transcript | {{ bot.bot_name }}{% endblock %}
+
+{% block content %}
+<style>
+  .conv-detail { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+
+  .conv-detail-header { margin-bottom: 24px; }
+  .conv-detail-header h1 { font-size: 22px; font-weight: 800; color: #1a1008; margin: 0 0 4px 0; }
+  .conv-detail-breadcrumb { font-size: 12px; color: #999; }
+  .conv-detail-breadcrumb a { color: #E8722A; text-decoration: none; font-weight: 600; }
+  .conv-detail-breadcrumb a:hover { text-decoration: underline; }
+
+  .conv-detail-meta {
+    background: #fff; border: 1px solid #f0e8e0; border-radius: 14px;
+    padding: 20px 24px; margin-bottom: 24px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px;
+  }
+  .conv-meta-item { text-align: center; }
+  .conv-meta-val { font-size: 18px; font-weight: 800; color: #1a1008; }
+  .conv-meta-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-top: 2px; }
+
+  .conv-lead-card {
+    background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 14px;
+  }
+  .conv-lead-icon {
+    width: 36px; height: 36px; border-radius: 50%; background: #10b981;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .conv-lead-icon svg { stroke: #fff; }
+  .conv-lead-info { flex: 1; }
+  .conv-lead-name { font-size: 14px; font-weight: 700; color: #065f46; }
+  .conv-lead-details { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .conv-lead-details span { margin-right: 12px; }
+
+  .conv-session-info {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+    padding-bottom: 16px; border-bottom: 1px solid #f0e8e0;
+  }
+  .conv-session-info span { font-size: 11px; color: #bbb; }
+  .conv-session-id {
+    font-family: monospace; font-size: 11px; color: #999;
+    background: #faf8f6; padding: 3px 8px; border-radius: 6px;
+  }
+
+  .conv-transcript { display: flex; flex-direction: column; gap: 14px; margin-bottom: 40px; }
+
+  .conv-msg {
+    max-width: 82%; padding: 14px 18px; border-radius: 18px;
+    font-size: 14px; line-height: 1.6; position: relative;
+    word-wrap: break-word;
+  }
+
+  .conv-msg-user {
+    background: #1a1008; color: #fff; align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  .conv-msg-bot {
+    background: #f8f4f0; color: #333; align-self: flex-start;
+    border-bottom-left-radius: 4px; border: 1px solid #f0e8e0;
+  }
+
+  .conv-msg-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 6px; gap: 8px;
+  }
+
+  .conv-msg-time { font-size: 10px; color: rgba(255,255,255,0.5); }
+  .conv-msg-bot .conv-msg-time { color: #bbb; }
+
+  .conv-msg-tokens { font-size: 9px; color: rgba(255,255,255,0.4); }
+  .conv-msg-bot .conv-msg-tokens { color: #ccc; }
+
+  .conv-msg-response-time {
+    font-size: 9px; padding: 2px 6px; border-radius: 4px;
+    background: rgba(232,114,42,0.1); color: #E8722A; font-weight: 600;
+    position: absolute; top: -8px; left: 12px;
+  }
+
+  .conv-msg-role-label {
+    font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 4px; opacity: 0.6;
+  }
+  .conv-msg-user .conv-msg-role-label { color: rgba(255,255,255,0.7); }
+  .conv-msg-bot .conv-msg-role-label { color: #999; }
+
+  @media (max-width: 640px) {
+    .conv-msg { max-width: 92%; }
+    .conv-detail-meta { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="conv-detail">
+  <div class="conv-detail-header">
+    <h1 class="bricolage">Chat Transcript</h1>
+    <div class="conv-detail-breadcrumb">
+      <a href="{{ url_for('views_bp.conversations_hub') }}">Conversations</a> /
+      <a href="{{ url_for('views_bp.conversations_list', bot_id=bot.id) }}">{{ bot.bot_name }}</a> /
+      Transcript
+    </div>
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="conv-detail-meta">
+    <div class="conv-meta-item">
+      <div class="conv-meta-val">{{ duration_mins }}m</div>
+      <div class="conv-meta-label">Duration</div>
+    </div>
+    <div class="conv-meta-item">
+      <div class="conv-meta-val">{{ user_msg_count + bot_msg_count }}</div>
+      <div class="conv-meta-label">Messages</div>
+    </div>
+    <div class="conv-meta-item">
+      <div class="conv-meta-val">{{ avg_response_sec }}s</div>
+      <div class="conv-meta-label">Avg Response</div>
+    </div>
+    <div class="conv-meta-item">
+      <div class="conv-meta-val">{{ total_tokens }}</div>
+      <div class="conv-meta-label">Tokens Used</div>
+    </div>
+    <div class="conv-meta-item">
+      <div class="conv-meta-val">{{ user_msg_count }}</div>
+      <div class="conv-meta-label">User Msgs</div>
+    </div>
+    <div class="conv-meta-item">
+      <div class="conv-meta-val">{{ bot_msg_count }}</div>
+      <div class="conv-meta-label">Bot Replies</div>
+    </div>
+  </div>
+
+  <!-- Lead Card (if captured) -->
+  {% if lead %}
+  <div class="conv-lead-card">
+    <div class="conv-lead-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+    <div class="conv-lead-info">
+      <div class="conv-lead-name">Lead Captured: {{ lead.name }}</div>
+      <div class="conv-lead-details">
+        <span>{{ lead.email }}</span>
+        {% if lead.phone %}<span>{{ lead.phone }}</span>{% endif %}
+        {% if lead.custom_data and lead.custom_data.get('Priority') %}
+          <span style="font-weight: 700; color: {% if lead.custom_data.Priority == 'High' %}#059669{% elif lead.custom_data.Priority == 'Medium' %}#d97706{% else %}#6b7280{% endif %};">
+            Priority: {{ lead.custom_data.Priority }}
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Session Info -->
+  <div class="conv-session-info">
+    <span>Session: <span class="conv-session-id">{{ session_id[:16] }}...</span></span>
+    <span>Started: {{ started_at.strftime('%b %d, %Y at %H:%M') if started_at else 'Unknown' }}</span>
+    <span>Ended: {{ ended_at.strftime('%H:%M') if ended_at else 'Unknown' }}</span>
+  </div>
+
+  <!-- Chat Transcript -->
+  <div class="conv-transcript">
+    {% for msg in messages %}
+    <div class="conv-msg {{ 'conv-msg-user' if msg.role == 'user' else 'conv-msg-bot' }}">
+      {% if msg.role == 'bot' and loop.index > 1 %}
+        {% set prev_msg = messages[loop.index0 - 1] %}
+        {% if prev_msg.role == 'user' and prev_msg.created_at and msg.created_at %}
+          {% set rt_secs = (msg.created_at - prev_msg.created_at).total_seconds() %}
+          {% if rt_secs > 0 and rt_secs < 300 %}
+          <span class="conv-msg-response-time">{{ "%.1f"|format(rt_secs) }}s response</span>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+
+      <div class="conv-msg-role-label">{{ 'Visitor' if msg.role == 'user' else bot.bot_name }}</div>
+      {{ msg.content }}
+      <div class="conv-msg-footer">
+        <span class="conv-msg-time">{{ msg.created_at.strftime('%H:%M:%S') if msg.created_at else '' }}</span>
+        {% if msg.tokens_used %}
+        <span class="conv-msg-tokens">{{ msg.tokens_used }} tokens</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if not messages %}
+    <p style="text-align: center; color: #999; padding: 40px;">No messages in this conversation.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

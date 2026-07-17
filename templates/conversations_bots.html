@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Conversations | Bubbl.ooo{% endblock %}
+
+{% block content %}
+<style>
+  .conv-hub { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+  .conv-hub-header { margin-bottom: 32px; }
+  .conv-hub-header h1 { font-size: 28px; font-weight: 800; color: #1a1008; margin: 0 0 6px 0; }
+  .conv-hub-header p { font-size: 14px; color: #888; margin: 0; }
+
+  .conv-bot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+
+  .conv-bot-card {
+    background: #fff; border: 1px solid #f0e8e0; border-radius: 16px;
+    padding: 24px; text-decoration: none; color: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .conv-bot-card:hover { border-color: #E8722A; box-shadow: 0 8px 24px rgba(232,114,42,0.08); transform: translateY(-2px); }
+
+  .conv-bot-top { display: flex; align-items: center; gap: 14px; }
+  .conv-bot-avatar {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .conv-bot-name { font-size: 16px; font-weight: 700; color: #1a1008; }
+  .conv-bot-type { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+  .conv-bot-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .conv-stat-box {
+    background: #faf8f6; border-radius: 10px; padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .conv-stat-val { font-size: 20px; font-weight: 800; color: #1a1008; }
+  .conv-stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+  .conv-bot-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #f5f0eb; }
+  .conv-bot-last { font-size: 11px; color: #bbb; }
+  .conv-bot-arrow { font-size: 18px; color: #E8722A; font-weight: 700; }
+
+  .conv-empty { text-align: center; padding: 80px 20px; }
+  .conv-empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .conv-empty h3 { font-size: 20px; color: #555; margin: 0 0 8px 0; }
+  .conv-empty p { font-size: 14px; color: #999; margin: 0 0 20px 0; }
+  .conv-empty a { color: #E8722A; font-weight: 600; text-decoration: none; }
+  .conv-empty a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .conv-bot-grid { grid-template-columns: 1fr; }
+    .conv-bot-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="conv-hub">
+  <div class="conv-hub-header">
+    <h1 class="bricolage">Conversations</h1>
+    <p>View chat history across all your bots. Select a bot to dive into its conversations.</p>
+  </div>
+
+  {% if bots_with_stats %}
+  <div class="conv-bot-grid">
+    {% for item in bots_with_stats %}
+    {% set bot = item.bot %}
+    {% set b_color = bot.ui_settings.theme_color if bot.ui_settings else '#E8722A' %}
+    <a href="{{ url_for('views_bp.conversations_list', bot_id=bot.id) }}" class="conv-bot-card">
+      <div class="conv-bot-top">
+        <div class="conv-bot-avatar"
+             {% if bot.ui_settings and bot.ui_settings.avatar_base64 %}
+             style="background-image: url('{{ bot.ui_settings.avatar_base64 }}'); background-size: cover; background-position: center; background-color: {{ b_color }};"
+             {% else %}
+             style="background-color: {{ b_color }};"
+             {% endif %}>
+          {% if not (bot.ui_settings and bot.ui_settings.avatar_base64) %}
+            {{ bot.bot_name[0] | upper }}
+          {% endif %}
+        </div>
+        <div>
+          <div class="conv-bot-name">{{ bot.bot_name }}</div>
+          <div class="conv-bot-type">{{ bot.bot_type or 'General' }}</div>
+        </div>
+      </div>
+
+      <div class="conv-bot-stats">
+        <div class="conv-stat-box">
+          <div class="conv-stat-val">{{ item.total_sessions }}</div>
+          <div class="conv-stat-label">Sessions</div>
+        </div>
+        <div class="conv-stat-box">
+          <div class="conv-stat-val">{{ item.total_messages }}</div>
+          <div class="conv-stat-label">Messages</div>
+        </div>
+        <div class="conv-stat-box">
+          <div class="conv-stat-val">{{ item.total_leads }}</div>
+          <div class="conv-stat-label">Leads</div>
+        </div>
+        <div class="conv-stat-box">
+          <div class="conv-stat-val">{{ item.avg_duration_mins }}m</div>
+          <div class="conv-stat-label">Avg Duration</div>
+        </div>
+      </div>
+
+      <div class="conv-bot-footer">
+        <span class="conv-bot-last">
+          {% if item.last_activity %}
+            Last active: {{ item.last_activity.strftime('%b %d, %Y') }}
+          {% else %}
+            No conversations yet
+          {% endif %}
+        </span>
+        <span class="conv-bot-arrow">&rarr;</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="conv-empty">
+    <div class="conv-empty-icon">💬</div>
+    <h3>No bots yet</h3>
+    <p>Create a bot and embed it on your site. Conversations will appear here.</p>
+    <a href="{{ url_for('admin_bp.create_pipeline') }}">Create Your First Bot &rarr;</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
