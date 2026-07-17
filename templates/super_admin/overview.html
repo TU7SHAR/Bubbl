@@ -21,49 +21,249 @@
   <input type="date" class="sa-input" id="start-date" value="{{ start_date }}" style="width:150px;">
   <input type="date" class="sa-input" id="end-date" value="{{ end_date }}" style="width:150px;">
   <button class="sa-btn sa-btn-primary" onclick="applyCustomRange()">Apply</button>
+  <span style="font-size:11px; color:var(--text-muted); margin-left:8px;">{{ days_count }} days</span>
 </div>
 
-<!-- Stats Grid -->
+<!-- ═══ REVENUE ROW ═══ -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:20px;">
+  <div class="sa-card" style="border-left: 3px solid var(--green);">
+    <div class="sa-card-label">Revenue Today</div>
+    <div class="sa-card-value" style="color:var(--green);">₹{{ revenue_today | int }}</div>
+  </div>
+  <div class="sa-card" style="border-left: 3px solid var(--blue);">
+    <div class="sa-card-label">Yesterday</div>
+    <div class="sa-card-value" style="color:var(--blue);">₹{{ revenue_yesterday | int }}</div>
+  </div>
+  <div class="sa-card" style="border-left: 3px solid var(--purple);">
+    <div class="sa-card-label">This Month</div>
+    <div class="sa-card-value" style="color:var(--purple);">₹{{ revenue_this_month | int }}</div>
+  </div>
+  <div class="sa-card" style="border-left: 3px solid var(--accent);">
+    <div class="sa-card-label">Gross Revenue</div>
+    <div class="sa-card-value">₹{{ revenue_gross | int }}</div>
+  </div>
+  <div class="sa-card" style="border-left: 3px solid var(--yellow);">
+    <div class="sa-card-label">MRR</div>
+    <div class="sa-card-value" style="color:var(--yellow);">₹{{ mrr | int }}</div>
+  </div>
+  <div class="sa-card" style="border-left: 3px solid var(--red);">
+    <div class="sa-card-label">Refunds</div>
+    <div class="sa-card-value" style="color:var(--red);">₹{{ total_refunds | int }}</div>
+  </div>
+</div>
+
+<!-- ═══ CORE METRICS ═══ -->
 <div class="sa-grid">
   <div class="sa-card">
-    <div class="sa-card-label">Users</div>
+    <div class="sa-card-label">Total Users</div>
     <div class="sa-card-value">{{ total_users }}</div>
+    <div style="font-size:11px; color:var(--green); margin-top:4px;">+{{ new_users_today }} today</div>
   </div>
   <div class="sa-card">
-    <div class="sa-card-label">Bots</div>
+    <div class="sa-card-label">Total Bots</div>
     <div class="sa-card-value">{{ total_bots }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_docs }} docs indexed</div>
   </div>
   <div class="sa-card">
     <div class="sa-card-label">Leads (Period)</div>
     <div class="sa-card-value">{{ total_leads }}</div>
+    <div style="font-size:11px; color:var(--green); margin-top:4px;">{{ leads_today }} today / {{ leads_yesterday }} yesterday</div>
   </div>
   <div class="sa-card">
     <div class="sa-card-label">Conversations</div>
     <div class="sa-card-value">{{ total_conversations }}</div>
-  </div>
-  <div class="sa-card">
-    <div class="sa-card-label">MRR (₹)</div>
-    <div class="sa-card-value">₹{{ mrr | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_messages }} total messages</div>
   </div>
   <div class="sa-card">
     <div class="sa-card-label">Paid Accounts</div>
     <div class="sa-card-value">{{ active_subscriptions }}</div>
-  </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Conversion %</div>
-    <div class="sa-card-value">{{ conversion_rate }}%</div>
+    <div style="font-size:11px; color:var(--accent); margin-top:4px;">{{ conversion_rate }}% conversion</div>
   </div>
   <div class="sa-card">
     <div class="sa-card-label">Messages Today</div>
-    <div class="sa-card-value">{{ total_messages }}</div>
+    <div class="sa-card-value">{{ messages_today }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ messages_yesterday }} yesterday</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">New Users (Period)</div>
+    <div class="sa-card-value">{{ new_users_period }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">in {{ days_count }} days</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">ARR</div>
+    <div class="sa-card-value">₹{{ arr | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">annualized</div>
   </div>
 </div>
 
-<!-- Chart -->
-<div class="sa-table-wrap" style="padding:20px;">
-  <h3 style="margin-bottom:16px; font-size:14px; font-weight:600;">Leads Over Time</h3>
-  <canvas id="leadsChart" height="100"></canvas>
+<!-- ═══ PLAN DISTRIBUTION ═══ -->
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
+  <!-- Plan Breakdown -->
+  <div class="sa-table-wrap" style="padding:20px;">
+    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">Plan Distribution</h3>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      {% for plan_name, count in plan_counts.items() %}
+      {% set pct = ((count / (total_users if total_users > 0 else 1)) * 100) | round(1) %}
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:12px; font-weight:600; color:var(--text); min-width:60px; text-transform:capitalize;">{{ plan_name }}</span>
+        <div style="flex:1; height:8px; background:rgba(148,163,184,0.1); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:{{ pct }}%; background:{% if plan_name == 'pro' %}var(--purple){% elif plan_name == 'growth' %}var(--blue){% elif plan_name == 'starter' %}var(--accent){% else %}var(--text-muted){% endif %}; border-radius:4px;"></div>
+        </div>
+        <span style="font-size:12px; font-weight:700; color:var(--text); min-width:30px; text-align:right;">{{ count }}</span>
+        <span style="font-size:10px; color:var(--text-muted); min-width:35px;">{{ pct }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- API Performance -->
+  <div class="sa-table-wrap" style="padding:20px;">
+    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">API Performance</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div>
+        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Avg Response</div>
+        <div style="font-size:22px; font-weight:800; color:{% if avg_latency_ms < 3000 %}var(--green){% elif avg_latency_ms < 5000 %}var(--yellow){% else %}var(--red){% endif %};">{{ avg_latency_ms }}ms</div>
+      </div>
+      <div>
+        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Total Tokens</div>
+        <div style="font-size:22px; font-weight:800; color:var(--text);">{{ "{:,}".format(total_tokens) }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Interactions</div>
+        <div style="font-size:22px; font-weight:800; color:var(--text);">{{ "{:,}".format(total_interactions) }}</div>
+      </div>
+      <div>
+        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Tokens/Msg</div>
+        <div style="font-size:22px; font-weight:800; color:var(--text);">{{ avg_tokens_per_msg }}</div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- ═══ CHARTS ═══ -->
+<div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-bottom:24px;">
+  <div class="sa-table-wrap" style="padding:20px;">
+    <h3 style="margin-bottom:16px; font-size:14px; font-weight:700;">Leads & Messages Over Time</h3>
+    <canvas id="combinedChart" height="80"></canvas>
+  </div>
+</div>
+
+<!-- ═══ SYSTEM HEALTH + SCRAPES ═══ -->
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
+  <!-- System Health -->
+  <div class="sa-table-wrap" style="padding:20px;">
+    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">System Health</h3>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="font-size:11px; color:var(--text-muted);">CPU</span>
+          <span style="font-size:11px; font-weight:700; color:var(--text);">{{ system_health.cpu }}</span>
+        </div>
+        <div style="height:6px; background:rgba(148,163,184,0.1); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:{{ system_health.get('cpu_val', 0) }}%; background:{% if system_health.get('cpu_val', 0) < 60 %}var(--green){% elif system_health.get('cpu_val', 0) < 85 %}var(--yellow){% else %}var(--red){% endif %}; border-radius:3px;"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="font-size:11px; color:var(--text-muted);">Memory</span>
+          <span style="font-size:11px; font-weight:700; color:var(--text);">{{ system_health.memory_used }} / {{ system_health.memory_total }}</span>
+        </div>
+        <div style="height:6px; background:rgba(148,163,184,0.1); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:{{ system_health.get('memory_percent', 0) }}%; background:{% if system_health.get('memory_percent', 0) < 60 %}var(--green){% elif system_health.get('memory_percent', 0) < 85 %}var(--yellow){% else %}var(--red){% endif %}; border-radius:3px;"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="font-size:11px; color:var(--text-muted);">Disk</span>
+          <span style="font-size:11px; font-weight:700; color:var(--text);">{{ system_health.get('disk_used', 'N/A') }} / {{ system_health.get('disk_total', 'N/A') }}</span>
+        </div>
+        <div style="height:6px; background:rgba(148,163,184,0.1); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:{{ system_health.get('disk_percent', 0) }}%; background:{% if system_health.get('disk_percent', 0) < 70 %}var(--green){% elif system_health.get('disk_percent', 0) < 90 %}var(--yellow){% else %}var(--red){% endif %}; border-radius:3px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrape Jobs -->
+  <div class="sa-table-wrap" style="padding:20px;">
+    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">Scrape Jobs</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
+      <div>
+        <div style="font-size:24px; font-weight:800; color:var(--green);">{{ scrapes_completed }}</div>
+        <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Completed</div>
+      </div>
+      <div>
+        <div style="font-size:24px; font-weight:800; color:var(--yellow);">{{ scrapes_pending }}</div>
+        <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Pending</div>
+      </div>
+      <div>
+        <div style="font-size:24px; font-weight:800; color:var(--red);">{{ scrapes_failed }}</div>
+        <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Failed</div>
+      </div>
+    </div>
+    {% if scrapes_failed > 0 %}
+    <a href="{{ url_for('super_admin_bp.scrapes_page') }}" style="display:block; text-align:center; margin-top:14px; font-size:12px; color:var(--red); font-weight:600;">View Failed Jobs &rarr;</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ═══ RECENT ACTIVITY ═══ -->
+<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
+  <!-- Recent Users -->
+  <div class="sa-table-wrap" style="padding:16px;">
+    <h3 style="font-size:13px; font-weight:700; margin-bottom:12px;">Recent Signups</h3>
+    {% for u in recent_users %}
+    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; {% if not loop.last %}border-bottom:1px solid var(--card-border);{% endif %}">
+      <div style="width:28px; height:28px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff;">{{ u.name[0] | upper }}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ u.name }}</div>
+        <div style="font-size:10px; color:var(--text-muted);">{{ u.email[:25] }}{% if u.email|length > 25 %}...{% endif %}</div>
+      </div>
+      <div style="font-size:10px; color:var(--text-muted);">{{ u.created_at.strftime('%b %d') if u.created_at else '' }}</div>
+    </div>
+    {% endfor %}
+    {% if not recent_users %}
+    <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:20px;">No users yet</div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Leads -->
+  <div class="sa-table-wrap" style="padding:16px;">
+    <h3 style="font-size:13px; font-weight:700; margin-bottom:12px;">Recent Leads</h3>
+    {% for l in recent_leads %}
+    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; {% if not loop.last %}border-bottom:1px solid var(--card-border);{% endif %}">
+      <div style="width:28px; height:28px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff;">{{ l.name[0] | upper }}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ l.name }}</div>
+        <div style="font-size:10px; color:var(--text-muted);">{{ l.email[:25] }}{% if l.email|length > 25 %}...{% endif %}</div>
+      </div>
+      <div style="font-size:10px; color:var(--text-muted);">{{ l.captured_at.strftime('%b %d') if l.captured_at else '' }}</div>
+    </div>
+    {% endfor %}
+    {% if not recent_leads %}
+    <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:20px;">No leads yet</div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Payments -->
+  <div class="sa-table-wrap" style="padding:16px;">
+    <h3 style="font-size:13px; font-weight:700; margin-bottom:12px;">Recent Payments</h3>
+    {% for p in recent_payments %}
+    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; {% if not loop.last %}border-bottom:1px solid var(--card-border);{% endif %}">
+      <div style="width:28px; height:28px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff;">₹</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12px; font-weight:600; color:var(--text);">₹{{ p.amount | int }} — {{ (p.plan or 'N/A') | capitalize }}</div>
+        <div style="font-size:10px; color:var(--text-muted);">{{ p.customer_email[:25] if p.customer_email else 'N/A' }}</div>
+      </div>
+      <div style="font-size:10px; color:var(--text-muted);">{{ p.created_at.strftime('%b %d') if p.created_at else '' }}</div>
+    </div>
+    {% endfor %}
+    {% if not recent_payments %}
+    <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:20px;">No payments yet</div>
+    {% endif %}
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -77,39 +277,55 @@ function applyCustomRange() {
   var start = document.getElementById('start-date').value;
   var end = document.getElementById('end-date').value;
   if (start && end) {
-    window.location.href = '?period=custom&start_date=' + start + '&end_date=' + end;
+    window.location.href = '?start=' + start + '&end=' + end;
   }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  var ctx = document.getElementById('leadsChart').getContext('2d');
+  var ctx = document.getElementById('combinedChart').getContext('2d');
   new Chart(ctx, {
     type: 'line',
     data: {
       labels: {{ chart_data.labels | tojson }},
-      datasets: [{
-        label: 'Leads',
-        data: {{ chart_data.data | tojson }},
-        borderColor: '#8b5cf6',
-        backgroundColor: 'rgba(139,92,246,0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.3
-      }]
+      datasets: [
+        {
+          label: 'Leads',
+          data: {{ chart_data.leads | tojson }},
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.08)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+        },
+        {
+          label: 'Messages',
+          data: {{ chart_data.messages | tojson }},
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139,92,246,0.05)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          pointHoverRadius: 4,
+        }
+      ]
     },
     options: {
       responsive: true,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: false }
+        legend: { display: true, position: 'top', labels: { font: { size: 11 }, color: '#94a3b8' } }
       },
       scales: {
         x: {
-          grid: { color: 'rgba(148,163,184,0.1)' },
-          ticks: { color: '#94a3b8', font: { size: 11 } }
+          grid: { color: 'rgba(148,163,184,0.08)' },
+          ticks: { color: '#94a3b8', font: { size: 10 } }
         },
         y: {
-          grid: { color: 'rgba(148,163,184,0.1)' },
-          ticks: { color: '#94a3b8', font: { size: 11 } },
+          grid: { color: 'rgba(148,163,184,0.08)' },
+          ticks: { color: '#94a3b8', font: { size: 10 } },
           beginAtZero: true
         }
       }
