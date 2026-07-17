@@ -13,7 +13,7 @@ def billing_page():
     """Revenue metrics and payment history."""
     plan_price = current_app.config.get('PLAN_PRICE_INR', {'free': 0, 'starter': 499, 'growth': 1499, 'pro': 4999})
 
-    all_orgs = Organization.query.all()
+    all_orgs = Organization.query.filter(Organization.name != 'Bubbl Platform').all()
     plan_counts = {'free': 0, 'starter': 0, 'growth': 0, 'pro': 0}
     for o in all_orgs:
         plan_counts[o.plan or 'free'] = plan_counts.get(o.plan or 'free', 0) + 1
