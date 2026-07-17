@@ -1,11 +1,20 @@
 // ═══════════════════════════════════════════
-// CHAT PERSISTENCE — Survives page navigation
+// CHAT PERSISTENCE — Survives page navigation AND multiple tabs
 // ═══════════════════════════════════════════
-// Uses sessionStorage to keep chat messages, history, and lead state
-// intact when the user navigates between pages (dashboard → leads → etc).
-// Clears automatically when the browser tab is closed.
+// Uses localStorage (shared across ALL tabs on the same origin) keyed by bot_id.
+// This means:
+//   - Admin on app.bubbl.ooo: chat persists across Dashboard/Leads/Billing tabs
+//   - Embed iframe (origin = app.bubbl.ooo): chat persists across ALL pages on
+//     any client website because every iframe shares the same localStorage.
+//   - Lead captured once? Never asked again (until storage is cleared).
+//   - Expires after 24 hours to prevent stale conversations.
 
-const CHAT_STORAGE_KEY = "bubbl_chat_state";
+const CHAT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function _chatStorageKey() {
+  const botId = window.EMBEDDED_BOT_ID || "platform";
+  return "bubbl_chat_" + botId;
+}
 
 function saveChatState() {
   const display = document.getElementById("chat-display");
@@ -15,19 +24,26 @@ function saveChatState() {
     leadId: window.BUBBL_LEAD_ID || null,
     messages: display ? display.innerHTML : "",
     chatOpen: !document.getElementById("chat-window-popup").classList.contains("hidden"),
+    savedAt: Date.now(),
   };
   try {
-    sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(state));
-  } catch (e) { /* Storage full or unavailable — degrade gracefully */ }
+    localStorage.setItem(_chatStorageKey(), JSON.stringify(state));
+  } catch (e) { /* Storage full or unavailable */ }
 }
 
 function restoreChatState() {
   try {
-    const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
+    const raw = localStorage.getItem(_chatStorageKey());
     if (!raw) return false;
 
     const state = JSON.parse(raw);
     if (!state || !state.history || state.history.length === 0) return false;
+
+    // Expire after 24 hours — start fresh conversation
+    if (state.savedAt && (Date.now() - state.savedAt) > CHAT_EXPIRY_MS) {
+      localStorage.removeItem(_chatStorageKey());
+      return false;
+    }
 
     // Restore JS state
     chatHistory = state.history || [];
@@ -58,6 +74,18 @@ function restoreChatState() {
     return false;
   }
 }
+
+// Sync across tabs — when another tab updates localStorage, this fires
+window.addEventListener("storage", function(e) {
+  if (e.key === _chatStorageKey() && e.newValue) {
+    try {
+      const state = JSON.parse(e.newValue);
+      // Update lead state from other tabs (most important sync)
+      if (state.leadCaptured) leadCaptured = true;
+      if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
+    } catch (err) { /* ignore parse errors */ }
+  }
+});
 
 // Restore on page load
 document.addEventListener("DOMContentLoaded", function() {
