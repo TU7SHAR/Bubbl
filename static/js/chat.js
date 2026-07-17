@@ -1,3 +1,69 @@
+// ═══════════════════════════════════════════
+// CHAT PERSISTENCE — Survives page navigation
+// ═══════════════════════════════════════════
+// Uses sessionStorage to keep chat messages, history, and lead state
+// intact when the user navigates between pages (dashboard → leads → etc).
+// Clears automatically when the browser tab is closed.
+
+const CHAT_STORAGE_KEY = "bubbl_chat_state";
+
+function saveChatState() {
+  const display = document.getElementById("chat-display");
+  const state = {
+    history: chatHistory,
+    leadCaptured: leadCaptured,
+    leadId: window.BUBBL_LEAD_ID || null,
+    messages: display ? display.innerHTML : "",
+    chatOpen: !document.getElementById("chat-window-popup").classList.contains("hidden"),
+  };
+  try {
+    sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(state));
+  } catch (e) { /* Storage full or unavailable — degrade gracefully */ }
+}
+
+function restoreChatState() {
+  try {
+    const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return false;
+
+    const state = JSON.parse(raw);
+    if (!state || !state.history || state.history.length === 0) return false;
+
+    // Restore JS state
+    chatHistory = state.history || [];
+    leadCaptured = state.leadCaptured || false;
+    if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
+
+    // Restore rendered messages
+    const display = document.getElementById("chat-display");
+    if (display && state.messages) {
+      display.innerHTML = state.messages;
+      display.scrollTop = display.scrollHeight;
+    }
+
+    // Restore open/closed state
+    if (state.chatOpen) {
+      const chatPopup = document.getElementById("chat-window-popup");
+      const spriteContainer = document.getElementById("sprite-ask-container");
+      if (chatPopup) {
+        chatPopup.classList.remove("hidden");
+        chatPopup.style.opacity = "1";
+        chatPopup.style.transform = "scale(1) translateY(0)";
+      }
+      if (spriteContainer) spriteContainer.classList.add("chat-open");
+    }
+
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Restore on page load
+document.addEventListener("DOMContentLoaded", function() {
+  restoreChatState();
+});
+
 let chatHistory = [];
 let leadCaptured = false;
 let pendingMessage = "";
@@ -56,6 +122,7 @@ function toggleChat() {
     if (window.LEAD_TIMING === "gatekeeper" && !leadCaptured) {
       renderGatekeeperForm();
     }
+    saveChatState();
   } else {
     // 1. Animate it out smoothly
     gsap.to(chatPopup, {
@@ -68,6 +135,7 @@ function toggleChat() {
         // 2. Hide it fully ONLY after the animation finishes
         chatPopup.classList.add("hidden");
         if (spriteContainer) spriteContainer.classList.remove("chat-open");
+        saveChatState();
       },
     });
   }
@@ -174,6 +242,7 @@ async function submitLeadForm(prefix) {
 
     if (response.ok) {
       leadCaptured = true;
+      saveChatState();
       if (prefix === "gk") {
         document.getElementById("gatekeeper-overlay").remove();
         if (pendingMessage) {
@@ -327,6 +396,7 @@ async function sendMessage() {
 
   appendUserMessage(rawMsg);
   chatHistory.push({ role: "user", text: rawMsg });
+  saveChatState();
 
   setInputState(true);
   if (window.SpriteBot) SpriteBot.setState("thinking");
@@ -365,11 +435,13 @@ async function sendMessage() {
           chatHistory.push({ role: "bot", text: replyText });
         }
         renderInChatForm();
+        saveChatState();
       } else {
         replyText = replyText.replace("[SHOW_FORM]", "").trim();
         appendBotMessage(replyText);
         chatHistory.push({ role: "bot", text: replyText });
         setInputState(false);
+        saveChatState();
       }
 
       if (window.SpriteBot) {
