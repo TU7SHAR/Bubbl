@@ -231,14 +231,16 @@ def conversations_hub():
         ).filter_by(bot_id=bot.id).scalar()
 
         # Average session duration (seconds) — diff between first and last msg per session
-        duration_query = db.session.query(
-            func.avg(
-                func.extract('epoch', func.max(ChatMessage.created_at)) -
-                func.extract('epoch', func.min(ChatMessage.created_at))
-            )
+        # Step 1: get duration per session as a subquery
+        duration_per_session = db.session.query(
+            (func.extract('epoch', func.max(ChatMessage.created_at)) -
+             func.extract('epoch', func.min(ChatMessage.created_at))).label('duration')
         ).filter_by(bot_id=bot.id).group_by(ChatMessage.session_id).subquery()
 
-        avg_duration_result = db.session.query(func.avg(duration_query.c[0])).scalar()
+        # Step 2: average those durations
+        avg_duration_result = db.session.query(
+            func.avg(duration_per_session.c.duration)
+        ).scalar()
         avg_duration_mins = round((avg_duration_result or 0) / 60, 1)
 
         bots_with_stats.append({
