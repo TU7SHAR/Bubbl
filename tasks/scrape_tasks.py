@@ -19,7 +19,7 @@ logger = get_task_logger(__name__)
 # soft_time_limit: raise SoftTimeLimitExceeded so we can mark the job failed cleanly.
 # time_limit: hard kill a few seconds later if soft handling doesn't return.
 @celery.task(bind=True, max_retries=3, default_retry_delay=60,
-             soft_time_limit=600, time_limit=660)
+             soft_time_limit=1500, time_limit=1560)
 def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
     """
     Background scrape task — replaces the old threading.Thread approach.
