@@ -1,3 +1,97 @@
+// ═══════════════════════════════════════════
+// CHAT PERSISTENCE — Survives page navigation AND multiple tabs
+// ═══════════════════════════════════════════
+// Uses localStorage (shared across ALL tabs on the same origin) keyed by bot_id.
+// This means:
+//   - Admin on app.bubbl.ooo: chat persists across Dashboard/Leads/Billing tabs
+//   - Embed iframe (origin = app.bubbl.ooo): chat persists across ALL pages on
+//     any client website because every iframe shares the same localStorage.
+//   - Lead captured once? Never asked again (until storage is cleared).
+//   - Expires after 24 hours to prevent stale conversations.
+
+const CHAT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function _chatStorageKey() {
+  const botId = window.EMBEDDED_BOT_ID || "platform";
+  return "bubbl_chat_" + botId;
+}
+
+function saveChatState() {
+  const display = document.getElementById("chat-display");
+  const state = {
+    history: chatHistory,
+    leadCaptured: leadCaptured,
+    leadId: window.BUBBL_LEAD_ID || null,
+    messages: display ? display.innerHTML : "",
+    chatOpen: !document.getElementById("chat-window-popup").classList.contains("hidden"),
+    savedAt: Date.now(),
+  };
+  try {
+    localStorage.setItem(_chatStorageKey(), JSON.stringify(state));
+  } catch (e) { /* Storage full or unavailable */ }
+}
+
+function restoreChatState() {
+  try {
+    const raw = localStorage.getItem(_chatStorageKey());
+    if (!raw) return false;
+
+    const state = JSON.parse(raw);
+    if (!state || !state.history || state.history.length === 0) return false;
+
+    // Expire after 24 hours — start fresh conversation
+    if (state.savedAt && (Date.now() - state.savedAt) > CHAT_EXPIRY_MS) {
+      localStorage.removeItem(_chatStorageKey());
+      return false;
+    }
+
+    // Restore JS state
+    chatHistory = state.history || [];
+    leadCaptured = state.leadCaptured || false;
+    if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
+
+    // Restore rendered messages
+    const display = document.getElementById("chat-display");
+    if (display && state.messages) {
+      display.innerHTML = state.messages;
+      display.scrollTop = display.scrollHeight;
+    }
+
+    // Restore open/closed state
+    if (state.chatOpen) {
+      const chatPopup = document.getElementById("chat-window-popup");
+      const spriteContainer = document.getElementById("sprite-ask-container");
+      if (chatPopup) {
+        chatPopup.classList.remove("hidden");
+        chatPopup.style.opacity = "1";
+        chatPopup.style.transform = "scale(1) translateY(0)";
+      }
+      if (spriteContainer) spriteContainer.classList.add("chat-open");
+    }
+
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Sync across tabs — when another tab updates localStorage, this fires
+window.addEventListener("storage", function(e) {
+  if (e.key === _chatStorageKey() && e.newValue) {
+    try {
+      const state = JSON.parse(e.newValue);
+      // Update lead state from other tabs (most important sync)
+      if (state.leadCaptured) leadCaptured = true;
+      if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
+    } catch (err) { /* ignore parse errors */ }
+  }
+});
+
+// Restore on page load
+document.addEventListener("DOMContentLoaded", function() {
+  restoreChatState();
+});
+
 let chatHistory = [];
 let leadCaptured = false;
 let pendingMessage = "";
@@ -56,6 +150,7 @@ function toggleChat() {
     if (window.LEAD_TIMING === "gatekeeper" && !leadCaptured) {
       renderGatekeeperForm();
     }
+    saveChatState();
   } else {
     // 1. Animate it out smoothly
     gsap.to(chatPopup, {
@@ -68,6 +163,7 @@ function toggleChat() {
         // 2. Hide it fully ONLY after the animation finishes
         chatPopup.classList.add("hidden");
         if (spriteContainer) spriteContainer.classList.remove("chat-open");
+        saveChatState();
       },
     });
   }
@@ -174,6 +270,7 @@ async function submitLeadForm(prefix) {
 
     if (response.ok) {
       leadCaptured = true;
+      saveChatState();
       if (prefix === "gk") {
         document.getElementById("gatekeeper-overlay").remove();
         if (pendingMessage) {
@@ -327,6 +424,7 @@ async function sendMessage() {
 
   appendUserMessage(rawMsg);
   chatHistory.push({ role: "user", text: rawMsg });
+  saveChatState();
 
   setInputState(true);
   if (window.SpriteBot) SpriteBot.setState("thinking");
@@ -365,11 +463,13 @@ async function sendMessage() {
           chatHistory.push({ role: "bot", text: replyText });
         }
         renderInChatForm();
+        saveChatState();
       } else {
         replyText = replyText.replace("[SHOW_FORM]", "").trim();
         appendBotMessage(replyText);
         chatHistory.push({ role: "bot", text: replyText });
         setInputState(false);
+        saveChatState();
       }
 
       if (window.SpriteBot) {
