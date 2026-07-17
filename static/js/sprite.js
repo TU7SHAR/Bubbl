@@ -11,6 +11,7 @@ const SpriteBot = {
   init() {
     this.element = document.querySelector("#bot-sprite");
     this.container = document.querySelector("#sprite-ask-container");
+    this.headerSprite = document.querySelector("#chat-header-sprite");
 
     if (!this.element || !this.container) return;
 
@@ -66,6 +67,30 @@ const SpriteBot = {
     this.currentState = stateName;
     this.isBusy = stateName === "thinking" || stateName === "talking";
 
+    // Update chat header state indicator
+    const stateEl = document.getElementById("chat-state-indicator");
+    if (stateEl) {
+      stateEl.className = "chat-header-state";
+      switch (stateName) {
+        case "thinking":
+          stateEl.textContent = "Thinking\u2026";
+          stateEl.classList.add("state-thinking");
+          break;
+        case "talking":
+          stateEl.textContent = "Responding";
+          stateEl.classList.add("state-talking");
+          break;
+        default:
+          stateEl.textContent = "Online";
+          break;
+      }
+    }
+
+    // Notify contextual message system
+    if (window.MascotContext) {
+      window.MascotContext.onEvent(stateName);
+    }
+
     if (this.currentTween) this.currentTween.kill();
 
     let startPosition, endPosition, duration;
@@ -114,6 +139,21 @@ const SpriteBot = {
       ease: "steps(80)",
       repeat: -1,
     });
+
+    // Sync header sprite (smaller, inside chat window)
+    if (this.headerSprite) {
+      const headerFrameWidth = this.headerSprite.offsetWidth || 70;
+      const headerStateLength = 80 * headerFrameWidth;
+      const hStart = (startPosition / frameWidth) * headerFrameWidth;
+      const hEnd = (endPosition / frameWidth) * headerFrameWidth;
+      gsap.set(this.headerSprite, { backgroundPositionX: `${hStart}px` });
+      gsap.to(this.headerSprite, {
+        backgroundPositionX: `${hEnd}px`,
+        duration: duration,
+        ease: "steps(80)",
+        repeat: -1,
+      });
+    }
   },
 };
 window.SpriteBot = SpriteBot;
