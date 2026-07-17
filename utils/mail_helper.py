@@ -297,3 +297,112 @@ def send_custom_email(to_email, subject, message, user_name=None):
     </div>
     """
     return _send_html_email(to_email, subject, html_content)
+
+
+
+def send_expiry_reminder_email(to_email, user_name, current_plan, fallback_plan, expires_at, days_remaining, reminder_type):
+    """
+    Sends a subscription expiry reminder email.
+
+    Two scenarios:
+    1. Free user was gifted a plan → "Your gifted plan expires on X, you'll revert to Free"
+    2. Paid user was gifted a BIGGER plan → "Your upgraded plan expires on X, you'll return to [original plan]"
+
+    Args:
+        to_email: Recipient email
+        user_name: Recipient name
+        current_plan: The plan they're currently on (the gifted one)
+        fallback_plan: What they'll fall back to ('free' or their original paid plan)
+        expires_at: datetime when plan expires
+        days_remaining: 7, 1, or 0
+        reminder_type: '7_day', '1_day', or 'today'
+    """
+    platform_name = f"{COMPANY_NAME_FIRST}.{COMPANY_LAST_NAME}"
+    current_label = (current_plan or "").capitalize()
+    fallback_label = (fallback_plan or "free").capitalize()
+    expiry_date_str = expires_at.strftime('%B %d, %Y') if expires_at else 'soon'
+    greeting = f"Hi {user_name}," if user_name else "Hi there,"
+
+    # Determine urgency styling
+    if reminder_type == '7_day':
+        urgency_color = '#f59e0b'  # Amber
+        urgency_label = '7 days remaining'
+        subject_prefix = 'Reminder'
+    elif reminder_type == '1_day':
+        urgency_color = '#ef4444'  # Red
+        urgency_label = 'Expires tomorrow'
+        subject_prefix = 'Final Notice'
+    else:
+        urgency_color = '#ef4444'
+        urgency_label = 'Expires today'
+        subject_prefix = 'Plan Expiring Today'
+
+    # Determine message based on fallback scenario
+    if fallback_plan == 'free':
+        # Scenario 1: They were on free, got gifted a plan
+        headline = f"Your {current_label} plan is expiring"
+        main_message = (
+            f"Your complimentary <strong>{current_label}</strong> plan on {platform_name} "
+            f"will expire on <strong>{expiry_date_str}</strong>."
+        )
+        fallback_message = (
+            f"After expiry, your account will automatically revert to the <strong>Free</strong> plan. "
+            f"You'll still have access to basic features, but your limits will be reduced."
+        )
+        cta_text = "Upgrade to keep your current features"
+        cta_note = f"Subscribe to the {current_label} plan (or higher) before {expiry_date_str} to keep all your current features without interruption."
+    else:
+        # Scenario 2: They were on a paid plan, got gifted a BIGGER plan
+        headline = f"Your upgraded {current_label} plan is expiring"
+        main_message = (
+            f"Your complimentary upgrade to the <strong>{current_label}</strong> plan on {platform_name} "
+            f"will expire on <strong>{expiry_date_str}</strong>."
+        )
+        fallback_message = (
+            f"After expiry, your account will return to your <strong>{fallback_label}</strong> plan. "
+            f"Your bots, data, and settings will remain intact, but your limits will adjust to the {fallback_label} tier."
+        )
+        cta_text = f"Upgrade to {current_label} permanently"
+        cta_note = f"If you'd like to keep the {current_label} features, you can subscribe to it from your billing page."
+
+    html_content = f"""
+    <div style="font-family: sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid #eee; border-radius: 12px;">
+        <div style="background: {urgency_color}; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; margin-bottom: 16px;">
+            {urgency_label}
+        </div>
+
+        <h2 style="color: #111827; margin-top: 0; font-size: 20px;">{headline}</h2>
+
+        <p style="color: #4b5563; font-size: 15px;">{greeting}</p>
+        <p style="color: #4b5563; font-size: 15px;">{main_message}</p>
+
+        <div style="background: #fef3cd; border: 1px solid #fde68a; padding: 16px 20px; border-radius: 10px; margin: 20px 0;">
+            <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 6px 0; color: #92400e;">Current Plan</td>
+                    <td style="padding: 6px 0; text-align: right; color: #92400e; font-weight: 700;">{current_label}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; color: #92400e;">Expires On</td>
+                    <td style="padding: 6px 0; text-align: right; color: #92400e; font-weight: 700;">{expiry_date_str}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; color: #92400e;">After Expiry</td>
+                    <td style="padding: 6px 0; text-align: right; color: #92400e; font-weight: 700;">{fallback_label} Plan</td>
+                </tr>
+            </table>
+        </div>
+
+        <p style="color: #4b5563; font-size: 14px;">{fallback_message}</p>
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px 18px; border-radius: 10px; margin: 20px 0;">
+            <p style="color: #166534; font-size: 14px; font-weight: 600; margin: 0 0 6px 0;">{cta_text}</p>
+            <p style="color: #166534; font-size: 13px; margin: 0;">{cta_note}</p>
+        </div>
+
+        <p style="color: #9ca3af; font-size: 13px;">If you have any questions, just reply to this email or contact us at {os.getenv('SUPPORT_EMAIL', 'support@bubbl.ooo')}.</p>
+        <p style="color: #4b5563; font-size: 14px; margin-top: 24px;">&mdash; The {platform_name} Team</p>
+    </div>
+    """
+    subject = f"[{subject_prefix}] Your {platform_name} {current_label} plan expires on {expiry_date_str}"
+    return _send_html_email(to_email, subject, html_content)

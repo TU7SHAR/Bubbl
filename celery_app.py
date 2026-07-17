@@ -22,7 +22,7 @@ def make_celery():
     # register with the worker. autodiscover_tasks(['tasks']) alone looks for
     # tasks/tasks.py (related_name='tasks') and MISSES tasks/scrape_tasks.py,
     # which caused: KeyError: 'tasks.scrape_tasks.async_scrape_task'.
-    app = Celery('bubbl', include=['tasks.scrape_tasks'])
+    app = Celery('bubbl', include=['tasks.scrape_tasks', 'tasks.reminder_tasks'])
 
     app.conf.update(
         # --- BROKER (where tasks are queued) ---
@@ -57,11 +57,19 @@ def make_celery():
 
         # --- RESULT EXPIRY ---
         result_expires=3600,              # Results expire after 1 hour
+
+        # --- BEAT SCHEDULE (Periodic Tasks) ---
+        beat_schedule={
+            'check-subscription-expiry-reminders': {
+                'task': 'tasks.reminder_tasks.check_subscription_expiry_reminders',
+                'schedule': 6 * 60 * 60,   # Every 6 hours (4 times/day)
+            },
+        },
     )
 
-    # Discover tasks in the 'tasks' package. related_name matches our actual
-    # module name (scrape_tasks.py), not the default 'tasks.py'.
+    # Discover tasks in the 'tasks' package.
     app.autodiscover_tasks(['tasks'], related_name='scrape_tasks')
+    app.autodiscover_tasks(['tasks'], related_name='reminder_tasks')
 
     return app
 
