@@ -52,6 +52,51 @@
     font-family: 'Bricolage Grotesque', sans-serif;
   }
 
+  /* 4b. HEADER SPRITE — Lives above the chat window */
+  .chat-header-sprite {
+    width: 70px;
+    height: 70px;
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-image: url('/static/images/spritesheet.webp');
+    background-size: auto 70px;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* 4c. STATE INDICATOR — Under bot name */
+  .chat-header-state {
+    font-size: 10px;
+    font-weight: 500;
+    color: #10b981;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .chat-header-state::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    display: inline-block;
+    animation: pulse-dot 2s infinite;
+  }
+  .chat-header-state.state-thinking { color: #f59e0b; }
+  .chat-header-state.state-thinking::before { background: #f59e0b; animation: pulse-dot 0.8s infinite; }
+  .chat-header-state.state-talking { color: {{ theme_color }}; }
+  .chat-header-state.state-talking::before { background: {{ theme_color }}; }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
   /* 5. LIGHT MODE GLASS */
   {% if theme_mode == 'light' or not theme_mode %}
   #chat-window-popup {
@@ -136,6 +181,9 @@
   </div>
 
   <div id="chat-window-popup" class="hidden">
+    <!-- Mini sprite that peeks above the chat window -->
+    <div class="chat-header-sprite" id="chat-header-sprite"></div>
+
     <div class="chat-header">
       <div class="chat-header-info" style="display: flex; align-items: center;">
         <div class="chat-header-avatar" id="global-chat-avatar"
@@ -147,8 +195,8 @@
             {% endif %}
         </div>
         <div>
-            <span class="status-dot"></span>
             <span class="chat-header-title">{{ chat_display_name | upper }}</span>
+            <div class="chat-header-state" id="chat-state-indicator">Online</div>
         </div>
       </div>
       
