@@ -31,12 +31,17 @@ def _get_or_create_platform_bot():
     # created_by must reference a real user (FK to user.id)
     first_user = User.query.order_by(User.id.asc()).first()
     if not first_user:
-        # Edge case: no users exist yet — create a system user
+        # Edge case: no users exist yet — create the official platform user
+        # Uses the super admin credentials from env so it's a real login-able account
         import bcrypt
-        system_hash = bcrypt.hashpw(b'platform_system', bcrypt.gensalt()).decode('utf-8')
+        import os
+        admin_email = os.getenv('SUPER_ADMIN_MAIL', 'bubblteams@gmail.com')
+        admin_hash = os.getenv('SUPER_ADMIN_HASH')
+        if not admin_hash:
+            admin_hash = bcrypt.hashpw(b'platform_system', bcrypt.gensalt()).decode('utf-8')
         first_user = User(
-            org_id=platform_org.id, name='System', email='system@bubbl.ooo',
-            password_hash=system_hash, role='admin', is_verified=True
+            org_id=platform_org.id, name='Bubbl Team', email=admin_email,
+            password_hash=admin_hash, role='admin', is_verified=True
         )
         db.session.add(first_user)
         db.session.flush()

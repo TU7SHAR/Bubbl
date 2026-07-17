@@ -47,11 +47,12 @@ def dashboard():
 
     days_count = max((end_date - start_date).days, 1)
 
-    # ═══════════════════════════════════════════
-    # CORE METRICS
-    # ═══════════════════════════════════════════
-    total_users = User.query.count()
-    total_bots = Bot.query.count()
+    # --- Core metrics ---
+    # Exclude internal platform org from user/bot counts
+    platform_org = Organization.query.filter_by(name='Bubbl Platform').first()
+    platform_org_id = platform_org.id if platform_org else -1
+    total_users = User.query.filter(User.org_id != platform_org_id).count()
+    total_bots = Bot.query.filter(Bot.bot_type != 'platform').count()
     total_docs = Document.query.count()
     total_leads = Lead.query.filter(Lead.captured_at >= start_date, Lead.captured_at <= end_date).count()
     total_leads_all = Lead.query.count()
@@ -62,13 +63,10 @@ def dashboard():
     messages_today = ChatMessage.query.filter(ChatMessage.created_at >= today_start).count()
     messages_yesterday = ChatMessage.query.filter(ChatMessage.created_at >= yesterday_start, ChatMessage.created_at < today_start).count()
 
-    # Users registered in period
-    new_users_period = User.query.filter(User.created_at >= start_date, User.created_at <= end_date).count()
-    new_users_today = User.query.filter(User.created_at >= today_start).count()
-
-    # ═══════════════════════════════════════════
-    # REVENUE METRICS
-    # ═══════════════════════════════════════════
+    # --- Revenue metrics ---
+    # Exclude the internal "Bubbl Platform" org from all revenue/plan metrics
+    all_orgs = Organization.query.filter(Organization.name != 'Bubbl Platform').all()
+    from flask import current_app
     plan_price = current_app.config.get('PLAN_PRICE_INR', {'free': 0, 'starter': 499, 'growth': 1499, 'pro': 4999})
 
     all_orgs = Organization.query.all()
