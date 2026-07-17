@@ -8,7 +8,7 @@
 import os
 import uuid
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
 from celery_app import celery
@@ -41,6 +41,10 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
         if not job or not target_bot:
             logger.error(f"Job {job_id} or Bot {bot_id} not found. Aborting.")
             return
+
+        # Mark as 'running' so we can detect interrupted jobs after restart
+        job.status = 'running'
+        db.session.commit()
 
         crawl_limit = job.limit if job.limit else 20
 
@@ -347,3 +351,70 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
         db.session.commit()
 
         logger.info(f"Job {job_id} finished: {job.status} ({success_count} URLs scraped)")
+
+
+
+# ═══════════════════════════════════════════
+# RECOVERY: Re-queue stuck/interrupted scrape jobs on worker startup
+# ═══════════════════════════════════════════
+
+@celery.task(bind=True)
+def recover_stuck_scrape_jobs(self):
+    """
+    Finds scrape jobs stuck in 'pending' or 'running' state (older than 2 minutes)
+    and re-queues them. Called once on worker startup via worker_ready signal.
+
+    This handles the case where:
+    - Celery was restarted mid-scrape (task killed, job stays 'running')
+    - A task was queued but never picked up (stayed 'pending' in DB but
+      the Redis message was lost/acknowledged)
+    """
+    from app import app
+
+    with app.app_context():
+        from models.models import db, ScrapeJob, Bot
+
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(minutes=2)
+
+        # Find jobs that are stuck (pending/running and created more than 2 min ago)
+        stuck_jobs = ScrapeJob.query.filter(
+            ScrapeJob.status.in_(['pending', 'running']),
+            ScrapeJob.created_at < cutoff
+        ).all()
+
+        if not stuck_jobs:
+            logger.info("[recovery] No stuck scrape jobs found.")
+            return {"recovered": 0}
+
+        recovered = 0
+        for job in stuck_jobs:
+            bot = Bot.query.get(job.bot_id)
+            if not bot:
+                # Bot was deleted — mark job failed
+                job.status = 'failed'
+                job.error_message = 'Bot no longer exists.'
+                db.session.commit()
+                continue
+
+            # Reset to pending and re-queue
+            job.status = 'pending'
+            job.logs = (job.logs or "") + f"\n[Recovery] Job re-queued after worker restart at {now.strftime('%H:%M:%S UTC')}\n"
+            db.session.commit()
+
+            # Re-dispatch the task
+            async_scrape_task.delay(job.id, job.url, job.bot_id, False)
+            recovered += 1
+            logger.info(f"[recovery] Re-queued job {job.id} (bot {job.bot_id}, url: {job.url[:60]})")
+
+        logger.info(f"[recovery] Recovered {recovered} stuck scrape jobs.")
+        return {"recovered": recovered}
+
+
+# --- Worker startup signal: auto-run recovery ---
+from celery.signals import worker_ready
+
+@worker_ready.connect
+def on_worker_ready(**kwargs):
+    """When the Celery worker boots up, check for stuck jobs and re-queue them."""
+    recover_stuck_scrape_jobs.delay()
