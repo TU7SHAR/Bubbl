@@ -226,7 +226,13 @@
 }
 
 #sprite-ask-container.chat-open {
-  display: none !important;
+  bottom: 620px;
+  right: 20px;
+  transform: scale(0.45);
+  transform-origin: bottom center;
+  pointer-events: none;
+  opacity: 1;
+  display: flex !important;
 }
 
 #sprite-ask-container.chat-open #chat-open-btn,
@@ -310,9 +316,15 @@
     right: 15px;
   }
 
-  /* Hide sprite completely when chat is open on mobile */
+  /* Sprite above chat on mobile */
   #sprite-ask-container.chat-open {
-    display: none !important;
+    bottom: 420px;
+    right: 15px;
+    transform: scale(0.35);
+    transform-origin: bottom center;
+    pointer-events: none;
+    opacity: 1;
+    display: flex !important;
   }
   }
 
