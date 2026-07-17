@@ -63,13 +63,15 @@ def dashboard():
     messages_today = ChatMessage.query.filter(ChatMessage.created_at >= today_start).count()
     messages_yesterday = ChatMessage.query.filter(ChatMessage.created_at >= yesterday_start, ChatMessage.created_at < today_start).count()
 
+    # Users registered in period
+    new_users_period = User.query.filter(User.created_at >= start_date, User.created_at <= end_date).count()
+    new_users_today = User.query.filter(User.created_at >= today_start).count()
+
     # --- Revenue metrics ---
     # Exclude the internal "Bubbl Platform" org from all revenue/plan metrics
     all_orgs = Organization.query.filter(Organization.name != 'Bubbl Platform').all()
-    from flask import current_app
     plan_price = current_app.config.get('PLAN_PRICE_INR', {'free': 0, 'starter': 499, 'growth': 1499, 'pro': 4999})
 
-    all_orgs = Organization.query.all()
     plan_counts = {'free': 0, 'starter': 0, 'growth': 0, 'pro': 0}
     for o in all_orgs:
         p = (o.plan or 'free')
