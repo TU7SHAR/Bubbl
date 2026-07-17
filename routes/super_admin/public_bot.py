@@ -245,7 +245,7 @@ def public_bot_extract_links():
     upload_dir = current_app.config.get('UPLOAD_FOLDER', '/root/Bubbl/uploads')
 
     # Determine base domain from the first scrape job URL
-    first_scrape = ScrapeJob.query.filter_by(bot_id=bot.id, status='completed').first()
+    first_scrape = ScrapeJob.query.filter_by(bot_id=bot.id).order_by(ScrapeJob.created_at.desc()).first()
     base_domain = ''
     if first_scrape:
         base_domain = urlparse(first_scrape.url).netloc
@@ -274,8 +274,8 @@ def public_bot_extract_links():
                 skip_paths = ('/dam/', '/assets/', '/static/', '/images/', '/media/', '/cdn/', '/_next/')
                 if any(skip in parsed.path.lower() for skip in skip_paths):
                     continue
-                # Only same-domain links (if we know the domain)
-                if base_domain and parsed.netloc != base_domain and not parsed.netloc.endswith('.' + base_domain):
+                # Only same-domain links if domain is known, otherwise accept all
+                if base_domain and parsed.netloc and parsed.netloc != base_domain and not parsed.netloc.endswith('.' + base_domain):
                     continue
                 existing_links.append({
                     "label": make_label(found_url),
@@ -316,7 +316,10 @@ def public_bot_extract_links():
             continue
 
     if new_links_added > 0:
+        # Force SQLAlchemy to detect the JSON change (mutation tracking doesn't work on JSON)
+        from sqlalchemy.orm.attributes import flag_modified
         bot.managed_links = existing_links
+        flag_modified(bot, 'managed_links')
         db.session.commit()
 
     return jsonify({"success": True, "new_links": new_links_added, "total_links": len(existing_links)})
