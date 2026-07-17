@@ -528,15 +528,38 @@ def embed_bot(bot_id):
     # 1. Strip the legacy X-Frame-Options
     response.headers.pop('X-Frame-Options', None)
     
-    # 2. Enforce the Domain Lock
+    # 2. Enforce the Domain Lock via CSP frame-ancestors
     allowed = (target_bot.allowed_domains or '').strip()
     
     if allowed:
-        # If domains are listed, lock it to those domains
-        response.headers['Content-Security-Policy'] = f"frame-ancestors 'self' {allowed}"
+        # Parse allowed domains — normalize to proper origins for frame-ancestors
+        # Users might enter: "github.io/path", "https://example.com", "example.com" etc.
+        # frame-ancestors needs: "https://example.com" (scheme + host, no path)
+        from urllib.parse import urlparse
+        origins = []
+        for domain in allowed.replace(',', ' ').split():
+            domain = domain.strip()
+            if not domain:
+                continue
+            # If it's just a wildcard, allow all
+            if domain == '*':
+                origins = ['*']
+                break
+            # Add scheme if missing
+            if not domain.startswith('http://') and not domain.startswith('https://'):
+                domain = 'https://' + domain
+            parsed = urlparse(domain)
+            origin = f"{parsed.scheme}://{parsed.netloc}"
+            if origin and parsed.netloc:
+                origins.append(origin)
+        
+        if origins:
+            origins_str = ' '.join(origins)
+            response.headers['Content-Security-Policy'] = f"frame-ancestors 'self' {origins_str}"
+        else:
+            response.headers['Content-Security-Policy'] = "frame-ancestors *"
     else:
-        # If the field is completely empty, default to allowing any site (Standard SaaS behavior)
-        # OR, if you want empty to mean STRICTLY BLOCKED, change '*' to 'none'
+        # No domains specified = allow embedding anywhere (standard SaaS behavior)
         response.headers['Content-Security-Policy'] = "frame-ancestors *"
         
     return response
