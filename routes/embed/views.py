@@ -197,6 +197,222 @@ def leads_dashboard():
 
     return render_template('leads.html', leads=leads)
 
+# ═══════════════════════════════════════════
+# CONVERSATIONS HUB — Full chat history for bot owners
+# ═══════════════════════════════════════════
+
+@views_bp.route('/conversations')
+def conversations_hub():
+    """Show all bots the user owns with conversation stats."""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    from models.models import ChatMessage, Lead
+
+    # Get all bots in the org
+    org_bots = Bot.query.filter_by(org_id=session.get('org_id')).all()
+
+    bots_with_stats = []
+    for bot in org_bots:
+        # Count unique sessions
+        total_sessions = db.session.query(
+            func.count(func.distinct(ChatMessage.session_id))
+        ).filter_by(bot_id=bot.id).scalar() or 0
+
+        # Count total messages
+        total_messages = ChatMessage.query.filter_by(bot_id=bot.id).count()
+
+        # Count leads captured
+        total_leads = Lead.query.filter_by(bot_id=bot.id).count()
+
+        # Last conversation time
+        last_activity = db.session.query(
+            func.max(ChatMessage.created_at)
+        ).filter_by(bot_id=bot.id).scalar()
+
+        # Average session duration (seconds) — diff between first and last msg per session
+        duration_query = db.session.query(
+            func.avg(
+                func.extract('epoch', func.max(ChatMessage.created_at)) -
+                func.extract('epoch', func.min(ChatMessage.created_at))
+            )
+        ).filter_by(bot_id=bot.id).group_by(ChatMessage.session_id).subquery()
+
+        avg_duration_result = db.session.query(func.avg(duration_query.c[0])).scalar()
+        avg_duration_mins = round((avg_duration_result or 0) / 60, 1)
+
+        bots_with_stats.append({
+            'bot': bot,
+            'total_sessions': total_sessions,
+            'total_messages': total_messages,
+            'total_leads': total_leads,
+            'last_activity': last_activity,
+            'avg_duration_mins': avg_duration_mins,
+        })
+
+    return render_template('conversations_bots.html', bots_with_stats=bots_with_stats)
+
+
+@views_bp.route('/conversations/<int:bot_id>')
+def conversations_list(bot_id):
+    """Show all conversation sessions for a specific bot with rich stats."""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    from models.models import ChatMessage, Lead
+
+    bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
+    if not bot:
+        flash("Bot not found.", "error")
+        return redirect(url_for('views_bp.conversations_hub'))
+
+    # Get all sessions with aggregated stats
+    sessions_query = db.session.query(
+        ChatMessage.session_id,
+        func.count(ChatMessage.id).label('message_count'),
+        func.min(ChatMessage.created_at).label('started_at'),
+        func.max(ChatMessage.created_at).label('last_message_at'),
+        func.sum(ChatMessage.tokens_used).label('total_tokens'),
+    ).filter_by(bot_id=bot_id).group_by(
+        ChatMessage.session_id
+    ).order_by(func.max(ChatMessage.created_at).desc()).all()
+
+    conversations = []
+    for sess in sessions_query:
+        # Duration in minutes
+        duration_secs = 0
+        if sess.started_at and sess.last_message_at:
+            duration_secs = (sess.last_message_at - sess.started_at).total_seconds()
+        duration_mins = round(duration_secs / 60, 1) if duration_secs > 0 else 0
+
+        # First user message as preview
+        first_msg = ChatMessage.query.filter_by(
+            bot_id=bot_id, session_id=sess.session_id, role='user'
+        ).order_by(ChatMessage.created_at.asc()).first()
+
+        # Check if a lead was captured in this session
+        lead = Lead.query.join(ChatMessage, ChatMessage.lead_id == Lead.id).filter(
+            ChatMessage.session_id == sess.session_id,
+            ChatMessage.bot_id == bot_id
+        ).first()
+
+        # If no lead found via ChatMessage.lead_id, check by session's captured leads
+        if not lead:
+            # Check if any message in this session has a lead_id
+            msg_with_lead = ChatMessage.query.filter(
+                ChatMessage.session_id == sess.session_id,
+                ChatMessage.bot_id == bot_id,
+                ChatMessage.lead_id.isnot(None)
+            ).first()
+            if msg_with_lead:
+                lead = Lead.query.get(msg_with_lead.lead_id)
+
+        # Count user messages and bot messages separately for response time calc
+        user_msg_count = ChatMessage.query.filter_by(
+            bot_id=bot_id, session_id=sess.session_id, role='user'
+        ).count()
+        bot_msg_count = ChatMessage.query.filter_by(
+            bot_id=bot_id, session_id=sess.session_id, role='bot'
+        ).count()
+
+        # Average response time: total latency tracked on bot / interaction count
+        # Or approximate from message timestamps
+        avg_response_ms = 0
+        if bot.interaction_count and bot.total_latency:
+            avg_response_ms = int((bot.total_latency / bot.interaction_count) * 1000)
+
+        conversations.append({
+            'session_id': sess.session_id,
+            'message_count': sess.message_count,
+            'user_messages': user_msg_count,
+            'bot_messages': bot_msg_count,
+            'started_at': sess.started_at,
+            'last_message_at': sess.last_message_at,
+            'duration_mins': duration_mins,
+            'total_tokens': sess.total_tokens or 0,
+            'lead': lead,
+            'preview': (first_msg.content[:100] + '...') if first_msg and len(first_msg.content) > 100 else (first_msg.content if first_msg else 'No messages'),
+            'avg_response_ms': avg_response_ms,
+        })
+
+    # Aggregate stats for the header
+    total_conversations = len(conversations)
+    total_messages = sum(c['message_count'] for c in conversations)
+    total_leads = sum(1 for c in conversations if c['lead'])
+    avg_duration = round(sum(c['duration_mins'] for c in conversations) / max(total_conversations, 1), 1)
+
+    return render_template('conversations_list.html',
+        bot=bot,
+        conversations=conversations,
+        total_conversations=total_conversations,
+        total_messages=total_messages,
+        total_leads=total_leads,
+        avg_duration=avg_duration,
+    )
+
+
+@views_bp.route('/conversations/<int:bot_id>/<session_id>')
+def conversation_detail(bot_id, session_id):
+    """View a full conversation transcript with metadata."""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    from models.models import ChatMessage, Lead
+
+    bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
+    if not bot:
+        flash("Bot not found.", "error")
+        return redirect(url_for('views_bp.conversations_hub'))
+
+    messages = ChatMessage.query.filter_by(
+        bot_id=bot_id, session_id=session_id
+    ).order_by(ChatMessage.created_at.asc()).all()
+
+    if not messages:
+        flash("Conversation not found.", "error")
+        return redirect(url_for('views_bp.conversations_list', bot_id=bot_id))
+
+    # Session metadata
+    started_at = messages[0].created_at if messages else None
+    ended_at = messages[-1].created_at if messages else None
+    duration_secs = (ended_at - started_at).total_seconds() if started_at and ended_at else 0
+    duration_mins = round(duration_secs / 60, 1)
+
+    total_tokens = sum(m.tokens_used or 0 for m in messages)
+    user_msg_count = sum(1 for m in messages if m.role == 'user')
+    bot_msg_count = sum(1 for m in messages if m.role == 'bot')
+
+    # Lead info
+    lead = None
+    msg_with_lead = next((m for m in messages if m.lead_id), None)
+    if msg_with_lead:
+        lead = Lead.query.get(msg_with_lead.lead_id)
+
+    # Calculate per-message response times (time between user msg and next bot msg)
+    response_times = []
+    for i, msg in enumerate(messages):
+        if msg.role == 'user' and i + 1 < len(messages) and messages[i + 1].role == 'bot':
+            if msg.created_at and messages[i + 1].created_at:
+                rt = (messages[i + 1].created_at - msg.created_at).total_seconds()
+                response_times.append(rt)
+
+    avg_response_sec = round(sum(response_times) / len(response_times), 1) if response_times else 0
+
+    return render_template('conversation_detail.html',
+        bot=bot,
+        messages=messages,
+        session_id=session_id,
+        started_at=started_at,
+        ended_at=ended_at,
+        duration_mins=duration_mins,
+        total_tokens=total_tokens,
+        user_msg_count=user_msg_count,
+        bot_msg_count=bot_msg_count,
+        lead=lead,
+        avg_response_sec=avg_response_sec,
+    )
+
+
 @views_bp.route('/compare')
 @views_bp.route('/compare/<competitor>')
 def compare(competitor=None):

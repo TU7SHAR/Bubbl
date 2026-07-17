@@ -209,6 +209,7 @@
                 <a href="{{ url_for('views_bp.dashboard') }}" class="nav-link">Dashboard</a>
                 <a href="{{ url_for('admin_bp.create_pipeline') }}" class="nav-link">Create Bot</a>
                 <a href="{{ url_for('views_bp.leads_dashboard') }}" class="nav-link">Leads</a>
+                <a href="{{ url_for('views_bp.conversations_hub') }}" class="nav-link">Conversations</a>
                 <a href="/payments/manage" class="nav-link">Billing</a>
                 {% if session.get('role') == 'super_admin' %}
         <a href="{{ url_for('super_admin_bp.dashboard') }}" class="nav-link" style="color: #8b5cf6; font-weight: 700;">
