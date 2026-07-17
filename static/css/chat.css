@@ -226,9 +226,10 @@
 }
 
 #sprite-ask-container.chat-open {
-  bottom: 610px;
-  transform: scale(0.5);
-  opacity: 0.9;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.3);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 #sprite-ask-container.chat-open #chat-open-btn,
@@ -314,8 +315,10 @@
 
   /* Calculate exact position of sprite when chat is open on mobile */
   #sprite-ask-container.chat-open {
-    bottom: 410px; /* 380px height + 15px bottom + 15px gap */
-    transform: scale(0.4);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.3);
+  }
   }
 
   /* Tighten up chat bubbles for mobile */
