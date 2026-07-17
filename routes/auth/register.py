@@ -82,7 +82,13 @@ def register():
             db.session.rollback()
             flash("Email already registered.", "error")
             return redirect(url_for('auth.register'))
-            
+
+    # Form validation failed — flash the errors so user sees what's wrong
+    if request.method == 'POST' and form.errors:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(error, "error")
+
     return render_template('register.html', form=form)
 
 @auth_bp.route('/verify_otp', methods=['GET', 'POST'])
