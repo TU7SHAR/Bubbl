@@ -198,6 +198,135 @@ def public_bot_get_links():
     return jsonify({"success": True, "links": links})
 
 
+@super_admin_bp.route('/public_bot/extract_links', methods=['POST'])
+@super_admin_required
+def public_bot_extract_links():
+    """
+    Manually extract links, emails, and phones from all existing scraped documents.
+    This runs the same extraction logic that normally happens at the end of a scrape task,
+    but can be triggered independently (e.g., after a timeout-killed scrape).
+    """
+    import re
+    import os
+    import glob
+    from urllib.parse import urlparse
+    from flask import current_app
+
+    bot = _get_or_create_platform_bot()
+    docs = Document.query.filter_by(bot_id=bot.id).all()
+
+    if not docs:
+        return jsonify({"error": "No documents found for this bot."}), 404
+
+    existing_links = bot.managed_links or []
+    existing_values = {link.get('url', '') for link in existing_links}
+
+    def auto_categorize(url_path):
+        path = url_path.lower()
+        if 'pricing' in path or 'plan' in path or 'buy' in path or 'shop' in path:
+            return 'pricing'
+        elif 'register' in path or 'signup' in path or 'sign-up' in path or 'start' in path or 'order' in path:
+            return 'action'
+        elif 'login' in path or 'signin' in path or 'account' in path:
+            return 'action'
+        elif 'contact' in path or 'support' in path or 'help' in path or 'faq' in path:
+            return 'support'
+        elif 'feature' in path or 'how' in path or 'docs' in path or 'guide' in path or 'about' in path or 'learn' in path:
+            return 'info'
+        else:
+            return 'link'
+
+    def make_label(url_str):
+        parsed = urlparse(url_str)
+        path = parsed.path.strip('/')
+        if not path:
+            return parsed.netloc
+        segment = path.split('/')[-1]
+        segment = segment.replace('.html', '').replace('.htm', '').replace('.php', '')
+        segment = segment.replace('-', ' ').replace('_', ' ')
+        return segment.title()[:50]
+
+    new_links_added = 0
+    upload_dir = current_app.config.get('UPLOAD_FOLDER', '/root/Bubbl/uploads')
+
+    # Determine base domain from the first scrape job URL
+    first_scrape = ScrapeJob.query.filter_by(bot_id=bot.id, status='completed').first()
+    base_domain = ''
+    if first_scrape:
+        base_domain = urlparse(first_scrape.url).netloc
+
+    # Read all document files and extract links/emails/phones
+    for doc in docs:
+        filepath = os.path.join(upload_dir, doc.filename)
+        if not os.path.exists(filepath):
+            continue
+
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Extract URLs
+            found_urls = re.findall(r'https?://[^\s\)\]\>"\']+', content)
+            for found_url in found_urls:
+                found_url = found_url.rstrip('.,;:!?)')
+                if found_url in existing_values or len(found_url) > 300:
+                    continue
+                parsed = urlparse(found_url)
+                # Skip assets
+                skip_ext = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.pdf', '.css', '.js', '.woff', '.woff2', '.ttf', '.mp4', '.mp3')
+                if any(parsed.path.lower().endswith(ext) for ext in skip_ext):
+                    continue
+                skip_paths = ('/dam/', '/assets/', '/static/', '/images/', '/media/', '/cdn/', '/_next/')
+                if any(skip in parsed.path.lower() for skip in skip_paths):
+                    continue
+                # Only same-domain links (if we know the domain)
+                if base_domain and parsed.netloc != base_domain and not parsed.netloc.endswith('.' + base_domain):
+                    continue
+                existing_links.append({
+                    "label": make_label(found_url),
+                    "url": found_url,
+                    "category": auto_categorize(parsed.path),
+                })
+                existing_values.add(found_url)
+                new_links_added += 1
+
+            # Extract emails
+            platform_emails = {'bubblteams@gmail.com', 'system@bubbl.ooo'}
+            emails = re.findall(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', content)
+            for email in set(emails):
+                if email.lower() in platform_emails:
+                    continue
+                if any(skip in email.lower() for skip in ['noreply', 'no-reply', 'mailer-daemon', 'postmaster']):
+                    continue
+                mailto = f"mailto:{email}"
+                if mailto not in existing_values and email not in existing_values:
+                    existing_links.append({"label": email, "url": mailto, "category": "email"})
+                    existing_values.add(mailto)
+                    new_links_added += 1
+
+            # Extract phone numbers
+            phone_pattern = r'(?:\+\d{1,3}[\s\-]?)(?:\(?\d{2,5}\)?[\s\-]?)?\d{3,5}[\s\-]?\d{3,5}'
+            phones = re.findall(phone_pattern, content)
+            for phone in set(phones):
+                phone_clean = phone.strip()
+                digits_only = re.sub(r'\D', '', phone_clean)
+                if len(digits_only) >= 10 and len(digits_only) <= 15:
+                    tel = f"tel:+{digits_only}" if not phone_clean.startswith('+') else f"tel:{phone_clean.replace(' ', '').replace('-', '')}"
+                    if tel not in existing_values:
+                        existing_links.append({"label": phone_clean, "url": tel, "category": "phone"})
+                        existing_values.add(tel)
+                        new_links_added += 1
+
+        except Exception:
+            continue
+
+    if new_links_added > 0:
+        bot.managed_links = existing_links
+        db.session.commit()
+
+    return jsonify({"success": True, "new_links": new_links_added, "total_links": len(existing_links)})
+
+
 @super_admin_bp.route('/public_bot/links', methods=['POST'])
 @super_admin_required
 def public_bot_save_links():
