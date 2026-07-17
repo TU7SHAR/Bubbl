@@ -75,9 +75,9 @@
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_messages }} total messages</div>
   </div>
   <div class="sa-card">
-    <div class="sa-card-label">Paid Accounts</div>
+    <div class="sa-card-label">Paid Orgs</div>
     <div class="sa-card-value">{{ active_subscriptions }}</div>
-    <div style="font-size:11px; color:var(--accent); margin-top:4px;">{{ conversion_rate }}% conversion</div>
+    <div style="font-size:11px; color:var(--accent); margin-top:4px;">{{ conversion_rate }}% of {{ total_orgs }} orgs</div>
   </div>
   <div class="sa-card">
     <div class="sa-card-label">Messages Today</div>
@@ -100,10 +100,10 @@
 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
   <!-- Plan Breakdown -->
   <div class="sa-table-wrap" style="padding:20px;">
-    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">Plan Distribution</h3>
+    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">Plan Distribution <span style="font-size:11px; color:var(--text-muted); font-weight:400;">({{ total_orgs }} orgs)</span></h3>
     <div style="display:flex; flex-direction:column; gap:10px;">
       {% for plan_name, count in plan_counts.items() %}
-      {% set pct = ((count / (total_users if total_users > 0 else 1)) * 100) | round(1) %}
+      {% set pct = ((count / (total_orgs if total_orgs > 0 else 1)) * 100) | round(1) %}
       <div style="display:flex; align-items:center; gap:12px;">
         <span style="font-size:12px; font-weight:600; color:var(--text); min-width:60px; text-transform:capitalize;">{{ plan_name }}</span>
         <div style="flex:1; height:8px; background:rgba(148,163,184,0.1); border-radius:4px; overflow:hidden;">

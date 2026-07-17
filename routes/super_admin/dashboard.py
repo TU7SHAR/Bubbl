@@ -80,7 +80,8 @@ def dashboard():
     active_subscriptions = sum(c for p, c in plan_counts.items() if p != 'free')
     mrr = sum(plan_counts.get(p, 0) * price for p, price in plan_price.items())
     arr = mrr * 12
-    conversion_rate = round((active_subscriptions / len(all_orgs)) * 100, 1) if all_orgs else 0
+    total_orgs = len(all_orgs)
+    conversion_rate = round((active_subscriptions / total_orgs) * 100, 1) if total_orgs else 0
 
     # Revenue: today / yesterday / this month / gross
     revenue_today = db.session.query(func.coalesce(func.sum(Payment.amount), 0)).filter(
@@ -209,7 +210,7 @@ def dashboard():
         new_users_period=new_users_period, new_users_today=new_users_today,
         # Revenue
         active_subscriptions=active_subscriptions, mrr=mrr, arr=arr,
-        conversion_rate=conversion_rate, plan_counts=plan_counts,
+        conversion_rate=conversion_rate, plan_counts=plan_counts, total_orgs=total_orgs,
         revenue_today=revenue_today, revenue_yesterday=revenue_yesterday,
         revenue_this_month=revenue_this_month, revenue_gross=revenue_gross,
         total_refunds=total_refunds, net_revenue=net_revenue,
