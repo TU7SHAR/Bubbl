@@ -226,10 +226,7 @@
 }
 
 #sprite-ask-container.chat-open {
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.3);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  display: none !important;
 }
 
 #sprite-ask-container.chat-open #chat-open-btn,
@@ -313,11 +310,9 @@
     right: 15px;
   }
 
-  /* Calculate exact position of sprite when chat is open on mobile */
+  /* Hide sprite completely when chat is open on mobile */
   #sprite-ask-container.chat-open {
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.3);
+    display: none !important;
   }
   }
 
