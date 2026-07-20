@@ -9,12 +9,7 @@
 {% set chat_display_name = active_bot_name if active_bot_name else 'Bubbl' %}
 
 <style>
-  /* 1. PILL BUTTON SYNC */
-  #chat-open-btn { 
-    border: 2px solid {{ theme_color }} !important; 
-  }
-
-  /* 2. THE GLASS WINDOW BASE */
+  /* 1. CHAT HEADER AVATAR COLOR */
   #chat-window-popup {
     display: flex;
     flex-direction: column;
@@ -157,9 +152,6 @@
     <!-- Clickable hit-area over the mascot — opens chat whether or not a bot
          is selected. Small + centered so it doesn't block page buttons. -->
     <button id="sprite-hit-area" onclick="toggleChat()" aria-label="Open chat"></button>
-    <button id="chat-open-btn" onclick="toggleChat()">
-      {% if active_bot_name %}Ask: {{ active_bot_name }}{% else %}Chat with Bubbl{% endif %}
-    </button>
   </div>
 
   <div id="chat-window-popup" class="hidden">
