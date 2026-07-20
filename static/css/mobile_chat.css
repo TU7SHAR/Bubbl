@@ -48,14 +48,6 @@
     border-radius: 50% !important;
   }
 
-  #chat-open-btn {
-    padding: 10px 18px;
-    font-size: 12px;
-    font-weight: 700;
-    border-radius: 24px;
-    pointer-events: auto !important;
-  }
-
   /* Hide sprite when chat is open */
   #sprite-ask-container.chat-open {
     display: none !important;

@@ -11,37 +11,8 @@
   pointer-events: none;
 }
 
-/* 1. THE PILL BUTTON (Under Sprite) */
-#chat-open-btn {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  color: #1a1a1a;
-  padding: 12px 28px;
-  font-size: 15px;
-  font-weight: 700;
-  border-radius: 50px;
-  cursor: pointer;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  will-change: transform;
-  pointer-events: auto;
-  position: relative;
-  z-index: 2;
-}
-
-#chat-open-btn:hover {
-  background: rgba(255, 255, 255, 0.6);
-  transform: translateY(-3px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-}
-
-#chat-open-btn:active {
-  transform: scale(0.95) !important;
-}
-
-#chat-window-popup {
+/* 1. SPRITE CONTAINER */
+#chat-widget-container {
   width: 380px;
   height: 580px;
   background: rgba(255, 255, 255, 0.35);
@@ -239,7 +210,6 @@
   display: flex !important;
 }
 
-#sprite-ask-container.chat-open #chat-open-btn,
 #sprite-ask-container.chat-open #sprite-hit-area {
   display: none;
 }
@@ -267,10 +237,6 @@
   pointer-events: none;
 }
 
-#chat-open-btn {
-  pointer-events: auto !important;
-}
-
 /* Clickable circle over the visible mascot — opens the chat.
    Small (120px) and centered on the mascot so it doesn't block page
    buttons elsewhere. This is the only clickable part of the sprite. */
@@ -291,7 +257,7 @@
 }
 
 /* Container is pointer-events:none on DESKTOP so it never blocks page buttons.
-   Only the pill button (#chat-open-btn) and hit-area are clickable.
+   Only the hit-area over the sprite is clickable.
    On mobile, mobile_chat.css overrides this to pointer-events:auto. */
 #sprite-ask-container {
   pointer-events: none;
