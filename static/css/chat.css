@@ -210,6 +210,10 @@
   flex-direction: column;
   align-items: center;
   overflow: visible;
+  transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1),
+              right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1),
+              transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1),
+              opacity 0.3s ease;
 }
 
 #bot-sprite {
@@ -238,6 +242,19 @@
 #sprite-ask-container.chat-open #chat-open-btn,
 #sprite-ask-container.chat-open #sprite-hit-area {
   display: none;
+}
+
+/* Medium desktops: slightly smaller sprite so it doesn't dominate */
+@media screen and (min-width: 769px) and (max-width: 1200px) {
+  #bot-sprite {
+    width: 220px;
+    height: 121px;
+    background-size: 88000px 121px;
+  }
+  #sprite-ask-container.chat-open {
+    bottom: 580px;
+    transform: scale(0.4);
+  }
 }
 
 /* =========================================
@@ -298,36 +315,13 @@
 }
 /* =========================================
    MOBILE RESPONSIVE TWEAKS (PHONES ONLY)
+   =========================================
+   NOTE: Primary mobile overrides live in mobile_chat.css (768px breakpoint).
+   This section only covers small refinements for very narrow screens (<600px)
+   that DON'T conflict with mobile_chat.css. Sprite positioning is handled
+   entirely by mobile_chat.css to avoid duplication.
    ========================================= */
 @media screen and (max-width: 600px) {
-  /* Bring it closer to the edges on small screens */
-  #chat-widget-container {
-    bottom: 15px;
-    right: 15px;
-  }
-
-  #chat-open-btn {
-    padding: 8px 14px;
-    font-size: 11.5px;
-  }
-
-  #sprite-ask-container {
-    bottom: 15px;
-    right: 15px;
-  }
-
-  /* Sprite above chat on mobile */
-  #sprite-ask-container.chat-open {
-    bottom: 420px;
-    right: 15px;
-    transform: scale(0.35);
-    transform-origin: bottom center;
-    pointer-events: none;
-    opacity: 1;
-    display: flex !important;
-  }
-  }
-
   /* Tighten up chat bubbles for mobile */
   .msg {
     max-width: 90%;

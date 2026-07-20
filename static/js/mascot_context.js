@@ -30,7 +30,9 @@ const MascotContext = {
     this.element = bubble;
 
     // Determine context and show initial message (after short delay)
-    setTimeout(() => this._showPageMessage(), 800);
+    // Longer delay on mobile to let the page settle
+    const delay = window.innerWidth <= 768 ? 1500 : 800;
+    setTimeout(() => this._showPageMessage(), delay);
   },
 
   // Show a message with optional auto-hide
@@ -42,9 +44,13 @@ const MascotContext = {
     this.element.classList.add("visible");
     this.currentMessage = text;
 
+    // Shorter display on mobile (users scroll faster)
+    const isMobile = window.innerWidth <= 768;
+    const effectiveDuration = duration ? (isMobile ? Math.min(duration, 5000) : duration) : null;
+
     clearTimeout(this.hideTimer);
-    if (duration) {
-      this.hideTimer = setTimeout(() => this.hide(), duration);
+    if (effectiveDuration) {
+      this.hideTimer = setTimeout(() => this.hide(), effectiveDuration);
     }
   },
 
@@ -239,9 +245,26 @@ const MascotContext = {
       opacity: 1;
       transform: translateY(0) scale(1);
     }
-    /* Hide on mobile — sprite is static there */
+    /* Mobile: reposition bubble above the smaller sprite, compact styling */
     @media (max-width: 768px) {
-      .mascot-msg-bubble { display: none; }
+      .mascot-msg-bubble {
+        bottom: calc(100% + 4px);
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%) translateY(6px) scale(0.95);
+        margin-bottom: 0;
+        font-size: 11px;
+        padding: 6px 12px;
+        max-width: 180px;
+        border-radius: 10px 10px 10px 4px;
+        text-align: center;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+      }
+      .mascot-msg-bubble.visible {
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+      /* Hide when chat is open on mobile (sprite is hidden too) */
+      .chat-open .mascot-msg-bubble { display: none; }
     }
   `;
   document.head.appendChild(style);
