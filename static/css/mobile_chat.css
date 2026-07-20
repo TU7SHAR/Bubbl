@@ -32,12 +32,23 @@
     align-items: flex-end;
   }
 
-  /* CRITICAL: Kill the invisible hit-area on mobile.
-     It was 120x120px and intercepted taps on buttons/links behind it.
-     Users tap the pill button instead. */
+  /* Resize the hit-area to match the smaller sprite (70x50px).
+     On desktop it's 120x120px which hijacked taps on mobile.
+     Now it's tight around the mascot — tappable but not intrusive. */
   #sprite-hit-area {
-    display: none !important;
-    pointer-events: none !important;
+    width: 70px;
+    height: 50px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: auto !important;
+    display: block !important;
+  }
+
+  /* Make the sprite image itself tappable on mobile too */
+  #bot-sprite {
+    pointer-events: auto !important;
+    cursor: pointer;
   }
 
   #chat-open-btn {
@@ -60,12 +71,20 @@
     bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    max-height: 100vh !important;
+    max-height: 100dvh !important; /* dvh respects mobile keyboard */
     margin: 0 !important;
     border-radius: 0 !important;
     z-index: 9999;
     display: flex;
     flex-direction: column;
+    pointer-events: auto !important;
+  }
+
+  /* When open: override any desktop transforms so it shows cleanly */
+  #chat-window-popup:not(.hidden) {
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   /* === HEADER: Compact and touch-friendly === */
@@ -129,11 +148,12 @@
     height: 36px;
   }
 
-  /* === HIDDEN STATE: Slide down === */
+  /* === HIDDEN STATE: Slide down off-screen === */
   #chat-window-popup.hidden {
     transform: translateY(100%) !important;
-    opacity: 0;
-    pointer-events: none;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   /* === FEEDBACK OVERLAY === */
@@ -146,13 +166,35 @@
   }
 
   /* === LEAD CAPTURE FORM === */
-  .lead-form input {
+  .lead-form input,
+  .lead-input {
     font-size: 16px; /* Prevent iOS zoom */
-    padding: 10px 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .lead-submit-btn {
-    padding: 12px;
-    font-size: 14px;
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  /* Gatekeeper overlay: fills the chat area properly */
+  .lead-overlay-container {
+    padding: 24px 20px;
+    border-radius: 0 !important;
+  }
+
+  .lead-form-card {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  /* In-chat form: wider on mobile */
+  .in-chat-form-container {
+    max-width: 95%;
+    padding: 14px;
   }
 }
