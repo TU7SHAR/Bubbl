@@ -11,8 +11,8 @@
   pointer-events: none;
 }
 
-/* 1. SPRITE CONTAINER */
-#chat-widget-container {
+/* 2. THE CHAT POPUP WINDOW (glass box) */
+#chat-window-popup {
   width: 380px;
   height: 580px;
   background: rgba(255, 255, 255, 0.35);
@@ -24,7 +24,6 @@
   flex-direction: column;
   margin-bottom: 20px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-  transform: rotate(0deg) scale(1) translateY(0) !important;
   transition: opacity 0.3s ease;
   pointer-events: auto;
 }
