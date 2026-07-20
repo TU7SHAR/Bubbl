@@ -16,13 +16,13 @@
      blank; a normal-sized animated WebP plays natively on iOS 14+/Android.
      sprite.js skips its JS animation on mobile so it doesn't interfere. */
   #bot-sprite {
-    width: 50px !important;
-    height: 50px !important;
+    width: 100px !important;
+    height: 100px !important;
     background-image: url("/static/images/sprite-mobile.webp") !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
     background-position: center center !important;
-    margin-bottom: 0 !important;
+    margin-bottom: 4px !important;
     pointer-events: auto !important;
     cursor: pointer;
   }
@@ -31,16 +31,16 @@
   #sprite-ask-container {
     bottom: 16px !important;
     right: 16px !important;
-    align-items: flex-end !important;
+    align-items: center !important;
     pointer-events: auto !important;
     z-index: 1001 !important;
   }
 
-  /* Shrink hit-area to match the small sprite exactly */
+  /* Shrink hit-area to cover the sprite — circle tap target */
   #sprite-hit-area {
-    width: 50px !important;
-    height: 50px !important;
-    bottom: 0 !important;
+    width: 100px !important;
+    height: 100px !important;
+    bottom: 4px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     pointer-events: auto !important;
@@ -49,9 +49,10 @@
   }
 
   #chat-open-btn {
-    padding: 6px 12px;
-    font-size: 10px;
-    border-radius: 20px;
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 24px;
     pointer-events: auto !important;
   }
 
