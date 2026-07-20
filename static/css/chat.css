@@ -261,8 +261,10 @@
    CHAT WIDGET INVISIBLE SHIELD FIX
    ========================================= */
 
+/* Desktop: container is transparent to clicks (only children are clickable).
+   Mobile: mobile_chat.css overrides this to pointer-events:auto. */
 #chat-widget-container {
-  pointer-events: none !important;
+  pointer-events: none;
 }
 
 #chat-open-btn {
@@ -288,16 +290,17 @@
   z-index: 3;
 }
 
-/* Container is pointer-events:none so it never blocks page buttons.
-   Only the pill button (#chat-open-btn) is clickable. The sprite is
-   purely decorative — clicks pass through its transparent padding. */
+/* Container is pointer-events:none on DESKTOP so it never blocks page buttons.
+   Only the pill button (#chat-open-btn) and hit-area are clickable.
+   On mobile, mobile_chat.css overrides this to pointer-events:auto. */
 #sprite-ask-container {
-  pointer-events: none !important;
+  pointer-events: none;
 }
 
-/* Sprite is decorative — clicks pass through to page buttons behind it */
+/* Sprite is decorative on desktop — clicks pass through to page buttons behind it.
+   On mobile, mobile_chat.css enables pointer-events for tapping. */
 #bot-sprite {
-  pointer-events: none !important;
+  pointer-events: none;
 }
 
 #chat-window-popup {
