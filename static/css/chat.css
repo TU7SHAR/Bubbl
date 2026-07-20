@@ -279,7 +279,12 @@
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
-  transform: scale(0.85) translateY(20px) rotate(2deg) !important;
+  transform: scale(0.85) translateY(20px) !important;
+}
+
+/* When open, the popup is always perfectly upright — no rotation. */
+#chat-window-popup:not(.hidden) {
+  transform: none !important;
 }
 /* =========================================
    MOBILE RESPONSIVE TWEAKS (PHONES ONLY)
