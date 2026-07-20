@@ -18,6 +18,11 @@ backlog = 2048
 #   - 2GB VPS  -> 3 workers × 12 threads = 36 slots
 #   - 4GB VPS  -> 4 workers × 12 threads = 48 slots
 # Override per-instance with WEB_CONCURRENCY / GUNICORN_THREADS env vars.
+#
+# WEBSOCKET SUPPORT:
+# Flask-SocketIO with async_mode='threading' works with gthread workers.
+# WebSocket connections are long-lived but lightweight (no CPU during idle).
+# Each WS connection holds one thread slot while active.
 workers = int(os.environ.get('WEB_CONCURRENCY', 2))
 threads = int(os.environ.get('GUNICORN_THREADS', 12))
 worker_class = "gthread"
