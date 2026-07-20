@@ -6,9 +6,13 @@
 
   /* === SPRITE + PILL (corner widget) === */
   #chat-widget-container {
-    bottom: 10px;
-    right: 10px;
-    pointer-events: auto !important; /* Override desktop pointer-events:none */
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 16px !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: 1000 !important;
+    pointer-events: auto !important;
   }
 
   /* On mobile, use an ANIMATED WebP (self-playing) instead of the 80000px
@@ -16,8 +20,8 @@
      blank; a normal-sized animated WebP plays natively on iOS 14+/Android.
      sprite.js skips its JS animation on mobile so it doesn't interfere. */
   #bot-sprite {
-    width: 100px !important;
-    height: 100px !important;
+    width: 80px !important;
+    height: 80px !important;
     background-image: url("/static/images/sprite-mobile.webp") !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
@@ -27,10 +31,13 @@
     cursor: pointer;
   }
 
-  /* The container MUST accept pointer events on mobile so taps reach children */
+  /* The container MUST be fixed to viewport and accept taps */
   #sprite-ask-container {
-    bottom: 16px !important;
+    position: fixed !important;
+    bottom: 20px !important;
     right: 16px !important;
+    left: auto !important;
+    top: auto !important;
     align-items: center !important;
     pointer-events: auto !important;
     z-index: 1001 !important;
@@ -38,8 +45,8 @@
 
   /* Shrink hit-area to cover the sprite — circle tap target */
   #sprite-hit-area {
-    width: 100px !important;
-    height: 100px !important;
+    width: 80px !important;
+    height: 80px !important;
     bottom: 4px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
