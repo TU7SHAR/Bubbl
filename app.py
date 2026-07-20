@@ -1,5 +1,6 @@
 import os
 from flask import Flask, request
+from flask_socketio import SocketIO
 from models.models import db
 from config import Config
 from routes.admin import admin_bp
@@ -17,6 +18,19 @@ app = Flask(__name__)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True  # Required when SameSite is 'None'
 app.config.from_object(Config)
+
+# --- WEBSOCKET: Real-time chat streaming via Flask-SocketIO ---
+# Uses Redis as message queue so WebSocket events work across multiple gunicorn workers.
+# Falls back to in-memory if Redis is unavailable (single-worker dev mode).
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",  # Embed widgets run on any domain
+    message_queue=REDIS_URL,
+    async_mode='threading',    # Compatible with gunicorn gthread workers
+    logger=False,
+    engineio_logger=False,
+)
 
 # --- CORS: Restrict to your domains only ---
 ALLOWED_ORIGINS = [
@@ -59,6 +73,10 @@ app.register_blueprint(views_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(payments_bp)
 app.register_blueprint(super_admin_bp)
+
+# --- WEBSOCKET EVENT HANDLERS ---
+from routes.socket_chat import register_socket_events
+register_socket_events(socketio)
 
 
 def _run_auto_migrations():
@@ -191,4 +209,4 @@ def csrf_protect():
     return jsonify({"error": "Request blocked: invalid origin."}), 403
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)

@@ -74,3 +74,8 @@ yarl==1.23.0
 celery==5.4.0
 gevent==24.11.1
 redis==5.2.1
+
+flask-socketio==5.5.1
+python-socketio==5.13.0
+python-engineio==4.12.0
+simple-websocket==1.1.0

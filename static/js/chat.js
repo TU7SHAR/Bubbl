@@ -410,6 +410,134 @@ function setInputState(disabled) {
   }
 }
 
+// ═══════════════════════════════════════════
+// WEBSOCKET CONNECTION — Real-time streaming
+// ═══════════════════════════════════════════
+// Connects via Socket.IO for streaming AI responses chunk-by-chunk.
+// Falls back to HTTP POST (/api/chat) if WebSocket is unavailable.
+
+let socket = null;
+let useWebSocket = false;
+let streamingBotDiv = null; // Reference to the bot message being streamed
+
+function initWebSocket() {
+  // Only init if socket.io client is loaded (base.html includes it)
+  if (typeof io === 'undefined') {
+    console.log("[chat] socket.io not loaded, using HTTP fallback");
+    useWebSocket = false;
+    return;
+  }
+
+  try {
+    socket = io({
+      transports: ['websocket', 'polling'],  // Prefer WebSocket, fall back to polling
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+    });
+
+    socket.on('connect', function() {
+      console.log("[chat] WebSocket connected:", socket.id);
+      useWebSocket = true;
+    });
+
+    socket.on('disconnect', function() {
+      console.log("[chat] WebSocket disconnected");
+      useWebSocket = false;
+    });
+
+    socket.on('connect_error', function(err) {
+      console.log("[chat] WebSocket connection failed, using HTTP fallback");
+      useWebSocket = false;
+    });
+
+    // --- STREAMING: Receive chunks as the AI generates them ---
+    socket.on('chat_chunk', function(data) {
+      if (!streamingBotDiv) {
+        // First chunk — remove typing indicator and create the bot message
+        removeTypingIndicator();
+        const display = document.getElementById("chat-display");
+        streamingBotDiv = document.createElement("div");
+        streamingBotDiv.className = "msg bot";
+        streamingBotDiv.innerText = "";
+        display.appendChild(streamingBotDiv);
+
+        if (window.SpriteBot) SpriteBot.setState("talking");
+      }
+      // Append chunk text
+      streamingBotDiv.innerText += data.text;
+      const display = document.getElementById("chat-display");
+      display.scrollTop = display.scrollHeight;
+    });
+
+    // --- COMPLETE: Final event after all chunks are sent ---
+    socket.on('chat_complete', function(data) {
+      const fullResponse = data.response || "";
+      const leadId = data.lead_id;
+
+      // Handle lead capture
+      if (leadId) {
+        window.BUBBL_LEAD_ID = leadId;
+        if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackLeadCaptured(window.EMBEDDED_BOT_ID || 'unknown');
+      }
+
+      // If streaming div exists, finalize it with parsed buttons
+      if (streamingBotDiv) {
+        // Remove the streaming div (we'll re-render with button parsing)
+        streamingBotDiv.remove();
+        streamingBotDiv = null;
+      } else {
+        removeTypingIndicator();
+      }
+
+      // Process the final response (buttons, [SHOW_FORM], etc.)
+      let replyText = fullResponse;
+
+      if (replyText.includes("[SHOW_FORM]") && !leadCaptured) {
+        replyText = replyText.replace("[SHOW_FORM]", "").trim();
+        if (replyText) {
+          appendBotMessage(replyText);
+          chatHistory.push({ role: "bot", text: replyText });
+        }
+        renderInChatForm();
+        saveChatState();
+      } else {
+        replyText = replyText.replace("[SHOW_FORM]", "").trim();
+        appendBotMessage(replyText);
+        chatHistory.push({ role: "bot", text: replyText });
+        setInputState(false);
+        saveChatState();
+      }
+
+      if (window.SpriteBot) {
+        SpriteBot.setState("talking");
+        setTimeout(() => {
+          if (SpriteBot.currentState === "talking") SpriteBot.setState("idle");
+        }, 8000);
+      }
+    });
+
+    // --- ERROR ---
+    socket.on('chat_error', function(data) {
+      removeTypingIndicator();
+      streamingBotDiv = null;
+      if (window.SpriteBot) SpriteBot.setState("idle");
+      appendBotMessage("SYSTEM ERROR: " + (data.error || "Unknown error"));
+      setInputState(false);
+    });
+
+  } catch (e) {
+    console.log("[chat] WebSocket init failed:", e);
+    useWebSocket = false;
+  }
+}
+
+// Initialize WebSocket on page load
+document.addEventListener("DOMContentLoaded", function() {
+  initWebSocket();
+});
+
+
 async function sendMessage() {
   const input = document.getElementById("user-input");
   const rawMsg = input.value.trim();
@@ -430,9 +558,21 @@ async function sendMessage() {
   if (window.SpriteBot) SpriteBot.setState("thinking");
   showTypingIndicator();
 
-  const payload = { message: rawMsg, history: chatHistory };
+  const payload = {
+    message: rawMsg,
+    history: chatHistory,
+    session_id: window._chatSessionId || null,
+  };
   if (window.EMBEDDED_BOT_ID) payload.bot_id = window.EMBEDDED_BOT_ID;
 
+  // --- USE WEBSOCKET (streaming) if available ---
+  if (useWebSocket && socket && socket.connected) {
+    streamingBotDiv = null; // Reset streaming state
+    socket.emit('chat_message', payload);
+    return; // Response comes via chat_chunk + chat_complete events
+  }
+
+  // --- FALLBACK: HTTP POST (for embed widget or when WS is down) ---
   try {
     const response = await fetch("/api/chat", {
       method: "POST",
@@ -444,7 +584,6 @@ async function sendMessage() {
 
     if (data.lead_id) {
       window.BUBBL_LEAD_ID = data.lead_id;
-      // --- FUNNEL EVENT: Lead Captured via Conversation ---
       if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackLeadCaptured(window.EMBEDDED_BOT_ID || 'unknown');
     }
 
