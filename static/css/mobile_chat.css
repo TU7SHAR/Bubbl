@@ -8,6 +8,7 @@
   #chat-widget-container {
     bottom: 10px;
     right: 10px;
+    pointer-events: auto !important; /* Override desktop pointer-events:none */
   }
 
   /* On mobile, use an ANIMATED WebP (self-playing) instead of the 80000px
@@ -15,46 +16,43 @@
      blank; a normal-sized animated WebP plays natively on iOS 14+/Android.
      sprite.js skips its JS animation on mobile so it doesn't interfere. */
   #bot-sprite {
-    width: 70px;
-    height: 38px;
+    width: 50px !important;
+    height: 50px !important;
     background-image: url("/static/images/sprite-mobile.webp") !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
-    background-position: center bottom !important;
-    margin-bottom: 0;
-  }
-
-  /* Tuck the whole widget into the bottom-right corner, right-aligned.
-     Keep it small and out of the way of page content. */
-  #sprite-ask-container {
-    bottom: 12px;
-    right: 12px;
-    align-items: flex-end;
-  }
-
-  /* Resize the hit-area to match the smaller sprite (70x50px).
-     On desktop it's 120x120px which hijacked taps on mobile.
-     Now it's tight around the mascot — tappable but not intrusive. */
-  #sprite-hit-area {
-    width: 70px;
-    height: 50px;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    pointer-events: auto !important;
-    display: block !important;
-  }
-
-  /* Make the sprite image itself tappable on mobile too */
-  #bot-sprite {
+    background-position: center center !important;
+    margin-bottom: 0 !important;
     pointer-events: auto !important;
     cursor: pointer;
+  }
+
+  /* The container MUST accept pointer events on mobile so taps reach children */
+  #sprite-ask-container {
+    bottom: 16px !important;
+    right: 16px !important;
+    align-items: flex-end !important;
+    pointer-events: auto !important;
+    z-index: 1001 !important;
+  }
+
+  /* Shrink hit-area to match the small sprite exactly */
+  #sprite-hit-area {
+    width: 50px !important;
+    height: 50px !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    pointer-events: auto !important;
+    display: block !important;
+    border-radius: 50% !important;
   }
 
   #chat-open-btn {
     padding: 6px 12px;
     font-size: 10px;
     border-radius: 20px;
+    pointer-events: auto !important;
   }
 
   /* Hide sprite when chat is open */
@@ -71,16 +69,16 @@
     bottom: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    max-height: 100dvh !important; /* dvh respects mobile keyboard */
+    max-height: 100dvh !important;
     margin: 0 !important;
     border-radius: 0 !important;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
+    z-index: 9999 !important;
+    display: flex !important;
+    flex-direction: column !important;
     pointer-events: auto !important;
   }
 
-  /* When open: override any desktop transforms so it shows cleanly */
+  /* When open: override ALL desktop transforms/opacity so it shows cleanly */
   #chat-window-popup:not(.hidden) {
     transform: none !important;
     opacity: 1 !important;
@@ -100,9 +98,9 @@
   }
 
   .chat-close-x {
-    width: 34px;
-    height: 34px;
-    font-size: 16px;
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
   }
 
   /* === MESSAGES: Scrollable, takes remaining space === */
@@ -126,7 +124,7 @@
   .chat-input-area {
     padding: 10px 12px;
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-top: 1px solid rgba(0, 0, 0, 0.06);
