@@ -11,6 +11,59 @@ import uuid
 api_bp = Blueprint('api_bp', __name__)
 
 
+def _build_user_context():
+    """
+    Build a context string about the current logged-in user.
+    Injected into the AI prompt so the bot can answer personalized questions
+    like "what plan am I on?" or "how many leads do I have?".
+    
+    Returns empty string for anonymous/embed users (no session).
+    """
+    user_id = session.get('user_id')
+    if not user_id or user_id == -1:  # -1 = super admin
+        return ""
+    
+    try:
+        from models.models import User, Organization, Bot as BotModel
+        
+        user = User.query.get(user_id)
+        org = Organization.query.get(session.get('org_id'))
+        
+        if not user or not org:
+            return ""
+        
+        # Query real-time stats
+        bot_count = BotModel.query.filter_by(org_id=org.id).count()
+        lead_count = Lead.query.join(BotModel).filter(BotModel.org_id == org.id).count()
+        messages_used = org.messages_used or 0
+        
+        # Plan limits
+        from utils.plan_limits import PLAN_LIMITS
+        limits = PLAN_LIMITS.get(org.plan or 'free', PLAN_LIMITS['free'])
+        messages_limit = limits.get('messages', 200)
+        bots_limit = limits.get('bots', 1)
+        
+        context = (
+            "\n--- CURRENT USER CONTEXT (use this for personalized questions) ---\n"
+            f"- Logged in: Yes\n"
+            f"- Name: {user.name}\n"
+            f"- Email: {user.email}\n"
+            f"- Organization: {org.name}\n"
+            f"- Plan: {org.plan or 'free'}\n"
+            f"- Messages used: {messages_used}/{messages_limit} this month\n"
+            f"- Bots created: {bot_count}/{bots_limit}\n"
+            f"- Leads captured: {lead_count}\n"
+            f"- Account verified: {user.is_verified}\n"
+            "- If the user asks about their account, plan, usage, or personal info, use THIS data.\n"
+            "- Do NOT share this info unless the user specifically asks.\n"
+            "--- END USER CONTEXT ---\n\n"
+        )
+        return context
+    except Exception as e:
+        logging.warning(f"[context_injection] Failed to build user context: {e}")
+        return ""
+
+
 def _save_chat_message(bot_id, session_id, role, content, lead_id=None, tokens_used=0):
     """Persist a single chat message to the database (fire-and-forget)."""
     try:
@@ -145,7 +198,9 @@ def chat():
 
     try:
         if not bot_id:
-            reply = get_response_from_gemini(user_query=user_message, history=history)
+            # --- CONTEXT INJECTION for public bot ---
+            user_context = _build_user_context()
+            reply = get_response_from_gemini(user_query=user_message, history=history, custom_prompt=user_context if user_context else None)
             # Save public bot conversation
             _save_chat_message(bot_id=None, session_id=chat_session_id, role='user', content=user_message)
             _save_chat_message(bot_id=None, session_id=chat_session_id, role='bot', content=reply)
@@ -165,6 +220,12 @@ def chat():
                 return jsonify({"response": "I'm currently unavailable as this bot's message limit has been reached for this month. Please try again later or contact the website owner for assistance.", "lead_id": None})
 
         ai_prompt = bot_cfg["system_prompt"] or "You are a helpful assistant."
+        
+        # --- CONTEXT INJECTION: Add user session data so bot can answer personal questions ---
+        user_context = _build_user_context()
+        if user_context:
+            ai_prompt = user_context + ai_prompt
+        
         timing = bot_cfg["lead_capture_timing"]
         custom_fields = bot_cfg["custom_form_fields"] or []
         # Ensure it's a JSON string for the prompt builder (legacy compat)

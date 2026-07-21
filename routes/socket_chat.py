@@ -74,6 +74,12 @@ def register_socket_events(socketio):
                     target_store_id = public_store_id
                 else:
                     system_instruction = BASE_GUARDRAILS + _build_public_bot_prompt("")
+                
+                # Context injection for logged-in users on platform bot
+                from routes.embed.api import _build_user_context
+                user_context = _build_user_context()
+                if user_context:
+                    system_instruction += user_context
             else:
                 # Specific bot
                 bot_cfg = _get_bot_config_for_ws(bot_id)
@@ -95,6 +101,13 @@ def register_socket_events(socketio):
 
                 target_store_id = bot_cfg.get("store_id")
                 ai_prompt = bot_cfg.get("system_prompt") or "You are a helpful assistant."
+                
+                # Context injection for logged-in users
+                from routes.embed.api import _build_user_context
+                user_context = _build_user_context()
+                if user_context:
+                    ai_prompt = user_context + ai_prompt
+                
                 timing = bot_cfg.get("lead_capture_timing")
                 custom_fields = bot_cfg.get("custom_form_fields") or []
 
