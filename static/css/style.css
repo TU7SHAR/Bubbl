@@ -545,3 +545,145 @@ h3,
     padding: 0 20px;
   }
 }
+
+
+/* =========================================
+   LEGAL PAGES (Privacy, Terms, Refunds)
+   ========================================= */
+.legal-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.legal-page .prose {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary, #5c4a30);
+}
+
+.legal-page .prose h1 {
+  font-size: 36px;
+  color: var(--text-primary, #1a1008);
+  margin-bottom: 8px;
+}
+
+.legal-page .prose h2 {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary, #1a1008);
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.legal-page .prose h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #1a1008);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.legal-page .prose p {
+  margin-bottom: 1rem;
+}
+
+.legal-page .prose ul,
+.legal-page .prose ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.legal-page .prose li {
+  margin-bottom: 0.4rem;
+}
+
+.legal-page .prose a {
+  color: var(--orange, #E8722A);
+  text-decoration: underline;
+}
+
+.legal-page .legal-updated {
+  font-size: 13px;
+  color: var(--text-muted, #8a7558);
+  margin-bottom: 0.5rem;
+}
+
+/* Data tables in privacy policy */
+.legal-page .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: 13px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.legal-page .data-table th {
+  background: #f9fafb;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--text-primary, #1a1008);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.legal-page .data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  vertical-align: top;
+}
+
+.legal-page .data-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .legal-page {
+    padding: 24px 16px 60px;
+  }
+
+  .legal-page .prose h1 {
+    font-size: 26px;
+  }
+
+  .legal-page .prose h2 {
+    font-size: 18px;
+  }
+
+  .legal-page .prose {
+    font-size: 14px;
+  }
+
+  /* Make tables scroll horizontally on mobile */
+  .legal-page .data-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .legal-page .data-table th,
+  .legal-page .data-table td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .legal-page .prose h1 {
+    font-size: 22px;
+  }
+
+  .legal-page .prose h2 {
+    font-size: 17px;
+  }
+
+  .legal-page .prose {
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+}
