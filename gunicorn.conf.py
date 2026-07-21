@@ -12,19 +12,17 @@ bind = f"0.0.0.0:{os.environ.get('PORT', '5000')}"
 backlog = 2048
 
 # --- WORKERS ---
-# Optimized for 1GB VPS with Celery handling background tasks.
-# All gunicorn slots are now dedicated to serving web requests (chat, pages).
-#   - 1GB VPS  -> 2 workers × 12 threads = 24 concurrent slots
-#   - 2GB VPS  -> 3 workers × 12 threads = 36 slots
-#   - 4GB VPS  -> 4 workers × 12 threads = 48 slots
-# Override per-instance with WEB_CONCURRENCY / GUNICORN_THREADS env vars.
+# Single worker with 24 threads for WebSocket (Socket.IO) compatibility.
+# Socket.IO polling sessions are per-process — multiple workers cause 400 errors
+# because the session created on worker 1 isn't found by worker 2.
 #
-# WEBSOCKET SUPPORT:
-# Flask-SocketIO with async_mode='threading' works with gthread workers.
-# WebSocket connections are long-lived but lightweight (no CPU during idle).
-# Each WS connection holds one thread slot while active.
-workers = int(os.environ.get('WEB_CONCURRENCY', 2))
-threads = int(os.environ.get('GUNICORN_THREADS', 12))
+# 1 worker × 24 threads = 24 concurrent slots (same capacity as 2×12).
+# To scale beyond 24 concurrent users: switch to gevent worker + Redis session store.
+#
+# Override with env vars if needed:
+#   WEB_CONCURRENCY=1 GUNICORN_THREADS=24
+workers = int(os.environ.get('WEB_CONCURRENCY', 1))
+threads = int(os.environ.get('GUNICORN_THREADS', 24))
 worker_class = "gthread"
 
 # --- TIMEOUTS ---
