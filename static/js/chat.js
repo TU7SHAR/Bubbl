@@ -421,6 +421,12 @@ let useWebSocket = false;
 let streamingBotDiv = null; // Reference to the bot message being streamed
 
 function initWebSocket() {
+  // DISABLED: WebSocket streaming requires gevent worker (not gthread) + Flask-SocketIO
+  // compatibility fix for Flask 3.1. HTTP fallback works perfectly for now.
+  // To re-enable: remove the early return below and switch gunicorn to gevent worker.
+  useWebSocket = false;
+  return;
+
   // Only init if socket.io client is loaded (base.html includes it)
   if (typeof io === 'undefined') {
     console.log("[chat] socket.io not loaded, using HTTP fallback");
