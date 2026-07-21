@@ -38,9 +38,14 @@
         background-position: center bottom !important;
         transform: none !important;
         margin-bottom: 2px !important;
+        pointer-events: auto !important;
+        cursor: pointer !important;
       }
-      /* Hide the invisible hit-area (pill is the clicker), and hide the
-         sprite when the chat is open so it doesn't float in the tall iframe. */
+      /* The sprite container must also accept clicks in the embed */
+      #sprite-ask-container {
+        pointer-events: auto !important;
+      }
+      /* Hide the invisible hit-area (sprite itself is the clicker now) */
       #sprite-hit-area {
         display: none !important;
       }
