@@ -53,7 +53,7 @@ def dashboard():
     platform_org_id = platform_org.id if platform_org else -1
     total_users = User.query.filter(User.org_id != platform_org_id).count()
     total_bots = Bot.query.filter(Bot.bot_type != 'platform').count()
-    total_docs = Document.query.count()
+    total_docs = Document.query.join(Bot).filter(Bot.bot_type != 'platform').count()
     total_leads = Lead.query.filter(Lead.captured_at >= start_date, Lead.captured_at <= end_date).count()
     total_leads_all = Lead.query.count()
     leads_today = Lead.query.filter(Lead.captured_at >= today_start).count()
@@ -63,9 +63,9 @@ def dashboard():
     messages_today = ChatMessage.query.filter(ChatMessage.created_at >= today_start).count()
     messages_yesterday = ChatMessage.query.filter(ChatMessage.created_at >= yesterday_start, ChatMessage.created_at < today_start).count()
 
-    # Users registered in period
-    new_users_period = User.query.filter(User.created_at >= start_date, User.created_at <= end_date).count()
-    new_users_today = User.query.filter(User.created_at >= today_start).count()
+    # Users registered in period (exclude platform org)
+    new_users_period = User.query.filter(User.created_at >= start_date, User.created_at <= end_date, User.org_id != platform_org_id).count()
+    new_users_today = User.query.filter(User.created_at >= today_start, User.org_id != platform_org_id).count()
 
     # --- Revenue metrics ---
     # Exclude the internal "Bubbl Platform" org from all revenue/plan metrics
