@@ -120,5 +120,10 @@
 document.getElementById('pwT').addEventListener('click', function() { var i = document.getElementById('pw'); i.type = i.type === 'password' ? 'text' : 'password'; this.textContent = i.type === 'password' ? 'Show' : 'Hide'; });
 (function() { var u=['utm_source','utm_medium','utm_campaign','utm_term','utm_content'],p=new URLSearchParams(window.location.search),h=false; u.forEach(function(k){if(!p.has(k)){var s=localStorage.getItem(k);if(s){p.set(k,s);h=true;}}}); if(h&&!window.location.search.includes('utm_'))window.history.replaceState({},'',window.location.pathname+'?'+p.toString()); })();
 </script>
+
+<!-- Sprite Mascot -->
+<div style="position:fixed; bottom:20px; right:20px; z-index:100; pointer-events:none;">
+  <img src="/static/images/sprite-mobile.webp" alt="Bubbl mascot" style="width:80px; height:80px; object-fit:contain; opacity:0.9;">
+</div>
 </body>
 </html>
