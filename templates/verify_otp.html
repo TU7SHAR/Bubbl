@@ -1,40 +1,108 @@
-{% extends 'base.html' %} 
-{% block title %}Verify Email | {{ config.COMPANY_NAME_FIRST }}.{{ config.COMPANY_LAST_NAME }}{% endblock %} 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Verify Email | bubbl.ooo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Outfit', sans-serif; background: #fffbf7;
+      min-height: 100vh; display: flex; align-items: center;
+      justify-content: center; padding: 20px; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 10% 20%, rgba(232,114,42,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 85% 80%, rgba(245,200,66,0.08) 0%, transparent 65%);
+      z-index: 0;
+    }
+    .auth-card {
+      position: relative; z-index: 1; width: 100%; max-width: 420px;
+      background: #fff; border-radius: 24px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+      padding: 44px 40px; border: 1px solid rgba(0,0,0,0.04);
+      animation: cardIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
 
-{% block meta_description %}
-<meta name="robots" content="noindex, nofollow" />
-{% endblock %}
+    @keyframes cardIn { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .auth-logo { text-align: center; margin-bottom: 28px; }
+    .auth-logo a { font-family: 'Bricolage Grotesque', serif; font-size: 26px; font-weight: 800; color: #1a1008; text-decoration: none; }
+    .auth-logo a span { color: #E8722A; }
+    .auth-illustration { display: flex; justify-content: center; margin-bottom: 24px; }
+    .auth-illustration svg { width: 60px; height: 60px; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    .auth-card h2 { font-family: 'Bricolage Grotesque', serif; font-size: 24px; font-weight: 800; color: #1a1008; text-align: center; margin-bottom: 8px; }
+    .auth-card .sub { font-size: 14px; color: #8a7a6a; text-align: center; margin-bottom: 28px; line-height: 1.5; }
+    .auth-card .sub strong { color: #E8722A; }
+    .fg { margin-bottom: 18px; }
+    .fg label { display: block; font-size: 13px; font-weight: 600; color: #4a3d30; margin-bottom: 6px; }
+    .fg input {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 1.5px solid #E8E2DC; background: #fdfaf6;
+      font-size: 14px; font-family: 'Outfit', sans-serif; color: #1a1008;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .fg input:focus { outline: none; border-color: #E8722A; box-shadow: 0 0 0 3px rgba(232,114,42,0.08); background: #fff; }
+    .otp-input { text-align: center; font-size: 24px; letter-spacing: 10px; font-weight: 800; padding: 16px 14px; }
+    .otp-input::placeholder { color: #ddd; letter-spacing: 6px; }
+    .auth-btn {
+      width: 100%; padding: 13px; font-size: 15px; font-weight: 700;
+      background: #E8722A; color: #fff; border: none; border-radius: 10px;
+      cursor: pointer; margin-top: 8px; transition: all 0.2s;
+    }
+    .auth-btn:hover { background: #d4611f; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,114,42,0.25); }
+    .resend-link { text-align: center; margin-top: 24px; font-size: 13px; color: #8a7a6a; }
+    .resend-link a { color: #E8722A; text-decoration: none; font-weight: 600; }
+    .resend-link a:hover { text-decoration: underline; }
+    .flash-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; font-weight: 500; }
+    .flash-success { background: rgba(16,185,129,0.1); color: #059669; }
+    .flash-error { background: rgba(239,68,68,0.08); color: #dc2626; }
+    .flash-info { background: rgba(59,130,246,0.08); color: #2563eb; }
+    @media (max-width: 480px) { .auth-card { padding: 32px 24px; border-radius: 20px; } }
+  </style>
+</head>
+<body>
+<div class="auth-card">
+  <div class="auth-logo"><a href="https://bubbl.ooo">bubbl<span>.ooo</span></a></div>
+  <div class="auth-illustration">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="18" width="40" height="30" rx="4" fill="#FFF0E6" stroke="#E8722A" stroke-width="2"/>
+      <path d="M10 22L30 36L50 22" stroke="#E8722A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="30" cy="10" r="4" fill="#FFF0E6" stroke="#E8722A" stroke-width="2">
+        <animate attributeName="r" values="4;5;4" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <text x="28" y="13" font-size="6" fill="#E8722A" font-weight="700">
+        <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>!
+      </text>
+      <circle cx="48" cy="14" r="2" fill="#F5C842" opacity="0.7"><animate attributeName="r" values="2;3;2" dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx="12" cy="12" r="1.5" fill="#E8722A" opacity="0.3"><animate attributeName="r" values="1.5;2.5;1.5" dur="4s" repeatCount="indefinite"/></circle>
+    </svg>
+  </div>
+  <h2>Check your email</h2>
+  <p class="sub">We sent a 6-digit code to <strong>{{ email }}</strong></p>
 
-{% block content %}
-<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
-    <div class="lg" style="width: 100%; max-width: 440px; border-radius: 24px;">
-        <div class="lg-fx"></div><div class="lg-tint"></div><div class="lg-shine"></div>
-        <div class="lg-c" style="padding: 3rem 2.5rem; text-align: center;">
-            <h2 class="bricolage" style="font-size: 28px; margin-bottom: 10px; color: var(--text-primary);">Check your email</h2>
-            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 2rem;">We sent a 6-digit verification code to <strong style="color: var(--orange);">{{ email }}</strong>.</p>
-            
-            {% with messages = get_flashed_messages(with_categories=true) %} 
-              {% if messages %} 
-                <div style="margin-bottom: 20px;">
-                  {% for category, message in messages %}
-                    <div class="flash-msg flash-{{ category }}">{{ message }}</div>
-                  {% endfor %} 
-                </div>
-              {% endif %} 
-            {% endwith %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}
+      <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+    {% endfor %}{% endif %}
+  {% endwith %}
 
-            <form method="POST" action="{{ url_for('auth.verify_otp') }}">
-                <div style="text-align: left; margin-bottom: 24px;">
-                    <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px;">Verification Code</label>
-                    <input type="text" name="otp" required maxlength="6" pattern="\d{6}" placeholder="••••••" class="dash-input" style="width: 100%; padding: 16px; border-radius: 12px; text-align: center; font-size: 24px; letter-spacing: 12px; font-weight: 800;">
-                </div>
-                <button type="submit" class="btn btn-solid" style="width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; justify-content: center;">Verify Account</button>
-            </form>
-            
-            <div style="margin-top: 1.5rem; font-size: 13px; color: var(--text-muted);">
-                Didn't get it? <a href="{{ url_for('auth.resend_otp') }}" style="color: var(--orange); text-decoration: none; font-weight: 600;">Resend Email</a>
-            </div>
-        </div>
+  <form method="POST" action="{{ url_for('auth.verify_otp') }}">
+    <div class="fg">
+      <label>Verification code</label>
+      <input type="text" name="otp" required maxlength="6" pattern="\d{6}" placeholder="------" class="otp-input" autocomplete="one-time-code">
     </div>
+    <button type="submit" class="auth-btn">Verify account</button>
+  </form>
+  <div class="resend-link">
+    Didn't receive it? <a href="{{ url_for('auth.resend_otp') }}">Resend code</a>
+  </div>
 </div>
-{% endblock %}
+</body>
+</html>
