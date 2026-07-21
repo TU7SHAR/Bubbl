@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Create your free Bubbl.ooo account. Build AI chatbots in minutes. No credit card required.">
+  <meta name="description" content="Create your free Bubbl.ooo account. Build AI chatbots in minutes.">
   <title>Create account | bubbl.ooo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,189 +11,114 @@
   <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: 'Outfit', sans-serif;
-      background: #fffbf7;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      overflow-x: hidden;
-    }
+    body { font-family: 'Outfit', sans-serif; background: #fffbf7; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    body::before { content: ''; position: fixed; inset: 0; z-index: 0; background: radial-gradient(ellipse 60% 50% at 10% 20%, rgba(232,114,42,0.05) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 90% 80%, rgba(245,200,66,0.07) 0%, transparent 65%); }
+    .auth-card { position: relative; z-index: 1; display: flex; width: 100%; max-width: 900px; background: #fff; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; border: 1px solid rgba(0,0,0,0.04); animation: cardIn 0.5s cubic-bezier(0.2,0.8,0.2,1); }
+    @keyframes cardIn { from { opacity:0; transform:translateY(16px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: 
-        radial-gradient(ellipse 60% 50% at 10% 20%, rgba(232,114,42,0.06) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 40% at 85% 80%, rgba(245,200,66,0.08) 0%, transparent 65%);
-      z-index: 0;
-    }
+    .auth-brand { flex: 0 0 44%; padding: 48px 40px; background: linear-gradient(150deg, #fff5ed 0%, #ffe8d4 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+    .auth-brand svg { width: 170px; height: 170px; margin-bottom: 24px; }
+    .auth-brand h1 { font-family: 'Bricolage Grotesque', serif; font-size: 24px; font-weight: 800; color: #1a1008; margin-bottom: 12px; line-height: 1.3; }
+    .auth-brand p { font-size: 14px; color: #5a4a3a; line-height: 1.6; max-width: 280px; }
+    .auth-brand .checks { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+    .auth-brand .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4a3d30; font-weight: 500; }
+    .auth-brand .check-icon { color: #059669; font-weight: 700; }
 
-    .auth-card {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 420px;
-      background: #fff;
-      border-radius: 24px;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
-      padding: 40px;
-      border: 1px solid rgba(0,0,0,0.04);
-      animation: cardIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(16px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .auth-logo { text-align: center; margin-bottom: 24px; }
-    .auth-logo a { font-family: 'Bricolage Grotesque', serif; font-size: 26px; font-weight: 800; color: #1a1008; text-decoration: none; }
+    .auth-form-side { flex: 1; padding: 44px 40px; display: flex; flex-direction: column; justify-content: center; }
+    .auth-logo { margin-bottom: 20px; }
+    .auth-logo a { font-family: 'Bricolage Grotesque', serif; font-size: 24px; font-weight: 800; color: #1a1008; text-decoration: none; }
     .auth-logo a span { color: #E8722A; }
-
-    .auth-illustration { display: flex; justify-content: center; margin-bottom: 20px; }
-    .auth-illustration svg { width: 60px; height: 60px; animation: float 3s ease-in-out infinite; }
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-
-    .auth-card h2 { font-family: 'Bricolage Grotesque', serif; font-size: 22px; font-weight: 800; color: #1a1008; text-align: center; margin-bottom: 4px; }
-    .auth-card .sub { font-size: 14px; color: #8a7a6a; text-align: center; margin-bottom: 6px; }
-
-    .free-badge {
-      display: block; text-align: center; margin-bottom: 20px;
-    }
-    .free-badge span {
-      display: inline-block; background: rgba(5,150,105,0.08); color: #059669;
-      font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 16px;
-    }
+    .auth-form-side h2 { font-family: 'Bricolage Grotesque', serif; font-size: 22px; font-weight: 800; color: #1a1008; margin-bottom: 4px; }
+    .auth-form-side .sub { font-size: 14px; color: #8a7a6a; margin-bottom: 6px; }
+    .free-badge { display: inline-block; background: rgba(5,150,105,0.08); color: #059669; font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 16px; margin-bottom: 18px; }
 
     .fg { margin-bottom: 14px; }
     .fg label { display: block; font-size: 13px; font-weight: 600; color: #4a3d30; margin-bottom: 5px; }
-    .fg input {
-      width: 100%; padding: 11px 14px; border-radius: 10px;
-      border: 1.5px solid #E8E2DC; background: #fdfaf6;
-      font-size: 14px; font-family: 'Outfit', sans-serif; color: #1a1008;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
+    .fg input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #E8E2DC; background: #fdfaf6; font-size: 14px; font-family: 'Outfit', sans-serif; color: #1a1008; transition: border-color 0.2s, box-shadow 0.2s; }
     .fg input:focus { outline: none; border-color: #E8722A; box-shadow: 0 0 0 3px rgba(232,114,42,0.08); background: #fff; }
     .fg input::placeholder { color: #c5b8aa; }
-
     .pw-wrap { position: relative; }
     .pw-wrap input { padding-right: 56px; }
-    .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: #E8722A; text-transform: uppercase; letter-spacing: 0.3px; }
+    .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: #E8722A; text-transform: uppercase; }
     .pw-toggle:hover { color: #1a1008; }
-
-    .auth-btn {
-      width: 100%; padding: 12px; font-size: 15px; font-weight: 700;
-      background: #E8722A; color: #fff; border: none; border-radius: 10px;
-      cursor: pointer; margin-top: 18px; transition: all 0.2s;
-    }
+    .auth-btn { width: 100%; padding: 12px; font-size: 15px; font-weight: 700; background: #E8722A; color: #fff; border: none; border-radius: 10px; cursor: pointer; margin-top: 16px; transition: all 0.2s; }
     .auth-btn:hover { background: #d4611f; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,114,42,0.25); }
-    .auth-btn:active { transform: translateY(0); }
-
-    .auth-terms { text-align: center; font-size: 11px; color: #aaa; margin-top: 12px; line-height: 1.4; }
+    .auth-terms { text-align: center; font-size: 11px; color: #aaa; margin-top: 10px; line-height: 1.4; }
     .auth-terms a { color: #777; text-decoration: underline; }
-
-    .auth-footer { text-align: center; margin-top: 16px; font-size: 13px; color: #8a7a6a; }
+    .auth-footer { text-align: center; margin-top: 14px; font-size: 13px; color: #8a7a6a; }
     .auth-footer a { color: #4a3d30; text-decoration: none; font-weight: 600; }
     .auth-footer a span { color: #E8722A; }
-    .auth-footer a:hover span { text-decoration: underline; }
 
-    .flash-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; font-weight: 500; }
+    .flash-msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; font-weight: 500; }
     .flash-success { background: rgba(16,185,129,0.1); color: #059669; }
     .flash-error { background: rgba(239,68,68,0.08); color: #dc2626; }
     .flash-warning { background: rgba(245,158,11,0.1); color: #b45309; }
     .flash-info { background: rgba(59,130,246,0.08); color: #2563eb; }
-
-    @media (max-width: 480px) {
-      .auth-card { padding: 32px 24px; border-radius: 20px; }
-      .auth-card h2 { font-size: 20px; }
-    }
+    @media (max-width: 768px) { .auth-card { flex-direction: column; } .auth-brand { display: none; } .auth-form-side { padding: 36px 24px; } }
   </style>
 </head>
 <body>
-
 <div class="auth-card">
-  <div class="auth-logo">
-    <a href="https://bubbl.ooo">bubbl<span>.ooo</span></a>
-  </div>
-
-  <!-- Animated SVG — rocket/launch -->
-  <div class="auth-illustration">
-    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M30 8C30 8 22 18 22 30C22 42 30 52 30 52C30 52 38 42 38 30C38 18 30 8 30 8Z" fill="#FFF0E6" stroke="#E8722A" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="30" cy="28" r="4" fill="#E8722A" opacity="0.8">
-        <animate attributeName="r" values="4;5;4" dur="2s" repeatCount="indefinite"/>
+  <div class="auth-brand">
+    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Rocket -->
+      <path d="M100 20C100 20 75 50 75 100C75 150 100 180 100 180C100 180 125 150 125 100C125 50 100 20 100 20Z" fill="#FFF8F2" stroke="#E8722A" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="100" cy="90" r="12" fill="#E8722A" opacity="0.7">
+        <animate attributeName="r" values="12;14;12" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
       </circle>
-      <path d="M22 36L16 40L20 34" stroke="#E8722A" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
-      <path d="M38 36L44 40L40 34" stroke="#E8722A" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
-      <circle cx="30" cy="52" r="2" fill="#F5C842" opacity="0.6">
-        <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
-      </circle>
-      <circle cx="28" cy="55" r="1.5" fill="#E8722A" opacity="0.4">
-        <animate attributeName="opacity" values="0.4;0.8;0.4" dur="1.5s" begin="0.3s" repeatCount="indefinite"/>
-      </circle>
-      <circle cx="32" cy="56" r="1" fill="#F5C842" opacity="0.5">
-        <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" begin="0.6s" repeatCount="indefinite"/>
-      </circle>
-      <circle cx="48" cy="12" r="2" fill="#F5C842" opacity="0.7">
-        <animate attributeName="r" values="2;3;2" dur="3s" repeatCount="indefinite"/>
-      </circle>
-      <circle cx="14" cy="16" r="1.5" fill="#E8722A" opacity="0.3">
-        <animate attributeName="r" values="1.5;2.5;1.5" dur="4s" repeatCount="indefinite"/>
-      </circle>
+      <!-- Fins -->
+      <path d="M75 120L55 135L65 115" stroke="#E8722A" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+      <path d="M125 120L145 135L135 115" stroke="#E8722A" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+      <!-- Exhaust flames -->
+      <ellipse cx="100" cy="185" rx="8" ry="10" fill="#F5C842" opacity="0.7">
+        <animate attributeName="ry" values="10;14;10" dur="0.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.7;1;0.7" dur="0.8s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="95" cy="190" rx="4" ry="6" fill="#E8722A" opacity="0.5">
+        <animate attributeName="ry" values="6;9;6" dur="0.8s" begin="0.2s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse cx="105" cy="192" rx="3" ry="5" fill="#F5C842" opacity="0.4">
+        <animate attributeName="ry" values="5;8;5" dur="0.8s" begin="0.4s" repeatCount="indefinite"/>
+      </ellipse>
+      <!-- Stars/sparkles -->
+      <circle cx="155" cy="35" r="5" fill="#F5C842" opacity="0.7"><animate attributeName="r" values="5;7;5" dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx="45" cy="45" r="4" fill="#E8722A" opacity="0.3"><animate attributeName="r" values="4;6;4" dur="4s" repeatCount="indefinite"/></circle>
+      <circle cx="160" cy="160" r="3" fill="#F5C842" opacity="0.5"><animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite"/></circle>
+      <circle cx="40" cy="155" r="3" fill="#E8722A" opacity="0.25"><animate attributeName="r" values="3;5;3" dur="3.5s" repeatCount="indefinite"/></circle>
     </svg>
+    <h1>Build your first AI agent in minutes</h1>
+    <p>Add your website, Bubbl learns your content and answers visitors instantly.</p>
+    <div class="checks">
+      <div class="check"><span class="check-icon">&#10003;</span> No credit card required</div>
+      <div class="check"><span class="check-icon">&#10003;</span> 200 free messages/month</div>
+      <div class="check"><span class="check-icon">&#10003;</span> Live in minutes</div>
+    </div>
   </div>
-
-  <h2>Create your account</h2>
-  <p class="sub">Start building AI agents for free</p>
-  <div class="free-badge"><span>Free forever &middot; 200 messages/month</span></div>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}{% for category, message in messages %}
-      <div class="flash-msg flash-{{ category }}">{{ message }}</div>
-    {% endfor %}{% endif %}
-  {% endwith %}
-
-  <form method="POST" action="/register">
-    {{ form.csrf_token if form else '' }}
-    <div class="fg">
-      <label>Full name</label>
-      <input type="text" name="name" required placeholder="Your name" autocomplete="name">
-    </div>
-    <div class="fg">
-      <label>Work email</label>
-      <input type="email" name="email" required placeholder="you@company.com" autocomplete="email">
-    </div>
-    <div class="fg" style="margin-bottom:0;">
-      <label>Password</label>
-      <div class="pw-wrap">
-        <input type="password" name="password" id="pw" required placeholder="At least 8 characters" autocomplete="new-password">
-        <button type="button" class="pw-toggle" id="pwT">Show</button>
-      </div>
-    </div>
-    <button type="submit" class="auth-btn">Create free account</button>
-  </form>
-
-  <div class="auth-terms">By creating an account, you agree to our <a href="/legal/terms">Terms</a> and <a href="/legal/privacy">Privacy Policy</a>.</div>
-  <div class="auth-footer"><a href="{{ url_for('auth.login') }}">Already have an account? <span>Sign in</span></a></div>
+  <div class="auth-form-side">
+    <div class="auth-logo"><a href="https://bubbl.ooo">bubbl<span>.ooo</span></a></div>
+    <h2>Create your account</h2>
+    <p class="sub">Start free. No credit card required.</p>
+    <div class="free-badge">Free forever &middot; 200 messages/month</div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}
+        <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+    <form method="POST" action="/register">
+      {{ form.csrf_token if form else '' }}
+      <div class="fg"><label>Full name</label><input type="text" name="name" required placeholder="Your name" autocomplete="name"></div>
+      <div class="fg"><label>Work email</label><input type="email" name="email" required placeholder="you@company.com" autocomplete="email"></div>
+      <div class="fg" style="margin-bottom:0;"><label>Password</label><div class="pw-wrap"><input type="password" name="password" id="pw" required placeholder="At least 8 characters" autocomplete="new-password"><button type="button" class="pw-toggle" id="pwT">Show</button></div></div>
+      <button type="submit" class="auth-btn">Create free account</button>
+    </form>
+    <div class="auth-terms">By signing up you agree to our <a href="/legal/terms">Terms</a> & <a href="/legal/privacy">Privacy</a>.</div>
+    <div class="auth-footer"><a href="{{ url_for('auth.login') }}">Already have an account? <span>Sign in</span></a></div>
+  </div>
 </div>
-
 <script>
-document.getElementById('pwT').addEventListener('click', function() {
-  var i = document.getElementById('pw');
-  i.type = i.type === 'password' ? 'text' : 'password';
-  this.textContent = i.type === 'password' ? 'Show' : 'Hide';
-});
-(function() {
-  var utmKeys = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'];
-  var params = new URLSearchParams(window.location.search);
-  var hasNew = false;
-  utmKeys.forEach(function(k) { if (!params.has(k)) { var s = localStorage.getItem(k); if (s) { params.set(k,s); hasNew=true; } } });
-  if (hasNew && !window.location.search.includes('utm_')) { window.history.replaceState({},'',window.location.pathname+'?'+params.toString()); }
-})();
+document.getElementById('pwT').addEventListener('click', function() { var i = document.getElementById('pw'); i.type = i.type === 'password' ? 'text' : 'password'; this.textContent = i.type === 'password' ? 'Show' : 'Hide'; });
+(function() { var u=['utm_source','utm_medium','utm_campaign','utm_term','utm_content'],p=new URLSearchParams(window.location.search),h=false; u.forEach(function(k){if(!p.has(k)){var s=localStorage.getItem(k);if(s){p.set(k,s);h=true;}}}); if(h&&!window.location.search.includes('utm_'))window.history.replaceState({},'',window.location.pathname+'?'+p.toString()); })();
 </script>
 </body>
 </html>
