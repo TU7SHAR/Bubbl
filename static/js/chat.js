@@ -439,6 +439,19 @@ function initWebSocket() {
     socket.on('connect', function() {
       console.log("[chat] WebSocket connected:", socket.id);
       useWebSocket = true;
+      
+      // Join the chat room for multi-tab sync
+      var sessionId = window._chatSessionId || localStorage.getItem('bubbl_ws_session') || null;
+      if (!sessionId) {
+        sessionId = 'ws_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('bubbl_ws_session', sessionId);
+      }
+      window._chatSessionId = sessionId;
+      socket.emit('join_chat', { session_id: sessionId });
+    });
+
+    socket.on('room_joined', function(data) {
+      console.log("[chat] Multi-tab room joined:", data.session_id);
     });
 
     socket.on('disconnect', function() {
@@ -604,6 +617,7 @@ async function sendMessage() {
   // --- USE WEBSOCKET (streaming) if available ---
   if (useWebSocket && socket && socket.connected) {
     streamingBotDiv = null; // Reset streaming state
+    payload.session_id = window._chatSessionId || null;
     socket.emit('chat_message', payload);
     return; // Response comes via chat_chunk + chat_complete events
   }
