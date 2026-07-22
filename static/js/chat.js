@@ -538,33 +538,32 @@ function initWebSocket() {
           if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackLeadCaptured(window.EMBEDDED_BOT_ID || 'unknown');
         }
 
-        // If streaming div exists, finalize it with parsed buttons
+        // Keep the streaming div as the final message (don't remove + re-render)
+        // Just update its text with the clean response (without [[LEAD:...]] tags)
+        let replyText = fullResponse.replace("[SHOW_FORM]", "").trim();
+        
         if (streamingBotDiv) {
-          // Remove the streaming div (we'll re-render with button parsing)
-          streamingBotDiv.remove();
+          // Check for buttons — if present, replace with parsed version
+          const { cleanText, buttons } = parseButtons(replyText);
+          streamingBotDiv.innerText = cleanText;
+          if (buttons.length > 0) {
+            const display = document.getElementById("chat-display");
+            renderButtons(buttons, display);
+          }
           streamingBotDiv = null;
         } else {
           removeTypingIndicator();
-        }
-
-        // Process the final response (buttons, [SHOW_FORM], etc.)
-        let replyText = fullResponse;
-
-        if (replyText.includes("[SHOW_FORM]") && !leadCaptured) {
-          replyText = replyText.replace("[SHOW_FORM]", "").trim();
-          if (replyText) {
-            appendBotMessage(replyText);
-            chatHistory.push({ role: "bot", text: replyText });
-          }
-          renderInChatForm();
-          saveChatState();
-        } else {
-          replyText = replyText.replace("[SHOW_FORM]", "").trim();
           appendBotMessage(replyText);
-          chatHistory.push({ role: "bot", text: replyText });
-          setInputState(false);
-          saveChatState();
         }
+
+        // Handle [SHOW_FORM]
+        if (fullResponse.includes("[SHOW_FORM]") && !leadCaptured) {
+          renderInChatForm();
+        }
+
+        chatHistory.push({ role: "bot", text: replyText });
+        setInputState(false);
+        saveChatState();
 
         if (window.SpriteBot) {
           SpriteBot.setState("talking");
