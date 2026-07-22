@@ -16,7 +16,7 @@ import os
 import time
 import uuid
 import logging
-from flask import session, request
+from flask import request
 from flask_socketio import emit
 
 from models.models import Bot, Lead, ChatMessage, db
@@ -32,16 +32,6 @@ from google.genai import types
 def register_socket_events(socketio):
     """Register all WebSocket event handlers with the SocketIO instance."""
 
-    @socketio.on('connect')
-    def handle_connect():
-        """Client connected via WebSocket."""
-        logging.info(f"[ws] Client connected: {request.sid}")
-
-    @socketio.on('disconnect')
-    def handle_disconnect():
-        """Client disconnected."""
-        logging.info(f"[ws] Client disconnected: {request.sid}")
-
     @socketio.on('chat_message')
     def handle_chat_message(data):
         """
@@ -49,17 +39,13 @@ def register_socket_events(socketio):
         chunk by chunk, then emits a final 'chat_complete' event.
         """
         user_message = data.get('message', '').strip()
-        bot_id = data.get('bot_id') or session.get('active_bot_id')
+        bot_id = data.get('bot_id') or None
         history = data.get('history', [])
-        chat_session_id = data.get('session_id') or session.get('chat_session_id') or str(uuid.uuid4())
+        chat_session_id = data.get('session_id') or str(uuid.uuid4())
 
         if not user_message:
             emit('chat_error', {'error': 'Empty message'})
             return
-
-        # Store session_id
-        if 'chat_session_id' not in session:
-            session['chat_session_id'] = chat_session_id
 
         try:
             # --- BUILD THE PROMPT ---
@@ -74,12 +60,6 @@ def register_socket_events(socketio):
                     target_store_id = public_store_id
                 else:
                     system_instruction = BASE_GUARDRAILS + _build_public_bot_prompt("")
-                
-                # Context injection for logged-in users on platform bot
-                from routes.embed.api import _build_user_context
-                user_context = _build_user_context()
-                if user_context:
-                    system_instruction += user_context
             else:
                 # Specific bot
                 bot_cfg = _get_bot_config_for_ws(bot_id)
@@ -101,12 +81,6 @@ def register_socket_events(socketio):
 
                 target_store_id = bot_cfg.get("store_id")
                 ai_prompt = bot_cfg.get("system_prompt") or "You are a helpful assistant."
-                
-                # Context injection for logged-in users
-                from routes.embed.api import _build_user_context
-                user_context = _build_user_context()
-                if user_context:
-                    ai_prompt = user_context + ai_prompt
                 
                 timing = bot_cfg.get("lead_capture_timing")
                 custom_fields = bot_cfg.get("custom_form_fields") or []
