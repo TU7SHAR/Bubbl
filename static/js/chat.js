@@ -430,11 +430,10 @@ function initWebSocket() {
 
   try {
     socket = io({
-      transports: ['polling', 'websocket'],  // Start with polling (works with gunicorn gthread), upgrade to WS if available
+      transports: ['polling'],  // Polling only — gthread can't upgrade to WS protocol
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
-      upgrade: true,  // Allow upgrade from polling to websocket if server supports it
+      reconnectionAttempts: 3,
+      reconnectionDelay: 3000,
     });
 
     socket.on('connect', function() {
