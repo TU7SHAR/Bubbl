@@ -66,15 +66,33 @@ function restoreChatState() {
   }
 }
 
-// Sync across tabs — when another tab updates localStorage, this fires
+// Apply a persisted chat state (from localStorage) into THIS tab.
+// Used by cross-tab sync so every tab mirrors the full conversation.
+function applyChatStateFromStorage(raw) {
+  // Never clobber a reply we're actively streaming in THIS tab.
+  if (streamingBotDiv) return;
+  try {
+    const state = JSON.parse(raw);
+    if (!state) return;
+    if (Array.isArray(state.history)) chatHistory = state.history;
+    if (state.leadCaptured) leadCaptured = true;
+    if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
+    const display = document.getElementById("chat-display");
+    if (display && typeof state.messages === "string") {
+      display.innerHTML = state.messages;
+      display.scrollTop = display.scrollHeight;
+    }
+  } catch (err) { /* ignore parse errors */ }
+}
+
+// Sync across tabs — the browser fires this in OTHER tabs when one tab writes
+// to localStorage. Unlike the socket 'sync_chat' signal (which can arrive
+// before the sender finishes its typing animation + save), this fires with the
+// correct timing: only AFTER the sending tab has persisted the final reply.
+// So we re-render the full conversation here, not just the lead state.
 window.addEventListener("storage", function(e) {
   if (e.key === _chatStorageKey() && e.newValue) {
-    try {
-      const state = JSON.parse(e.newValue);
-      // Update lead state from other tabs (most important sync)
-      if (state.leadCaptured) leadCaptured = true;
-      if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
-    } catch (err) { /* ignore parse errors */ }
+    applyChatStateFromStorage(e.newValue);
   }
 });
 
@@ -448,22 +466,13 @@ function initWebSocket() {
     });
 
     // --- SYNC: Another tab sent a message — reload from localStorage ---
+    // Note: this can arrive before the sender has persisted its reply, so it
+    // may render a partial state. The native 'storage' event (above) corrects
+    // it once the sender actually saves the final reply.
     socket.on('sync_chat', function(data) {
       console.log("[chat] Syncing from other tab...");
       var raw = localStorage.getItem(_chatStorageKey());
-      if (raw) {
-        try {
-          var state = JSON.parse(raw);
-          chatHistory = state.history || [];
-          leadCaptured = state.leadCaptured || false;
-          if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
-          var display = document.getElementById("chat-display");
-          if (display && state.messages) {
-            display.innerHTML = state.messages;
-            display.scrollTop = display.scrollHeight;
-          }
-        } catch(e) {}
-      }
+      if (raw) applyChatStateFromStorage(raw);
     });
 
     socket.on('disconnect', function() {
