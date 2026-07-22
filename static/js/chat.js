@@ -453,6 +453,25 @@ function initWebSocket() {
     });
 
     // --- STREAMING: Receive chunks as the AI generates them ---
+    // Characters are queued and rendered with a typing delay for smooth animation
+    let streamQueue = [];
+    let streamInterval = null;
+
+    function processStreamQueue() {
+      if (streamQueue.length === 0) {
+        clearInterval(streamInterval);
+        streamInterval = null;
+        return;
+      }
+      if (!streamingBotDiv) return;
+
+      // Render 2-3 characters at a time for natural typing speed
+      const chars = streamQueue.splice(0, 2).join('');
+      streamingBotDiv.innerText += chars;
+      const display = document.getElementById("chat-display");
+      display.scrollTop = display.scrollHeight;
+    }
+
     socket.on('chat_chunk', function(data) {
       if (!streamingBotDiv) {
         // First chunk — remove typing indicator and create the bot message
@@ -465,57 +484,74 @@ function initWebSocket() {
 
         if (window.SpriteBot) SpriteBot.setState("talking");
       }
-      // Append chunk text
-      streamingBotDiv.innerText += data.text;
-      const display = document.getElementById("chat-display");
-      display.scrollTop = display.scrollHeight;
+      // Queue characters for smooth rendering
+      for (const char of data.text) {
+        streamQueue.push(char);
+      }
+      // Start the rendering interval if not already running
+      if (!streamInterval) {
+        streamInterval = setInterval(processStreamQueue, 20); // 20ms per 2 chars = ~100 chars/sec
+      }
     });
 
     // --- COMPLETE: Final event after all chunks are sent ---
     socket.on('chat_complete', function(data) {
-      const fullResponse = data.response || "";
-      const leadId = data.lead_id;
+      // Wait for the typing queue to finish before finalizing
+      function finalize() {
+        if (streamQueue.length > 0) {
+          setTimeout(finalize, 50);
+          return;
+        }
+        if (streamInterval) {
+          clearInterval(streamInterval);
+          streamInterval = null;
+        }
 
-      // Handle lead capture
-      if (leadId) {
-        window.BUBBL_LEAD_ID = leadId;
-        if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackLeadCaptured(window.EMBEDDED_BOT_ID || 'unknown');
-      }
+        const fullResponse = data.response || "";
+        const leadId = data.lead_id;
 
-      // If streaming div exists, finalize it with parsed buttons
-      if (streamingBotDiv) {
-        // Remove the streaming div (we'll re-render with button parsing)
-        streamingBotDiv.remove();
-        streamingBotDiv = null;
-      } else {
-        removeTypingIndicator();
-      }
+        // Handle lead capture
+        if (leadId) {
+          window.BUBBL_LEAD_ID = leadId;
+          if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackLeadCaptured(window.EMBEDDED_BOT_ID || 'unknown');
+        }
 
-      // Process the final response (buttons, [SHOW_FORM], etc.)
-      let replyText = fullResponse;
+        // If streaming div exists, finalize it with parsed buttons
+        if (streamingBotDiv) {
+          // Remove the streaming div (we'll re-render with button parsing)
+          streamingBotDiv.remove();
+          streamingBotDiv = null;
+        } else {
+          removeTypingIndicator();
+        }
 
-      if (replyText.includes("[SHOW_FORM]") && !leadCaptured) {
-        replyText = replyText.replace("[SHOW_FORM]", "").trim();
-        if (replyText) {
+        // Process the final response (buttons, [SHOW_FORM], etc.)
+        let replyText = fullResponse;
+
+        if (replyText.includes("[SHOW_FORM]") && !leadCaptured) {
+          replyText = replyText.replace("[SHOW_FORM]", "").trim();
+          if (replyText) {
+            appendBotMessage(replyText);
+            chatHistory.push({ role: "bot", text: replyText });
+          }
+          renderInChatForm();
+          saveChatState();
+        } else {
+          replyText = replyText.replace("[SHOW_FORM]", "").trim();
           appendBotMessage(replyText);
           chatHistory.push({ role: "bot", text: replyText });
+          setInputState(false);
+          saveChatState();
         }
-        renderInChatForm();
-        saveChatState();
-      } else {
-        replyText = replyText.replace("[SHOW_FORM]", "").trim();
-        appendBotMessage(replyText);
-        chatHistory.push({ role: "bot", text: replyText });
-        setInputState(false);
-        saveChatState();
-      }
 
-      if (window.SpriteBot) {
-        SpriteBot.setState("talking");
-        setTimeout(() => {
-          if (SpriteBot.currentState === "talking") SpriteBot.setState("idle");
-        }, 8000);
+        if (window.SpriteBot) {
+          SpriteBot.setState("talking");
+          setTimeout(() => {
+            if (SpriteBot.currentState === "talking") SpriteBot.setState("idle");
+          }, 8000);
+        }
       }
+      finalize();
     });
 
     // --- ERROR ---
