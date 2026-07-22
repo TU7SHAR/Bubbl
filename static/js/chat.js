@@ -389,15 +389,17 @@ function setInputState(disabled) {
   const sendButton = document.getElementById("send-btn-icon");
 
   if (input) {
-    input.disabled = disabled;
+    // Input field stays enabled (user can type next message while bot responds)
+    // Only the send button is disabled
+    input.disabled = false;
     if (!disabled) {
-      input.value = "";
       input.focus();
     }
   }
   if (sendButton) {
     sendButton.disabled = disabled;
     sendButton.style.opacity = disabled ? "0.5" : "1";
+    sendButton.style.cursor = disabled ? "not-allowed" : "pointer";
   }
 }
 
@@ -598,8 +600,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
 async function sendMessage() {
   const input = document.getElementById("user-input");
+  const sendButton = document.getElementById("send-btn-icon");
   const rawMsg = input.value.trim();
   if (!rawMsg) return;
+  
+  // Don't send if bot is still responding
+  if (sendButton && sendButton.disabled) return;
 
   // Gatekeeper Failsafe
   if (window.LEAD_TIMING === "gatekeeper" && !leadCaptured) {
@@ -610,6 +616,7 @@ async function sendMessage() {
 
   appendUserMessage(rawMsg);
   chatHistory.push({ role: "user", text: rawMsg });
+  input.value = ""; // Clear input immediately after sending
   saveChatState();
 
   setInputState(true);
