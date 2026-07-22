@@ -57,17 +57,8 @@ function restoreChatState() {
       display.scrollTop = display.scrollHeight;
     }
 
-    // Restore open/closed state
-    if (state.chatOpen) {
-      const chatPopup = document.getElementById("chat-window-popup");
-      const spriteContainer = document.getElementById("sprite-ask-container");
-      if (chatPopup) {
-        chatPopup.classList.remove("hidden");
-        chatPopup.style.opacity = "1";
-        chatPopup.style.transform = "scale(1) translateY(0)";
-      }
-      if (spriteContainer) spriteContainer.classList.add("chat-open");
-    }
+    // Don't auto-open chat on page load from localStorage
+    // (prevents chat from popping open on every new tab)
 
     return true;
   } catch (e) {
@@ -452,6 +443,25 @@ function initWebSocket() {
 
     socket.on('room_joined', function(data) {
       console.log("[chat] Multi-tab room joined:", data.session_id);
+    });
+
+    // --- SYNC: Another tab sent a message — reload from localStorage ---
+    socket.on('sync_chat', function(data) {
+      console.log("[chat] Syncing from other tab...");
+      var raw = localStorage.getItem(_chatStorageKey());
+      if (raw) {
+        try {
+          var state = JSON.parse(raw);
+          chatHistory = state.history || [];
+          leadCaptured = state.leadCaptured || false;
+          if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
+          var display = document.getElementById("chat-display");
+          if (display && state.messages) {
+            display.innerHTML = state.messages;
+            display.scrollTop = display.scrollHeight;
+          }
+        } catch(e) {}
+      }
     });
 
     socket.on('disconnect', function() {
