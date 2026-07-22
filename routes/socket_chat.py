@@ -17,7 +17,7 @@ import time
 import uuid
 import logging
 from flask import request
-from flask_socketio import emit
+from flask_socketio import emit, join_room
 
 from models.models import Bot, Lead, ChatMessage, db
 from extensions import cache
@@ -32,6 +32,17 @@ from google.genai import types
 def register_socket_events(socketio):
     """Register all WebSocket event handlers with the SocketIO instance."""
 
+    @socketio.on('join_chat')
+    def handle_join_chat(data):
+        """
+        Client joins a chat room based on session_id.
+        All tabs with the same session_id will receive messages simultaneously.
+        """
+        room = data.get('session_id')
+        if room:
+            join_room(room)
+            emit('room_joined', {'session_id': room, 'message': 'Synced across tabs'})
+
     @socketio.on('chat_message')
     def handle_chat_message(data):
         """
@@ -42,6 +53,9 @@ def register_socket_events(socketio):
         bot_id = data.get('bot_id') or None
         history = data.get('history', [])
         chat_session_id = data.get('session_id') or str(uuid.uuid4())
+
+        # Join the room for this conversation (enables multi-tab sync)
+        join_room(chat_session_id)
 
         if not user_message:
             emit('chat_error', {'error': 'Empty message'})
@@ -136,7 +150,7 @@ def register_socket_events(socketio):
             for chunk in stream:
                 if chunk.text:
                     full_response += chunk.text
-                    emit('chat_chunk', {'text': chunk.text})
+                    emit('chat_chunk', {'text': chunk.text}, room=chat_session_id)
 
             duration = time.time() - start_ts
 
@@ -174,12 +188,12 @@ def register_socket_events(socketio):
             _save_ws_chat_message(bot_id, chat_session_id, 'user', user_message)
             _save_ws_chat_message(bot_id, chat_session_id, 'bot', reply, lead_id=lead_id, tokens_used=token_count)
 
-            # --- EMIT FINAL COMPLETE EVENT ---
+            # --- EMIT FINAL COMPLETE EVENT (to all tabs in this conversation) ---
             emit('chat_complete', {
                 'response': reply,
                 'lead_id': lead_id,
                 'session_id': chat_session_id
-            })
+            }, room=chat_session_id)
 
         except Exception as e:
             db.session.rollback()
