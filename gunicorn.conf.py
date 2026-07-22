@@ -12,18 +12,12 @@ bind = f"0.0.0.0:{os.environ.get('PORT', '5000')}"
 backlog = 2048
 
 # --- WORKERS ---
-# Single worker with 24 threads for WebSocket (Socket.IO) compatibility.
-# Socket.IO polling sessions are per-process — multiple workers cause 400 errors
-# because the session created on worker 1 isn't found by worker 2.
-#
-# 1 worker × 24 threads = 24 concurrent slots (same capacity as 2×12).
-# To scale beyond 24 concurrent users: switch to gevent worker + Redis session store.
-#
-# Override with env vars if needed:
-#   WEB_CONCURRENCY=1 GUNICORN_THREADS=24
-workers = int(os.environ.get('WEB_CONCURRENCY', 1))
-threads = int(os.environ.get('GUNICORN_THREADS', 24))
-worker_class = "gthread"
+# Single worker with GeventWebSocket for true WebSocket support.
+# This allows socket.io to upgrade from HTTP polling to raw ws:// protocol.
+# gevent uses cooperative multitasking (greenlets) — handles many concurrent
+# connections efficiently without threads.
+workers = 1
+worker_class = "geventwebsocket.gunicorn.workers.GeventWebSocketWorker"
 
 # --- TIMEOUTS ---
 # Gemini API can take 2-10 seconds; allow up to 120s before killing a worker

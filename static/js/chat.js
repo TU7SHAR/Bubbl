@@ -430,10 +430,10 @@ function initWebSocket() {
 
   try {
     socket = io({
-      transports: ['polling'],  // Polling only — gthread can't upgrade to WS protocol
+      transports: ['websocket', 'polling'],  // True WebSocket with polling fallback
       reconnection: true,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 3000,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
     });
 
     socket.on('connect', function() {

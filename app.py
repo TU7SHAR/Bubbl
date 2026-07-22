@@ -27,7 +27,7 @@ socketio = SocketIO(
     app,
     cors_allowed_origins="*",  # Embed widgets run on any domain
     message_queue=REDIS_URL,
-    async_mode='threading',    # Compatible with gunicorn gthread workers
+    async_mode='gevent',       # Gevent for true WebSocket support
     logger=False,
     engineio_logger=False,
 )
