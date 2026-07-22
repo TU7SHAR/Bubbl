@@ -1,3 +1,9 @@
+# Gevent monkey-patch MUST be first — before any other imports.
+# Without this, SSL/networking libraries load unpatched and break
+# database connections (NeonDB) and API calls (Gemini).
+from gevent import monkey
+monkey.patch_all()
+
 import os
 from flask import Flask, request
 from flask_socketio import SocketIO
