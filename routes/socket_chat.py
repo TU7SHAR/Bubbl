@@ -150,7 +150,7 @@ def register_socket_events(socketio):
             for chunk in stream:
                 if chunk.text:
                     full_response += chunk.text
-                    emit('chat_chunk', {'text': chunk.text}, room=chat_session_id)
+                    emit('chat_chunk', {'text': chunk.text})
 
             duration = time.time() - start_ts
 
@@ -188,12 +188,15 @@ def register_socket_events(socketio):
             _save_ws_chat_message(bot_id, chat_session_id, 'user', user_message)
             _save_ws_chat_message(bot_id, chat_session_id, 'bot', reply, lead_id=lead_id, tokens_used=token_count)
 
-            # --- EMIT FINAL COMPLETE EVENT (to all tabs in this conversation) ---
+            # --- EMIT FINAL COMPLETE EVENT (to sender only) ---
             emit('chat_complete', {
                 'response': reply,
                 'lead_id': lead_id,
                 'session_id': chat_session_id
-            }, room=chat_session_id)
+            })
+
+            # --- NOTIFY OTHER TABS to sync from localStorage ---
+            emit('sync_chat', {'session_id': chat_session_id}, room=chat_session_id, include_self=False)
 
         except Exception as e:
             db.session.rollback()
