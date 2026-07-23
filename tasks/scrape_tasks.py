@@ -338,9 +338,18 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                         continue
 
                 if new_links_added > 0:
-                    target_bot.managed_links = existing_links
+                    target_bot.managed_links = list(existing_links)  # new list object forces SQLAlchemy dirty detection
+                    from sqlalchemy.orm.attributes import flag_modified
+                    flag_modified(target_bot, 'managed_links')
                     db.session.commit()
                     add_log(f"[Links] Auto-extracted {new_links_added} items (URLs + emails + phones).")
+
+                    # Invalidate bot cache so chat prompt picks up new links immediately
+                    try:
+                        from extensions import cache
+                        cache.delete(f'bot_config_{bot_id}')
+                    except Exception:
+                        pass  # Cache invalidation is best-effort
 
         else:
             job.status = 'failed'
