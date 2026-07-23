@@ -15,6 +15,7 @@
           <th>Role</th>
           <th>Plan</th>
           <th>Status</th>
+          <th>Usage</th>
           <th>Bots</th>
           <th>Leads</th>
           <th>Actions</th>
@@ -48,6 +49,18 @@
             {% if u.is_suspended %}
               <span class="badge badge-red">Suspended</span>
             {% endif %}
+          </td>
+          <td>
+            {% set pct = ((u.messages_used / u.messages_limit) * 100) if u.messages_limit > 0 else 0 %}
+            <div style="min-width:100px;">
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                <span>{{ u.messages_used }}</span>
+                <span style="color:var(--text-muted);">/ {{ u.messages_limit }}</span>
+              </div>
+              <div style="height:6px; background:var(--bg-darker, rgba(0,0,0,0.08)); border-radius:3px; overflow:hidden;">
+                <div style="height:100%; width:{{ pct if pct <= 100 else 100 }}%; background:{% if pct >= 90 %}#ef4444{% elif pct >= 70 %}#f59e0b{% else %}#10b981{% endif %}; border-radius:3px; transition:width 0.3s;"></div>
+              </div>
+            </div>
           </td>
           <td>{{ u.bot_count }}</td>
           <td>{{ u.lead_count }}</td>
