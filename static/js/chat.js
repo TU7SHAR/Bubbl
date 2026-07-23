@@ -66,15 +66,33 @@ function restoreChatState() {
   }
 }
 
-// Sync across tabs — when another tab updates localStorage, this fires
+// Apply a persisted chat state (from localStorage) into THIS tab.
+// Used by cross-tab sync so every tab mirrors the full conversation.
+function applyChatStateFromStorage(raw) {
+  // Never clobber a reply we're actively streaming in THIS tab.
+  if (streamingBotDiv) return;
+  try {
+    const state = JSON.parse(raw);
+    if (!state) return;
+    if (Array.isArray(state.history)) chatHistory = state.history;
+    if (state.leadCaptured) leadCaptured = true;
+    if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
+    const display = document.getElementById("chat-display");
+    if (display && typeof state.messages === "string") {
+      display.innerHTML = state.messages;
+      display.scrollTop = display.scrollHeight;
+    }
+  } catch (err) { /* ignore parse errors */ }
+}
+
+// Sync across tabs — the browser fires this in OTHER tabs when one tab writes
+// to localStorage. Unlike the socket 'sync_chat' signal (which can arrive
+// before the sender finishes its typing animation + save), this fires with the
+// correct timing: only AFTER the sending tab has persisted the final reply.
+// So we re-render the full conversation here, not just the lead state.
 window.addEventListener("storage", function(e) {
   if (e.key === _chatStorageKey() && e.newValue) {
-    try {
-      const state = JSON.parse(e.newValue);
-      // Update lead state from other tabs (most important sync)
-      if (state.leadCaptured) leadCaptured = true;
-      if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
-    } catch (err) { /* ignore parse errors */ }
+    applyChatStateFromStorage(e.newValue);
   }
 });
 
@@ -296,6 +314,45 @@ function appendUserMessage(msg) {
   display.scrollTop = display.scrollHeight;
 }
 
+// ═══════════════════════════════════════════
+// AUTO-LINKIFY — Detect URLs and emails in bot text and make them clickable
+// ═══════════════════════════════════════════
+function linkify(text) {
+  /**
+   * Takes plain text and returns HTML with URLs/emails wrapped in <a href> tags.
+   * - URLs: http(s)://... or www.something.tld (auto-prefixed with https://)
+   * - Emails: user@domain.tld → mailto: links
+   * Safe: escapes HTML entities first to prevent XSS, then adds only <a> tags.
+   */
+  // 1. Escape HTML entities so user/bot text can't inject arbitrary tags
+  var escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+  // 2. URL regex — matches http(s)://... and www.something...
+  //    Stops at whitespace, quotes, or trailing punctuation like ) . , ; that aren't part of the URL
+  var urlRegex = /(?:https?:\/\/|www\.)[^\s<>"']+[^\s<>"'.,;:!?\)]/gi;
+
+  // 3. Email regex — simple but covers standard addresses
+  var emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+
+  // Replace emails first (so URLs containing @ don't get double-matched)
+  escaped = escaped.replace(emailRegex, function(match) {
+    return '<a href="mailto:' + match + '" target="_blank" rel="noopener noreferrer" class="bubbl-inline-link">' + match + '</a>';
+  });
+
+  // Replace URLs
+  escaped = escaped.replace(urlRegex, function(match) {
+    var href = match;
+    if (href.indexOf("http") !== 0) href = "https://" + href;
+    return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" class="bubbl-inline-link">' + match + '</a>';
+  });
+
+  return escaped;
+}
+
 function parseButtons(text) {
   /**
    * Extracts [[BUTTONS: category:Label|URL, ...]] from bot response.
@@ -353,11 +410,11 @@ function appendBotMessage(msg) {
   // Parse buttons from the message (if any)
   const { cleanText, buttons } = parseButtons(msg);
 
-  // Render the text message
+  // Render the text message with auto-linked URLs/emails
   if (cleanText) {
     const botDiv = document.createElement("div");
     botDiv.className = "msg bot";
-    botDiv.innerText = cleanText;
+    botDiv.innerHTML = linkify(cleanText);
     display.appendChild(botDiv);
   }
 
@@ -448,22 +505,13 @@ function initWebSocket() {
     });
 
     // --- SYNC: Another tab sent a message — reload from localStorage ---
+    // Note: this can arrive before the sender has persisted its reply, so it
+    // may render a partial state. The native 'storage' event (above) corrects
+    // it once the sender actually saves the final reply.
     socket.on('sync_chat', function(data) {
       console.log("[chat] Syncing from other tab...");
       var raw = localStorage.getItem(_chatStorageKey());
-      if (raw) {
-        try {
-          var state = JSON.parse(raw);
-          chatHistory = state.history || [];
-          leadCaptured = state.leadCaptured || false;
-          if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
-          var display = document.getElementById("chat-display");
-          if (display && state.messages) {
-            display.innerHTML = state.messages;
-            display.scrollTop = display.scrollHeight;
-          }
-        } catch(e) {}
-      }
+      if (raw) applyChatStateFromStorage(raw);
     });
 
     socket.on('disconnect', function() {
@@ -547,7 +595,8 @@ function initWebSocket() {
         if (streamingBotDiv) {
           // Check for buttons — if present, replace with parsed version
           const { cleanText, buttons } = parseButtons(replyText);
-          streamingBotDiv.innerText = cleanText;
+          // Use innerHTML with linkify to make URLs/emails clickable
+          streamingBotDiv.innerHTML = linkify(cleanText);
           if (buttons.length > 0) {
             const display = document.getElementById("chat-display");
             renderButtons(buttons, display);
