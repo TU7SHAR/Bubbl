@@ -480,6 +480,37 @@ def set_active_bot(bot_id):
             
     return redirect(url_for('views_bp.dashboard'))
 
+
+@views_bp.route('/connect_support')
+def connect_support():
+    """Switch the chat widget to the Bubbl platform support bot."""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    platform_bot = Bot.query.filter_by(bot_type='platform').first()
+    if platform_bot:
+        session['active_bot_id'] = platform_bot.id
+        session['active_bot_name'] = platform_bot.bot_name
+        session['lead_capture_timing'] = platform_bot.lead_capture_timing or 'disabled'
+        session['custom_form_fields'] = '[]'
+
+        # Reset UI settings to platform defaults
+        if hasattr(platform_bot, 'ui_settings') and platform_bot.ui_settings:
+            session['theme_color'] = platform_bot.ui_settings.theme_color
+            session['header_color'] = platform_bot.ui_settings.header_color
+            session['theme_mode'] = platform_bot.ui_settings.theme_mode
+        else:
+            session['theme_color'] = '#E8722A'
+            session['header_color'] = '#FFFFFF'
+            session['theme_mode'] = 'light'
+    else:
+        # No platform bot exists — just clear active bot so widget uses platform fallback
+        session.pop('active_bot_id', None)
+        session.pop('active_bot_name', None)
+
+    return redirect(url_for('views_bp.dashboard'))
+
+
 @views_bp.route('/unlock_bot/<int:bot_id>', methods=['POST'])
 def unlock_bot(bot_id):
     if session.get('role') != 'admin':
