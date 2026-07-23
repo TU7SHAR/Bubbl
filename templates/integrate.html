@@ -333,7 +333,7 @@
         <div class="int-code-block">
           <button class="int-copy-btn" onclick="copySnippet('embed-code-html', this)">Copy</button>
           <pre id="embed-code-html">&lt;!-- Bubbl Widget --&gt;
-&lt;script src="{{ request.host_url }}static/js/embed.js"
+&lt;script src="https://{{ request.host }}/static/js/embed.js"
   data-bot-id="{{ bot.id }}"&gt;&lt;/script&gt;</pre>
         </div>
 
@@ -344,7 +344,7 @@
 &lt;Script id="bubbl-init" strategy="beforeInteractive"&gt;
   {`window.BOTFACTORY_ID = "{{ bot.id }}";`}
 &lt;/Script&gt;
-&lt;Script src="{{ request.host_url }}static/js/embed.js"
+&lt;Script src="https://{{ request.host }}/static/js/embed.js"
   strategy="afterInteractive" /&gt;</pre>
         </div>
 
@@ -389,7 +389,7 @@
       <p class="int-preview-sub">Your agent appears in the bottom-right corner of this page.</p>
       <div class="int-live-pill"><span></span> Widget Active</div>
 
-      <script src="{{ request.host_url }}static/js/embed.js" data-bot-id="{{ bot.id }}"></script>
+      <script src="https://{{ request.host }}/static/js/embed.js" data-bot-id="{{ bot.id }}"></script>
     </div>
 
   </div>
