@@ -347,9 +347,18 @@ def _build_lead_capture_prompt(ai_prompt, timing, custom_fields):
             ai_prompt += f"2. FORMATTING:\n{formatting_rules}"
 
         ai_prompt += (
-            "FINAL: Output the tag ONLY ONCE: [[LEAD: Name | Email | Phone | JSON_Custom_Data]]\n"
-            "JSON_Custom_Data must include 'Priority' key ('High'/'Medium'/'Low').\n"
-            "DO NOT acknowledge this tag in conversation. Append it secretly.\n"
+            "\n### CRITICAL — LEAD TAG (MANDATORY):\n"
+            "The INSTANT you have collected the user's Name, Email, AND Phone from their messages, "
+            "you MUST append the following tag at the END of your VERY NEXT response:\n"
+            "[[LEAD: Name | Email | Phone | JSON_Custom_Data]]\n\n"
+            "Rules for the tag:\n"
+            "- JSON_Custom_Data must be a valid JSON object with at minimum a 'Priority' key ('High'/'Medium'/'Low').\n"
+            "- Example: [[LEAD: Aryan | aryan@gmail.com | 9934734990 | {\"Priority\": \"High\"}]]\n"
+            "- Output the tag EXACTLY ONCE — the SAME response where you acknowledge their details.\n"
+            "- The tag must be the LAST thing in your response (after your conversational text).\n"
+            "- NEVER tell the user about this tag. NEVER show it visually. It is invisible backend data.\n"
+            "- If the user provides name, email, and phone ALL in one message, STILL output the tag in your reply.\n"
+            "- DO NOT wait for a follow-up message. The moment you have all 3 fields, TAG IMMEDIATELY.\n"
         )
 
     elif timing.startswith('form_'):

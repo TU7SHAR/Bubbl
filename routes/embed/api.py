@@ -286,8 +286,11 @@ def chat():
                 ai_prompt += (
                     "FINAL INSTRUCTION: Only output the exact hidden tag ONLY ONCE during the entire conversation, immediately after the user provides their final verified missing detail. Do NOT output it again in subsequent messages.\n"
                     "The tag format is: [[LEAD: Name | Email | Phone | JSON_Custom_Data]]\n"
-                    "Replace JSON_Custom_Data with a valid JSON object containing any extra details AND your Lead Quality Score under the key 'Priority' (e.g. {\"Company\": \"Google\", \"Priority\": \"High\"}). If there are no extra details, just put {\"Priority\": \"Low/Medium/High\"}. "
-                    "DO NOT acknowledge this tag in your conversational text. Just append it secretly."
+                    "Replace JSON_Custom_Data with a valid JSON object containing any extra details AND your Lead Quality Score under the key 'Priority' (e.g. {\"Company\": \"Google\", \"Priority\": \"High\"}). If there are no extra details, just put {\"Priority\": \"Low/Medium/High\"}.\n"
+                    "CRITICAL: Output this tag the INSTANT you have all 3 fields (Name, Email, Phone). "
+                    "Do NOT wait for a follow-up message. Append it at the END of the SAME response where you acknowledge their details. "
+                    "If the user provides all 3 in one message, your reply MUST include the tag. "
+                    "DO NOT acknowledge this tag in your conversational text. It is invisible backend data."
                 )
                 
             elif timing.startswith('form_'):
