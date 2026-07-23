@@ -321,7 +321,9 @@ def public_bot_extract_links():
             continue
 
     if new_links_added > 0:
-        bot.managed_links = existing_links
+        bot.managed_links = list(existing_links)  # new list forces SQLAlchemy dirty detection
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(bot, 'managed_links')
         db.session.commit()
 
     return jsonify({"success": True, "new_links": new_links_added, "total_links": len(existing_links)})
