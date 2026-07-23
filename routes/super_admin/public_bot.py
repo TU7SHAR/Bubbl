@@ -131,7 +131,7 @@ def public_bot_delete_doc(doc_id):
         return jsonify({"error": "Document not found."}), 404
 
     try:
-        delete_from_gemini(doc.filename)
+        delete_from_gemini(doc.filename, store_id=bot.store_id)
     except Exception:
         pass
 
@@ -149,7 +149,7 @@ def public_bot_clear_all():
 
     for doc in docs:
         try:
-            delete_from_gemini(doc.filename)
+            delete_from_gemini(doc.filename, store_id=bot.store_id)
         except Exception:
             pass
         db.session.delete(doc)
