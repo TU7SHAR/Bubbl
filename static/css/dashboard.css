@@ -51,6 +51,36 @@
   letter-spacing: -0.02em;
 }
 
+/* --- Talk to Bubbl Support Button --- */
+.btn-support-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  color: #E8722A;
+  background: rgba(232, 114, 42, 0.08);
+  border: 1.5px solid rgba(232, 114, 42, 0.25);
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-support-chat:hover {
+  background: rgba(232, 114, 42, 0.15);
+  border-color: rgba(232, 114, 42, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(232, 114, 42, 0.15);
+}
+.btn-support-chat:active {
+  transform: scale(0.97);
+}
+.btn-support-chat svg {
+  flex-shrink: 0;
+}
+
 .bot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
