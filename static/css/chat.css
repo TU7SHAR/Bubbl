@@ -387,6 +387,21 @@
   opacity: 0.8;
 }
 
+/* --- Inline Auto-Linked URLs/Emails in bot messages --- */
+.bubbl-inline-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+  transition: color 0.15s ease;
+}
+.bubbl-inline-link:hover {
+  color: #1d4ed8;
+}
+.bubbl-inline-link:visited {
+  color: #6d28d9;
+}
+
 /* --- Category Colors --- */
 
 /* Pricing — Orange (brand) */

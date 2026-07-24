@@ -26,8 +26,21 @@ graceful_timeout = 30
 keepalive = 5
 
 # --- PERFORMANCE ---
-# Preload app so workers share memory (saves ~30% RAM — important on small dynos)
-preload_app = True
+# preload_app MUST be False with the gevent worker.
+#
+# app.py runs gevent's monkey.patch_all() at import time. With preload_app=True,
+# gunicorn imports the app (and initializes the gevent hub + the Redis-backed
+# SocketIO message queue) in the MASTER process, then fork()s the worker.
+# A forked child inherits a stale gevent hub — greenlets/hub threads do not
+# survive fork() — so the first blocking I/O in the worker (e.g. creating a
+# Gemini File Search store or the time.sleep() polling loop during bot creation)
+# hits a dead hub and crashes with:
+#   AssertionError in gevent AbstractLinkable._notify_links
+#   [ERROR] Control server error: no running event loop
+#
+# Setting preload_app=False makes each worker import the app and build its own
+# fresh gevent hub AFTER fork, which is the supported setup for gevent workers.
+preload_app = False
 
 # Max requests before worker restarts (prevents memory leaks)
 max_requests = 1000
