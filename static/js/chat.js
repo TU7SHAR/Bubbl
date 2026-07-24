@@ -635,6 +635,7 @@ function initWebSocket() {
         const display = document.getElementById("chat-display");
         streamingBotDiv = document.createElement("div");
         streamingBotDiv.className = "msg bot";
+        streamingBotDiv.style.whiteSpace = "pre-wrap";  // Preserve spaces during streaming (plain text)
         streamingBotDiv.innerText = "";
         display.appendChild(streamingBotDiv);
 
@@ -679,8 +680,15 @@ function initWebSocket() {
         if (streamingBotDiv) {
           // Check for buttons — if present, replace with parsed version
           const { cleanText, buttons } = parseButtons(replyText);
-          // Render with markdown formatting (tables, lists, bold, etc.)
-          streamingBotDiv.innerHTML = renderMarkdown(cleanText);
+          // Switch from plain-text streaming to formatted HTML
+          streamingBotDiv.style.whiteSpace = "";  // Remove pre-wrap for HTML
+          if (typeof renderMarkdown === 'function') {
+            streamingBotDiv.innerHTML = renderMarkdown(cleanText);
+          } else if (typeof linkify === 'function') {
+            streamingBotDiv.innerHTML = linkify(cleanText);
+          } else {
+            streamingBotDiv.innerText = cleanText;
+          }
           if (buttons.length > 0) {
             const display = document.getElementById("chat-display");
             renderButtons(buttons, display);
