@@ -110,6 +110,7 @@
       <div class="fg"><label>Full name</label><input type="text" name="name" required placeholder="Your name" autocomplete="name"></div>
       <div class="fg"><label>Work email</label><input type="email" name="email" required placeholder="you@company.com" autocomplete="email"></div>
       <div class="fg" style="margin-bottom:0;"><label>Password</label><div class="pw-wrap"><input type="password" name="password" id="pw" required placeholder="At least 8 characters" autocomplete="new-password"><button type="button" class="pw-toggle" id="pwT">Show</button></div></div>
+      <div class="fg" style="margin-bottom:0; margin-top:14px;"><label>Confirm Password</label><div class="pw-wrap"><input type="password" name="confirm_password" id="cpw" required placeholder="Re-enter your password" autocomplete="new-password"><button type="button" class="pw-toggle" id="cpwT">Show</button></div></div>
       <button type="submit" class="auth-btn">Create free account</button>
     </form>
     <div class="auth-terms">By signing up you agree to our <a href="/legal/terms">Terms</a> & <a href="/legal/privacy">Privacy</a>.</div>
@@ -118,6 +119,7 @@
 </div>
 <script>
 document.getElementById('pwT').addEventListener('click', function() { var i = document.getElementById('pw'); i.type = i.type === 'password' ? 'text' : 'password'; this.textContent = i.type === 'password' ? 'Show' : 'Hide'; });
+document.getElementById('cpwT').addEventListener('click', function() { var i = document.getElementById('cpw'); i.type = i.type === 'password' ? 'text' : 'password'; this.textContent = i.type === 'password' ? 'Show' : 'Hide'; });
 (function() { var u=['utm_source','utm_medium','utm_campaign','utm_term','utm_content'],p=new URLSearchParams(window.location.search),h=false; u.forEach(function(k){if(!p.has(k)){var s=localStorage.getItem(k);if(s){p.set(k,s);h=true;}}}); if(h&&!window.location.search.includes('utm_'))window.history.replaceState({},'',window.location.pathname+'?'+p.toString()); })();
 </script>
 
@@ -126,6 +128,7 @@ document.getElementById('pwT').addEventListener('click', function() { var i = do
 <link rel="stylesheet" href="/static/css/mobile_chat.css">
 {% include 'chat.html' %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="/static/js/sprite.js"></script>
 <script src="/static/js/chat.js"></script>
 </body>

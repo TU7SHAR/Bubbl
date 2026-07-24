@@ -66,15 +66,33 @@ function restoreChatState() {
   }
 }
 
-// Sync across tabs — when another tab updates localStorage, this fires
+// Apply a persisted chat state (from localStorage) into THIS tab.
+// Used by cross-tab sync so every tab mirrors the full conversation.
+function applyChatStateFromStorage(raw) {
+  // Never clobber a reply we're actively streaming in THIS tab.
+  if (streamingBotDiv) return;
+  try {
+    const state = JSON.parse(raw);
+    if (!state) return;
+    if (Array.isArray(state.history)) chatHistory = state.history;
+    if (state.leadCaptured) leadCaptured = true;
+    if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
+    const display = document.getElementById("chat-display");
+    if (display && typeof state.messages === "string") {
+      display.innerHTML = state.messages;
+      display.scrollTop = display.scrollHeight;
+    }
+  } catch (err) { /* ignore parse errors */ }
+}
+
+// Sync across tabs — the browser fires this in OTHER tabs when one tab writes
+// to localStorage. Unlike the socket 'sync_chat' signal (which can arrive
+// before the sender finishes its typing animation + save), this fires with the
+// correct timing: only AFTER the sending tab has persisted the final reply.
+// So we re-render the full conversation here, not just the lead state.
 window.addEventListener("storage", function(e) {
   if (e.key === _chatStorageKey() && e.newValue) {
-    try {
-      const state = JSON.parse(e.newValue);
-      // Update lead state from other tabs (most important sync)
-      if (state.leadCaptured) leadCaptured = true;
-      if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
-    } catch (err) { /* ignore parse errors */ }
+    applyChatStateFromStorage(e.newValue);
   }
 });
 
@@ -296,6 +314,129 @@ function appendUserMessage(msg) {
   display.scrollTop = display.scrollHeight;
 }
 
+// ═══════════════════════════════════════════
+// MARKDOWN RENDERER — Formats bot responses for readability
+// ═══════════════════════════════════════════
+function renderMarkdown(text) {
+  /**
+   * Lightweight markdown-to-HTML converter for bot messages.
+   * Handles: tables, headers, bold, italic, lists, code blocks, blockquotes, hr.
+   * XSS-safe: escapes HTML first, then applies formatting.
+   */
+  // 1. Escape HTML entities
+  var html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // 2. Code blocks (``` ... ```) — must be before inline code
+  html = html.replace(/```([\s\S]*?)```/g, function(m, code) {
+    return '<pre><code>' + code.trim() + '</code></pre>';
+  });
+
+  // 3. Inline code (`...`)
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // 4. Tables (detect lines with | separators)
+  html = html.replace(/((?:^|\n)\|.+\|(?:\n\|.+\|)+)/g, function(tableBlock) {
+    var rows = tableBlock.trim().split('\n').filter(function(r) { return r.trim(); });
+    if (rows.length < 2) return tableBlock;
+    
+    var tableHtml = '<table>';
+    var headerDone = false;
+    
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i].trim();
+      // Skip separator rows (|---|---|)
+      if (/^\|[\s\-:]+\|$/.test(row) || /^\|(\s*[-:]+\s*\|)+$/.test(row)) {
+        headerDone = true;
+        continue;
+      }
+      var cells = row.split('|').filter(function(c, idx, arr) { return idx > 0 && idx < arr.length - 1; });
+      var tag = (!headerDone && i === 0) ? 'th' : 'td';
+      tableHtml += '<tr>';
+      for (var j = 0; j < cells.length; j++) {
+        tableHtml += '<' + tag + '>' + cells[j].trim() + '</' + tag + '>';
+      }
+      tableHtml += '</tr>';
+      if (tag === 'th') headerDone = true;
+    }
+    tableHtml += '</table>';
+    return tableHtml;
+  });
+
+  // 5. Headers (### > ## > #)
+  html = html.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
+  // 6. Bold (**text** or __text__)
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+  // 7. Italic (*text* or _text_)
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+  // 8. Blockquotes (> text)
+  html = html.replace(/^&gt;\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // 9. Horizontal rules (--- or ***)
+  html = html.replace(/^(\-{3,}|\*{3,})$/gm, '<hr>');
+
+  // 10. Unordered lists (- item or * item)
+  html = html.replace(/((?:^|\n)[\-\*]\s.+)+/g, function(block) {
+    var items = block.trim().split('\n');
+    var listHtml = '<ul>';
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i].replace(/^[\-\*]\s+/, '').trim();
+      if (item) listHtml += '<li>' + item + '</li>';
+    }
+    listHtml += '</ul>';
+    return listHtml;
+  });
+
+  // 11. Ordered lists (1. item, 2. item)
+  html = html.replace(/((?:^|\n)\d+\.\s.+)+/g, function(block) {
+    var items = block.trim().split('\n');
+    var listHtml = '<ol>';
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i].replace(/^\d+\.\s+/, '').trim();
+      if (item) listHtml += '<li>' + item + '</li>';
+    }
+    listHtml += '</ol>';
+    return listHtml;
+  });
+
+  // 12. Auto-linkify URLs and emails (same as linkify() but for already-escaped HTML)
+  var urlRegex = /(?:https?:\/\/|www\.)[^\s&lt;&gt;&quot;&#39;]+[^\s&lt;&gt;&quot;&#39;.,;:!?\)]/gi;
+  var emailRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
+
+  html = html.replace(emailRegex, function(match) {
+    return '<a href="mailto:' + match + '" target="_blank" rel="noopener noreferrer" class="bubbl-inline-link">' + match + '</a>';
+  });
+  html = html.replace(urlRegex, function(match) {
+    var href = match.replace(/&amp;/g, '&');
+    if (href.indexOf("http") !== 0) href = "https://" + href;
+    return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" class="bubbl-inline-link">' + match + '</a>';
+  });
+
+  // 13. Paragraphs — convert double newlines to <p> breaks
+  html = html.replace(/\n{2,}/g, '</p><p>');
+  // Single newlines within a paragraph → <br>
+  html = html.replace(/\n/g, '<br>');
+  // Wrap in <p> if not already structured
+  if (!html.startsWith('<') || html.startsWith('<strong>') || html.startsWith('<em>')) {
+    html = '<p>' + html + '</p>';
+  }
+
+  // Clean up empty paragraphs
+  html = html.replace(/<p>\s*<\/p>/g, '');
+
+  return html;
+}
+
 function parseButtons(text) {
   /**
    * Extracts [[BUTTONS: category:Label|URL, ...]] from bot response.
@@ -353,11 +494,11 @@ function appendBotMessage(msg) {
   // Parse buttons from the message (if any)
   const { cleanText, buttons } = parseButtons(msg);
 
-  // Render the text message
+  // Render the text message with markdown formatting
   if (cleanText) {
     const botDiv = document.createElement("div");
     botDiv.className = "msg bot";
-    botDiv.innerText = cleanText;
+    botDiv.innerHTML = renderMarkdown(cleanText);
     display.appendChild(botDiv);
   }
 
@@ -448,22 +589,13 @@ function initWebSocket() {
     });
 
     // --- SYNC: Another tab sent a message — reload from localStorage ---
+    // Note: this can arrive before the sender has persisted its reply, so it
+    // may render a partial state. The native 'storage' event (above) corrects
+    // it once the sender actually saves the final reply.
     socket.on('sync_chat', function(data) {
       console.log("[chat] Syncing from other tab...");
       var raw = localStorage.getItem(_chatStorageKey());
-      if (raw) {
-        try {
-          var state = JSON.parse(raw);
-          chatHistory = state.history || [];
-          leadCaptured = state.leadCaptured || false;
-          if (state.leadId) window.BUBBL_LEAD_ID = state.leadId;
-          var display = document.getElementById("chat-display");
-          if (display && state.messages) {
-            display.innerHTML = state.messages;
-            display.scrollTop = display.scrollHeight;
-          }
-        } catch(e) {}
-      }
+      if (raw) applyChatStateFromStorage(raw);
     });
 
     socket.on('disconnect', function() {
@@ -503,6 +635,7 @@ function initWebSocket() {
         const display = document.getElementById("chat-display");
         streamingBotDiv = document.createElement("div");
         streamingBotDiv.className = "msg bot";
+        streamingBotDiv.style.whiteSpace = "pre-wrap";  // Preserve spaces during streaming (plain text)
         streamingBotDiv.innerText = "";
         display.appendChild(streamingBotDiv);
 
@@ -547,7 +680,15 @@ function initWebSocket() {
         if (streamingBotDiv) {
           // Check for buttons — if present, replace with parsed version
           const { cleanText, buttons } = parseButtons(replyText);
-          streamingBotDiv.innerText = cleanText;
+          // Switch from plain-text streaming to formatted HTML
+          streamingBotDiv.style.whiteSpace = "";  // Remove pre-wrap for HTML
+          if (typeof renderMarkdown === 'function') {
+            streamingBotDiv.innerHTML = renderMarkdown(cleanText);
+          } else if (typeof linkify === 'function') {
+            streamingBotDiv.innerHTML = linkify(cleanText);
+          } else {
+            streamingBotDiv.innerText = cleanText;
+          }
           if (buttons.length > 0) {
             const display = document.getElementById("chat-display");
             renderButtons(buttons, display);

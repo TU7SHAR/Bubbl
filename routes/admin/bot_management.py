@@ -225,7 +225,7 @@ def delete_bot(bot_id):
     if target_bot:
         docs = Document.query.filter_by(bot_id=target_bot.id).all()
         for doc in docs:
-            delete_from_gemini(doc.filename)
+            delete_from_gemini(doc.filename, store_id=target_bot.store_id)
 
         db.session.delete(target_bot)
         db.session.commit()
@@ -343,7 +343,7 @@ def delete_doc(doc_id):
     bot = Bot.query.filter_by(id=doc.bot_id, org_id=session['org_id']).first()
     if bot:
         try:
-            delete_from_gemini(doc.filename)
+            delete_from_gemini(doc.filename, store_id=bot.store_id)
         except Exception as e:
             print(f"Gemini Delete Error: {e}")
             

@@ -26,6 +26,7 @@ from bot.chat import (
     BASE_GUARDRAILS, _get_client, _get_platform_bot_config,
     _build_public_bot_prompt, _build_links_text, BUTTON_INSTRUCTIONS
 )
+from routes.embed.api import _build_user_context
 from google.genai import types
 
 
@@ -74,6 +75,11 @@ def register_socket_events(socketio):
                     target_store_id = public_store_id
                 else:
                     system_instruction = BASE_GUARDRAILS + _build_public_bot_prompt("")
+
+                # Context injection — add user details so bot can answer personal questions
+                user_context = _build_user_context()
+                if user_context:
+                    system_instruction = user_context + system_instruction
             else:
                 # Specific bot
                 bot_cfg = _get_bot_config_for_ws(bot_id)
@@ -111,6 +117,11 @@ def register_socket_events(socketio):
                     links_text = _build_links_text(bot_record.managed_links)
                     ai_prompt += "\n\n" + BUTTON_INSTRUCTIONS
                     ai_prompt += "Available links (ONLY use these):\n" + links_text
+
+                # Context injection — add user details for personalized responses
+                user_context = _build_user_context()
+                if user_context:
+                    ai_prompt = user_context + ai_prompt
 
                 system_instruction = BASE_GUARDRAILS + "SPECIFIC BOT INSTRUCTIONS:\n" + ai_prompt
 

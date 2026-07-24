@@ -58,7 +58,7 @@ def upload_file():
         existing_doc = Document.query.filter_by(bot_id=user_bot.id, filename=filename).first()
         
         if existing_doc:
-            delete_from_gemini(filename)
+            delete_from_gemini(filename, store_id=user_bot.store_id)
         else:
             new_doc = Document(bot_id=user_bot.id, filename=filename)
             db.session.add(new_doc)
@@ -91,7 +91,7 @@ def delete_file(filename):
         if doc_to_delete:
             db.session.delete(doc_to_delete)
             db.session.commit()            
-            delete_from_gemini(filename)
+            delete_from_gemini(filename, store_id=user_bot.store_id)
             flash(f"File Deleted: {filename} from {user_bot.bot_name}", "success")
         else:
             flash(f"Error: File '{filename}' does not exist in this Bot.", "error")
