@@ -28,6 +28,13 @@ class RegistrationForm(FlaskForm):
         Length(min=8, message="Password must be at least 8 characters."),
         password_strength,
     ])
+    confirm_password = PasswordField("Confirm Password", validators=[
+        DataRequired(message="Please confirm your password."),
+    ])
+
+    def validate_confirm_password(self, field):
+        if field.data != self.password.data:
+            raise ValidationError("Passwords do not match.")
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", methods=["POST"])  # Prevents registration spam
