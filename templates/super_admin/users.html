@@ -6,17 +6,28 @@
 <div class="sa-table-wrap">
   <div class="sa-table-header">
     <h3>All Users</h3>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <input type="text" class="sa-search-input" placeholder="Search users..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:220px; outline:none;">
+      <select class="sa-filter-select" data-col="2" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
+        <option value="">All Plans</option>
+        <option value="free">Free</option>
+        <option value="starter">Starter</option>
+        <option value="growth">Growth</option>
+        <option value="pro">Pro</option>
+      </select>
+      <span class="sa-search-count" style="font-size:11px; color:var(--text-muted);"></span>
+    </div>
   </div>
   <div class="sa-table-scroll">
     <table class="sa-table">
       <thead>
         <tr>
-          <th>Name / Email</th>
-          <th>Role</th>
-          <th>Plan</th>
+          <th data-sort="text">Name / Email</th>
+          <th data-sort="text">Role</th>
+          <th data-sort="text">Plan</th>
           <th>Status</th>
-          <th>Bots</th>
-          <th>Leads</th>
+          <th data-sort="number">Bots</th>
+          <th data-sort="number">Leads</th>
           <th>Actions</th>
         </tr>
       </thead>

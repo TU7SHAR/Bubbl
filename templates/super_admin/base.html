@@ -202,6 +202,11 @@
       text-align: left;
       border-bottom: 1px solid var(--card-border);
     }
+    .sa-table th[data-sort] { cursor: pointer; position: relative; padding-right: 20px; }
+    .sa-table th[data-sort]:hover { color: var(--accent); }
+    .sa-table th[data-sort]::after { content: '⇅'; position: absolute; right: 4px; opacity: 0.4; font-size: 10px; }
+    .sa-table th.sort-asc::after { content: '↑'; opacity: 1; color: var(--accent); }
+    .sa-table th.sort-desc::after { content: '↓'; opacity: 1; color: var(--accent); }
     .sa-table td {
       padding: 12px 14px;
       font-size: 13px;
@@ -490,6 +495,106 @@ function updateToggleBtn(theme) {
   var saved = localStorage.getItem('sa-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
   updateToggleBtn(saved);
+})();
+
+// ═══════════════════════════════════════════
+// SEARCH & SORT — Works on any sa-table with .sa-search-input
+// ═══════════════════════════════════════════
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    // --- SEARCH: filter table rows by text ---
+    document.querySelectorAll('.sa-search-input').forEach(function(input) {
+      var tableWrap = input.closest('.sa-table-wrap');
+      if (!tableWrap) return;
+      var table = tableWrap.querySelector('.sa-table');
+      if (!table) return;
+
+      input.addEventListener('input', function() {
+        var query = this.value.toLowerCase().trim();
+        var rows = table.querySelectorAll('tbody tr');
+        var visibleCount = 0;
+
+        rows.forEach(function(row) {
+          var text = row.textContent.toLowerCase();
+          var match = !query || text.indexOf(query) !== -1;
+          row.style.display = match ? '' : 'none';
+          if (match) visibleCount++;
+        });
+
+        // Update count badge if present
+        var countEl = tableWrap.querySelector('.sa-search-count');
+        if (countEl) countEl.textContent = visibleCount + ' result' + (visibleCount !== 1 ? 's' : '');
+      });
+    });
+
+    // --- SORT: click column headers to sort ---
+    document.querySelectorAll('.sa-table th[data-sort]').forEach(function(th) {
+      th.style.cursor = 'pointer';
+      th.style.userSelect = 'none';
+      th.title = 'Click to sort';
+
+      th.addEventListener('click', function() {
+        var table = th.closest('table');
+        var tbody = table.querySelector('tbody');
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+        var colIndex = Array.from(th.parentNode.children).indexOf(th);
+        var sortType = th.getAttribute('data-sort'); // 'text', 'number', 'date'
+        var currentDir = th.getAttribute('data-dir') || 'asc';
+        var newDir = currentDir === 'asc' ? 'desc' : 'asc';
+
+        // Reset other headers
+        table.querySelectorAll('th[data-sort]').forEach(function(h) {
+          h.removeAttribute('data-dir');
+          h.classList.remove('sort-asc', 'sort-desc');
+        });
+        th.setAttribute('data-dir', newDir);
+        th.classList.add('sort-' + newDir);
+
+        rows.sort(function(a, b) {
+          var aVal = (a.children[colIndex] || {}).textContent || '';
+          var bVal = (b.children[colIndex] || {}).textContent || '';
+
+          if (sortType === 'number') {
+            aVal = parseFloat(aVal.replace(/[^0-9.\-]/g, '')) || 0;
+            bVal = parseFloat(bVal.replace(/[^0-9.\-]/g, '')) || 0;
+          } else if (sortType === 'date') {
+            aVal = new Date(aVal).getTime() || 0;
+            bVal = new Date(bVal).getTime() || 0;
+          } else {
+            aVal = aVal.toLowerCase().trim();
+            bVal = bVal.toLowerCase().trim();
+          }
+
+          if (aVal < bVal) return newDir === 'asc' ? -1 : 1;
+          if (aVal > bVal) return newDir === 'asc' ? 1 : -1;
+          return 0;
+        });
+
+        rows.forEach(function(row) { tbody.appendChild(row); });
+      });
+    });
+
+    // --- FILTER: dropdown filters (e.g. by plan) ---
+    document.querySelectorAll('.sa-filter-select').forEach(function(sel) {
+      var tableWrap = sel.closest('.sa-table-wrap');
+      if (!tableWrap) return;
+      var table = tableWrap.querySelector('.sa-table');
+      if (!table) return;
+      var colIndex = parseInt(sel.getAttribute('data-col'));
+
+      sel.addEventListener('change', function() {
+        var filterVal = this.value.toLowerCase();
+        var rows = table.querySelectorAll('tbody tr');
+
+        rows.forEach(function(row) {
+          if (!filterVal) { row.style.display = ''; return; }
+          var cell = row.children[colIndex];
+          var cellText = (cell ? cell.textContent : '').toLowerCase().trim();
+          row.style.display = cellText.indexOf(filterVal) !== -1 ? '' : 'none';
+        });
+      });
+    });
+  });
 })();
 </script>
 {% block scripts %}{% endblock %}
