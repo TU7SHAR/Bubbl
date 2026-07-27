@@ -115,7 +115,9 @@ function upgradeUser(userId, userName) {
   })
   .then(r => r.json())
   .then(data => {
-    openModal('Plan Updated', '<p>' + (data.message || JSON.stringify(data)) + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
+    if (data.error) { openModal('Error', '<p style="color:#f87171;">' + data.error + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>'); return; }
+    var msg = 'Plan updated to <strong>' + (data.plan_label || plan) + '</strong>' + (data.email ? ' for ' + data.email : '') + '.' + (data.emailed ? ' A confirmation email was sent.' : '');
+    openModal('Plan Updated', '<p>' + msg + '</p><br><button class="sa-btn sa-btn-primary" onclick="location.reload()">OK</button>');
   })
   .catch(err => {
     openModal('Error', '<p style="color:#f87171;">' + err.message + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
@@ -208,7 +210,8 @@ function sendEmail() {
   })
   .then(r => r.json())
   .then(data => {
-    openModal('Email Sent', '<p>' + (data.message || JSON.stringify(data)) + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
+    if (data.error) { openModal('Error', '<p style="color:#f87171;">' + data.error + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>'); return; }
+    openModal('Email Sent', '<p>Email sent successfully' + (data.email ? ' to ' + data.email : '') + '.</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
   })
   .catch(err => {
     openModal('Error', '<p style="color:#f87171;">' + err.message + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');

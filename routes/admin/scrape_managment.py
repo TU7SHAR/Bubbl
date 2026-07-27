@@ -1,12 +1,15 @@
 import os
 from flask import request, jsonify, session
 
-from models.models import db, Bot, ScrapeJob
+from models.models import db, Bot, ScrapeJob, Organization
 from tasks.scrape_tasks import async_scrape_task
 from utils.scraper import is_safe_url
 from utils.plan_limits import check_scrape_limit
 from extensions import limiter
 from . import admin_bp
+
+# Rough per-page cost: ~2s rate-limit sleep + ~2-3s scrape/index per URL
+SECONDS_PER_PAGE = 4
 
 @admin_bp.route('/api/scrape/start', methods=['POST'])
 def start_scrape():
@@ -42,9 +45,14 @@ def start_scrape():
         return jsonify({"error": f"Invalid URL: {error_msg}"}), 400
 
     # --- PLAN LIMIT: Cap max pages to plan allowance ---
+    requested = max_urls
     plan_scrape_limit = check_scrape_limit(session.get('org_id'))
-    if max_urls > plan_scrape_limit:
+    capped = requested > plan_scrape_limit
+    if capped:
         max_urls = plan_scrape_limit
+
+    org = Organization.query.get(session.get('org_id'))
+    plan_name = (org.plan if org else 'free') or 'free'
 
     new_job = ScrapeJob(bot_id=bot_id, url=url, status='pending', limit=max_urls)
     db.session.add(new_job)
@@ -53,7 +61,20 @@ def start_scrape():
     # Queue the scrape in Celery (runs in separate worker process)
     async_scrape_task.delay(new_job.id, url, bot_id, use_spider)
 
-    return jsonify({"success": True, "job_id": new_job.id, "message": f"Scraping started (max {max_urls} pages)."})
+    # Time estimate (single page scrapes are quick; deep crawl scales with pages)
+    est_seconds = (max_urls if use_spider else 1) * SECONDS_PER_PAGE
+
+    return jsonify({
+        "success": True,
+        "job_id": new_job.id,
+        "pages": max_urls,
+        "requested": requested,
+        "plan": plan_name,
+        "plan_limit": plan_scrape_limit,
+        "capped": capped,
+        "estimated_seconds": est_seconds,
+        "message": f"Scraping started (max {max_urls} pages).",
+    })
 
 @admin_bp.route('/api/scrape/status/<int:job_id>', methods=['GET'])
 @limiter.exempt

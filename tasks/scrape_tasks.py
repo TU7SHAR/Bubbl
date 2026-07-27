@@ -49,11 +49,13 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
         crawl_limit = job.limit if job.limit else 20
 
         def add_log(msg):
-            """Append progress log to the ScrapeJob record."""
-            logger.info(msg)
+            """Append a timestamped (UTC) progress log to the ScrapeJob record."""
+            ts = datetime.now(timezone.utc).strftime('%H:%M:%S')
+            line = f"[{ts} UTC] {msg}"
+            logger.info(line)
             j = ScrapeJob.query.get(job_id)
             if j:
-                j.logs = (j.logs or "") + msg + "\n"
+                j.logs = (j.logs or "") + line + "\n"
                 db.session.commit()
 
         add_log(f"[Celery] Initializing Scraper for: {url} (Limit: {crawl_limit} pages)")
