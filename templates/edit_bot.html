@@ -448,8 +448,13 @@
               <h2 class="cb-content-title bricolage">Managed Links</h2>
               <p class="cb-content-subtitle">These links appear as clickable buttons in your bot's chat responses. Auto-populated from scrapes, editable here.</p>
 
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                <button type="button" class="btn btn-solid" style="border-radius: 8px; font-size: 13px; padding: 8px 14px;" onclick="addLinkRow()">+ Add Link</button>
+                <span style="font-size:12px; color:#6b7280;"><span style="color:#dc2626; font-weight:700;">*</span> Label and URL are required</span>
+              </div>
+
               <div id="links-container" style="margin-bottom: 16px;"></div>
-              <button type="button" class="btn btn-solid" style="border-radius: 8px; font-size: 13px; padding: 8px 14px;" onclick="addLinkRow()">+ Add Link</button>
+              <button type="button" class="btn btn-outline" style="border-radius: 8px; font-size: 13px; padding: 8px 14px;" onclick="addLinkRow()">+ Add Link</button>
               <div id="links-status" style="margin-top: 10px; font-size: 12px;"></div>
 
               <div class="cb-bottom-bar">
@@ -842,8 +847,10 @@ function renderLinks() {
   currentLinks.forEach(function(link, i) {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center; flex-wrap:wrap;';
-    row.innerHTML = '<input class="dash-input" style="flex:2; min-width:120px; padding:9px 12px; font-size:13px;" placeholder="Label" value="' + (link.label||'') + '" onchange="currentLinks['+i+'].label=this.value">' +
-      '<input class="dash-input" style="flex:3; min-width:180px; padding:9px 12px; font-size:13px;" placeholder="https://..." value="' + (link.url||'') + '" onchange="currentLinks['+i+'].url=this.value">' +
+    var labelBorder = link.label ? 'rgba(0,0,0,0.15)' : '#f87171';
+    var urlBorder = link.url ? 'rgba(0,0,0,0.15)' : '#f87171';
+    row.innerHTML = '<input class="dash-input" title="Required" style="flex:2; min-width:120px; padding:9px 12px; font-size:13px; border:1.5px solid ' + labelBorder + ';" placeholder="Label *" value="' + (link.label||'') + '" oninput="currentLinks['+i+'].label=this.value; this.style.borderColor=this.value?\'rgba(0,0,0,0.15)\':\'#f87171\';">' +
+      '<input class="dash-input" title="Required" style="flex:3; min-width:180px; padding:9px 12px; font-size:13px; border:1.5px solid ' + urlBorder + ';" placeholder="https://... *" value="' + (link.url||'') + '" oninput="currentLinks['+i+'].url=this.value; this.style.borderColor=this.value?\'rgba(0,0,0,0.15)\':\'#f87171\';">' +
       '<select class="dash-input" style="flex:1; min-width:110px; padding:9px 8px; font-size:12px; appearance:none; -webkit-appearance:none; background-image:url(\'data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;%23666&quot; stroke-width=&quot;2&quot;><polyline points=&quot;6 9 12 15 18 9&quot;/></svg>\'); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; cursor:pointer;" onchange="currentLinks['+i+'].category=this.value">' +
       '<option value="pricing"'+(link.category==='pricing'?' selected':'')+'>Pricing</option>' +
       '<option value="action"'+(link.category==='action'?' selected':'')+'>Action</option>' +
@@ -862,15 +869,23 @@ function removeLink(i) { currentLinks.splice(i, 1); renderLinks(); }
 
 function saveLinks() {
   var s = document.getElementById('links-status');
-  var valid = currentLinks.filter(function(l) { return l.label && l.url; });
+
+  // Warn if any row is missing a required field (Label or URL)
+  var missing = currentLinks.filter(function(l) { return !l.label || !l.url; });
+  if (missing.length > 0) {
+    s.innerHTML = '<span style="color:#dc2626;">&#9888; Please fill both Label and URL for every link, or remove the empty row(s) using the X button.</span>';
+    renderLinks(); // re-render so the empty required fields show red borders
+    return;
+  }
+
   fetch('/admin/bot/' + botId + '/links', {
     method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ links: valid })
+    body: JSON.stringify({ links: currentLinks })
   })
   .then(function(r) { return r.json(); })
   .then(function(d) {
-    if (d.success) { s.innerHTML = '<span style="color:#059669;">Saved ' + d.count + ' links!</span>'; currentLinks = valid; renderLinks(); setTimeout(function(){s.innerHTML='';}, 3000); }
+    if (d.success) { s.innerHTML = '<span style="color:#059669;">Saved ' + d.count + ' link' + (d.count !== 1 ? 's' : '') + '!</span>'; renderLinks(); setTimeout(function(){s.innerHTML='';}, 3000); }
     else { s.innerHTML = '<span style="color:#dc2626;">' + (d.error||'Failed') + '</span>'; }
   });
 }
