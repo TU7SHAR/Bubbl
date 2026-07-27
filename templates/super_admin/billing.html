@@ -56,17 +56,27 @@
 <div class="sa-table-wrap">
   <div class="sa-table-header">
     <h3>Payment History</h3>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <input type="text" class="sa-search-input" placeholder="Search payments..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
+      <select class="sa-filter-select" data-col="5" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
+        <option value="">All Status</option>
+        <option value="success">Success</option>
+        <option value="captured">Captured</option>
+        <option value="failed">Failed</option>
+        <option value="refunded">Refunded</option>
+      </select>
+    </div>
   </div>
   <div class="sa-table-scroll">
     <table class="sa-table">
       <thead>
         <tr>
-          <th>Date (UTC)</th>
-          <th>Customer</th>
-          <th>Plan</th>
-          <th>Amount</th>
+          <th data-sort="date">Date</th>
+          <th data-sort="text">Customer</th>
+          <th data-sort="text">Plan</th>
+          <th data-sort="number">Amount</th>
           <th>Transaction ID</th>
-          <th>Status</th>
+          <th data-sort="text">Status</th>
         </tr>
       </thead>
       <tbody>

@@ -4,12 +4,21 @@
 {% block admin_content %}
 <h1 class="page-title">Failed Scrape Jobs</h1>
 
-<div class="table-wrap">
-  <div class="table-header"><h3>{{ scrapes | length }} failed jobs</h3></div>
-  <div class="table-scroll">
-    <table>
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>{{ scrapes | length }} failed jobs</h3>
+    <input type="text" class="sa-search-input" placeholder="Search scrapes..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
       <thead>
-        <tr><th>ID</th><th>URL</th><th>Error</th><th>Created</th><th>Actions</th></tr>
+        <tr>
+          <th data-sort="number">ID</th>
+          <th data-sort="text">URL</th>
+          <th>Error</th>
+          <th data-sort="date">Created</th>
+          <th>Actions</th>
+        </tr>
       </thead>
       <tbody>
         {% for s in scrapes %}
