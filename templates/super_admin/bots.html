@@ -70,7 +70,9 @@ function toggleBot(botId, name) {
   })
   .then(r => r.json())
   .then(data => {
-    openModal('Bot Toggled', '<p>' + (data.message || JSON.stringify(data)) + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal(); location.reload();">OK</button>');
+    if (data.error) { openModal('Error', '<p style="color:#f87171;">' + data.error + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>'); return; }
+    var state = (data.status || (data.is_active ? 'enabled' : 'disabled'));
+    openModal('Bot Updated', '<p>Bot <strong>' + name + '</strong> is now ' + state + '.</p><br><button class="sa-btn sa-btn-primary" onclick="location.reload()">OK</button>');
   })
   .catch(err => {
     openModal('Error', '<p style="color:#f87171;">' + err.message + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
