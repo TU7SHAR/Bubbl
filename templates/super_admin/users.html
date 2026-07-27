@@ -64,7 +64,11 @@
                 </select>
                 <button class="sa-btn sa-btn-primary" style="padding:4px 8px; font-size:11px;" onclick="upgradeUser('{{ u.id }}', '{{ u.name }}')">Apply</button>
                 <button class="sa-btn sa-btn-ghost" style="padding:4px 8px; font-size:11px;" onclick="openEmailModal('{{ u.id }}', '{{ u.name }}', '{{ u.email }}')">✉</button>
-                <button class="sa-btn sa-btn-danger" style="padding:4px 8px; font-size:11px;" onclick="suspendUser('{{ u.id }}', '{{ u.name }}')">⚡</button>
+                {% if u.is_suspended %}
+                <button class="sa-btn" style="padding:4px 10px; font-size:11px; background:#10b981; color:#fff; border:none;" onclick="suspendUser('{{ u.id }}', '{{ u.name }}', true)">Unsuspend</button>
+                {% else %}
+                <button class="sa-btn sa-btn-danger" style="padding:4px 10px; font-size:11px;" onclick="suspendUser('{{ u.id }}', '{{ u.name }}', false)">Suspend</button>
+                {% endif %}
               </div>
             {% endif %}
           </td>
@@ -95,8 +99,9 @@ function upgradeUser(userId, userName) {
   });
 }
 
-function suspendUser(userId, userName) {
-  if (!confirm('Toggle suspension for ' + userName + '?')) return;
+function suspendUser(userId, userName, isSuspended) {
+  var action = isSuspended ? 'Restore access for' : 'Suspend';
+  if (!confirm(action + ' ' + userName + '?')) return;
   fetch('/super_admin/users/suspend', {
     method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
@@ -104,7 +109,10 @@ function suspendUser(userId, userName) {
   })
   .then(r => r.json())
   .then(data => {
-    openModal('Suspend Toggle', '<p>' + (data.message || JSON.stringify(data)) + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
+    var msg = data.status === 'suspended'
+      ? userName + ' has been suspended.'
+      : userName + ' has been unsuspended (access restored).';
+    openModal('Done', '<p>' + msg + '</p><br><button class="sa-btn sa-btn-primary" onclick="location.reload()">OK</button>');
   })
   .catch(err => {
     openModal('Error', '<p style="color:#f87171;">' + err.message + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
