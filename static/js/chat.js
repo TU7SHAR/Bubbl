@@ -422,6 +422,18 @@ function renderMarkdown(text) {
     return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" class="bubbl-inline-link">' + match + '</a>';
   });
 
+  // 12b. Informal links WITHOUT protocol (e.g. "bubbl.ooo", "example.com/pricing").
+  // Only matches a whitelist of common TLDs to avoid false positives (e.g. "e.g.", "1.5").
+  // Splits on existing <a>...</a> segments so it never re-links text already inside an anchor
+  // (URLs and emails were already converted above).
+  var bareDomain = /\b((?:[a-zA-Z0-9\-]+\.)+(?:com|org|net|io|ooo|co|in|dev|app|ai|xyz|info|biz|me|gov|edu))(\/[^\s<]*)?/gi;
+  html = html.split(/(<a\b[^>]*>[\s\S]*?<\/a>)/gi).map(function(seg) {
+    if (seg.slice(0, 2).toLowerCase() === '<a') return seg;  // leave existing links untouched
+    return seg.replace(bareDomain, function(m) {
+      return '<a href="https://' + m + '" target="_blank" rel="noopener noreferrer" class="bubbl-inline-link">' + m + '</a>';
+    });
+  }).join('');
+
   // 13. Paragraphs — convert double newlines to <p> breaks
   html = html.replace(/\n{2,}/g, '</p><p>');
   // Single newlines within a paragraph → <br>
