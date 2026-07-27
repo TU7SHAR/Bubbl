@@ -324,6 +324,14 @@ def conversations_list(bot_id):
         if bot.interaction_count and bot.total_latency:
             avg_response_ms = int((bot.total_latency / bot.interaction_count) * 1000)
 
+        # Visitor IP — first recorded IP in this session
+        ip_row = ChatMessage.query.filter(
+            ChatMessage.bot_id == bot_id,
+            ChatMessage.session_id == sess.session_id,
+            ChatMessage.ip_address.isnot(None)
+        ).first()
+        visitor_ip = ip_row.ip_address if ip_row else None
+
         conversations.append({
             'session_id': sess.session_id,
             'message_count': sess.message_count,
@@ -334,6 +342,7 @@ def conversations_list(bot_id):
             'duration_mins': duration_mins,
             'total_tokens': sess.total_tokens or 0,
             'lead': lead,
+            'ip_address': visitor_ip,
             'preview': (first_msg.content[:100] + '...') if first_msg and len(first_msg.content) > 100 else (first_msg.content if first_msg else 'No messages'),
             'avg_response_ms': avg_response_ms,
         })

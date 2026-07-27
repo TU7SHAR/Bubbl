@@ -214,4 +214,5 @@ class ChatMessage(db.Model):
     role = db.Column(db.String(10), nullable=False)  # 'user' or 'bot'
     content = db.Column(db.Text, nullable=False)
     tokens_used = db.Column(db.Integer, default=0)  # Tokens for this specific response
+    ip_address = db.Column(db.String(45), nullable=True)  # Visitor IP (IPv4/IPv6), captured on user messages
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

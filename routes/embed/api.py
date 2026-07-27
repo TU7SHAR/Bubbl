@@ -64,7 +64,18 @@ def _build_user_context():
         return ""
 
 
-def _save_chat_message(bot_id, session_id, role, content, lead_id=None, tokens_used=0):
+def _client_ip():
+    """Extract the real client IP, honoring nginx's X-Forwarded-For header."""
+    try:
+        xff = request.headers.get('X-Forwarded-For', '')
+        if xff:
+            return xff.split(',')[0].strip()[:45]
+        return (request.remote_addr or '')[:45]
+    except Exception:
+        return None
+
+
+def _save_chat_message(bot_id, session_id, role, content, lead_id=None, tokens_used=0, ip_address=None):
     """Persist a single chat message to the database (fire-and-forget)."""
     try:
         msg = ChatMessage(
@@ -74,6 +85,7 @@ def _save_chat_message(bot_id, session_id, role, content, lead_id=None, tokens_u
             content=content[:5000] if content else "",  # Cap at 5000 chars
             lead_id=lead_id,
             tokens_used=tokens_used,
+            ip_address=ip_address,
         )
         db.session.add(msg)
         db.session.commit()
@@ -202,7 +214,7 @@ def chat():
             user_context = _build_user_context()
             reply = get_response_from_gemini(user_query=user_message, history=history, custom_prompt=user_context if user_context else None)
             # Save public bot conversation
-            _save_chat_message(bot_id=None, session_id=chat_session_id, role='user', content=user_message)
+            _save_chat_message(bot_id=None, session_id=chat_session_id, role='user', content=user_message, ip_address=_client_ip())
             _save_chat_message(bot_id=None, session_id=chat_session_id, role='bot', content=reply)
             return jsonify({"response": reply, "session_id": chat_session_id})
 
@@ -373,7 +385,7 @@ def chat():
             increment_message_count(bot_record.org_id)
 
         # --- PERSIST CHAT TO DB ---
-        _save_chat_message(bot_id=bot_id, session_id=chat_session_id, role='user', content=user_message)
+        _save_chat_message(bot_id=bot_id, session_id=chat_session_id, role='user', content=user_message, ip_address=_client_ip())
         _save_chat_message(bot_id=bot_id, session_id=chat_session_id, role='bot', content=reply, lead_id=lead_id)
 
         return jsonify({"response": reply, "lead_id": lead_id, "session_id": chat_session_id})

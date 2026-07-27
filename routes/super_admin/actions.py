@@ -70,6 +70,7 @@ def migrate_db():
         )""",
         "CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)",
         "CREATE INDEX IF NOT EXISTS idx_chat_message_bot ON chat_message(bot_id)",
+        "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45)",
 
         # ═══ CLEANUP: Remove redundant columns ═══
         "ALTER TABLE organization DROP COLUMN IF EXISTS payment_method",

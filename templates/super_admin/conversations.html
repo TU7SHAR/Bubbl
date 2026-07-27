@@ -11,10 +11,11 @@
     <table class="sa-table">
       <thead>
         <tr>
-          <th>Session ID</th>
+          <th>Session</th>
           <th>Bot</th>
-          <th>Messages</th>
-          <th>Started</th>
+          <th>Admin</th>
+          <th>Visitor IP</th>
+          <th>Msgs</th>
           <th>Last Activity</th>
           <th>Action</th>
         </tr>
@@ -24,9 +25,13 @@
         <tr>
           <td><code style="font-size:12px;">{{ s.session_id[:8] }}</code></td>
           <td>{{ s.bot_name }}</td>
+          <td>
+            <span style="font-weight:600;">{{ s.owner_name }}</span><br>
+            <span style="font-size:11px; color:var(--text-muted);">{{ s.owner_email }}</span>
+          </td>
+          <td><code style="font-size:12px;">{{ s.ip_address }}</code></td>
           <td>{{ s.msg_count }}</td>
-          <td>{{ s.started_at.strftime('%b %d, %Y %H:%M') }}</td>
-          <td>{{ s.last_activity.strftime('%b %d, %Y %H:%M') }}</td>
+          <td>{{ s.last_activity.strftime('%b %d, %H:%M') }}</td>
           <td>
             <a href="/super_admin/conversations/{{ s.session_id }}" class="sa-btn sa-btn-ghost" style="padding:4px 10px; font-size:11px;">View</a>
           </td>
