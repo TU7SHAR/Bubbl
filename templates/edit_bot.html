@@ -314,7 +314,9 @@
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                   Start Scraping Engine
               </button>
-              
+
+              <div id="scrape-notice" style="display: none; margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5;"></div>
+
               <div id="scrape-log-container" style="display: none; margin-top: 24px;">
                   <pre id="scrape-terminal-text" style="background: #111827; color: #10b981; padding: 20px; border-radius: 16px; font-size: 11px; height: 180px; overflow-y: auto; font-family: 'Fira Code', monospace; box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);"></pre>
               </div>
@@ -800,6 +802,30 @@
           if(data.error) {
               logText.innerText = `> Error: ${data.error}`;
               return;
+          }
+
+          // --- Time estimate + plan-limit upgrade notice (persists during polling) ---
+          const notice = document.getElementById('scrape-notice');
+          if (notice) {
+              const estMin = Math.max(1, Math.round((data.estimated_seconds || 0) / 60));
+              const estTxt = 'Estimated time: ~' + estMin + ' min for ' + data.pages + ' page' + (data.pages !== 1 ? 's' : '') + '.';
+              if (data.capped) {
+                  notice.style.display = 'block';
+                  notice.style.background = 'rgba(232,114,42,0.08)';
+                  notice.style.border = '1px solid rgba(232,114,42,0.3)';
+                  notice.style.color = '#9a4a15';
+                  notice.innerHTML = '&#9888; Your <b>' + data.plan + '</b> plan allows up to <b>' + data.plan_limit +
+                      '</b> pages per scrape. We\'ll scrape the first <b>' + data.pages + '</b>. ' +
+                      'To scrape more pages, upgrade your plan.<br>' +
+                      '<span style="color:#6b7280;">' + estTxt + '</span><br>' +
+                      '<a href="/pricing" target="_blank" style="display:inline-block; margin-top:8px; background:#E8722A; color:#fff; padding:6px 16px; border-radius:8px; text-decoration:none; font-weight:600;">Upgrade Plan</a>';
+              } else {
+                  notice.style.display = 'block';
+                  notice.style.background = 'rgba(16,185,129,0.08)';
+                  notice.style.border = '1px solid rgba(16,185,129,0.25)';
+                  notice.style.color = '#047857';
+                  notice.innerHTML = '&#128337; ' + estTxt;
+              }
           }
 
           if(data.job_id) {
