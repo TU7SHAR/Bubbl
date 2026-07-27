@@ -110,6 +110,7 @@ def _run_auto_migrations():
             content TEXT NOT NULL, tokens_used INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT NOW())""",
         'CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)',
+        'ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45)',
     ]
     for s in sqls:
         try:

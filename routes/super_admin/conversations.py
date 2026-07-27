@@ -1,6 +1,6 @@
 """Super Admin — Chat conversation viewer."""
 from flask import render_template, request, jsonify
-from models.models import db, ChatMessage, Bot
+from models.models import db, ChatMessage, Bot, User
 from sqlalchemy import func
 from . import super_admin_bp
 from .decorators import super_admin_required
@@ -31,9 +31,28 @@ def conversations_page():
     enriched = []
     for s in sessions:
         bot = Bot.query.get(s.bot_id) if s.bot_id else None
+
+        # Owner admin (the user who created this bot) + their email
+        owner_name, owner_email = 'Bubbl Platform', '—'
+        if bot and bot.created_by:
+            owner = User.query.get(bot.created_by)
+            if owner:
+                owner_name = owner.name
+                owner_email = owner.email
+
+        # Visitor IP — first recorded IP in this session
+        ip_row = ChatMessage.query.filter(
+            ChatMessage.session_id == s.session_id,
+            ChatMessage.ip_address.isnot(None)
+        ).first()
+        visitor_ip = ip_row.ip_address if ip_row else '—'
+
         enriched.append({
             'session_id': s.session_id,
             'bot_name': bot.bot_name if bot else 'Bubbl (Public)',
+            'owner_name': owner_name,
+            'owner_email': owner_email,
+            'ip_address': visitor_ip,
             'msg_count': s.msg_count,
             'last_activity': s.last_activity,
             'started_at': s.started_at,

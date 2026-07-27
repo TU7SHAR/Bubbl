@@ -195,8 +195,9 @@ def register_socket_events(socketio):
             if bot_id and bot_record:
                 increment_message_count(bot_record.org_id)
 
-            # --- PERSIST CHAT ---
-            _save_ws_chat_message(bot_id, chat_session_id, 'user', user_message)
+            # --- PERSIST CHAT (capture visitor IP on the user message) ---
+            visitor_ip = _client_ip()
+            _save_ws_chat_message(bot_id, chat_session_id, 'user', user_message, ip_address=visitor_ip)
             _save_ws_chat_message(bot_id, chat_session_id, 'bot', reply, lead_id=lead_id, tokens_used=token_count)
 
             # --- EMIT FINAL COMPLETE EVENT (to sender only) ---
@@ -239,7 +240,18 @@ def _get_bot_config_for_ws(bot_id):
     return cfg
 
 
-def _save_ws_chat_message(bot_id, session_id, role, content, lead_id=None, tokens_used=0):
+def _client_ip():
+    """Extract the real client IP, honoring nginx's X-Forwarded-For header."""
+    try:
+        xff = request.headers.get('X-Forwarded-For', '')
+        if xff:
+            return xff.split(',')[0].strip()[:45]
+        return (request.remote_addr or '')[:45]
+    except Exception:
+        return None
+
+
+def _save_ws_chat_message(bot_id, session_id, role, content, lead_id=None, tokens_used=0, ip_address=None):
     """Persist a chat message to DB."""
     try:
         msg = ChatMessage(
@@ -249,6 +261,7 @@ def _save_ws_chat_message(bot_id, session_id, role, content, lead_id=None, token
             content=content[:5000] if content else "",
             lead_id=lead_id,
             tokens_used=tokens_used,
+            ip_address=ip_address,
         )
         db.session.add(msg)
         db.session.commit()
