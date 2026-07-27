@@ -109,7 +109,7 @@
       <!-- Chart -->
       <div class="sa-chart-box">
         <div class="sa-chart-header">
-          <h3>Lead Capture Trend ({% if current_period == 'today' %}Today{% else %}{{ days_count }} Days{% endif %})</h3>
+          <h3>Lead Capture Trend ({% if current_period == 'today' %}Today{% else %}{{ days_count }} Day{{ 's' if days_count != 1 else '' }}{% endif %})</h3>
           <span class="sa-badge sa-badge-green">+{{ total_hits_today }} today</span>
         </div>
         <div style="height: 280px; width: 100%;">

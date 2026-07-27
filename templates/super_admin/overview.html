@@ -21,7 +21,8 @@
   <input type="date" class="sa-input" id="start-date" value="{{ start_date }}" style="width:150px;">
   <input type="date" class="sa-input" id="end-date" value="{{ end_date }}" style="width:150px;">
   <button class="sa-btn sa-btn-primary" onclick="applyCustomRange()">Apply</button>
-  <span style="font-size:11px; color:var(--text-muted); margin-left:8px;">{{ days_count }} days</span>
+  <span style="font-size:11px; color:var(--text-muted); margin-left:8px;">{{ days_count }} day{{ 's' if days_count != 1 else '' }}</span>
+  <span style="font-size:11px; color:var(--text-muted); margin-left:auto;">🕒 All times shown in UTC</span>
 </div>
 
 <!-- ═══ REVENUE ROW ═══ -->
@@ -87,7 +88,7 @@
   <div class="sa-card">
     <div class="sa-card-label">New Users (Period)</div>
     <div class="sa-card-value">{{ new_users_period }}</div>
-    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">in {{ days_count }} days</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">in {{ days_count }} day{{ 's' if days_count != 1 else '' }}</div>
   </div>
   <div class="sa-card">
     <div class="sa-card-label">ARR</div>
