@@ -38,7 +38,7 @@
   {% set usage_percent = ((messages_used / messages_limit * 100) if messages_limit and messages_limit > 0 else 0)|int %}
   <div style="background: rgba(255,255,255,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 28px 28px 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-      <h3 style="font-size: 15px; font-weight: 700; color: #111; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Current Plan & Usage</h3>
+      <h3 style="font-size: 15px; font-weight: 700; color: #111; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Usage This Period</h3>
 
       <!-- Plan Badge -->
       {% if plan == 'pro' %}
@@ -53,31 +53,90 @@
     </div>
 
     <!-- Message Usage -->
-    <div style="margin-bottom: 18px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-size: 13px; color: #555; font-weight: 500;">Messages Used</span>
+    <div style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 13px; color: #555; font-weight: 500;">Messages</span>
         <span style="font-size: 13px; color: #333; font-weight: 600;">{{ messages_used | default(0) }} / {{ messages_limit | default(0) }}</span>
       </div>
-      <div style="width: 100%; height: 10px; background: #e5e7eb; border-radius: 6px; overflow: hidden;">
-        <div style="height: 100%; width: {{ [usage_percent, 100]|min }}%; border-radius: 6px; transition: width 0.4s ease;
-          {% if usage_percent > 100 %}background: #ef4444;{% elif usage_percent > 75 %}background: #E8722A;{% else %}background: #22c55e;{% endif %}
+      <div style="width: 100%; height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+        <div style="height: 100%; width: {{ [usage_percent, 100]|min }}%; border-radius: 4px;
+          {% if usage_percent > 90 %}background: #ef4444;{% elif usage_percent > 70 %}background: #E8722A;{% else %}background: #22c55e;{% endif %}
         "></div>
-      </div>
-      <div style="text-align: right; margin-top: 4px;">
-        <span style="font-size: 12px; color: {% if usage_percent > 100 %}#ef4444{% elif usage_percent > 75 %}#E8722A{% else %}#666{% endif %}; font-weight: 500;">{{ usage_percent }}% used</span>
       </div>
     </div>
 
     <!-- Bot Usage -->
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid rgba(0,0,0,0.06);">
-      <span style="font-size: 13px; color: #555; font-weight: 500;">Bots</span>
-      <span style="font-size: 14px; color: #222; font-weight: 600;">{{ bot_count | default(0) }} / {% if bots_limit is defined and bots_limit >= 999 %}Unlimited{% else %}{{ bots_limit | default(1) }}{% endif %}</span>
+    {% set bots_pct = ((bot_count / bots_limit) * 100)|int if bots_limit and bots_limit < 999 else 5 %}
+    <div style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 13px; color: #555; font-weight: 500;">Bots</span>
+        <span style="font-size: 13px; color: #333; font-weight: 600;">{{ bot_count | default(0) }} / {% if bots_limit >= 999 %}&infin;{% else %}{{ bots_limit }}{% endif %}</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+        <div style="height: 100%; width: {{ [bots_pct, 100]|min }}%; border-radius: 4px;
+          {% if bots_pct > 90 %}background: #ef4444;{% elif bots_pct > 70 %}background: #E8722A;{% else %}background: #22c55e;{% endif %}
+        "></div>
+      </div>
+    </div>
+
+    <!-- Documents -->
+    {% set docs_used = usage.documents_used if usage else 0 %}
+    {% set docs_limit = usage.documents_limit if usage else 3 %}
+    {% set docs_pct = ((docs_used / docs_limit) * 100)|int if docs_limit > 0 else 0 %}
+    <div style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 13px; color: #555; font-weight: 500;">Documents (all bots)</span>
+        <span style="font-size: 13px; color: #333; font-weight: 600;">{{ docs_used }} / {{ docs_limit }}</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+        <div style="height: 100%; width: {{ [docs_pct, 100]|min }}%; border-radius: 4px;
+          {% if docs_pct > 90 %}background: #ef4444;{% elif docs_pct > 70 %}background: #E8722A;{% else %}background: #22c55e;{% endif %}
+        "></div>
+      </div>
+    </div>
+
+    <!-- Scrape Jobs -->
+    {% set scrape_used = usage.scrape_jobs_used if usage else 0 %}
+    {% set scrape_limit = usage.scrape_jobs_limit if usage else 5 %}
+    {% set scrape_pct = ((scrape_used / scrape_limit) * 100)|int if scrape_limit < 999999 else 2 %}
+    <div style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 13px; color: #555; font-weight: 500;">Scrape Jobs (monthly)</span>
+        <span style="font-size: 13px; color: #333; font-weight: 600;">{{ scrape_used }} / {% if scrape_limit >= 999999 %}&infin;{% else %}{{ scrape_limit }}{% endif %}</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+        <div style="height: 100%; width: {{ [scrape_pct, 100]|min }}%; border-radius: 4px;
+          {% if scrape_pct > 90 %}background: #ef4444;{% elif scrape_pct > 70 %}background: #E8722A;{% else %}background: #22c55e;{% endif %}
+        "></div>
+      </div>
+    </div>
+
+    <!-- Pages per Scrape -->
+    <div style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 13px; color: #555; font-weight: 500;">Pages per Scrape</span>
+        <span style="font-size: 13px; color: #333; font-weight: 600;">Up to {{ usage.scrape_pages_limit if usage else 5 }} pages</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: rgba(16,185,129,0.15); border-radius: 4px; overflow: hidden;">
+        <div style="height: 100%; width: 100%; border-radius: 4px; background: #22c55e; opacity: 0.4;"></div>
+      </div>
+    </div>
+
+    <!-- Text Snippets -->
+    <div style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <span style="font-size: 13px; color: #555; font-weight: 500;">Text Snippets</span>
+        <span style="font-size: 13px; color: #10b981; font-weight: 700;">&infin; Unlimited</span>
+      </div>
+      <div style="width: 100%; height: 6px; background: rgba(16,185,129,0.15); border-radius: 4px; overflow: hidden;">
+        <div style="height: 100%; width: 100%; border-radius: 4px; background: #22c55e; opacity: 0.4;"></div>
+      </div>
     </div>
 
     <!-- Reset Date -->
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid rgba(0,0,0,0.06);">
-      <span style="font-size: 13px; color: #555; font-weight: 500;">Resets on</span>
-      <span style="font-size: 14px; color: #222; font-weight: 500;">{{ messages_reset_at.strftime('%b %d, %Y') if messages_reset_at else 'Next billing cycle' }}</span>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 0; border-top: 1px solid rgba(0,0,0,0.06); margin-top: 4px;">
+      <span style="font-size: 12px; color: #999; font-weight: 500;">Resets on</span>
+      <span style="font-size: 12px; color: #999; font-weight: 500;">{{ messages_reset_at.strftime('%b %d, %Y') if messages_reset_at else 'Next billing cycle' }}</span>
     </div>
 
     <!-- Upgrade Button -->
