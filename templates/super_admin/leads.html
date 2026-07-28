@@ -13,17 +13,17 @@
 
 <!-- Stats -->
 <div class="sa-grid" style="grid-template-columns: repeat(3, 1fr);">
-  <div class="sa-card">
+  <div class="sa-card" title="Total number of leads captured across all bots">
     <div class="sa-card-label">Total Leads</div>
     <div class="sa-card-value">{{ total_leads }}</div>
   </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Avg Rating ⭐</div>
-    <div class="sa-card-value">{{ avg_rating }}</div>
+  <div class="sa-card" title="Leads scored as High priority by the AI">
+    <div class="sa-card-label">High Priority</div>
+    <div class="sa-card-value" style="color:var(--red);">{{ high_priority_count }}</div>
   </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Total Feedback</div>
-    <div class="sa-card-value">{{ total_feedback }}</div>
+  <div class="sa-card" title="Number of distinct bots that have captured at least one lead">
+    <div class="sa-card-label">Source Bots</div>
+    <div class="sa-card-value">{{ source_bots_count }}</div>
   </div>
 </div>
 
