@@ -95,8 +95,10 @@ def _build_links_text(links_list):
         label = link.get('label', '')
         url = link.get('url', '')
         category = link.get('category', 'link')
+        color = link.get('color', '')
         if label and url:
-            text += f"- {url} — {label} (category: {category})\n"
+            color_txt = f", color: {color}" if color else ""
+            text += f"- {url} — {label} (category: {category}{color_txt})\n"
     return text
 
 
@@ -106,10 +108,12 @@ BUTTON_INSTRUCTIONS = (
     "Buttons are OPTIONAL — only use them when directing the user to a specific page.\n"
     "ALWAYS answer the question FIRST, then optionally add buttons.\n"
     "Format: [[BUTTONS: category:Label|URL, category:Label|URL]]\n\n"
-    "Categories: pricing (orange), action (green), info (blue), support (purple), link (gray)\n\n"
+    "Categories: pricing (orange), action (green), info (blue), support (purple), link (gray)\n"
+    "If a link in 'Available links' lists a color (e.g. 'color: #ff0000'), append it as a 4th field so the button uses that exact colour: category:Label|URL|#ff0000\n\n"
     "RULES:\n"
     "- ANSWER FIRST. Buttons are a supplement, not a replacement.\n"
     "- ONLY use URLs from the 'Available links' list. NEVER invent URLs.\n"
+    "- If a link has a color, include it exactly as given. If not, omit the color field.\n"
     "- Max 1-2 buttons per response.\n"
     "- Do NOT show buttons for greetings or when you already answered fully.\n"
     "- If no links are available, do NOT show any buttons.\n"

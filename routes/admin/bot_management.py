@@ -403,15 +403,21 @@ def save_bot_links(bot_id):
     links = data.get('links', [])
 
     valid_categories = ['pricing', 'action', 'info', 'support', 'link', 'email', 'phone']
+    import re as _re
     cleaned = []
     for link in links:
         label = (link.get('label') or '').strip()
         url = (link.get('url') or '').strip()
         category = (link.get('category') or 'link').strip().lower()
+        color = (link.get('color') or '').strip()
         if label and url:
             if category not in valid_categories:
                 category = 'link'
-            cleaned.append({"label": label, "url": url, "category": category})
+            entry = {"label": label, "url": url, "category": category}
+            # Store a custom button colour only if it's a valid hex value
+            if _re.match(r'^#[0-9a-fA-F]{3,8}$', color):
+                entry["color"] = color
+            cleaned.append(entry)
 
     bot.managed_links = cleaned
     db.session.commit()

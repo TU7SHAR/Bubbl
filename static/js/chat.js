@@ -464,12 +464,14 @@ function parseButtons(text) {
   // Split by comma, but be careful of URLs containing commas (unlikely but safe)
   const parts = raw.split(/,\s*(?=[a-z]+:)/);
   for (const part of parts) {
-    const btnMatch = part.trim().match(/^(\w+):(.+?)\|(.+)$/);
+    // category:Label|URL   OR   category:Label|URL|#hexcolor (optional custom colour)
+    const btnMatch = part.trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
     if (btnMatch) {
       buttons.push({
         category: btnMatch[1].toLowerCase(),
         label: btnMatch[2].trim(),
         url: btnMatch[3].trim(),
+        color: btnMatch[4] ? btnMatch[4].trim() : null,
       });
     }
   }
@@ -493,6 +495,12 @@ function renderButtons(buttons, container) {
     anchor.target = "_blank";
     anchor.rel = "noopener noreferrer";
     anchor.className = "bubbl-btn bubbl-btn--" + btn.category;
+    // Apply a custom per-link colour if provided (overrides the category class colour)
+    if (btn.color) {
+      anchor.style.background = btn.color;
+      anchor.style.color = "#fff";
+      anchor.style.border = "none";
+    }
     anchor.innerHTML = btn.label + ' <span class="bubbl-btn-arrow">\u2197</span>';
     btnRow.appendChild(anchor);
   }
