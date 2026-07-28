@@ -11,6 +11,87 @@ from . import admin_bp
 # Rough per-page cost: ~2s rate-limit sleep + ~2-3s scrape/index per URL
 SECONDS_PER_PAGE = 4
 
+
+@admin_bp.route('/api/scrape/discover', methods=['POST'])
+def discover_links():
+    """
+    Quick link discovery — finds all URLs on a site WITHOUT scraping them.
+    Returns the list so the user can preview what will be scraped.
+    """
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    from utils.scraper import crawl_website_links, extract_sitemap_urls
+
+    data = request.json or {}
+    url = (data.get('url') or '').strip()
+    use_spider = data.get('use_spider', False)
+    max_urls = min(int(data.get('max_urls') or 50), 100)  # cap preview at 100
+
+    if not url:
+        return jsonify({"error": "URL is required."}), 400
+
+    safe, error_msg = is_safe_url(url)
+    if not safe:
+        return jsonify({"error": f"Invalid URL: {error_msg}"}), 400
+
+    # --- PLAN LIMIT ---
+    plan_limit = check_scrape_limit(session.get('org_id'))
+    org = Organization.query.get(session.get('org_id'))
+    plan_name = (org.plan if org else 'free') or 'free'
+
+    urls_found = []
+    method_used = 'single'
+
+    try:
+        if use_spider:
+            method_used = 'deep_crawl'
+            result = crawl_website_links(url, max_pages=max_urls)
+            if result['success']:
+                urls_found = result['urls']
+            # Fallback to sitemap if spider found very few
+            if len(urls_found) < 3:
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
+                try:
+                    import requests as req
+                    resp = req.head(sitemap_url, timeout=5, allow_redirects=True, headers={'User-Agent': 'Mozilla/5.0'})
+                    if resp.status_code == 200:
+                        sitemap_data = extract_sitemap_urls(sitemap_url, max_urls=max_urls)
+                        if sitemap_data['success'] and len(sitemap_data['urls_to_scrape']) > len(urls_found):
+                            urls_found = sitemap_data['urls_to_scrape']
+                            method_used = 'sitemap_fallback'
+                except Exception:
+                    pass
+        elif url.endswith('.xml'):
+            method_used = 'sitemap'
+            sitemap_data = extract_sitemap_urls(url, max_urls=max_urls)
+            if sitemap_data['success']:
+                urls_found = sitemap_data['urls_to_scrape']
+        else:
+            urls_found = [url]
+            method_used = 'single_page'
+    except Exception as e:
+        return jsonify({"error": f"Discovery failed: {str(e)[:200]}"}), 500
+
+    # Cap to plan limit
+    capped = len(urls_found) > plan_limit
+    scrape_count = min(len(urls_found), plan_limit)
+
+    return jsonify({
+        "success": True,
+        "total_found": len(urls_found),
+        "scrape_count": scrape_count,
+        "capped": capped,
+        "plan": plan_name,
+        "plan_limit": plan_limit,
+        "method": method_used,
+        "urls": urls_found[:scrape_count],  # Only show the ones that will be scraped
+        "estimated_seconds": scrape_count * SECONDS_PER_PAGE,
+    })
+
+
 @admin_bp.route('/api/scrape/start', methods=['POST'])
 def start_scrape():
     if 'user_id' not in session:
