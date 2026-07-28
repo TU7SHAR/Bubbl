@@ -5,6 +5,8 @@ from gevent import monkey
 monkey.patch_all()
 
 import os
+import sys
+import logging
 from flask import Flask, request
 from flask_socketio import SocketIO
 from models.models import db
@@ -24,6 +26,19 @@ app = Flask(__name__)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True  # Required when SameSite is 'None'
 app.config.from_object(Config)
+
+# --- LOGGING: Ensure all output reaches journalctl immediately ---
+# Force unbuffered stdout (gevent can buffer greenlet output otherwise)
+if not sys.flags.dev_mode:
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=logging.INFO,
+        format='[%(asctime)s] %(levelname)s %(name)s: %(message)s',
+        datefmt='%H:%M:%S'
+    )
+# Suppress noisy libraries
+logging.getLogger('engineio').setLevel(logging.WARNING)
+logging.getLogger('socketio').setLevel(logging.WARNING)
 
 # --- WEBSOCKET: Real-time chat streaming via Flask-SocketIO ---
 # Uses Redis as message queue so WebSocket events work across multiple gunicorn workers.
@@ -51,6 +66,7 @@ CORS(app, resources={
     r"/api/platform-feedback": {"origins": "*"},  # Public feedback
     r"/api/bot_avatar/*": {"origins": "*"},  # Avatar fetch from embed
     r"/api/waitlist": {"origins": "*"},      # Marketing site waitlist
+    r"/admin/api/bot_link_colors/*": {"origins": "*"},  # Link colors for embed widget
     r"/api/*": {"origins": ALLOWED_ORIGINS}, # All other API routes: restricted
 })
 
@@ -123,6 +139,15 @@ def _run_auto_migrations():
 with app.app_context():
     db.create_all()
     _run_auto_migrations()
+
+@app.after_request
+def log_request(response):
+    """Log every HTTP request to stdout (visible in journalctl -u bubbl -f)."""
+    # Skip noisy static file requests and health checks
+    if not request.path.startswith('/static/') and not request.path == '/favicon.ico':
+        app.logger.info('%s %s %s → %s', request.remote_addr, request.method, request.path, response.status_code)
+    return response
+
 
 @app.after_request
 def add_security_headers(response):

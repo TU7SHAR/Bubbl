@@ -387,6 +387,29 @@ def get_bot_links(bot_id):
     return jsonify({"success": True, "links": links})
 
 
+@admin_bp.route('/api/bot_link_colors/<int:bot_id>', methods=['GET'])
+def get_bot_link_colors(bot_id):
+    """
+    Public endpoint — returns managed link colors for a bot (used by the chat widget).
+    Maps URL → color so renderButtons can apply custom colors without relying on the AI.
+    """
+    bot = Bot.query.get(bot_id)
+    if not bot:
+        return jsonify({}), 404
+
+    links = bot.managed_links or []
+    # Build a URL → {color, category} map
+    color_map = {}
+    for link in links:
+        url = link.get('url', '').strip()
+        color = link.get('color', '')
+        category = link.get('category', 'link')
+        if url:
+            color_map[url] = {"color": color, "category": category}
+
+    return jsonify(color_map)
+
+
 @admin_bp.route('/bot/<int:bot_id>/links', methods=['POST'])
 def save_bot_links(bot_id):
     """Save managed links for a bot (replaces all)."""

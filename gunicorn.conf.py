@@ -50,6 +50,9 @@ max_requests_jitter = 50
 accesslog = "-"  # stdout
 errorlog = "-"   # stderr
 loglevel = "info"
+# Force unbuffered stdout so print() statements from app code appear immediately
+# in journalctl. Without this, gevent's greenlet-based I/O can buffer output.
+raw_env = ["PYTHONUNBUFFERED=1"]
 
 # --- SECURITY ---
 # Limit request sizes (matches Flask MAX_CONTENT_LENGTH)

@@ -118,10 +118,10 @@
   .setting-info { display: flex; flex-direction: column; }
   .setting-title { font-size: 14px; font-weight: 700; color: #111827; }
   .setting-desc { font-size: 12px; color: #6b7280; margin-top: 4px; }
-  .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; margin: 0; }
-  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; margin: 0; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
   .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e5e7eb; transition: .3s ease; border-radius: 24px; }
-  .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s ease; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; top: 3px; background-color: white; transition: .3s ease; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
   .toggle-switch input:checked + .toggle-slider { background-color: var(--orange, #E8722A); }
   .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
   .limit-input { width: 70px !important; text-align: center; padding: 10px !important; margin: 0 !important; font-weight: 700; }
@@ -320,7 +320,7 @@
                     <span class="setting-desc">Extract extra URLs from page content (emails, internal links not in nav)</span>
                   </div>
                   <label class="toggle-switch">
-                    <input type="checkbox" id="find_max_links" checked>
+                    <input type="checkbox" id="find_max_links" checked onchange="toggleMaxLinksMode()">
                     <span class="toggle-slider"></span>
                   </label>
                 </div>
@@ -870,14 +870,38 @@
     updateLivePreview();
   }
 
+  // --- FIND MAX LINKS: Disable page limit when enabled ---
+  function toggleMaxLinksMode() {
+    var maxLinksOn = document.getElementById('find_max_links').checked;
+    var limitInput = document.getElementById('max_urls');
+    if (maxLinksOn) {
+      limitInput.disabled = true;
+      limitInput.style.opacity = '0.4';
+      limitInput.style.cursor = 'not-allowed';
+      limitInput.title = 'Disabled — Find Max Links will discover all pages automatically';
+    } else {
+      limitInput.disabled = false;
+      limitInput.style.opacity = '1';
+      limitInput.style.cursor = '';
+      limitInput.title = 'Max URLs to process';
+    }
+  }
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() { toggleMaxLinksMode(); });
+
   document.getElementById('scrape-btn').addEventListener('click', async function() {
       const url = document.getElementById('scrape_url').value;
       if(!url) return showModal('Please enter a URL.', 'error');
 
       const isDeep = document.getElementById('use_deep_crawl').checked;
-      const limit = document.getElementById('max_urls').value || 20;
       const findMaxLinks = document.getElementById('find_max_links').checked;
+      const limit = findMaxLinks ? 500 : (document.getElementById('max_urls').value || 20);
       const currentBotId = "{{ bot.id }}"; // Jinja injects the ID here
+      const btn = this; // Reference to the clicked button
+
+      // Show loading state
+      btn.disabled = true;
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Discovering links...';
 
       try {
           const discRes = await fetch('/admin/api/scrape/discover', {
@@ -908,9 +932,10 @@
             disc.method === 'sitemap_fallback' ? '📄 Sitemap (fallback)' : '📃 Single Page';
 
           var statsHtml = '<span>Found: <strong>' + disc.total_found + '</strong> links</span>';
+          if (disc.estimated_total > disc.total_found) statsHtml += '<span>Est. total: <strong>~' + disc.estimated_total + '</strong></span>';
           statsHtml += '<span>Will scrape: <strong>' + disc.scrape_count + '</strong></span>';
           statsHtml += '<span>Est. time: ~' + Math.max(1, Math.round(disc.estimated_seconds / 60)) + ' min</span>';
-          if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max)</span>';
+          if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max). <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a></span>';
           document.getElementById('discovery-stats').innerHTML = statsHtml;
 
           var urlsHtml = disc.urls.map(function(u, idx) {
@@ -930,7 +955,7 @@
               const res = await fetch("{{ url_for('admin_bp.start_scrape') }}", {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: limit, bot_id: currentBotId })
+                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: disc.scrape_count, bot_id: currentBotId, find_max_links: findMaxLinks })
               });
               const data = await res.json();
               if (data.error) { logText.innerText = '> Error: ' + data.error; return; }
