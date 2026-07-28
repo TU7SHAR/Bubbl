@@ -208,7 +208,10 @@ def rename_bot(bot_id):
 @admin_bp.route('/edit_bot/<int:bot_id>', methods=['GET'])
 @admin_required
 def edit_bot(bot_id):
-    target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()    
+    target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+    # Also allow editing the platform bot (belongs to a different org but accessible to all logged-in users)
+    if not target_bot:
+        target_bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
     if not target_bot:
         flash("Bot not found.", "error")
         return redirect(url_for('views_bp.dashboard'))
@@ -260,6 +263,8 @@ def update_bot(bot_id):
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
     if not bot:
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+    if not bot:
         flash("Error: Bot not found.", "error")
         return redirect(url_for('views_bp.dashboard'))
 
@@ -309,6 +314,8 @@ def add_knowledge(bot_id):
         return redirect(url_for('auth.login'))
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+    if not bot:
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
     if not bot:
         flash("Error: Bot not found.", "error")
         return redirect(url_for('views_bp.dashboard'))
@@ -369,6 +376,8 @@ def get_bot_links(bot_id):
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
     if not bot:
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+    if not bot:
         return jsonify({"error": "Bot not found"}), 404
 
     links = bot.managed_links or []
@@ -382,6 +391,8 @@ def save_bot_links(bot_id):
         return jsonify({"error": "Unauthorized"}), 401
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+    if not bot:
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
     if not bot:
         return jsonify({"error": "Bot not found"}), 404
 
