@@ -20,7 +20,7 @@ logger = get_task_logger(__name__)
 # time_limit: hard kill a few seconds later if soft handling doesn't return.
 @celery.task(bind=True, max_retries=3, default_retry_delay=60,
              soft_time_limit=1500, time_limit=1560)
-def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
+def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_links=True):
     """
     Background scrape task — replaces the old threading.Thread approach.
 
@@ -196,8 +196,9 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False):
                 job.error_message = f"Partial success ({success_count} scraped)."
 
             # --- AUTO-EXTRACT LINKS, EMAILS, PHONES FROM ALL BOTS ---
+            # Only if find_max_links is enabled (default: True)
             # Extract from page content (markdown has [text](url) links, emails, phones)
-            if urls_to_scrape:
+            if urls_to_scrape and find_max_links:
                 import re
                 from urllib.parse import urlparse, urljoin
 
