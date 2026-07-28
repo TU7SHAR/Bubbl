@@ -118,10 +118,10 @@
   .setting-info { display: flex; flex-direction: column; }
   .setting-title { font-size: 14px; font-weight: 700; color: #111827; }
   .setting-desc { font-size: 12px; color: #6b7280; margin-top: 4px; }
-  .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; margin: 0; }
-  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; margin: 0; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
   .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e5e7eb; transition: .3s ease; border-radius: 24px; }
-  .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s ease; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; top: 3px; background-color: white; transition: .3s ease; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
   .toggle-switch input:checked + .toggle-slider { background-color: var(--orange, #E8722A); }
   .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
   .limit-input { width: 70px !important; text-align: center; padding: 10px !important; margin: 0 !important; font-weight: 700; }
@@ -232,10 +232,11 @@
               <p class="cb-content-subtitle">Files embedded into your agent's memory.</p>
               
               <label class="cb-label">Existing Documents</label>
-              <div style="margin-bottom:10px;">
-                <input type="text" id="doc-search" placeholder="Search documents..." oninput="filterDocs()" style="width:100%; padding:9px 14px; font-size:13px; border-radius:8px; border:1.5px solid rgba(0,0,0,0.1); outline:none;" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,0.1)'">
+              <div style="margin-bottom:10px; display:flex; gap:10px; align-items:center;">
+                <input type="text" id="doc-search" placeholder="Search documents..." oninput="filterAndPaginateDocs()" style="flex:1; padding:9px 14px; font-size:13px; border-radius:8px; border:1.5px solid rgba(0,0,0,0.1); outline:none;" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,0.1)'">
+                <span id="doc-count" style="font-size:12px; color:#6b7280; white-space:nowrap;"></span>
               </div>
-              <div class="doc-list" id="doc-list-container" style="margin-bottom: 40px;">
+              <div class="doc-list" id="doc-list-container" style="margin-bottom: 10px;">
                 {% if docs %}
                     {% for doc in docs %}
                     <div class="doc-item">
@@ -256,6 +257,7 @@
                     </div>
                 {% endif %}
               </div>
+              <div id="doc-pagination" style="display:flex; justify-content:center; gap:8px; margin-bottom:30px;"></div>
 
               <div id="staging-area" style="display: none; margin-bottom: 30px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -311,16 +313,52 @@
                   </div>
                   <input type="number" id="max_urls" value="20" class="dash-input limit-input" min="1" max="500">
                 </div>
+
+                <div class="scrape-setting-card">
+                  <div class="setting-info">
+                    <span class="setting-title">Find Max Links</span>
+                    <span class="setting-desc">Extract extra URLs from page content (emails, internal links not in nav)</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="find_max_links" checked onchange="toggleMaxLinksMode()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div id="scrape-info-box" style="margin-top:12px; padding:12px 16px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15); border-radius:10px; font-size:12px; color:#1e40af; line-height:1.5;">
+                <strong>How it works:</strong><br>
+                - <strong>Direct links:</strong> Found by crawling &lt;a href&gt; tags on each page (what you see in navigation/footer)<br>
+                - <strong>Extra links:</strong> URLs, emails, and phone numbers extracted from page <em>content</em> (text body, not just nav)<br>
+                - <strong>Find Max Links ON:</strong> Both direct + extra links are added to Managed Links after scraping<br>
+                - <strong>Find Max Links OFF:</strong> Only the directly crawled page URLs are used
               </div>
 
               <button type="button" class="btn btn-outline" style="margin-top: 10px; width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;" id="scrape-btn">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                  Start Scraping Engine
+                  Discover Links
               </button>
+
+              <!-- Link Discovery Preview Panel -->
+              <div id="scrape-discovery" style="display:none; margin-top:16px; background:#f9fafb; border:1.5px solid rgba(0,0,0,0.08); border-radius:14px; padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <h4 style="margin:0; font-size:15px; font-weight:700; color:#111827;">🔍 Links Discovered</h4>
+                  <span id="discovery-method" style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(59,130,246,0.1); color:#3b82f6; font-weight:600;"></span>
+                </div>
+                <div id="discovery-stats" style="display:flex; gap:16px; margin-bottom:12px; font-size:13px; color:#6b7280;"></div>
+                <div id="discovery-urls" style="max-height:200px; overflow-y:auto; background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:10px; padding:10px; font-size:12px; font-family:monospace;"></div>
+                <div style="display:flex; gap:10px; margin-top:14px;">
+                  <button type="button" class="btn btn-solid" style="flex:1; border-radius:10px; padding:12px; font-weight:700;" id="confirm-scrape-btn">
+                    ✓ Start Scraping (<span id="confirm-scrape-count">0</span> pages)
+                  </button>
+                  <button type="button" class="btn btn-outline" style="border-radius:10px; padding:12px;" onclick="document.getElementById('scrape-discovery').style.display='none'">Cancel</button>
+                </div>
+              </div>
 
               <div id="scrape-notice" style="display: none; margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5;"></div>
 
               <div id="scrape-log-container" style="display: none; margin-top: 24px;">
+                  <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
                   <pre id="scrape-terminal-text" style="background: #111827; color: #10b981; padding: 20px; border-radius: 16px; font-size: 11px; height: 180px; overflow-y: auto; font-family: 'Fira Code', monospace; box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);"></pre>
               </div>
             </div>
@@ -454,13 +492,13 @@
               <p class="cb-content-subtitle">These links appear as clickable buttons in your bot's chat responses. Each category has a default colour, but you can <strong>click the colour circle</strong> next to any link to set a custom button colour. Auto-populated from scrapes, editable here.</p>
 
               <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#E8722A;"></span> Pricing</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;"></span> Action</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;"></span> Info</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;"></span> Support</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#0d9488;"></span> Email</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#4f46e5;"></span> Phone</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#6b7280;"></span> General</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Pricing links"><input type="color" value="#E8722A" oninput="setCategoryColor('pricing',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Pricing</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Action links"><input type="color" value="#10b981" oninput="setCategoryColor('action',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Action</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Info links"><input type="color" value="#3b82f6" oninput="setCategoryColor('info',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Info</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Support links"><input type="color" value="#8b5cf6" oninput="setCategoryColor('support',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Support</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Email links"><input type="color" value="#0d9488" oninput="setCategoryColor('email',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Email</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Phone links"><input type="color" value="#4f46e5" oninput="setCategoryColor('phone',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Phone</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL General links"><input type="color" value="#6b7280" oninput="setCategoryColor('link',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> General</span>
               </div>
 
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
@@ -468,7 +506,23 @@
                 <span style="font-size:12px; color:#6b7280;"><span style="color:#dc2626; font-weight:700;">*</span> Label and URL are required</span>
               </div>
 
-              <div id="links-container" style="margin-bottom: 16px;"></div>
+              <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center; flex-wrap:wrap;">
+                <input type="text" id="link-search" placeholder="Search links..." oninput="filterAndPaginateLinks()" style="flex:1; min-width:150px; padding:9px 14px; font-size:13px; border-radius:8px; border:1.5px solid rgba(0,0,0,0.1); outline:none;" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,0.1)'">
+                <select id="link-cat-filter" onchange="filterAndPaginateLinks()" style="padding:9px 12px; font-size:13px; border-radius:8px; border:1.5px solid rgba(0,0,0,0.1); cursor:pointer; outline:none;">
+                  <option value="">All Categories</option>
+                  <option value="pricing">Pricing</option>
+                  <option value="action">Action</option>
+                  <option value="info">Info</option>
+                  <option value="support">Support</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Phone</option>
+                  <option value="link">General</option>
+                </select>
+                <span id="link-count" style="font-size:12px; color:#6b7280; white-space:nowrap;"></span>
+              </div>
+
+              <div id="links-container" style="margin-bottom: 12px;"></div>
+              <div id="links-pagination" style="display:flex; justify-content:center; gap:8px; margin-bottom:12px;"></div>
               <button type="button" class="btn btn-outline" style="border-radius: 8px; font-size: 13px; padding: 8px 14px;" onclick="addLinkRow()">+ Add Link</button>
               <div id="links-status" style="margin-top: 10px; font-size: 12px;"></div>
 
@@ -514,15 +568,38 @@
     document.getElementById(tabId).classList.add('active');
   }
 
-  // --- DOCUMENT SEARCH ---
-  function filterDocs() {
-    var query = document.getElementById('doc-search').value.toLowerCase().trim();
-    var items = document.querySelectorAll('#doc-list-container .doc-item');
-    items.forEach(function(item) {
-      var text = item.textContent.toLowerCase();
-      item.style.display = (!query || text.indexOf(query) !== -1) ? '' : 'none';
+  // --- DOCUMENT SEARCH + PAGINATION ---
+  var docPage = 1;
+  var DOCS_PER_PAGE = 10;
+  function filterAndPaginateDocs() {
+    var query = (document.getElementById('doc-search').value || '').toLowerCase().trim();
+    var items = Array.from(document.querySelectorAll('#doc-list-container .doc-item'));
+    // Filter
+    var visible = items.filter(function(item) {
+      var match = !query || item.textContent.toLowerCase().indexOf(query) !== -1;
+      item.style.display = match ? '' : 'none';
+      return match;
     });
+    // Count
+    var countEl = document.getElementById('doc-count');
+    if (countEl) countEl.textContent = visible.length + ' of ' + items.length;
+    // Paginate visible items
+    var totalPages = Math.max(1, Math.ceil(visible.length / DOCS_PER_PAGE));
+    if (docPage > totalPages) docPage = totalPages;
+    visible.forEach(function(item, idx) {
+      item.style.display = (idx >= (docPage-1)*DOCS_PER_PAGE && idx < docPage*DOCS_PER_PAGE) ? '' : 'none';
+    });
+    // Render pagination
+    var pag = document.getElementById('doc-pagination');
+    if (pag && totalPages > 1) {
+      var html = '';
+      for (var p = 1; p <= totalPages; p++) {
+        html += '<button onclick="docPage='+p+';filterAndPaginateDocs()" style="padding:4px 10px; border-radius:6px; border:1px solid '+(p===docPage?'#E8722A':'rgba(0,0,0,0.1)')+'; background:'+(p===docPage?'#E8722A':'#fff')+'; color:'+(p===docPage?'#fff':'#333')+'; font-size:12px; cursor:pointer;">'+p+'</button>';
+      }
+      pag.innerHTML = html;
+    } else if (pag) { pag.innerHTML = ''; }
   }
+  document.addEventListener('DOMContentLoaded', filterAndPaginateDocs);
 
   // --- CUSTOM FORM BUILDER LOGIC ---
   let customFieldsState = [];
@@ -793,77 +870,123 @@
     updateLivePreview();
   }
 
+  // --- FIND MAX LINKS: Disable page limit when enabled ---
+  function toggleMaxLinksMode() {
+    var maxLinksOn = document.getElementById('find_max_links').checked;
+    var limitInput = document.getElementById('max_urls');
+    if (maxLinksOn) {
+      limitInput.disabled = true;
+      limitInput.style.opacity = '0.4';
+      limitInput.style.cursor = 'not-allowed';
+      limitInput.title = 'Disabled — Find Max Links will discover all pages automatically';
+    } else {
+      limitInput.disabled = false;
+      limitInput.style.opacity = '1';
+      limitInput.style.cursor = '';
+      limitInput.title = 'Max URLs to process';
+    }
+  }
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() { toggleMaxLinksMode(); });
+
   document.getElementById('scrape-btn').addEventListener('click', async function() {
       const url = document.getElementById('scrape_url').value;
       if(!url) return showModal('Please enter a URL.', 'error');
 
-      // Grab variables safely
       const isDeep = document.getElementById('use_deep_crawl').checked;
-      const limit = document.getElementById('max_urls').value || 20;
+      const findMaxLinks = document.getElementById('find_max_links').checked;
+      const limit = findMaxLinks ? 500 : (document.getElementById('max_urls').value || 20);
       const currentBotId = "{{ bot.id }}"; // Jinja injects the ID here
+      const btn = this; // Reference to the clicked button
 
-      const logBox = document.getElementById('scrape-log-container');
-      const logText = document.getElementById('scrape-terminal-text');
-      logBox.style.display = 'block';
-      logText.innerText = "> Initializing Scraper Engine...\n> Identifying internal links...";
-      
+      // Show loading state
+      btn.disabled = true;
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Discovering links...';
+
       try {
-          const res = await fetch("{{ url_for('admin_bp.start_scrape') }}", {
+          const discRes = await fetch('/admin/api/scrape/discover', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({
                   url: url,
                   use_spider: isDeep,
                   max_urls: limit,
-                  bot_id: currentBotId
+                  bot_id: currentBotId,
+                  find_max_links: findMaxLinks
               })
           });
-          
-          const data = await res.json();
-          
-          // If Python threw a 400 error, print it in the UI terminal
-          if(data.error) {
-              logText.innerText = `> Error: ${data.error}`;
-              return;
-          }
+          const disc = await discRes.json();
 
-          // --- Time estimate + plan-limit upgrade notice (persists during polling) ---
-          const notice = document.getElementById('scrape-notice');
-          if (notice) {
-              const estMin = Math.max(1, Math.round((data.estimated_seconds || 0) / 60));
-              const estTxt = 'Estimated time: ~' + estMin + ' min for ' + data.pages + ' page' + (data.pages !== 1 ? 's' : '') + '.';
-              if (data.capped) {
-                  notice.style.display = 'block';
-                  notice.style.background = 'rgba(232,114,42,0.08)';
-                  notice.style.border = '1px solid rgba(232,114,42,0.3)';
-                  notice.style.color = '#9a4a15';
-                  notice.innerHTML = '&#9888; Your <b>' + data.plan + '</b> plan allows up to <b>' + data.plan_limit +
-                      '</b> pages per scrape. We\'ll scrape the first <b>' + data.pages + '</b>. ' +
-                      'To scrape more pages, upgrade your plan.<br>' +
-                      '<span style="color:#6b7280;">' + estTxt + '</span><br>' +
-                      '<a href="/pricing" target="_blank" style="display:inline-block; margin-top:8px; background:#E8722A; color:#fff; padding:6px 16px; border-radius:8px; text-decoration:none; font-weight:600;">Upgrade Plan</a>';
-              } else {
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> Discover Links';
+
+          if (disc.error) { showModal(disc.error, 'error'); return; }
+
+          // --- Show discovery preview ---
+          var panel = document.getElementById('scrape-discovery');
+          panel.style.display = 'block';
+
+          document.getElementById('discovery-method').textContent =
+            disc.method === 'deep_crawl' ? '🕷 Deep Crawl' :
+            disc.method === 'sitemap' ? '📄 Sitemap' :
+            disc.method === 'sitemap_fallback' ? '📄 Sitemap (fallback)' : '📃 Single Page';
+
+          var statsHtml = '<span>Found: <strong>' + disc.total_found + '</strong> links</span>';
+          statsHtml += '<span>Will scrape: <strong>' + disc.scrape_count + '</strong></span>';
+          statsHtml += '<span>Est. time: ~' + Math.max(1, Math.round(disc.estimated_seconds / 60)) + ' min</span>';
+          if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max)</span>';
+          document.getElementById('discovery-stats').innerHTML = statsHtml;
+
+          var urlsHtml = disc.urls.map(function(u, idx) {
+            return '<div style="padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (idx+1) + '. ' + u + '</div>';
+          }).join('');
+          document.getElementById('discovery-urls').innerHTML = urlsHtml || '<p style="color:#999;">No links found.</p>';
+          document.getElementById('confirm-scrape-count').textContent = disc.scrape_count;
+
+          // --- STEP 2: Confirm button starts the actual scrape ---
+          document.getElementById('confirm-scrape-btn').onclick = async function() {
+              panel.style.display = 'none';
+              const logBox = document.getElementById('scrape-log-container');
+              const logText = document.getElementById('scrape-terminal-text');
+              logBox.style.display = 'block';
+              logText.innerText = "> Starting scrape of " + disc.scrape_count + " pages...";
+
+              const res = await fetch("{{ url_for('admin_bp.start_scrape') }}", {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: limit, bot_id: currentBotId, find_max_links: findMaxLinks })
+              });
+              const data = await res.json();
+              if (data.error) { logText.innerText = '> Error: ' + data.error; return; }
+
+              // Show notice
+              const notice = document.getElementById('scrape-notice');
+              if (notice) {
+                  const estMin = Math.max(1, Math.round((data.estimated_seconds || 0) / 60));
                   notice.style.display = 'block';
                   notice.style.background = 'rgba(16,185,129,0.08)';
                   notice.style.border = '1px solid rgba(16,185,129,0.25)';
                   notice.style.color = '#047857';
-                  notice.innerHTML = '&#128337; ' + estTxt;
+                  notice.innerHTML = '🕐 Scraping ' + data.pages + ' pages (~' + estMin + ' min)';
               }
-          }
 
-          if(data.job_id) {
-              const poll = setInterval(async () => {
-                  const sRes = await fetch(`/admin/api/scrape/status/${data.job_id}`);
-                  const sData = await sRes.json();
-                  if(sData.logs) logText.innerText = sData.logs;
-                  if(sData.status === 'completed' || sData.status === 'failed') { 
-                      clearInterval(poll); 
-                      if (sData.status === 'completed') window.location.reload(); 
-                  }
-              }, 2000);
-          }
+              if (data.job_id) {
+                  const poll = setInterval(async () => {
+                      const sRes = await fetch('/admin/api/scrape/status/' + data.job_id);
+                      const sData = await sRes.json();
+                      if (sData.logs) logText.innerText = sData.logs;
+                      if (sData.status === 'completed' || sData.status === 'failed') {
+                          clearInterval(poll);
+                          if (sData.status === 'completed') window.location.reload();
+                      }
+                  }, 2000);
+              }
+          };
+
       } catch (err) {
-          logText.innerText = `> Network/Server Error: ${err}`;
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> Discover Links';
+          showModal('Network error: ' + err.message, 'error');
       }
   });
 
@@ -891,9 +1014,22 @@ function renderLinks() {
   c.innerHTML = '';
   if (currentLinks.length === 0) {
     c.innerHTML = '<p style="color:#888; font-size:13px;">No links yet. Scrape your website to auto-discover links, or add them manually.</p>';
+    document.getElementById('link-count').textContent = '';
+    document.getElementById('links-pagination').innerHTML = '';
     return;
   }
-  currentLinks.forEach(function(link, i) {
+  var filtered = getFilteredLinkIndices();
+  // Count badge
+  var countEl = document.getElementById('link-count');
+  if (countEl) countEl.textContent = filtered.length + ' of ' + currentLinks.length + ' links';
+  // Pagination
+  var totalPages = Math.max(1, Math.ceil(filtered.length / LINKS_PER_PAGE));
+  if (linksPage > totalPages) linksPage = totalPages;
+  var startIdx = (linksPage - 1) * LINKS_PER_PAGE;
+  var pageItems = filtered.slice(startIdx, startIdx + LINKS_PER_PAGE);
+
+  pageItems.forEach(function(i) {
+    var link = currentLinks[i];
     var row = document.createElement('div');
     row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center; flex-wrap:wrap;';
     var labelBorder = link.label ? 'rgba(0,0,0,0.15)' : '#f87171';
@@ -914,6 +1050,16 @@ function renderLinks() {
       '<button type="button" style="background:rgba(239,68,68,0.1); color:#dc2626; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-weight:700; font-size:12px;" onclick="removeLink('+i+')">X</button>';
     c.appendChild(row);
   });
+
+  // Render pagination for links
+  var pag = document.getElementById('links-pagination');
+  if (pag && totalPages > 1) {
+    var html = '';
+    for (var p = 1; p <= totalPages; p++) {
+      html += '<button onclick="linksPage='+p+';renderLinks()" style="padding:4px 10px; border-radius:6px; border:1px solid '+(p===linksPage?'#E8722A':'rgba(0,0,0,0.1)')+'; background:'+(p===linksPage?'#E8722A':'#fff')+'; color:'+(p===linksPage?'#fff':'#333')+'; font-size:12px; cursor:pointer;">'+p+'</button>';
+    }
+    pag.innerHTML = html;
+  } else if (pag) { pag.innerHTML = ''; }
 }
 
 // Category → button colour (matches .bubbl-btn--* classes in chat.css)
@@ -930,8 +1076,41 @@ function catColor(cat) {
   return colors[cat] || colors.link;
 }
 
+// Set ALL links of a given category to a new colour (from the legend colour picker)
+function setCategoryColor(cat, color) {
+  for (var i = 0; i < currentLinks.length; i++) {
+    if ((currentLinks[i].category || 'link') === cat) {
+      currentLinks[i].color = color;
+    }
+  }
+  renderLinks();
+}
+
 function addLinkRow() { currentLinks.push({label:'', url:'', category:'link'}); renderLinks(); }
 function removeLink(i) { currentLinks.splice(i, 1); renderLinks(); }
+
+var linksPage = 1;
+var LINKS_PER_PAGE = 10;
+var linksSearchQuery = '';
+var linksCatFilter = '';
+
+function filterAndPaginateLinks() {
+  linksSearchQuery = (document.getElementById('link-search').value || '').toLowerCase().trim();
+  linksCatFilter = (document.getElementById('link-cat-filter').value || '').toLowerCase();
+  linksPage = 1;
+  renderLinks();
+}
+
+function getFilteredLinkIndices() {
+  var indices = [];
+  for (var i = 0; i < currentLinks.length; i++) {
+    var link = currentLinks[i];
+    var matchText = !linksSearchQuery || (link.label||'').toLowerCase().indexOf(linksSearchQuery) !== -1 || (link.url||'').toLowerCase().indexOf(linksSearchQuery) !== -1;
+    var matchCat = !linksCatFilter || (link.category||'link') === linksCatFilter;
+    if (matchText && matchCat) indices.push(i);
+  }
+  return indices;
+}
 
 function saveLinks() {
   var s = document.getElementById('links-status');

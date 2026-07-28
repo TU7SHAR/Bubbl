@@ -26,71 +26,73 @@
 </div>
 
 <!-- ═══ REVENUE ROW ═══ -->
+<p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">💰 Revenue metrics — <strong>not affected</strong> by the date filter above (always all-time/monthly)</p>
 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:20px;">
-  <div class="sa-card" style="border-left: 3px solid var(--green);">
+  <div class="sa-card" style="border-left: 3px solid var(--green);" title="Total revenue earned today (UTC midnight to now). Only includes completed Paddle transactions.">
     <div class="sa-card-label">Revenue Today</div>
     <div class="sa-card-value" style="color:var(--green);">₹{{ revenue_today | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--blue);">
+  <div class="sa-card" style="border-left: 3px solid var(--blue);" title="Total revenue earned yesterday (full day UTC). Useful to compare day-over-day growth.">
     <div class="sa-card-label">Yesterday</div>
     <div class="sa-card-value" style="color:var(--blue);">₹{{ revenue_yesterday | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--purple);">
+  <div class="sa-card" style="border-left: 3px solid var(--purple);" title="Revenue collected from the 1st of this month until now. Resets every month.">
     <div class="sa-card-label">This Month</div>
     <div class="sa-card-value" style="color:var(--purple);">₹{{ revenue_this_month | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--accent);">
+  <div class="sa-card" style="border-left: 3px solid var(--accent);" title="Total revenue ever collected (all completed Paddle transactions combined, before refunds).">
     <div class="sa-card-label">Gross Revenue</div>
     <div class="sa-card-value">₹{{ revenue_gross | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--yellow);">
+  <div class="sa-card" style="border-left: 3px solid var(--yellow);" title="Monthly Recurring Revenue — sum of all active subscription plan prices. This is what you'd earn every month if no one cancels.">
     <div class="sa-card-label">MRR</div>
     <div class="sa-card-value" style="color:var(--yellow);">₹{{ mrr | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--red);">
+  <div class="sa-card" style="border-left: 3px solid var(--red);" title="Total amount refunded to customers (all-time). Deducted from gross to calculate net revenue.">
     <div class="sa-card-label">Refunds</div>
     <div class="sa-card-value" style="color:var(--red);">₹{{ total_refunds | int }}</div>
   </div>
 </div>
 
 <!-- ═══ CORE METRICS ═══ -->
+<p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">📊 Platform metrics — items marked <strong>(Period)</strong> are filtered by the date range above; others are all-time</p>
 <div class="sa-grid">
-  <div class="sa-card">
+  <div class="sa-card" title="Total registered users on the platform (all-time, excludes internal platform org)">
     <div class="sa-card-label">Total Users</div>
     <div class="sa-card-value">{{ total_users }}</div>
     <div style="font-size:11px; color:var(--green); margin-top:4px;">+{{ new_users_today }} today</div>
   </div>
-  <div class="sa-card">
+  <div class="sa-card" title="Total chatbots created across all organizations (all-time, excludes the internal platform bot)">
     <div class="sa-card-label">Total Bots</div>
     <div class="sa-card-value">{{ total_bots }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_docs }} docs indexed</div>
   </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Leads (Period)</div>
+  <div class="sa-card" title="Leads captured within the selected date range. A lead is a visitor whose contact info (name, email, phone) was collected by the chatbot during conversation or via a form.">
+    <div class="sa-card-label">Leads (Period) 📅</div>
     <div class="sa-card-value">{{ total_leads }}</div>
     <div style="font-size:11px; color:var(--green); margin-top:4px;">{{ leads_today }} today / {{ leads_yesterday }} yesterday</div>
   </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Conversations</div>
+  <div class="sa-card" title="Unique chat sessions (conversations) across all bots. Each session is one visitor's complete chat thread — may contain multiple messages.">
+    <div class="sa-card-label">Conversations 📅</div>
     <div class="sa-card-value">{{ total_conversations }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_messages }} total messages</div>
   </div>
-  <div class="sa-card">
+  <div class="sa-card" title="Organizations on a paid plan (Starter/Growth/Pro). Conversion rate = paid orgs ÷ total orgs × 100.">
     <div class="sa-card-label">Paid Orgs</div>
     <div class="sa-card-value">{{ active_subscriptions }}</div>
     <div style="font-size:11px; color:var(--accent); margin-top:4px;">{{ conversion_rate }}% of {{ total_orgs }} orgs</div>
   </div>
-  <div class="sa-card">
+  <div class="sa-card" title="Total individual chat messages sent today (UTC) across all bots. Includes both user messages and bot replies.">
     <div class="sa-card-label">Messages Today</div>
     <div class="sa-card-value">{{ messages_today }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ messages_yesterday }} yesterday</div>
   </div>
-  <div class="sa-card">
-    <div class="sa-card-label">New Users (Period)</div>
+  <div class="sa-card" title="New user registrations within the selected date range above. Each user belongs to one organization.">
+    <div class="sa-card-label">New Users (Period) 📅</div>
     <div class="sa-card-value">{{ new_users_period }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">in {{ days_count }} day{{ 's' if days_count != 1 else '' }}</div>
   </div>
-  <div class="sa-card">
+  <div class="sa-card" title="Annual Recurring Revenue = MRR × 12. Projects yearly revenue if all current subscriptions continue unchanged.">
     <div class="sa-card-label">ARR</div>
     <div class="sa-card-value">₹{{ arr | int }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">annualized</div>
@@ -101,7 +103,7 @@
 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
   <!-- Plan Breakdown -->
   <div class="sa-table-wrap" style="padding:20px;">
-    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">Plan Distribution <span style="font-size:11px; color:var(--text-muted); font-weight:400;">({{ total_orgs }} orgs)</span></h3>
+    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;" title="How many organizations are on each plan. Percentage shows the share of total orgs on that plan.">Plan Distribution <span style="font-size:11px; color:var(--text-muted); font-weight:400;">({{ total_orgs }} orgs)</span></h3>
     <div style="display:flex; flex-direction:column; gap:10px;">
       {% for plan_name, count in plan_counts.items() %}
       {% set pct = ((count / (total_orgs if total_orgs > 0 else 1)) * 100) | round(1) %}
@@ -118,22 +120,22 @@
   </div>
 
   <!-- API Performance -->
-  <div class="sa-table-wrap" style="padding:20px;">
+  <div class="sa-table-wrap" style="padding:20px;" title="Gemini AI API performance metrics aggregated across all bots (all-time cumulative data).">
     <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">API Performance</h3>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-      <div>
+      <div title="Average time from sending a message to receiving the full AI response. Green < 3s, Yellow 3-5s, Red > 5s.">
         <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Avg Response</div>
         <div style="font-size:22px; font-weight:800; color:{% if avg_latency_ms < 3000 %}var(--green){% elif avg_latency_ms < 5000 %}var(--yellow){% else %}var(--red){% endif %};">{{ avg_latency_ms }}ms</div>
       </div>
-      <div>
+      <div title="Total Gemini AI tokens consumed across all bots (input + output tokens combined). Higher = more API cost.">
         <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Total Tokens</div>
         <div style="font-size:22px; font-weight:800; color:var(--text);">{{ "{:,}".format(total_tokens) }}</div>
       </div>
-      <div>
+      <div title="Total number of chat messages processed by the AI across all bots (all-time). Each user question = 1 interaction.">
         <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Interactions</div>
         <div style="font-size:22px; font-weight:800; color:var(--text);">{{ "{:,}".format(total_interactions) }}</div>
       </div>
-      <div>
+      <div title="Average tokens consumed per single chat message. Helps estimate API cost per conversation. Typical range: 400-800 tokens/msg.">
         <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Tokens/Msg</div>
         <div style="font-size:22px; font-weight:800; color:var(--text);">{{ avg_tokens_per_msg }}</div>
       </div>
@@ -143,7 +145,7 @@
 
 <!-- ═══ CHARTS ═══ -->
 <div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-bottom:24px;">
-  <div class="sa-table-wrap" style="padding:20px;">
+  <div class="sa-table-wrap" style="padding:20px;" title="Leads = contact info captured from visitors. Messages = individual chat messages sent/received. Both filtered by the date range selected above.">
     <h3 style="margin-bottom:16px; font-size:14px; font-weight:700;">Leads & Messages Over Time</h3>
     <canvas id="combinedChart" height="80"></canvas>
   </div>
@@ -152,10 +154,10 @@
 <!-- ═══ SYSTEM HEALTH + SCRAPES ═══ -->
 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
   <!-- System Health -->
-  <div class="sa-table-wrap" style="padding:20px;">
+  <div class="sa-table-wrap" style="padding:20px;" title="Live server resource usage. Green = healthy, Yellow = caution, Red = critical. Measured from the DigitalOcean droplet running this app.">
     <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">System Health</h3>
     <div style="display:flex; flex-direction:column; gap:12px;">
-      <div>
+      <div title="CPU usage percentage. High sustained CPU (>85%) means the server is struggling with requests.">
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
           <span style="font-size:11px; color:var(--text-muted);">CPU</span>
           <span style="font-size:11px; font-weight:700; color:var(--text);">{{ system_health.cpu }}</span>
@@ -164,7 +166,7 @@
           <div style="height:100%; width:{{ system_health.get('cpu_val', 0) }}%; background:{% if system_health.get('cpu_val', 0) < 60 %}var(--green){% elif system_health.get('cpu_val', 0) < 85 %}var(--yellow){% else %}var(--red){% endif %}; border-radius:3px;"></div>
         </div>
       </div>
-      <div>
+      <div title="RAM usage. Gunicorn workers + Celery + Redis share 1GB. If this hits 90%+, the server may OOM-kill processes.">
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
           <span style="font-size:11px; color:var(--text-muted);">Memory</span>
           <span style="font-size:11px; font-weight:700; color:var(--text);">{{ system_health.memory_used }} / {{ system_health.memory_total }}</span>
@@ -173,7 +175,7 @@
           <div style="height:100%; width:{{ system_health.get('memory_percent', 0) }}%; background:{% if system_health.get('memory_percent', 0) < 60 %}var(--green){% elif system_health.get('memory_percent', 0) < 85 %}var(--yellow){% else %}var(--red){% endif %}; border-radius:3px;"></div>
         </div>
       </div>
-      <div>
+      <div title="Disk space usage. Stores uploaded files, scraped documents, and OS. If this fills up, scraping and uploads will fail.">
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
           <span style="font-size:11px; color:var(--text-muted);">Disk</span>
           <span style="font-size:11px; font-weight:700; color:var(--text);">{{ system_health.get('disk_used', 'N/A') }} / {{ system_health.get('disk_total', 'N/A') }}</span>
@@ -186,18 +188,18 @@
   </div>
 
   <!-- Scrape Jobs -->
-  <div class="sa-table-wrap" style="padding:20px;">
+  <div class="sa-table-wrap" style="padding:20px;" title="Background web scraping jobs run by Celery. Scraping fetches website content and uploads it to Gemini's vector store for bot training.">
     <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">Scrape Jobs</h3>
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
-      <div>
+      <div title="Scrape jobs that finished successfully — all URLs scraped and uploaded to the bot's knowledge base.">
         <div style="font-size:24px; font-weight:800; color:var(--green);">{{ scrapes_completed }}</div>
         <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Completed</div>
       </div>
-      <div>
+      <div title="Scrape jobs waiting in the Celery queue or currently running. If stuck at > 0 for a long time, the worker may be down.">
         <div style="font-size:24px; font-weight:800; color:var(--yellow);">{{ scrapes_pending }}</div>
         <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Pending</div>
       </div>
-      <div>
+      <div title="Scrape jobs that failed after 3 retry attempts. Common causes: site blocking Firecrawl, timeout, or invalid URLs.">
         <div style="font-size:24px; font-weight:800; color:var(--red);">{{ scrapes_failed }}</div>
         <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase;">Failed</div>
       </div>
@@ -211,7 +213,7 @@
 <!-- ═══ RECENT ACTIVITY ═══ -->
 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; margin-bottom:24px;">
   <!-- Recent Users -->
-  <div class="sa-table-wrap" style="padding:16px;">
+  <div class="sa-table-wrap" style="padding:16px;" title="Most recently registered users on the platform (latest 5). Shows their name, email, and signup date.">
     <h3 style="font-size:13px; font-weight:700; margin-bottom:12px;">Recent Signups</h3>
     {% for u in recent_users %}
     <div style="display:flex; align-items:center; gap:10px; padding:8px 0; {% if not loop.last %}border-bottom:1px solid var(--card-border);{% endif %}">
@@ -229,7 +231,7 @@
   </div>
 
   <!-- Recent Leads -->
-  <div class="sa-table-wrap" style="padding:16px;">
+  <div class="sa-table-wrap" style="padding:16px;" title="Most recently captured leads across all bots (latest 5). A lead is a visitor who shared their contact info through the chatbot.">
     <h3 style="font-size:13px; font-weight:700; margin-bottom:12px;">Recent Leads</h3>
     {% for l in recent_leads %}
     <div style="display:flex; align-items:center; gap:10px; padding:8px 0; {% if not loop.last %}border-bottom:1px solid var(--card-border);{% endif %}">
@@ -247,7 +249,7 @@
   </div>
 
   <!-- Recent Payments -->
-  <div class="sa-table-wrap" style="padding:16px;">
+  <div class="sa-table-wrap" style="padding:16px;" title="Most recent completed payment transactions via Paddle (latest 5). Shows amount, plan purchased, and customer email.">
     <h3 style="font-size:13px; font-weight:700; margin-bottom:12px;">Recent Payments</h3>
     {% for p in recent_payments %}
     <div style="display:flex; align-items:center; gap:10px; padding:8px 0; {% if not loop.last %}border-bottom:1px solid var(--card-border);{% endif %}">
