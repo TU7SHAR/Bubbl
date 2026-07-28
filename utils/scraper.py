@@ -232,5 +232,6 @@ def crawl_website_links(start_url, max_pages=50):
 
     return {
         "success": True, 
-        "urls": found_urls
+        "urls": found_urls,
+        "remaining_queue": len(queue)  # How many undiscovered links were left when we stopped
     }
