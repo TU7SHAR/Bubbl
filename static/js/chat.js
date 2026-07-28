@@ -438,8 +438,9 @@ function renderMarkdown(text) {
   html = html.replace(/\n{2,}/g, '</p><p>');
   // Single newlines within a paragraph → <br>
   html = html.replace(/\n/g, '<br>');
-  // Wrap in <p> if not already structured
-  if (!html.startsWith('<') || html.startsWith('<strong>') || html.startsWith('<em>')) {
+  // Wrap in <p> only if content is plain text (no block-level elements already present)
+  var hasBlockElements = /<(table|ul|ol|pre|blockquote|h[1-4]|hr)/i.test(html);
+  if (!hasBlockElements) {
     html = '<p>' + html + '</p>';
   }
 
