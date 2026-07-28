@@ -932,9 +932,10 @@
             disc.method === 'sitemap_fallback' ? '📄 Sitemap (fallback)' : '📃 Single Page';
 
           var statsHtml = '<span>Found: <strong>' + disc.total_found + '</strong> links</span>';
+          if (disc.estimated_total > disc.total_found) statsHtml += '<span>Est. total: <strong>~' + disc.estimated_total + '</strong></span>';
           statsHtml += '<span>Will scrape: <strong>' + disc.scrape_count + '</strong></span>';
           statsHtml += '<span>Est. time: ~' + Math.max(1, Math.round(disc.estimated_seconds / 60)) + ' min</span>';
-          if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max)</span>';
+          if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max). <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a></span>';
           document.getElementById('discovery-stats').innerHTML = statsHtml;
 
           var urlsHtml = disc.urls.map(function(u, idx) {
@@ -954,7 +955,7 @@
               const res = await fetch("{{ url_for('admin_bp.start_scrape') }}", {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: limit, bot_id: currentBotId, find_max_links: findMaxLinks })
+                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: disc.scrape_count, bot_id: currentBotId, find_max_links: findMaxLinks })
               });
               const data = await res.json();
               if (data.error) { logText.innerText = '> Error: ' + data.error; return; }

@@ -15,9 +15,14 @@ SECONDS_PER_PAGE = 4
 @admin_bp.route('/api/scrape/discover', methods=['POST'])
 def discover_links():
     """
-    Quick link discovery — finds all URLs on a site WITHOUT scraping them.
-    Returns the FULL list so the user can see the total, plus notes how many
-    will actually be scraped based on their plan limit.
+    Quick link discovery — finds URLs on a site WITHOUT scraping content.
+    
+    IMPORTANT: This runs SYNCHRONOUSLY in the gunicorn worker. It MUST be fast
+    (< 30 seconds) or it blocks all other requests on this single-worker server.
+    
+    Strategy: Crawl up to 50 pages for discovery preview. If the site has more,
+    we report the estimated total based on the link queue size at cutoff.
+    The actual full crawl (up to plan limit) happens in Celery when user confirms.
     """
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
@@ -29,15 +34,10 @@ def discover_links():
     use_spider = data.get('use_spider', False)
     find_max_links = data.get('find_max_links', False)
 
-    # When Find Max Links is ON, discover as many as possible (up to 500)
-    # When OFF, respect the user's page limit
-    if find_max_links:
-        max_urls = 500  # Discover up to 500 links (no artificial cap)
-    else:
-        try:
-            max_urls = int(data.get('max_urls') or 50)
-        except (ValueError, TypeError):
-            max_urls = 50
+    # Discovery preview limit — kept LOW because this blocks the web worker.
+    # For deep crawl: scan up to 50 pages (takes ~30-60s max), extrapolate the rest.
+    # The actual scrape (in Celery) will crawl the full amount.
+    DISCOVERY_LIMIT = 50
 
     if not url:
         return jsonify({"error": "URL is required."}), 400
@@ -53,13 +53,19 @@ def discover_links():
 
     urls_found = []
     method_used = 'single'
+    estimated_total = 0  # Estimated total pages on the site (may be > urls_found)
 
     try:
         if use_spider:
             method_used = 'deep_crawl'
-            result = crawl_website_links(url, max_pages=max_urls)
+            # Only crawl up to DISCOVERY_LIMIT pages for the preview
+            result = crawl_website_links(url, max_pages=DISCOVERY_LIMIT)
             if result['success']:
                 urls_found = result['urls']
+                # Estimate total: if the queue still had pending links at cutoff,
+                # the site likely has more pages. Report found + remaining queue.
+                remaining_queue = result.get('remaining_queue', 0)
+                estimated_total = len(urls_found) + remaining_queue
             # Fallback to sitemap if spider found very few
             if len(urls_found) < 3:
                 from urllib.parse import urlparse
@@ -69,36 +75,43 @@ def discover_links():
                     import requests as req
                     resp = req.head(sitemap_url, timeout=5, allow_redirects=True, headers={'User-Agent': 'Mozilla/5.0'})
                     if resp.status_code == 200:
-                        sitemap_data = extract_sitemap_urls(sitemap_url, max_urls=max_urls)
+                        sitemap_data = extract_sitemap_urls(sitemap_url, max_urls=500)
                         if sitemap_data['success'] and len(sitemap_data['urls_to_scrape']) > len(urls_found):
                             urls_found = sitemap_data['urls_to_scrape']
+                            estimated_total = len(urls_found)
                             method_used = 'sitemap_fallback'
                 except Exception:
                     pass
         elif url.endswith('.xml'):
             method_used = 'sitemap'
-            sitemap_data = extract_sitemap_urls(url, max_urls=max_urls)
+            sitemap_data = extract_sitemap_urls(url, max_urls=500)
             if sitemap_data['success']:
                 urls_found = sitemap_data['urls_to_scrape']
+                estimated_total = len(urls_found)
         else:
             urls_found = [url]
+            estimated_total = 1
             method_used = 'single_page'
     except Exception as e:
         return jsonify({"error": f"Discovery failed: {str(e)[:200]}"}), 500
 
+    if estimated_total < len(urls_found):
+        estimated_total = len(urls_found)
+
     # Show ALL found URLs, but note how many will actually be scraped
-    capped = len(urls_found) > plan_limit
-    scrape_count = min(len(urls_found), plan_limit)
+    capped = estimated_total > plan_limit
+    scrape_count = min(estimated_total, plan_limit)
 
     return jsonify({
         "success": True,
         "total_found": len(urls_found),
+        "estimated_total": estimated_total,
         "scrape_count": scrape_count,
         "capped": capped,
         "plan": plan_name,
         "plan_limit": plan_limit,
         "method": method_used,
-        "urls": urls_found,  # Return ALL found URLs (user sees full picture)
+        "urls": urls_found,  # The URLs we actually discovered (up to 50)
         "estimated_seconds": scrape_count * SECONDS_PER_PAGE,
     })
 
