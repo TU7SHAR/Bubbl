@@ -266,8 +266,16 @@ def conversations_list(bot_id):
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
     if not bot:
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+    if not bot:
         flash("Bot not found.", "error")
         return redirect(url_for('views_bp.conversations_hub'))
+
+    from sqlalchemy import or_
+    if bot.bot_type == 'platform':
+        bot_filter = or_(ChatMessage.bot_id == bot.id, ChatMessage.bot_id.is_(None))
+    else:
+        bot_filter = (ChatMessage.bot_id == bot.id)
 
     # Get all sessions with aggregated stats
     sessions_query = db.session.query(
@@ -276,7 +284,7 @@ def conversations_list(bot_id):
         func.min(ChatMessage.created_at).label('started_at'),
         func.max(ChatMessage.created_at).label('last_message_at'),
         func.sum(ChatMessage.tokens_used).label('total_tokens'),
-    ).filter_by(bot_id=bot_id).group_by(
+    ).filter(bot_filter).group_by(
         ChatMessage.session_id
     ).order_by(func.max(ChatMessage.created_at).desc()).all()
 
