@@ -23,7 +23,17 @@
 <div class="sa-table-wrap">
   <div class="sa-table-header">
     <h3>All Feedback ({{ total_feedback }})</h3>
-    <input type="text" class="sa-search-input" placeholder="Search feedback..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <input type="text" class="sa-search-input" placeholder="Search feedback..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
+      <select class="sa-filter-select" data-col="3" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
+        <option value="">All Ratings</option>
+        <option value="★★★★★">5 Stars</option>
+        <option value="★★★★☆">4 Stars</option>
+        <option value="★★★☆☆">3 Stars</option>
+        <option value="★★☆☆☆">2 Stars</option>
+        <option value="★☆☆☆☆">1 Star</option>
+      </select>
+    </div>
   </div>
   <div class="sa-table-scroll">
     <table class="sa-table">
