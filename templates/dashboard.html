@@ -37,6 +37,35 @@
             <span class="bricolage" style="font-size: 16px; font-weight: 600; letter-spacing: -0.01em;">Create New Agent</span>
         </a>
 
+        {% if platform_bot %}
+        <div class="bot-card {% if platform_bot.id == session.get('active_bot_id') %}active{% endif %}" onclick="window.location.href='/connect_support'" style="border: 2px solid rgba(232,114,42,0.2);">
+            <div class="card-banner" style="background: linear-gradient(135deg, #E8722A, #f59e0b);">
+                <div class="card-avatar" style="background-color: #E8722A;">
+                    B
+                </div>
+            </div>
+            <div class="card-body">
+                <h3>{{ platform_bot.bot_name }}</h3>
+                <div class="card-middle-row">
+                    <span class="tag-success" style="background: rgba(232,114,42,0.1); color: #E8722A;">Platform Bot</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 16px; align-items: stretch; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.06); margin-top: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">Status</span>
+                        {% if platform_bot.id == session.get('active_bot_id') %}
+                            <span class="pill-status active" style="margin: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #fde68a;">● Active</span>
+                        {% else %}
+                            <span class="pill-status" style="margin: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #e5e7eb;">○ Standby</span>
+                        {% endif %}
+                    </div>
+                    <div style="text-align:center; font-size:12px; color:#6b7280; padding:8px 0;">
+                        Click to chat with Bubbl's support bot
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {% for bot in my_bots %}
         <div class="bot-card {% if bot.id == session.get('active_bot_id') %}active{% endif %}" onclick="window.location.href='/set_active_bot/{{ bot.id }}'">
             

@@ -445,6 +445,9 @@ def dashboard():
     all_org_bots = Bot.query.filter(Bot.org_id == session['org_id'], Bot.created_by != session['user_id']).all()
     member_count = User.query.filter_by(org_id=session.get('org_id')).count()
 
+    # Include the platform bot (Bubbl's public support bot) so users can interact with it
+    platform_bot = Bot.query.filter_by(bot_type='platform').first()
+
     org_bots = []
     for bot in all_org_bots:
         if bot.visibility == 'public':
@@ -455,7 +458,8 @@ def dashboard():
     return render_template('dashboard.html', 
                            my_bots=my_bots, 
                            org_bots=org_bots, 
-                           member_count=member_count)
+                           member_count=member_count,
+                           platform_bot=platform_bot)
 
 @views_bp.route('/set_active_bot/<int:bot_id>')
 def set_active_bot(bot_id):
