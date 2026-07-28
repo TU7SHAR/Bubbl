@@ -77,8 +77,8 @@ PUBLIC_BOT_PERSONALITY_BASE = (
 PUBLIC_BOT_BUTTON_RULES = (
     "BUTTON RULES:\n"
     "- ANSWER THE QUESTION FIRST. Buttons are a supplement, not a replacement.\n"
-    "- Only show buttons if the user would genuinely benefit from visiting a page\n"
-    "- Do NOT show buttons for greetings, casual chat, or when you already answered fully\n"
+    "- Show buttons when the user asks about pricing, features, comparisons, getting started, or support\n"
+    "- For comparison questions (vs Chatbase, Gupshup, Tidio, etc.) ALWAYS show a relevant button (e.g. pricing or sign-up)\n"
     "- Max 1-2 buttons per response\n"
     "- ONLY use URLs from the 'Available links' list above. NEVER invent or guess URLs.\n"
     "- If no link from the list is relevant, do NOT show any buttons.\n"
@@ -103,10 +103,10 @@ def _build_links_text(links_list):
 
 
 BUTTON_INSTRUCTIONS = (
-    "INTERACTIVE BUTTONS (OPTIONAL):\n"
-    "You MAY show clickable buttons below your message to help users navigate.\n"
-    "Buttons are OPTIONAL — only use them when directing the user to a specific page.\n"
-    "ALWAYS answer the question FIRST, then optionally add buttons.\n"
+    "INTERACTIVE BUTTONS (RECOMMENDED):\n"
+    "You SHOULD show clickable buttons below your message to help users navigate.\n"
+    "Buttons make it easy for users to take action without copy-pasting URLs.\n"
+    "ALWAYS answer the question FIRST, then add relevant buttons.\n"
     "Format: [[BUTTONS: category:Label|URL, category:Label|URL]]\n\n"
     "Categories: pricing (orange), action (green), info (blue), support (purple), link (gray)\n"
     "If a link in 'Available links' lists a color (e.g. 'color: #ff0000'), append it as a 4th field so the button uses that exact colour: category:Label|URL|#ff0000\n\n"
@@ -114,8 +114,9 @@ BUTTON_INSTRUCTIONS = (
     "- ANSWER FIRST. Buttons are a supplement, not a replacement.\n"
     "- ONLY use URLs from the 'Available links' list. NEVER invent URLs.\n"
     "- If a link has a color, include it exactly as given. If not, omit the color field.\n"
-    "- Max 1-2 buttons per response.\n"
-    "- Do NOT show buttons for greetings or when you already answered fully.\n"
+    "- Max 1-3 buttons per response.\n"
+    "- Show buttons for most informational replies — they help users navigate.\n"
+    "- Do NOT show buttons only for simple greetings ('hello', 'thanks').\n"
     "- If no links are available, do NOT show any buttons.\n"
     "- The buttons tag must be the LAST thing in your response.\n"
 )
