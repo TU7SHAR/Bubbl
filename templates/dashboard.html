@@ -37,7 +37,7 @@
             <span class="bricolage" style="font-size: 16px; font-weight: 600; letter-spacing: -0.01em;">Create New Agent</span>
         </a>
 
-        {% if platform_bot %}
+        {% if platform_bot and session.get('role') == 'super_admin' %}
         <div class="bot-card {% if platform_bot.id == session.get('active_bot_id') %}active{% endif %}" onclick="window.location.href='/connect_support'" style="border: 2px solid rgba(232,114,42,0.2);">
             <div class="card-banner" style="background: linear-gradient(135deg, #E8722A, #f59e0b);">
                 <div class="card-avatar" style="background-color: #E8722A;">
