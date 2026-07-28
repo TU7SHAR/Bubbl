@@ -40,17 +40,17 @@ def leads_page():
             'custom_data': l.custom_data,
         })
 
-    # Feedback stats
-    all_feedback = Feedback.query.all()
-    avg_rating = 0
-    if all_feedback:
-        valid = [f.rating for f in all_feedback if f.rating]
-        avg_rating = round(sum(valid) / len(valid), 1) if valid else 0
+    # Lead-specific stats (NOT feedback — that has its own page)
+    from sqlalchemy import func
+    high_priority_count = Lead.query.filter(
+        Lead.custom_data['Priority'].astext == 'High'
+    ).count()
+    source_bots_count = Lead.query.with_entities(Lead.bot_id).distinct().count()
 
     return render_template('super_admin/leads.html',
         leads=enriched, search=search,
         page=page, total_pages=paginated.pages, total_leads=paginated.total,
-        avg_rating=avg_rating, total_feedback=len(all_feedback),
+        high_priority_count=high_priority_count, source_bots_count=source_bots_count,
     )
 
 
