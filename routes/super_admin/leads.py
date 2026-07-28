@@ -3,7 +3,7 @@ import csv
 import io
 
 from flask import render_template, request, make_response
-from models.models import Lead, Bot, Feedback
+from models.models import Lead, Bot
 from . import super_admin_bp
 from .decorators import super_admin_required
 
@@ -40,12 +40,9 @@ def leads_page():
             'custom_data': l.custom_data,
         })
 
-    # Lead-specific stats (NOT feedback — that has its own page)
-    from sqlalchemy import func
-    high_priority_count = Lead.query.filter(
-        Lead.custom_data['Priority'].astext == 'High'
-    ).count()
-    source_bots_count = Lead.query.with_entities(Lead.bot_id).distinct().count()
+    # Lead-specific stats
+    high_priority_count = sum(1 for l in enriched if l['priority'] == 'High')
+    source_bots_count = len(set(l.bot_id for l in leads))
 
     return render_template('super_admin/leads.html',
         leads=enriched, search=search,
