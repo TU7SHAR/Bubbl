@@ -16,7 +16,8 @@ SECONDS_PER_PAGE = 4
 def discover_links():
     """
     Quick link discovery — finds all URLs on a site WITHOUT scraping them.
-    Returns the list so the user can preview what will be scraped.
+    Returns the FULL list so the user can see the total, plus notes how many
+    will actually be scraped based on their plan limit.
     """
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
@@ -26,7 +27,17 @@ def discover_links():
     data = request.json or {}
     url = (data.get('url') or '').strip()
     use_spider = data.get('use_spider', False)
-    max_urls = min(int(data.get('max_urls') or 50), 100)  # cap preview at 100
+    find_max_links = data.get('find_max_links', False)
+
+    # When Find Max Links is ON, discover as many as possible (up to 500)
+    # When OFF, respect the user's page limit
+    if find_max_links:
+        max_urls = 500  # Discover up to 500 links (no artificial cap)
+    else:
+        try:
+            max_urls = int(data.get('max_urls') or 50)
+        except (ValueError, TypeError):
+            max_urls = 50
 
     if not url:
         return jsonify({"error": "URL is required."}), 400
@@ -75,7 +86,7 @@ def discover_links():
     except Exception as e:
         return jsonify({"error": f"Discovery failed: {str(e)[:200]}"}), 500
 
-    # Cap to plan limit
+    # Show ALL found URLs, but note how many will actually be scraped
     capped = len(urls_found) > plan_limit
     scrape_count = min(len(urls_found), plan_limit)
 
@@ -87,7 +98,7 @@ def discover_links():
         "plan": plan_name,
         "plan_limit": plan_limit,
         "method": method_used,
-        "urls": urls_found[:scrape_count],  # Only show the ones that will be scraped
+        "urls": urls_found,  # Return ALL found URLs (user sees full picture)
         "estimated_seconds": scrape_count * SECONDS_PER_PAGE,
     })
 
