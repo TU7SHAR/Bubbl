@@ -484,6 +484,7 @@ function renderButtons(buttons, container) {
   /**
    * Renders an array of button objects as styled pill buttons below a message.
    * Each button opens its URL in a new tab.
+   * Uses custom colors from managed links (fetched on init) when available.
    */
   if (!buttons || buttons.length === 0) return;
 
@@ -496,18 +497,35 @@ function renderButtons(buttons, container) {
     anchor.target = "_blank";
     anchor.rel = "noopener noreferrer";
     anchor.className = "bubbl-btn bubbl-btn--" + btn.category;
-    // Apply a custom per-link colour if provided (overrides the category class colour)
-    if (btn.color) {
-      anchor.style.background = btn.color;
+
+    // Apply custom color: first check if bot AI provided one, then check
+    // the managed links color map (fetched from /admin/api/bot_link_colors)
+    var customColor = btn.color || null;
+    if (!customColor && window._botLinkColors && window._botLinkColors[btn.url]) {
+      customColor = window._botLinkColors[btn.url].color;
+    }
+    if (customColor) {
+      anchor.style.background = customColor;
       anchor.style.color = "#fff";
       anchor.style.border = "none";
     }
+
     anchor.innerHTML = btn.label + ' <span class="bubbl-btn-arrow">\u2197</span>';
     btnRow.appendChild(anchor);
   }
 
   container.appendChild(btnRow);
 }
+
+// Fetch managed link colors for the current bot (so buttons use admin-set colors)
+(function() {
+  var botId = window.EMBEDDED_BOT_ID;
+  if (!botId) return;
+  fetch('/admin/api/bot_link_colors/' + botId)
+    .then(function(r) { return r.ok ? r.json() : {}; })
+    .then(function(data) { window._botLinkColors = data; })
+    .catch(function() { window._botLinkColors = {}; });
+})();
 
 function appendBotMessage(msg) {
   const display = document.getElementById("chat-display");
