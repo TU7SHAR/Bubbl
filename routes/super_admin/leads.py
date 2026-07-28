@@ -3,7 +3,7 @@ import csv
 import io
 
 from flask import render_template, request, make_response
-from models.models import Lead, Bot, Feedback
+from models.models import Lead, Bot
 from . import super_admin_bp
 from .decorators import super_admin_required
 
@@ -40,17 +40,14 @@ def leads_page():
             'custom_data': l.custom_data,
         })
 
-    # Feedback stats
-    all_feedback = Feedback.query.all()
-    avg_rating = 0
-    if all_feedback:
-        valid = [f.rating for f in all_feedback if f.rating]
-        avg_rating = round(sum(valid) / len(valid), 1) if valid else 0
+    # Lead-specific stats
+    high_priority_count = sum(1 for l in enriched if l['priority'] == 'High')
+    source_bots_count = len(set(l.bot_id for l in leads))
 
     return render_template('super_admin/leads.html',
         leads=enriched, search=search,
         page=page, total_pages=paginated.pages, total_leads=paginated.total,
-        avg_rating=avg_rating, total_feedback=len(all_feedback),
+        high_priority_count=high_priority_count, source_bots_count=source_bots_count,
     )
 
 
