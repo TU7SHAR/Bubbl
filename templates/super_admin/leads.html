@@ -31,7 +31,15 @@
 <div class="sa-table-wrap">
   <div class="sa-table-header">
     <h3>Leads</h3>
-    <input type="text" class="sa-search-input" placeholder="Search leads..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <input type="text" class="sa-search-input" placeholder="Search leads..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
+      <select class="sa-filter-select" data-col="5" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
+        <option value="">All Priority</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
   </div>
   <div class="sa-table-scroll">
     <table class="sa-table">
