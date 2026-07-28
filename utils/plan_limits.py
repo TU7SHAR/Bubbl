@@ -13,6 +13,8 @@ PLAN_LIMITS = {
         'messages': 200,
         'documents_per_bot': 3,
         'scrape_pages': 5,
+        'scrape_jobs': 5,          # Total scrape jobs allowed per month
+        'text_snippets': 999999,   # Unlimited text uploads
         'file_size_mb': 5,
         'team_members': 1,
     },
@@ -21,6 +23,8 @@ PLAN_LIMITS = {
         'messages': 2000,
         'documents_per_bot': 10,
         'scrape_pages': 20,
+        'scrape_jobs': 50,
+        'text_snippets': 999999,
         'file_size_mb': 10,
         'team_members': 3,
     },
@@ -29,6 +33,8 @@ PLAN_LIMITS = {
         'messages': 10000,
         'documents_per_bot': 50,
         'scrape_pages': 100,
+        'scrape_jobs': 300,
+        'text_snippets': 999999,
         'file_size_mb': 10,
         'team_members': 10,
     },
@@ -37,6 +43,8 @@ PLAN_LIMITS = {
         'messages': 50000,
         'documents_per_bot': 200,
         'scrape_pages': 500,
+        'scrape_jobs': 999999,     # Unlimited
+        'text_snippets': 999999,
         'file_size_mb': 10,
         'team_members': 50,
     },
@@ -331,8 +339,19 @@ def get_usage_summary(org_id):
         'members_limit': members_limit,
         'documents_per_bot_limit': limits['documents_per_bot'],
         'scrape_pages_limit': limits['scrape_pages'],
+        'scrape_jobs_limit': limits.get('scrape_jobs', 2),
+        'text_snippets_limit': limits.get('text_snippets', 999999),
         'file_size_mb': limits['file_size_mb'],
         'reset_date': reset_date,
+        # Documents: total across all bots in this org
+        'documents_used': Document.query.join(Bot).filter(Bot.org_id == org_id).count(),
+        'documents_limit': limits['documents_per_bot'] * max(bots_used, 1),  # total capacity
+        # Scrape jobs: completed scrapes this month
+        'scrape_jobs_used': ScrapeJob.query.join(Bot).filter(
+            Bot.org_id == org_id,
+            ScrapeJob.status == 'completed',
+            ScrapeJob.created_at >= (datetime.now(timezone.utc) - timedelta(days=30))
+        ).count(),
         # Subscription lifecycle
         'subscription_status': org.subscription_status or ('active' if plan != 'free' else 'free'),
         'subscription_started_at': org.subscription_started_at,

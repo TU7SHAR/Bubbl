@@ -68,6 +68,52 @@
           <span>Bots</span>
           <span class="mp-usage-value">{{ bots_used }} / {% if bots_limit >= 999 %}&#8734;{% else %}{{ bots_limit }}{% endif %}</span>
         </div>
+        {% set bots_pct = ((bots_used / bots_limit) * 100) | int if bots_limit < 999 else 5 %}
+        <div class="mp-progress-bar">
+          <div class="mp-progress-fill {% if bots_pct > 90 %}mp-danger{% elif bots_pct > 70 %}mp-warn{% endif %}" style="width: {{ bots_pct }}%;"></div>
+        </div>
+      </div>
+      <div class="mp-usage-block">
+        <div class="mp-usage-row">
+          <span>Documents (all bots)</span>
+          <span class="mp-usage-value">{{ usage.documents_used if usage else 0 }} / {{ (usage.documents_limit if usage else 3) }}</span>
+        </div>
+        {% set docs_used = usage.documents_used if usage else 0 %}
+        {% set docs_limit = usage.documents_limit if usage else 3 %}
+        {% set docs_pct = ((docs_used / docs_limit) * 100) | int if docs_limit > 0 else 0 %}
+        <div class="mp-progress-bar">
+          <div class="mp-progress-fill {% if docs_pct > 90 %}mp-danger{% elif docs_pct > 70 %}mp-warn{% endif %}" style="width: {{ docs_pct }}%;"></div>
+        </div>
+      </div>
+      <div class="mp-usage-block">
+        <div class="mp-usage-row">
+          <span>Scrape Jobs (monthly)</span>
+          <span class="mp-usage-value">{{ usage.scrape_jobs_used if usage else 0 }} / {% if (usage.scrape_jobs_limit if usage else 2) >= 999999 %}&#8734;{% else %}{{ usage.scrape_jobs_limit if usage else 2 }}{% endif %}</span>
+        </div>
+        {% set scrape_used = usage.scrape_jobs_used if usage else 0 %}
+        {% set scrape_limit = usage.scrape_jobs_limit if usage else 2 %}
+        {% set scrape_pct = ((scrape_used / scrape_limit) * 100) | int if scrape_limit < 999999 else 2 %}
+        <div class="mp-progress-bar">
+          <div class="mp-progress-fill {% if scrape_pct > 90 %}mp-danger{% elif scrape_pct > 70 %}mp-warn{% endif %}" style="width: {{ scrape_pct }}%;"></div>
+        </div>
+      </div>
+      <div class="mp-usage-block">
+        <div class="mp-usage-row">
+          <span>Pages per Scrape</span>
+          <span class="mp-usage-value">Up to {{ usage.scrape_pages_limit if usage else 5 }} pages</span>
+        </div>
+        <div class="mp-progress-bar" style="background: rgba(16,185,129,0.1);">
+          <div class="mp-progress-fill" style="width: 100%; background: #10b981; opacity: 0.3;"></div>
+        </div>
+      </div>
+      <div class="mp-usage-block">
+        <div class="mp-usage-row">
+          <span>Text Snippets</span>
+          <span class="mp-usage-value" style="color: #10b981; font-weight: 700;">&#8734; Unlimited</span>
+        </div>
+        <div class="mp-progress-bar" style="background: rgba(16,185,129,0.1);">
+          <div class="mp-progress-fill" style="width: 100%; background: #10b981; opacity: 0.3;"></div>
+        </div>
       </div>
       <div class="mp-usage-block" style="margin-top: 8px;">
         <div class="mp-usage-row">
