@@ -51,6 +51,7 @@ CORS(app, resources={
     r"/api/platform-feedback": {"origins": "*"},  # Public feedback
     r"/api/bot_avatar/*": {"origins": "*"},  # Avatar fetch from embed
     r"/api/waitlist": {"origins": "*"},      # Marketing site waitlist
+    r"/admin/api/bot_link_colors/*": {"origins": "*"},  # Link colors for embed widget
     r"/api/*": {"origins": ALLOWED_ORIGINS}, # All other API routes: restricted
 })
 
