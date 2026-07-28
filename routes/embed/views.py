@@ -266,8 +266,19 @@ def conversations_list(bot_id):
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
     if not bot:
+        # Allow viewing platform bot conversations even if it's not in the user's org
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+    if not bot:
         flash("Bot not found.", "error")
         return redirect(url_for('views_bp.conversations_hub'))
+
+    from sqlalchemy import or_
+
+    # For the platform bot, also include messages saved with bot_id=None (legacy anonymous path)
+    if bot.bot_type == 'platform':
+        bot_filter = or_(ChatMessage.bot_id == bot.id, ChatMessage.bot_id.is_(None))
+    else:
+        bot_filter = (ChatMessage.bot_id == bot.id)
 
     # Get all sessions with aggregated stats
     sessions_query = db.session.query(
@@ -276,7 +287,7 @@ def conversations_list(bot_id):
         func.min(ChatMessage.created_at).label('started_at'),
         func.max(ChatMessage.created_at).label('last_message_at'),
         func.sum(ChatMessage.tokens_used).label('total_tokens'),
-    ).filter_by(bot_id=bot_id).group_by(
+    ).filter(bot_filter).group_by(
         ChatMessage.session_id
     ).order_by(func.max(ChatMessage.created_at).desc()).all()
 
@@ -289,8 +300,8 @@ def conversations_list(bot_id):
         duration_mins = round(duration_secs / 60, 1) if duration_secs > 0 else 0
 
         # First user message as preview
-        first_msg = ChatMessage.query.filter_by(
-            bot_id=bot_id, session_id=sess.session_id, role='user'
+        first_msg = ChatMessage.query.filter(
+            bot_filter, ChatMessage.session_id == sess.session_id, ChatMessage.role == 'user'
         ).order_by(ChatMessage.created_at.asc()).first()
 
         # Check if a lead was captured in this session
@@ -311,11 +322,11 @@ def conversations_list(bot_id):
                 lead = Lead.query.get(msg_with_lead.lead_id)
 
         # Count user messages and bot messages separately for response time calc
-        user_msg_count = ChatMessage.query.filter_by(
-            bot_id=bot_id, session_id=sess.session_id, role='user'
+        user_msg_count = ChatMessage.query.filter(
+            bot_filter, ChatMessage.session_id == sess.session_id, ChatMessage.role == 'user'
         ).count()
-        bot_msg_count = ChatMessage.query.filter_by(
-            bot_id=bot_id, session_id=sess.session_id, role='bot'
+        bot_msg_count = ChatMessage.query.filter(
+            bot_filter, ChatMessage.session_id == sess.session_id, ChatMessage.role == 'bot'
         ).count()
 
         # Average response time: total latency tracked on bot / interaction count
@@ -373,11 +384,19 @@ def conversation_detail(bot_id, session_id):
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
     if not bot:
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+    if not bot:
         flash("Bot not found.", "error")
         return redirect(url_for('views_bp.conversations_hub'))
 
-    messages = ChatMessage.query.filter_by(
-        bot_id=bot_id, session_id=session_id
+    from sqlalchemy import or_
+    if bot.bot_type == 'platform':
+        msg_filter = or_(ChatMessage.bot_id == bot.id, ChatMessage.bot_id.is_(None))
+    else:
+        msg_filter = (ChatMessage.bot_id == bot.id)
+
+    messages = ChatMessage.query.filter(
+        msg_filter, ChatMessage.session_id == session_id
     ).order_by(ChatMessage.created_at.asc()).all()
 
     if not messages:
