@@ -320,7 +320,7 @@
                     <span class="setting-desc">Extract extra URLs from page content (emails, internal links not in nav)</span>
                   </div>
                   <label class="toggle-switch">
-                    <input type="checkbox" id="find_max_links" checked>
+                    <input type="checkbox" id="find_max_links" checked onchange="toggleMaxLinksMode()">
                     <span class="toggle-slider"></span>
                   </label>
                 </div>
@@ -870,13 +870,32 @@
     updateLivePreview();
   }
 
+  // --- FIND MAX LINKS: Disable page limit when enabled ---
+  function toggleMaxLinksMode() {
+    var maxLinksOn = document.getElementById('find_max_links').checked;
+    var limitInput = document.getElementById('max_urls');
+    if (maxLinksOn) {
+      limitInput.disabled = true;
+      limitInput.style.opacity = '0.4';
+      limitInput.style.cursor = 'not-allowed';
+      limitInput.title = 'Disabled — Find Max Links will discover all pages automatically';
+    } else {
+      limitInput.disabled = false;
+      limitInput.style.opacity = '1';
+      limitInput.style.cursor = '';
+      limitInput.title = 'Max URLs to process';
+    }
+  }
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() { toggleMaxLinksMode(); });
+
   document.getElementById('scrape-btn').addEventListener('click', async function() {
       const url = document.getElementById('scrape_url').value;
       if(!url) return showModal('Please enter a URL.', 'error');
 
       const isDeep = document.getElementById('use_deep_crawl').checked;
-      const limit = document.getElementById('max_urls').value || 20;
       const findMaxLinks = document.getElementById('find_max_links').checked;
+      const limit = findMaxLinks ? 500 : (document.getElementById('max_urls').value || 20);
       const currentBotId = "{{ bot.id }}"; // Jinja injects the ID here
 
       try {
