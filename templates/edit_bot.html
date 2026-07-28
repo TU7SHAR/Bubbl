@@ -232,10 +232,11 @@
               <p class="cb-content-subtitle">Files embedded into your agent's memory.</p>
               
               <label class="cb-label">Existing Documents</label>
-              <div style="margin-bottom:10px;">
-                <input type="text" id="doc-search" placeholder="Search documents..." oninput="filterDocs()" style="width:100%; padding:9px 14px; font-size:13px; border-radius:8px; border:1.5px solid rgba(0,0,0,0.1); outline:none;" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,0.1)'">
+              <div style="margin-bottom:10px; display:flex; gap:10px; align-items:center;">
+                <input type="text" id="doc-search" placeholder="Search documents..." oninput="filterAndPaginateDocs()" style="flex:1; padding:9px 14px; font-size:13px; border-radius:8px; border:1.5px solid rgba(0,0,0,0.1); outline:none;" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,0.1)'">
+                <span id="doc-count" style="font-size:12px; color:#6b7280; white-space:nowrap;"></span>
               </div>
-              <div class="doc-list" id="doc-list-container" style="margin-bottom: 40px;">
+              <div class="doc-list" id="doc-list-container" style="margin-bottom: 10px;">
                 {% if docs %}
                     {% for doc in docs %}
                     <div class="doc-item">
@@ -256,6 +257,7 @@
                     </div>
                 {% endif %}
               </div>
+              <div id="doc-pagination" style="display:flex; justify-content:center; gap:8px; margin-bottom:30px;"></div>
 
               <div id="staging-area" style="display: none; margin-bottom: 30px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -468,7 +470,23 @@
                 <span style="font-size:12px; color:#6b7280;"><span style="color:#dc2626; font-weight:700;">*</span> Label and URL are required</span>
               </div>
 
-              <div id="links-container" style="margin-bottom: 16px;"></div>
+              <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center; flex-wrap:wrap;">
+                <input type="text" id="link-search" placeholder="Search links..." oninput="filterAndPaginateLinks()" style="flex:1; min-width:150px; padding:9px 14px; font-size:13px; border-radius:8px; border:1.5px solid rgba(0,0,0,0.1); outline:none;" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='rgba(0,0,0,0.1)'">
+                <select id="link-cat-filter" onchange="filterAndPaginateLinks()" style="padding:9px 12px; font-size:13px; border-radius:8px; border:1.5px solid rgba(0,0,0,0.1); cursor:pointer; outline:none;">
+                  <option value="">All Categories</option>
+                  <option value="pricing">Pricing</option>
+                  <option value="action">Action</option>
+                  <option value="info">Info</option>
+                  <option value="support">Support</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Phone</option>
+                  <option value="link">General</option>
+                </select>
+                <span id="link-count" style="font-size:12px; color:#6b7280; white-space:nowrap;"></span>
+              </div>
+
+              <div id="links-container" style="margin-bottom: 12px;"></div>
+              <div id="links-pagination" style="display:flex; justify-content:center; gap:8px; margin-bottom:12px;"></div>
               <button type="button" class="btn btn-outline" style="border-radius: 8px; font-size: 13px; padding: 8px 14px;" onclick="addLinkRow()">+ Add Link</button>
               <div id="links-status" style="margin-top: 10px; font-size: 12px;"></div>
 
@@ -514,15 +532,38 @@
     document.getElementById(tabId).classList.add('active');
   }
 
-  // --- DOCUMENT SEARCH ---
-  function filterDocs() {
-    var query = document.getElementById('doc-search').value.toLowerCase().trim();
-    var items = document.querySelectorAll('#doc-list-container .doc-item');
-    items.forEach(function(item) {
-      var text = item.textContent.toLowerCase();
-      item.style.display = (!query || text.indexOf(query) !== -1) ? '' : 'none';
+  // --- DOCUMENT SEARCH + PAGINATION ---
+  var docPage = 1;
+  var DOCS_PER_PAGE = 10;
+  function filterAndPaginateDocs() {
+    var query = (document.getElementById('doc-search').value || '').toLowerCase().trim();
+    var items = Array.from(document.querySelectorAll('#doc-list-container .doc-item'));
+    // Filter
+    var visible = items.filter(function(item) {
+      var match = !query || item.textContent.toLowerCase().indexOf(query) !== -1;
+      item.style.display = match ? '' : 'none';
+      return match;
     });
+    // Count
+    var countEl = document.getElementById('doc-count');
+    if (countEl) countEl.textContent = visible.length + ' of ' + items.length;
+    // Paginate visible items
+    var totalPages = Math.max(1, Math.ceil(visible.length / DOCS_PER_PAGE));
+    if (docPage > totalPages) docPage = totalPages;
+    visible.forEach(function(item, idx) {
+      item.style.display = (idx >= (docPage-1)*DOCS_PER_PAGE && idx < docPage*DOCS_PER_PAGE) ? '' : 'none';
+    });
+    // Render pagination
+    var pag = document.getElementById('doc-pagination');
+    if (pag && totalPages > 1) {
+      var html = '';
+      for (var p = 1; p <= totalPages; p++) {
+        html += '<button onclick="docPage='+p+';filterAndPaginateDocs()" style="padding:4px 10px; border-radius:6px; border:1px solid '+(p===docPage?'#E8722A':'rgba(0,0,0,0.1)')+'; background:'+(p===docPage?'#E8722A':'#fff')+'; color:'+(p===docPage?'#fff':'#333')+'; font-size:12px; cursor:pointer;">'+p+'</button>';
+      }
+      pag.innerHTML = html;
+    } else if (pag) { pag.innerHTML = ''; }
   }
+  document.addEventListener('DOMContentLoaded', filterAndPaginateDocs);
 
   // --- CUSTOM FORM BUILDER LOGIC ---
   let customFieldsState = [];
@@ -891,9 +932,22 @@ function renderLinks() {
   c.innerHTML = '';
   if (currentLinks.length === 0) {
     c.innerHTML = '<p style="color:#888; font-size:13px;">No links yet. Scrape your website to auto-discover links, or add them manually.</p>';
+    document.getElementById('link-count').textContent = '';
+    document.getElementById('links-pagination').innerHTML = '';
     return;
   }
-  currentLinks.forEach(function(link, i) {
+  var filtered = getFilteredLinkIndices();
+  // Count badge
+  var countEl = document.getElementById('link-count');
+  if (countEl) countEl.textContent = filtered.length + ' of ' + currentLinks.length + ' links';
+  // Pagination
+  var totalPages = Math.max(1, Math.ceil(filtered.length / LINKS_PER_PAGE));
+  if (linksPage > totalPages) linksPage = totalPages;
+  var startIdx = (linksPage - 1) * LINKS_PER_PAGE;
+  var pageItems = filtered.slice(startIdx, startIdx + LINKS_PER_PAGE);
+
+  pageItems.forEach(function(i) {
+    var link = currentLinks[i];
     var row = document.createElement('div');
     row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center; flex-wrap:wrap;';
     var labelBorder = link.label ? 'rgba(0,0,0,0.15)' : '#f87171';
@@ -914,6 +968,16 @@ function renderLinks() {
       '<button type="button" style="background:rgba(239,68,68,0.1); color:#dc2626; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-weight:700; font-size:12px;" onclick="removeLink('+i+')">X</button>';
     c.appendChild(row);
   });
+
+  // Render pagination for links
+  var pag = document.getElementById('links-pagination');
+  if (pag && totalPages > 1) {
+    var html = '';
+    for (var p = 1; p <= totalPages; p++) {
+      html += '<button onclick="linksPage='+p+';renderLinks()" style="padding:4px 10px; border-radius:6px; border:1px solid '+(p===linksPage?'#E8722A':'rgba(0,0,0,0.1)')+'; background:'+(p===linksPage?'#E8722A':'#fff')+'; color:'+(p===linksPage?'#fff':'#333')+'; font-size:12px; cursor:pointer;">'+p+'</button>';
+    }
+    pag.innerHTML = html;
+  } else if (pag) { pag.innerHTML = ''; }
 }
 
 // Category → button colour (matches .bubbl-btn--* classes in chat.css)
@@ -930,8 +994,31 @@ function catColor(cat) {
   return colors[cat] || colors.link;
 }
 
-function addLinkRow() { currentLinks.push({label:'', url:'', category:'link'}); renderLinks(); }
+function addLinkRow() { currentLinks.push({label:'', url:'', category:'link'}); linksPage = Math.ceil(currentLinks.length / LINKS_PER_PAGE); renderLinks(); }
 function removeLink(i) { currentLinks.splice(i, 1); renderLinks(); }
+
+var linksPage = 1;
+var LINKS_PER_PAGE = 10;
+var linksSearchQuery = '';
+var linksCatFilter = '';
+
+function filterAndPaginateLinks() {
+  linksSearchQuery = (document.getElementById('link-search').value || '').toLowerCase().trim();
+  linksCatFilter = (document.getElementById('link-cat-filter').value || '').toLowerCase();
+  linksPage = 1;
+  renderLinks();
+}
+
+function getFilteredLinkIndices() {
+  var indices = [];
+  for (var i = 0; i < currentLinks.length; i++) {
+    var link = currentLinks[i];
+    var matchText = !linksSearchQuery || (link.label||'').toLowerCase().indexOf(linksSearchQuery) !== -1 || (link.url||'').toLowerCase().indexOf(linksSearchQuery) !== -1;
+    var matchCat = !linksCatFilter || (link.category||'link') === linksCatFilter;
+    if (matchText && matchCat) indices.push(i);
+  }
+  return indices;
+}
 
 function saveLinks() {
   var s = document.getElementById('links-status');
