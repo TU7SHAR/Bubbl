@@ -348,6 +348,9 @@ def delete_doc(doc_id):
     doc = Document.query.get_or_404(doc_id)
     
     bot = Bot.query.filter_by(id=doc.bot_id, org_id=session['org_id']).first()
+    # Also allow deleting docs from the platform bot (different org, but manageable by admins)
+    if not bot:
+        bot = Bot.query.filter_by(id=doc.bot_id, bot_type='platform').first()
     if bot:
         try:
             delete_from_gemini(doc.filename, store_id=bot.store_id)
