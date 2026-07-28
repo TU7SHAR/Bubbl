@@ -84,9 +84,9 @@ def check_scrape_status(job_id):
     
     job = ScrapeJob.query.get_or_404(job_id)
     
-    # Verify the job belongs to the user's organization
+    # Verify the job belongs to the user's organization (or is the platform bot)
     bot = Bot.query.get(job.bot_id)
-    if not bot or bot.org_id != session.get('org_id'):
+    if not bot or (bot.org_id != session.get('org_id') and bot.bot_type != 'platform'):
         return jsonify({"error": "Not found"}), 404
     
     return jsonify({

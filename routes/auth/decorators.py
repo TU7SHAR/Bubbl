@@ -8,7 +8,8 @@ def admin_required(f):
             flash("Please log in to access this page.", "error")
             return redirect(url_for('auth.login'))
         
-        if session.get('role') != 'admin':
+        # Super admins have all admin privileges too
+        if session.get('role') not in ('admin', 'super_admin'):
             flash("Access Denied: Administrator privileges required.", "error")
             return redirect(url_for('views_bp.dashboard'))
             
