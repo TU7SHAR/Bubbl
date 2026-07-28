@@ -454,13 +454,13 @@
               <p class="cb-content-subtitle">These links appear as clickable buttons in your bot's chat responses. Each category has a default colour, but you can <strong>click the colour circle</strong> next to any link to set a custom button colour. Auto-populated from scrapes, editable here.</p>
 
               <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#E8722A;"></span> Pricing</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;"></span> Action</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;"></span> Info</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;"></span> Support</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#0d9488;"></span> Email</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#4f46e5;"></span> Phone</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#6b7280;"></span> General</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Pricing links"><input type="color" value="#E8722A" oninput="setCategoryColor('pricing',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Pricing</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Action links"><input type="color" value="#10b981" oninput="setCategoryColor('action',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Action</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Info links"><input type="color" value="#3b82f6" oninput="setCategoryColor('info',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Info</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Support links"><input type="color" value="#8b5cf6" oninput="setCategoryColor('support',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Support</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Email links"><input type="color" value="#0d9488" oninput="setCategoryColor('email',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Email</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Phone links"><input type="color" value="#4f46e5" oninput="setCategoryColor('phone',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Phone</span>
+                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL General links"><input type="color" value="#6b7280" oninput="setCategoryColor('link',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> General</span>
               </div>
 
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
@@ -928,6 +928,16 @@ function catColor(cat) {
     link:    '#6b7280'   // gray (General)
   };
   return colors[cat] || colors.link;
+}
+
+// Set ALL links of a given category to a new colour (from the legend colour picker)
+function setCategoryColor(cat, color) {
+  for (var i = 0; i < currentLinks.length; i++) {
+    if ((currentLinks[i].category || 'link') === cat) {
+      currentLinks[i].color = color;
+    }
+  }
+  renderLinks();
 }
 
 function addLinkRow() { currentLinks.push({label:'', url:'', category:'link'}); renderLinks(); }
