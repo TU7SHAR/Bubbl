@@ -313,6 +313,25 @@
                   </div>
                   <input type="number" id="max_urls" value="20" class="dash-input limit-input" min="1" max="500">
                 </div>
+
+                <div class="scrape-setting-card">
+                  <div class="setting-info">
+                    <span class="setting-title">Find Max Links</span>
+                    <span class="setting-desc">Extract extra URLs from page content (emails, internal links not in nav)</span>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="find_max_links" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div id="scrape-info-box" style="margin-top:12px; padding:12px 16px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15); border-radius:10px; font-size:12px; color:#1e40af; line-height:1.5;">
+                <strong>How it works:</strong><br>
+                - <strong>Direct links:</strong> Found by crawling &lt;a href&gt; tags on each page (what you see in navigation/footer)<br>
+                - <strong>Extra links:</strong> URLs, emails, and phone numbers extracted from page <em>content</em> (text body, not just nav)<br>
+                - <strong>Find Max Links ON:</strong> Both direct + extra links are added to Managed Links after scraping<br>
+                - <strong>Find Max Links OFF:</strong> Only the directly crawled page URLs are used
               </div>
 
               <button type="button" class="btn btn-outline" style="margin-top: 10px; width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;" id="scrape-btn">
@@ -857,18 +876,20 @@
 
       const isDeep = document.getElementById('use_deep_crawl').checked;
       const limit = document.getElementById('max_urls').value || 20;
-      const currentBotId = "{{ bot.id }}";
-      const btn = this;
-
-      // --- STEP 1: Discover links first ---
-      btn.disabled = true;
-      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Discovering links...';
+      const findMaxLinks = document.getElementById('find_max_links').checked;
+      const currentBotId = "{{ bot.id }}"; // Jinja injects the ID here
 
       try {
           const discRes = await fetch('/admin/api/scrape/discover', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: limit })
+              body: JSON.stringify({
+                  url: url,
+                  use_spider: isDeep,
+                  max_urls: limit,
+                  bot_id: currentBotId,
+                  find_max_links: findMaxLinks
+              })
           });
           const disc = await discRes.json();
 

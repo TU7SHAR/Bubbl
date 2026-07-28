@@ -102,6 +102,7 @@ def start_scrape():
     
     url = data.get('url')
     use_spider = data.get('use_spider', False)
+    find_max_links = data.get('find_max_links', True)
     
     try:
         max_urls = int(data.get('max_urls') or 20)
@@ -140,7 +141,7 @@ def start_scrape():
     db.session.commit()
 
     # Queue the scrape in Celery (runs in separate worker process)
-    async_scrape_task.delay(new_job.id, url, bot_id, use_spider)
+    async_scrape_task.delay(new_job.id, url, bot_id, use_spider, find_max_links)
 
     # Time estimate (single page scrapes are quick; deep crawl scales with pages)
     est_seconds = (max_urls if use_spider else 1) * SECONDS_PER_PAGE
