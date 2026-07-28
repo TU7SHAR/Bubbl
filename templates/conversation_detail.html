@@ -158,8 +158,13 @@
     <span>Ended: {{ ended_at.strftime('%H:%M') if ended_at else 'Unknown' }}</span>
   </div>
 
+  <!-- Search within transcript -->
+  <div style="margin-bottom:16px;">
+    <input type="text" id="transcript-search" placeholder="Search messages..." oninput="filterTranscript()" style="width:100%; padding:10px 16px; font-size:13px; border-radius:10px; border:1.5px solid #f0e8e0; background:#fff; font-family:inherit; outline:none;" onfocus="this.style.borderColor='#E8722A'" onblur="this.style.borderColor='#f0e8e0'">
+  </div>
+
   <!-- Chat Transcript -->
-  <div class="conv-transcript">
+  <div class="conv-transcript" id="conv-transcript">
     {% for msg in messages %}
     <div class="conv-msg {{ 'conv-msg-user' if msg.role == 'user' else 'conv-msg-bot' }}">
       {% if msg.role == 'bot' and loop.index > 1 %}
@@ -188,4 +193,15 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+function filterTranscript() {
+  var query = document.getElementById('transcript-search').value.toLowerCase().trim();
+  var msgs = document.querySelectorAll('#conv-transcript .conv-msg');
+  msgs.forEach(function(msg) {
+    var text = msg.textContent.toLowerCase();
+    msg.style.display = (!query || text.indexOf(query) !== -1) ? '' : 'none';
+  });
+}
+</script>
 {% endblock %}
