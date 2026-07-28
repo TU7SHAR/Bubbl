@@ -63,9 +63,9 @@
           <td>{{ l.phone }}</td>
           <td>{{ l.bot_name }}</td>
           <td>
-            {% if l.priority == 'high' %}
+            {% if l.priority|lower == 'high' %}
               <span class="badge badge-red">High</span>
-            {% elif l.priority == 'medium' %}
+            {% elif l.priority|lower == 'medium' %}
               <span class="badge badge-yellow">Medium</span>
             {% else %}
               <span class="badge badge-gray">Low</span>
