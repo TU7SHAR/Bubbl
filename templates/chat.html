@@ -9,6 +9,11 @@
 {% set chat_display_name = active_bot_name if active_bot_name else 'Bubbl' %}
 
 <style>
+  /* 0. THEME COLOR CSS VARIABLE — used by button pills and form inputs */
+  :root, #chat-widget-container {
+    --theme-color: {{ theme_color }};
+  }
+
   /* 1. CHAT HEADER AVATAR COLOR */
   #chat-window-popup {
     display: flex;
