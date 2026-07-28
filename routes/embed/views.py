@@ -297,14 +297,14 @@ def conversations_list(bot_id):
         duration_mins = round(duration_secs / 60, 1) if duration_secs > 0 else 0
 
         # First user message as preview
-        first_msg = ChatMessage.query.filter_by(
-            bot_id=bot_id, session_id=sess.session_id, role='user'
+        first_msg = ChatMessage.query.filter(
+            bot_filter, ChatMessage.session_id == sess.session_id, ChatMessage.role == 'user'
         ).order_by(ChatMessage.created_at.asc()).first()
 
         # Check if a lead was captured in this session
         lead = Lead.query.join(ChatMessage, ChatMessage.lead_id == Lead.id).filter(
             ChatMessage.session_id == sess.session_id,
-            ChatMessage.bot_id == bot_id
+            bot_filter
         ).first()
 
         # If no lead found via ChatMessage.lead_id, check by session's captured leads
@@ -312,18 +312,18 @@ def conversations_list(bot_id):
             # Check if any message in this session has a lead_id
             msg_with_lead = ChatMessage.query.filter(
                 ChatMessage.session_id == sess.session_id,
-                ChatMessage.bot_id == bot_id,
+                bot_filter,
                 ChatMessage.lead_id.isnot(None)
             ).first()
             if msg_with_lead:
                 lead = Lead.query.get(msg_with_lead.lead_id)
 
         # Count user messages and bot messages separately for response time calc
-        user_msg_count = ChatMessage.query.filter_by(
-            bot_id=bot_id, session_id=sess.session_id, role='user'
+        user_msg_count = ChatMessage.query.filter(
+            bot_filter, ChatMessage.session_id == sess.session_id, ChatMessage.role == 'user'
         ).count()
-        bot_msg_count = ChatMessage.query.filter_by(
-            bot_id=bot_id, session_id=sess.session_id, role='bot'
+        bot_msg_count = ChatMessage.query.filter(
+            bot_filter, ChatMessage.session_id == sess.session_id, ChatMessage.role == 'bot'
         ).count()
 
         # Average response time: total latency tracked on bot / interaction count
