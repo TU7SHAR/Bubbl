@@ -514,3 +514,28 @@
 .powered-by-bubbl a:hover strong {
   color: #E8722A;
 }
+
+
+
+/* --- Bot Message Rating Buttons --- */
+.msg-rating {
+  padding: 0 4px;
+}
+.rate-btn {
+  background: none;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+.rate-btn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+  border-color: rgba(0,0,0,0.2);
+}
+.rate-btn:disabled {
+  cursor: default;
+}

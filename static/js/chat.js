@@ -527,6 +527,35 @@ function renderButtons(buttons, container) {
     .catch(function() { window._botLinkColors = {}; });
 })();
 
+// Track bot message count for rating purposes
+var _botMsgIndex = 0;
+
+function createRatingButtons(msgIndex) {
+  var wrapper = document.createElement("div");
+  wrapper.className = "msg-rating";
+  wrapper.style.cssText = "display:flex; gap:6px; align-self:flex-start; margin-top:-8px; margin-bottom:4px;";
+  wrapper.innerHTML = '<button class="rate-btn rate-up" data-idx="'+msgIndex+'" data-val="1" onclick="rateMsg(this)" title="Helpful">&#128077;</button>' +
+    '<button class="rate-btn rate-down" data-idx="'+msgIndex+'" data-val="-1" onclick="rateMsg(this)" title="Not helpful">&#128078;</button>';
+  return wrapper;
+}
+
+function rateMsg(btn) {
+  var idx = parseInt(btn.getAttribute('data-idx'));
+  var val = parseInt(btn.getAttribute('data-val'));
+  var sessionId = window._chatSessionId || localStorage.getItem('bubbl_ws_session') || '';
+
+  // Visual feedback
+  btn.parentElement.querySelectorAll('.rate-btn').forEach(function(b) { b.style.opacity='0.4'; b.disabled=true; });
+  btn.style.opacity = '1';
+  btn.style.transform = 'scale(1.2)';
+
+  fetch('/api/rate_message', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ session_id: sessionId, message_index: idx, rating: val })
+  }).catch(function() {});
+}
+
 function appendBotMessage(msg) {
   const display = document.getElementById("chat-display");
 
@@ -539,6 +568,10 @@ function appendBotMessage(msg) {
     botDiv.className = "msg bot";
     botDiv.innerHTML = renderMarkdown(cleanText);
     display.appendChild(botDiv);
+
+    // Add rating buttons
+    display.appendChild(createRatingButtons(_botMsgIndex));
+    _botMsgIndex++;
   }
 
   // Render buttons below the message (separate container for flex layout)
@@ -733,6 +766,10 @@ function initWebSocket() {
             renderButtons(buttons, display);
           }
           streamingBotDiv = null;
+          // Add rating buttons after streaming completes
+          const display2 = document.getElementById("chat-display");
+          display2.appendChild(createRatingButtons(_botMsgIndex));
+          _botMsgIndex++;
         } else {
           removeTypingIndicator();
           appendBotMessage(replyText);
