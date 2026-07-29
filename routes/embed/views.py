@@ -380,6 +380,52 @@ def conversations_list(bot_id):
     )
 
 
+@views_bp.route('/conversations/<int:bot_id>/export')
+def export_conversations(bot_id):
+    """Export all conversations for a bot as CSV."""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    from models.models import ChatMessage, Lead
+
+    bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
+    if not bot:
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+    if not bot:
+        flash("Bot not found.", "error")
+        return redirect(url_for('views_bp.conversations_hub'))
+
+    from sqlalchemy import or_
+    if bot.bot_type == 'platform':
+        bot_filter = or_(ChatMessage.bot_id == bot.id, ChatMessage.bot_id.is_(None))
+    else:
+        bot_filter = (ChatMessage.bot_id == bot.id)
+
+    messages = ChatMessage.query.filter(bot_filter).order_by(
+        ChatMessage.session_id, ChatMessage.created_at.asc()
+    ).all()
+
+    si = io.StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['Session ID', 'Role', 'Message', 'Timestamp (UTC)', 'Tokens', 'Rating', 'IP Address'])
+
+    for msg in messages:
+        cw.writerow([
+            msg.session_id,
+            msg.role,
+            (msg.content or '')[:500],
+            msg.created_at.strftime('%Y-%m-%d %H:%M:%S') if msg.created_at else '',
+            msg.tokens_used or 0,
+            msg.rating if hasattr(msg, 'rating') and msg.rating else '',
+            msg.ip_address or '',
+        ])
+
+    output = make_response(si.getvalue())
+    output.headers['Content-Type'] = 'text/csv'
+    output.headers['Content-Disposition'] = f'attachment; filename={bot.bot_name}_conversations.csv'
+    return output
+
+
 @views_bp.route('/conversations/<int:bot_id>/<session_id>')
 def conversation_detail(bot_id, session_id):
     """View a full conversation transcript with metadata."""
