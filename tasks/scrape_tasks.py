@@ -20,13 +20,15 @@ logger = get_task_logger(__name__)
 # time_limit: hard kill a few seconds later if soft handling doesn't return.
 @celery.task(bind=True, max_retries=3, default_retry_delay=60,
              soft_time_limit=1500, time_limit=1560)
-def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_links=True):
+def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_links=True, selected_urls=None):
     """
     Background scrape task — replaces the old threading.Thread approach.
 
     Runs entirely inside the Celery worker process. Cannot affect gunicorn.
     Auto-retries up to 3 times on failure with 60s delay.
     Has a 10-minute soft time limit so a hung scrape is marked failed, not stuck forever.
+    
+    If selected_urls is provided, only those specific URLs are scraped (no crawling).
     """
     from app import app
 
@@ -64,7 +66,11 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_link
         urls_to_scrape = []
 
         try:
-            if use_spider:
+            # If user selected specific URLs from the discovery panel, use those directly
+            if selected_urls and isinstance(selected_urls, list) and len(selected_urls) > 0:
+                urls_to_scrape = selected_urls[:crawl_limit]
+                add_log(f"User selected {len(urls_to_scrape)} specific URL(s) to scrape.")
+            elif use_spider:
                 add_log(f"Deep Crawl Enabled: Searching for internal links (Limit: {crawl_limit})...")
                 spider_data = crawl_website_links(url, max_pages=crawl_limit)
                 if spider_data['success']:
