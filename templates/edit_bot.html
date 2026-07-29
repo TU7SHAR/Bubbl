@@ -889,19 +889,46 @@
   // Initialize on page load
   document.addEventListener('DOMContentLoaded', function() { toggleMaxLinksMode(); });
 
+  var currentPlanLimit = 999; // Will be set when discovery completes
+
   function toggleAllUrls(masterCheckbox) {
-    document.querySelectorAll('.url-check').forEach(function(cb) { cb.checked = masterCheckbox.checked; });
+    var checkboxes = document.querySelectorAll('.url-check');
+    if (masterCheckbox.checked) {
+      // Only check up to plan limit
+      var checked = 0;
+      checkboxes.forEach(function(cb) {
+        if (checked < currentPlanLimit) { cb.checked = true; checked++; }
+        else { cb.checked = false; }
+      });
+      if (checkboxes.length > currentPlanLimit) {
+        showModal('Your plan allows scraping up to ' + currentPlanLimit + ' pages. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade</a> to scrape more.', 'warning');
+      }
+    } else {
+      checkboxes.forEach(function(cb) { cb.checked = false; });
+    }
     updateSelectedCount();
   }
   function updateSelectedCount() {
     var count = document.querySelectorAll('.url-check:checked').length;
     var total = document.querySelectorAll('.url-check').length;
+    // Enforce plan limit — if user manually checked beyond limit, uncheck and warn
+    if (count > currentPlanLimit) {
+      var checked = 0;
+      document.querySelectorAll('.url-check').forEach(function(cb) {
+        if (cb.checked) {
+          checked++;
+          if (checked > currentPlanLimit) cb.checked = false;
+        }
+      });
+      count = currentPlanLimit;
+      showModal('You can only scrape up to ' + currentPlanLimit + ' pages on your current plan. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a>', 'warning');
+    }
     var el = document.getElementById('selected-count');
-    if (el) el.textContent = count + ' of ' + total + ' selected';
+    if (el) el.textContent = count + ' of ' + total + ' selected' + (count >= currentPlanLimit ? ' (plan max)' : '');
     var confirmCount = document.getElementById('confirm-scrape-count');
     if (confirmCount) confirmCount.textContent = count;
     var selectAll = document.getElementById('select-all-urls');
-    if (selectAll) selectAll.checked = (count === total);
+    if (selectAll) selectAll.checked = (count === total) || (count >= currentPlanLimit);
   }
 
   document.getElementById('scrape-btn').addEventListener('click', async function() {
@@ -937,6 +964,9 @@
 
           if (disc.error) { showModal(disc.error, 'error'); return; }
 
+          // Store plan limit for checkbox enforcement
+          currentPlanLimit = disc.plan_limit || 5;
+
           // --- Show discovery preview ---
           var panel = document.getElementById('scrape-discovery');
           panel.style.display = 'block';
@@ -953,7 +983,8 @@
           if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max). <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a></span>';
           document.getElementById('discovery-stats').innerHTML = statsHtml;
 
-          var urlsHtml = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(0,0,0,0.06);"><label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:#374151;"><input type="checkbox" id="select-all-urls" checked onchange="toggleAllUrls(this)" style="accent-color:#E8722A; width:14px; height:14px;"> Select All</label><span id="selected-count" style="font-size:11px; color:#6b7280;"></span></div>';
+          var selectAllChecked = disc.scrape_count >= disc.total_found ? 'checked' : '';
+          var urlsHtml = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(0,0,0,0.06);"><label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:#374151;"><input type="checkbox" id="select-all-urls" ' + selectAllChecked + ' onchange="toggleAllUrls(this)" style="accent-color:#E8722A; width:14px; height:14px;"> Select All</label><span id="selected-count" style="font-size:11px; color:#6b7280;"></span></div>';
           disc.urls.forEach(function(u, idx) {
             var isChecked = idx < disc.scrape_count ? 'checked' : '';
             urlsHtml += '<div style="padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); display:flex; align-items:center; gap:8px;"><input type="checkbox" class="url-check" data-url="' + u + '" ' + isChecked + ' onchange="updateSelectedCount()" style="accent-color:#E8722A; width:14px; height:14px; cursor:pointer; flex-shrink:0;"><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">' + (idx+1) + '. ' + u + '</span></div>';
