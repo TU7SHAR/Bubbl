@@ -889,6 +889,21 @@
   // Initialize on page load
   document.addEventListener('DOMContentLoaded', function() { toggleMaxLinksMode(); });
 
+  function toggleAllUrls(masterCheckbox) {
+    document.querySelectorAll('.url-check').forEach(function(cb) { cb.checked = masterCheckbox.checked; });
+    updateSelectedCount();
+  }
+  function updateSelectedCount() {
+    var count = document.querySelectorAll('.url-check:checked').length;
+    var total = document.querySelectorAll('.url-check').length;
+    var el = document.getElementById('selected-count');
+    if (el) el.textContent = count + ' of ' + total + ' selected';
+    var confirmCount = document.getElementById('confirm-scrape-count');
+    if (confirmCount) confirmCount.textContent = count;
+    var selectAll = document.getElementById('select-all-urls');
+    if (selectAll) selectAll.checked = (count === total);
+  }
+
   document.getElementById('scrape-btn').addEventListener('click', async function() {
       const url = document.getElementById('scrape_url').value;
       if(!url) return showModal('Please enter a URL.', 'error');
@@ -938,24 +953,34 @@
           if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max). <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a></span>';
           document.getElementById('discovery-stats').innerHTML = statsHtml;
 
-          var urlsHtml = disc.urls.map(function(u, idx) {
-            return '<div style="padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (idx+1) + '. ' + u + '</div>';
-          }).join('');
+          var urlsHtml = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(0,0,0,0.06);"><label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:#374151;"><input type="checkbox" id="select-all-urls" checked onchange="toggleAllUrls(this)" style="accent-color:#E8722A; width:14px; height:14px;"> Select All</label><span id="selected-count" style="font-size:11px; color:#6b7280;"></span></div>';
+          disc.urls.forEach(function(u, idx) {
+            var isChecked = idx < disc.scrape_count ? 'checked' : '';
+            urlsHtml += '<div style="padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); display:flex; align-items:center; gap:8px;"><input type="checkbox" class="url-check" data-url="' + u + '" ' + isChecked + ' onchange="updateSelectedCount()" style="accent-color:#E8722A; width:14px; height:14px; cursor:pointer; flex-shrink:0;"><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">' + (idx+1) + '. ' + u + '</span></div>';
+          });
           document.getElementById('discovery-urls').innerHTML = urlsHtml || '<p style="color:#999;">No links found.</p>';
-          document.getElementById('confirm-scrape-count').textContent = disc.scrape_count;
+          updateSelectedCount();
+          document.getElementById('confirm-scrape-count').textContent = document.querySelectorAll('.url-check:checked').length;
 
           // --- STEP 2: Confirm button starts the actual scrape ---
           document.getElementById('confirm-scrape-btn').onclick = async function() {
+              // Get selected URLs from checkboxes
+              var selectedUrls = [];
+              document.querySelectorAll('.url-check:checked').forEach(function(cb) {
+                  selectedUrls.push(cb.getAttribute('data-url'));
+              });
+              if (selectedUrls.length === 0) { showModal('Please select at least one URL to scrape.', 'error'); return; }
+
               panel.style.display = 'none';
               const logBox = document.getElementById('scrape-log-container');
               const logText = document.getElementById('scrape-terminal-text');
               logBox.style.display = 'block';
-              logText.innerText = "> Starting scrape of " + disc.scrape_count + " pages...";
+              logText.innerText = "> Starting scrape of " + selectedUrls.length + " selected pages...";
 
               const res = await fetch("{{ url_for('admin_bp.start_scrape') }}", {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: disc.scrape_count, bot_id: currentBotId, find_max_links: findMaxLinks })
+                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: selectedUrls.length, bot_id: currentBotId, find_max_links: findMaxLinks, selected_urls: selectedUrls })
               });
               const data = await res.json();
               if (data.error) { logText.innerText = '> Error: ' + data.error; return; }

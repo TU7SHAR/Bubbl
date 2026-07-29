@@ -127,6 +127,7 @@ def start_scrape():
     url = data.get('url')
     use_spider = data.get('use_spider', False)
     find_max_links = data.get('find_max_links', True)
+    selected_urls = data.get('selected_urls', None)  # List of user-selected URLs to scrape
     
     try:
         max_urls = int(data.get('max_urls') or 20)
@@ -151,11 +152,18 @@ def start_scrape():
         return jsonify({"error": f"Invalid URL: {error_msg}"}), 400
 
     # --- PLAN LIMIT: Cap max pages to plan allowance ---
-    requested = max_urls
     plan_scrape_limit = check_scrape_limit(session.get('org_id'))
-    capped = requested > plan_scrape_limit
-    if capped:
-        max_urls = plan_scrape_limit
+    
+    # If user selected specific URLs, use those (capped by plan)
+    if selected_urls and isinstance(selected_urls, list):
+        max_urls = min(len(selected_urls), plan_scrape_limit)
+        selected_urls = selected_urls[:plan_scrape_limit]
+    else:
+        requested = max_urls
+        capped = requested > plan_scrape_limit
+        if capped:
+            max_urls = plan_scrape_limit
+        selected_urls = None
 
     org = Organization.query.get(session.get('org_id'))
     plan_name = (org.plan if org else 'free') or 'free'
@@ -165,21 +173,20 @@ def start_scrape():
     db.session.commit()
 
     # Queue the scrape in Celery (runs in separate worker process)
-    async_scrape_task.delay(new_job.id, url, bot_id, use_spider, find_max_links)
+    # Pass selected_urls so Celery only scrapes those specific pages
+    async_scrape_task.delay(new_job.id, url, bot_id, use_spider, find_max_links, selected_urls)
 
     # Time estimate (single page scrapes are quick; deep crawl scales with pages)
-    est_seconds = (max_urls if use_spider else 1) * SECONDS_PER_PAGE
+    est_seconds = max_urls * SECONDS_PER_PAGE
 
     return jsonify({
         "success": True,
         "job_id": new_job.id,
         "pages": max_urls,
-        "requested": requested,
         "plan": plan_name,
         "plan_limit": plan_scrape_limit,
-        "capped": capped,
         "estimated_seconds": est_seconds,
-        "message": f"Scraping started (max {max_urls} pages).",
+        "message": f"Scraping started ({max_urls} pages selected).",
     })
 
 @admin_bp.route('/api/scrape/status/<int:job_id>', methods=['GET'])
