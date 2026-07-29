@@ -150,12 +150,14 @@ def export_leads():
     if not session.get('user_id'): 
         return redirect(url_for('auth.login'))
         
-    # Find all bots belonging to the user's organization + the shared platform bot
+    # Find all bots belonging to the user's organization
     org_bots = Bot.query.filter_by(org_id=session.get('org_id')).all()
     bot_ids = [bot.id for bot in org_bots]
-    platform_bot = Bot.query.filter_by(bot_type='platform').first()
-    if platform_bot and platform_bot.id not in bot_ids:
-        bot_ids.append(platform_bot.id)
+    # Platform bot leads only visible to super_admin
+    if session.get('role') == 'super_admin':
+        platform_bot = Bot.query.filter_by(bot_type='platform').first()
+        if platform_bot and platform_bot.id not in bot_ids:
+            bot_ids.append(platform_bot.id)
     
     # Fetch all leads
     leads = Lead.query.filter(Lead.bot_id.in_(bot_ids)).order_by(Lead.captured_at.desc()).all()
@@ -191,12 +193,14 @@ def leads_dashboard():
     if not session.get('user_id'): 
         return redirect(url_for('auth.login'))
         
-    # Find all bots belonging to the user's organization + the shared platform bot
+    # Find all bots belonging to the user's organization
     org_bots = Bot.query.filter_by(org_id=session.get('org_id')).all()
     bot_ids = [bot.id for bot in org_bots]
-    platform_bot = Bot.query.filter_by(bot_type='platform').first()
-    if platform_bot and platform_bot.id not in bot_ids:
-        bot_ids.append(platform_bot.id)
+    # Platform bot leads only visible to super_admin
+    if session.get('role') == 'super_admin':
+        platform_bot = Bot.query.filter_by(bot_type='platform').first()
+        if platform_bot and platform_bot.id not in bot_ids:
+            bot_ids.append(platform_bot.id)
     
     # Fetch all leads captured by these bots, newest first
     leads = Lead.query.filter(Lead.bot_id.in_(bot_ids)).order_by(Lead.captured_at.desc()).all()
@@ -215,11 +219,14 @@ def conversations_hub():
 
     from models.models import ChatMessage, Lead
 
-    # Get all bots in the org + the shared platform bot
+    # Get all bots in the org
     org_bots = Bot.query.filter_by(org_id=session.get('org_id')).all()
-    platform_bot = Bot.query.filter_by(bot_type='platform').first()
-    if platform_bot and platform_bot.id not in [b.id for b in org_bots]:
-        org_bots = list(org_bots) + [platform_bot]
+    
+    # Platform bot conversations are only visible to super_admin
+    if session.get('role') == 'super_admin':
+        platform_bot = Bot.query.filter_by(bot_type='platform').first()
+        if platform_bot and platform_bot.id not in [b.id for b in org_bots]:
+            org_bots = list(org_bots) + [platform_bot]
 
     bots_with_stats = []
     for bot in org_bots:
