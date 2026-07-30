@@ -16,6 +16,87 @@ from celery_app import celery
 logger = get_task_logger(__name__)
 
 
+
+@celery.task(bind=True, soft_time_limit=1500, time_limit=1560)
+def async_discover_links_task(self, url, use_spider, discovery_limit, plan_limit, plan_name):
+    """Find selectable site URLs outside the web worker and return preview data."""
+    from urllib.parse import urlparse
+    from utils.scraper import crawl_website_links, extract_sitemap_urls, is_safe_url
+
+    safe, error_msg = is_safe_url(url)
+    if not safe:
+        return {"error": f"Invalid URL: {error_msg}"}
+
+    urls_found = []
+    method_used = 'single_page'
+    estimated_total = 0
+
+    try:
+        if use_spider:
+            method_used = 'deep_crawl'
+            result = crawl_website_links(url, max_pages=discovery_limit)
+            if result['success']:
+                urls_found = result['urls']
+                estimated_total = len(urls_found) + result.get('remaining_queue', 0)
+
+            # JavaScript-heavy sites often expose their URLs through a sitemap.
+            if len(urls_found) < 3:
+                parsed = urlparse(url)
+                sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
+                try:
+                    import requests as req
+                    resp = req.head(
+                        sitemap_url,
+                        timeout=5,
+                        allow_redirects=True,
+                        headers={'User-Agent': 'Mozilla/5.0'},
+                    )
+                    if resp.status_code == 200:
+                        sitemap_data = extract_sitemap_urls(
+                            sitemap_url, max_urls=discovery_limit
+                        )
+                        if (
+                            sitemap_data['success']
+                            and len(sitemap_data['urls_to_scrape']) > len(urls_found)
+                        ):
+                            urls_found = sitemap_data['urls_to_scrape']
+                            estimated_total = len(urls_found)
+                            method_used = 'sitemap_fallback'
+                except Exception:
+                    pass
+        elif url.lower().endswith('.xml'):
+            method_used = 'sitemap'
+            sitemap_data = extract_sitemap_urls(url, max_urls=discovery_limit)
+            if sitemap_data['success']:
+                urls_found = sitemap_data['urls_to_scrape']
+                estimated_total = len(urls_found)
+        else:
+            urls_found = [url]
+            estimated_total = 1
+    except SoftTimeLimitExceeded:
+        return {"error": "Link discovery timed out. Try a smaller page limit."}
+    except Exception as exc:
+        return {"error": f"Discovery failed: {str(exc)[:200]}"}
+
+    if estimated_total < len(urls_found):
+        estimated_total = len(urls_found)
+
+    scrape_count = min(len(urls_found), plan_limit)
+    return {
+        "success": True,
+        "total_found": len(urls_found),
+        "estimated_total": estimated_total,
+        "scrape_count": scrape_count,
+        "capped": estimated_total > plan_limit,
+        "plan": plan_name,
+        "plan_limit": plan_limit,
+        "plan_unlimited": plan_limit >= 999999,
+        "method": method_used,
+        "urls": urls_found,
+        "estimated_seconds_min": scrape_count * 3,
+        "estimated_seconds_max": scrape_count * 7,
+    }
+
 # soft_time_limit: raise SoftTimeLimitExceeded so we can mark the job failed cleanly.
 # time_limit: hard kill a few seconds later if soft handling doesn't return.
 @celery.task(bind=True, max_retries=3, default_retry_delay=60,

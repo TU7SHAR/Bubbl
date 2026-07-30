@@ -115,7 +115,7 @@
     <div style="margin-bottom: 14px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
         <span style="font-size: 13px; color: #555; font-weight: 500;">Pages per Scrape</span>
-        <span style="font-size: 13px; color: #333; font-weight: 600;">Up to {{ usage.scrape_pages_limit if usage else 5 }} pages</span>
+        <span style="font-size: 13px; color: #333; font-weight: 600;">{% if (usage.scrape_pages_limit if usage else 50) >= 999999 %}Unlimited{% else %}Up to {{ usage.scrape_pages_limit if usage else 50 }} pages{% endif %}</span>
       </div>
       <div style="width: 100%; height: 6px; background: rgba(16,185,129,0.15); border-radius: 4px; overflow: hidden;">
         <div style="height: 100%; width: 100%; border-radius: 4px; background: #22c55e; opacity: 0.4;"></div>

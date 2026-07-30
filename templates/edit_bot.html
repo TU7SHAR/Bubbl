@@ -339,6 +339,14 @@
                   Discover Links
               </button>
 
+              <div id="scrape-discovery-loading" role="status" aria-live="polite" style="display:none; margin-top:16px; padding:18px; background:rgba(59,130,246,0.06); border:1.5px solid rgba(59,130,246,0.18); border-radius:14px; align-items:center; gap:12px; color:#1e40af;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite; flex-shrink:0;">
+                  <circle cx="12" cy="12" r="9" opacity="0.25"></circle>
+                  <path d="M21 12a9 9 0 0 0-9-9"></path>
+                </svg>
+                <div><strong style="display:block; font-size:13px;">Finding links...</strong><span style="font-size:12px; opacity:0.8;">Crawling the website and checking your plan allowance. Large sites can take a moment.</span></div>
+              </div>
+
               <!-- Link Discovery Preview Panel -->
               <div id="scrape-discovery" style="display:none; margin-top:16px; background:#f9fafb; border:1.5px solid rgba(0,0,0,0.08); border-radius:14px; padding:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -889,18 +897,18 @@
   // Initialize on page load
   document.addEventListener('DOMContentLoaded', function() { toggleMaxLinksMode(); });
 
-  var currentPlanLimit = 999; // Will be set when discovery completes
+  var currentPlanLimit = 50; // Will be set when discovery completes
+  var currentPlanUnlimited = false;
 
   function toggleAllUrls(masterCheckbox) {
     var checkboxes = document.querySelectorAll('.url-check');
     if (masterCheckbox.checked) {
-      // Only check up to plan limit
       var checked = 0;
       checkboxes.forEach(function(cb) {
-        if (checked < currentPlanLimit) { cb.checked = true; checked++; }
+        if (currentPlanUnlimited || checked < currentPlanLimit) { cb.checked = true; checked++; }
         else { cb.checked = false; }
       });
-      if (checkboxes.length > currentPlanLimit) {
+      if (!currentPlanUnlimited && checkboxes.length > currentPlanLimit) {
         showModal('Your plan allows scraping up to ' + currentPlanLimit + ' pages. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade</a> to scrape more.', 'warning');
       }
     } else {
@@ -912,7 +920,7 @@
     var count = document.querySelectorAll('.url-check:checked').length;
     var total = document.querySelectorAll('.url-check').length;
     // Enforce plan limit — if user manually checked beyond limit, uncheck and warn
-    if (count > currentPlanLimit) {
+    if (!currentPlanUnlimited && count > currentPlanLimit) {
       var checked = 0;
       document.querySelectorAll('.url-check').forEach(function(cb) {
         if (cb.checked) {
@@ -923,13 +931,54 @@
       count = currentPlanLimit;
       showModal('You can only scrape up to ' + currentPlanLimit + ' pages on your current plan. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a>', 'warning');
     }
+    var limitReached = !currentPlanUnlimited && count >= currentPlanLimit;
+    document.querySelectorAll('.url-check').forEach(function(cb) {
+      cb.disabled = limitReached && !cb.checked;
+      cb.style.cursor = cb.disabled ? 'not-allowed' : 'pointer';
+      cb.title = cb.disabled ? 'Unselect a URL before choosing another one' : '';
+    });
     var el = document.getElementById('selected-count');
-    if (el) el.textContent = count + ' of ' + total + ' selected' + (count >= currentPlanLimit ? ' (plan max)' : '');
+    if (el) el.textContent = count + ' of ' + total + ' selected' + (limitReached ? ' (plan max)' : '');
     var confirmCount = document.getElementById('confirm-scrape-count');
     if (confirmCount) confirmCount.textContent = count;
+    var timeEstimate = document.getElementById('discovery-time-estimate');
+    if (timeEstimate) timeEstimate.textContent = formatMinuteRange(count * 3, count * 7);
+    var confirmButton = document.getElementById('confirm-scrape-btn');
+    if (confirmButton) confirmButton.disabled = count === 0;
     var selectAll = document.getElementById('select-all-urls');
-    if (selectAll) selectAll.checked = (count === total) || (count >= currentPlanLimit);
+    if (selectAll) selectAll.checked = (count === total) || limitReached;
   }
+
+  function formatMinuteRange(minSeconds, maxSeconds) {
+    var minMinutes = Math.max(1, Math.ceil((minSeconds || 0) / 60));
+    var maxMinutes = Math.max(minMinutes, Math.ceil((maxSeconds || minSeconds || 0) / 60));
+    return minMinutes === maxMinutes ? '~' + minMinutes + ' min' : '~' + minMinutes + '-' + maxMinutes + ' min';
+  }
+
+  function escapeHtml(value) {
+    var node = document.createElement('div');
+    node.textContent = String(value);
+    return node.innerHTML;
+  }
+
+  async function waitForDiscovery(discoveryId) {
+    while (true) {
+      await new Promise(function(resolve) { setTimeout(resolve, 1500); });
+      var response = await fetch('/admin/api/scrape/discover/' + encodeURIComponent(discoveryId));
+      var result = await response.json();
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'Link discovery failed.');
+      }
+      if (!result.pending) return result;
+      var statusText = document.querySelector('#scrape-discovery-loading span');
+      if (statusText) {
+        statusText.textContent = result.status === 'started' ? 'Scanning pages and collecting internal links...' : 'Waiting for the link finder...';
+      }
+    }
+  }
+
+
+
 
   document.getElementById('scrape-btn').addEventListener('click', async function() {
       const url = document.getElementById('scrape_url').value;
@@ -937,13 +986,16 @@
 
       const isDeep = document.getElementById('use_deep_crawl').checked;
       const findMaxLinks = document.getElementById('find_max_links').checked;
-      const limit = findMaxLinks ? 500 : (document.getElementById('max_urls').value || 20);
+      const limit = document.getElementById('max_urls').value || 20;
       const currentBotId = "{{ bot.id }}"; // Jinja injects the ID here
       const btn = this; // Reference to the clicked button
+      const loadingBox = document.getElementById('scrape-discovery-loading');
 
       // Show loading state
       btn.disabled = true;
       btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Discovering links...';
+      document.getElementById('scrape-discovery').style.display = 'none';
+      loadingBox.style.display = 'flex';
 
       try {
           const discRes = await fetch('/admin/api/scrape/discover', {
@@ -957,15 +1009,18 @@
                   find_max_links: findMaxLinks
               })
           });
-          const disc = await discRes.json();
+          let disc = await discRes.json();
+          if (disc.pending) disc = await waitForDiscovery(disc.discovery_id);
 
           btn.disabled = false;
           btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> Discover Links';
+          loadingBox.style.display = 'none';
 
           if (disc.error) { showModal(disc.error, 'error'); return; }
 
           // Store plan limit for checkbox enforcement
-          currentPlanLimit = disc.plan_limit || 5;
+          currentPlanLimit = disc.plan_limit || 50;
+          currentPlanUnlimited = Boolean(disc.plan_unlimited);
 
           // --- Show discovery preview ---
           var panel = document.getElementById('scrape-discovery');
@@ -977,9 +1032,9 @@
             disc.method === 'sitemap_fallback' ? '📄 Sitemap (fallback)' : '📃 Single Page';
 
           var statsHtml = '<span>Found: <strong>' + disc.total_found + '</strong> links</span>';
-          if (disc.estimated_total > disc.total_found) statsHtml += '<span>Est. total: <strong>~' + disc.estimated_total + '</strong></span>';
+          if (disc.estimated_total > disc.total_found) statsHtml += '<span>Est. total: <strong>~' + disc.estimated_total + '+ links</strong></span>';
           statsHtml += '<span>Will scrape: <strong>' + disc.scrape_count + '</strong></span>';
-          statsHtml += '<span>Est. time: ~' + Math.max(1, Math.round(disc.estimated_seconds / 60)) + ' min</span>';
+          statsHtml += '<span>Est. time: <span id="discovery-time-estimate">' + formatMinuteRange(disc.estimated_seconds_min, disc.estimated_seconds_max) + '</span></span>';
           if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max). <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a></span>';
           document.getElementById('discovery-stats').innerHTML = statsHtml;
 
@@ -987,7 +1042,7 @@
           var urlsHtml = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(0,0,0,0.06);"><label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:#374151;"><input type="checkbox" id="select-all-urls" ' + selectAllChecked + ' onchange="toggleAllUrls(this)" style="accent-color:#E8722A; width:14px; height:14px;"> Select All</label><span id="selected-count" style="font-size:11px; color:#6b7280;"></span></div>';
           disc.urls.forEach(function(u, idx) {
             var isChecked = idx < disc.scrape_count ? 'checked' : '';
-            urlsHtml += '<div style="padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); display:flex; align-items:center; gap:8px;"><input type="checkbox" class="url-check" data-url="' + u + '" ' + isChecked + ' onchange="updateSelectedCount()" style="accent-color:#E8722A; width:14px; height:14px; cursor:pointer; flex-shrink:0;"><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">' + (idx+1) + '. ' + u + '</span></div>';
+            urlsHtml += '<div style="padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); display:flex; align-items:center; gap:8px;"><input type="checkbox" class="url-check" data-url="' + encodeURIComponent(u) + '" ' + isChecked + ' onchange="updateSelectedCount()" style="accent-color:#E8722A; width:14px; height:14px; cursor:pointer; flex-shrink:0;"><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">' + (idx+1) + '. ' + escapeHtml(u) + '</span></div>';
           });
           document.getElementById('discovery-urls').innerHTML = urlsHtml || '<p style="color:#999;">No links found.</p>';
           updateSelectedCount();
@@ -998,7 +1053,7 @@
               // Get selected URLs from checkboxes
               var selectedUrls = [];
               document.querySelectorAll('.url-check:checked').forEach(function(cb) {
-                  selectedUrls.push(cb.getAttribute('data-url'));
+                  selectedUrls.push(decodeURIComponent(cb.getAttribute('data-url')));
               });
               if (selectedUrls.length === 0) { showModal('Please select at least one URL to scrape.', 'error'); return; }
 
@@ -1019,7 +1074,7 @@
               // Show notice
               const notice = document.getElementById('scrape-notice');
               if (notice) {
-                  const estMin = Math.max(1, Math.round((data.estimated_seconds || 0) / 60));
+                  const estMin = formatMinuteRange(data.estimated_seconds_min, data.estimated_seconds_max).replace(/^~/, '').replace(/ min$/, '');
                   notice.style.display = 'block';
                   notice.style.background = 'rgba(16,185,129,0.08)';
                   notice.style.border = '1px solid rgba(16,185,129,0.25)';
@@ -1043,6 +1098,7 @@
       } catch (err) {
           btn.disabled = false;
           btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> Discover Links';
+          loadingBox.style.display = 'none';
           showModal('Network error: ' + err.message, 'error');
       }
   });

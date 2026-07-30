@@ -12,7 +12,7 @@ PLAN_LIMITS = {
         'bots': 1,
         'messages': 200,
         'documents_per_bot': 3,
-        'scrape_pages': 5,
+        'scrape_pages': 50,
         'scrape_jobs': 5,          # Total scrape jobs allowed per month
         'text_snippets': 999999,   # Unlimited text uploads
         'file_size_mb': 5,
@@ -22,7 +22,7 @@ PLAN_LIMITS = {
         'bots': 2,
         'messages': 2000,
         'documents_per_bot': 10,
-        'scrape_pages': 20,
+        'scrape_pages': 200,
         'scrape_jobs': 50,
         'text_snippets': 999999,
         'file_size_mb': 10,
@@ -32,7 +32,7 @@ PLAN_LIMITS = {
         'bots': 5,
         'messages': 10000,
         'documents_per_bot': 50,
-        'scrape_pages': 100,
+        'scrape_pages': 500,
         'scrape_jobs': 300,
         'text_snippets': 999999,
         'file_size_mb': 10,
@@ -42,7 +42,7 @@ PLAN_LIMITS = {
         'bots': 999,         # Effectively unlimited
         'messages': 50000,
         'documents_per_bot': 200,
-        'scrape_pages': 500,
+        'scrape_pages': 999999,        # Unlimited
         'scrape_jobs': 999999,     # Unlimited
         'text_snippets': 999999,
         'file_size_mb': 10,

@@ -100,7 +100,7 @@
       <div class="mp-usage-block">
         <div class="mp-usage-row">
           <span>Pages per Scrape</span>
-          <span class="mp-usage-value">Up to {{ usage.scrape_pages_limit if usage else 5 }} pages</span>
+          <span class="mp-usage-value">{% if (usage.scrape_pages_limit if usage else 50) >= 999999 %}Unlimited{% else %}Up to {{ usage.scrape_pages_limit if usage else 50 }} pages{% endif %}</span>
         </div>
         <div class="mp-progress-bar" style="background: rgba(16,185,129,0.1);">
           <div class="mp-progress-fill" style="width: 100%; background: #10b981; opacity: 0.3;"></div>
