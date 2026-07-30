@@ -569,6 +569,18 @@
   </form>
 </div>
 
+<!-- ALERT MODAL -->
+<div id="scrape-alert-overlay" style="display:none; position:fixed; inset:0; background:rgba(17,24,39,0.55); backdrop-filter:blur(4px); z-index:99999; justify-content:center; align-items:center; padding:20px;">
+  <div style="background:#fff; border-radius:20px; padding:32px 28px 24px; max-width:400px; width:100%; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.18); animation:popIn 0.2s ease;">
+    <div id="scrape-alert-icon" style="width:48px; height:48px; border-radius:50%; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; font-size:22px;"></div>
+    <p id="scrape-alert-msg" style="font-size:15px; color:#374151; margin:0 0 24px; line-height:1.6;"></p>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button id="scrape-alert-upgrade" onclick="window.location.href='/billing'" style="display:none; padding:10px 22px; background:#E8722A; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#c95e1e'" onmouseout="this.style.background='#E8722A'">Upgrade Plan →</button>
+      <button onclick="document.getElementById('scrape-alert-overlay').style.display='none'" style="padding:10px 28px; background:#111827; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#374151'" onmouseout="this.style.background='#111827'">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- TEXT EDITOR MODAL -->
 <div class="edit-modal-overlay" id="textEditorModal">
     <div class="edit-modal-box">
@@ -902,6 +914,31 @@
     updateLivePreview();
   }
 
+  // --- ALERT MODAL ---
+  function showModal(msg, type) {
+    var overlay = document.getElementById('scrape-alert-overlay');
+    var iconEl  = document.getElementById('scrape-alert-icon');
+    var msgEl   = document.getElementById('scrape-alert-msg');
+    var upgradeBtn = document.getElementById('scrape-alert-upgrade');
+
+    // Strip HTML from msg for the text node, but keep for innerHTML
+    msgEl.innerHTML = msg;
+
+    // Icon + background based on type
+    if (type === 'error') {
+      iconEl.style.background = '#fef2f2';
+      iconEl.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+    } else {
+      iconEl.style.background = '#fff7ed';
+      iconEl.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8722A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+    }
+
+    // Show upgrade button only for warning/plan messages
+    upgradeBtn.style.display = (type === 'warning') ? 'inline-block' : 'none';
+
+    overlay.style.display = 'flex';
+  }
+
   // --- FIND MAX LINKS: Disable page limit when enabled ---
   function toggleMaxLinksMode() {
     var maxLinksOn = document.getElementById('find_max_links').checked;
@@ -944,7 +981,7 @@
         else { cb.checked = false; }
       });
       if (checkboxes.length > currentScrapeLimit) {
-        showModal('Your plan allows scraping up to ' + currentScrapeLimit + ' pages at a time. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade</a> to scrape more.', 'warning');
+        showModal('Your plan allows scraping up to ' + currentScrapeLimit + ' pages at a time. Upgrade your plan to scrape more.', 'warning');
       }
     } else {
       checkboxes.forEach(function(cb) { cb.checked = false; });

@@ -11,7 +11,7 @@ PLAN_LIMITS = {
     'free': {
         'bots': 1,
         'messages': 200,
-        'documents_per_bot': 3,
+        'documents_per_bot': 10,
         'scrape_pages': 5,          # Actual pages scraped (content fetched) per job
         'discover_pages': 50,       # Max links surfaced during discovery preview
         'scrape_jobs': 5,           # Total scrape jobs allowed per month
@@ -20,9 +20,9 @@ PLAN_LIMITS = {
         'team_members': 1,
     },
     'starter': {
-        'bots': 2,
+        'bots': 3,
         'messages': 2000,
-        'documents_per_bot': 10,
+        'documents_per_bot': 75,
         'scrape_pages': 50,         # Actual pages scraped per job
         'discover_pages': 200,      # Max links surfaced during discovery preview
         'scrape_jobs': 50,
@@ -31,9 +31,9 @@ PLAN_LIMITS = {
         'team_members': 3,
     },
     'growth': {
-        'bots': 5,
+        'bots': 10,
         'messages': 10000,
-        'documents_per_bot': 50,
+        'documents_per_bot': 450,
         'scrape_pages': 300,        # Actual pages scraped per job
         'discover_pages': 500,      # Max links surfaced during discovery preview
         'scrape_jobs': 300,
@@ -42,9 +42,9 @@ PLAN_LIMITS = {
         'team_members': 10,
     },
     'pro': {
-        'bots': 999,                # Effectively unlimited
+        'bots': 999999,             # Unlimited
         'messages': 50000,
-        'documents_per_bot': 200,
+        'documents_per_bot': 999999,  # Unlimited
         'scrape_pages': 999999,     # Unlimited scraping
         'discover_pages': 999999,   # Discover all available internal links
         'scrape_jobs': 999999,      # Unlimited
