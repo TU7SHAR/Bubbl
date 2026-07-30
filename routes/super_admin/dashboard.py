@@ -35,15 +35,18 @@ def dashboard():
             start_date, end_date = now - timedelta(days=7), now
     else:
         end_date = now
+        # 'week' = Monday of the current calendar week (not rolling 7 days)
+        monday = now - timedelta(days=now.weekday())
+        monday_start = monday.replace(hour=0, minute=0, second=0, microsecond=0)
         periods = {
             'today': today_start,
-            'week': now - timedelta(days=7),
+            'week': monday_start,
             'month': now - timedelta(days=30),
             'quarter': now - timedelta(days=90),
             'year': now - timedelta(days=365),
             'all': datetime(2025, 1, 1, tzinfo=timezone.utc),
         }
-        start_date = periods.get(period, now - timedelta(days=7))
+        start_date = periods.get(period, monday_start)
 
     days_count = max((end_date - start_date).days, 1)
 

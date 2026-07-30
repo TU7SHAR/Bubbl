@@ -1,64 +1,223 @@
 {% extends "super_admin/base.html" %}
-{% block title %}User: {{ user.name }}{% endblock %}
+{% block page_title %}User: {{ user.name }}{% endblock %}
 
 {% block admin_content %}
-<h1 class="page-title">User: {{ user.name }}</h1>
 
-<div class="grid">
-  <div class="card">
-    <div class="card-label">Email</div>
-    <div class="card-value" style="font-size:14px;">{{ user.email }}</div>
+<!-- Header bar -->
+<div style="display:flex; align-items:center; gap:14px; margin-bottom:20px;">
+  <a href="/super_admin/users" class="sa-btn sa-btn-ghost" style="padding:6px 14px; font-size:12px;">← Back to Users</a>
+  <div>
+    <h2 style="margin:0; font-size:18px; font-weight:700; color:var(--text);">{{ user.name }}</h2>
+    <span style="font-size:12px; color:var(--text-muted);">{{ user.email }}</span>
   </div>
-  <div class="card">
-    <div class="card-label">Role</div>
-    <div class="card-value" style="font-size:14px;">{{ user.role }}</div>
+  {% if user.is_suspended %}
+    <span class="badge badge-red" style="margin-left:auto;">Suspended</span>
+    <button class="sa-btn" style="padding:6px 14px; font-size:12px; background:#10b981; color:#fff; border:none;"
+      onclick="suspendToggle({{ user.id }}, '{{ user.name }}')">Unsuspend</button>
+  {% else %}
+    <span class="badge badge-green" style="margin-left:auto;">Active</span>
+    <button class="sa-btn sa-btn-danger" style="padding:6px 14px; font-size:12px;"
+      onclick="suspendToggle({{ user.id }}, '{{ user.name }}')">Suspend</button>
+  {% endif %}
+</div>
+
+<!-- Stat cards -->
+<div class="sa-grid" style="margin-bottom:20px;">
+  <div class="sa-card">
+    <div class="sa-card-label">Plan</div>
+    <div class="sa-card-value" style="font-size:18px;">{{ (org.plan if org else 'free') | capitalize }}</div>
   </div>
-  <div class="card">
-    <div class="card-label">Plan</div>
-    <div class="card-value" style="font-size:14px;">{{ (org.plan if org else 'free') | capitalize }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Role</div>
+    <div class="sa-card-value" style="font-size:18px;">{{ user.role }}</div>
   </div>
-  <div class="card">
-    <div class="card-label">Bots</div>
-    <div class="card-value">{{ bots | length }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Bots</div>
+    <div class="sa-card-value">{{ bots | length }}</div>
   </div>
-  <div class="card">
-    <div class="card-label">Leads</div>
-    <div class="card-value">{{ leads | length }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Leads</div>
+    <div class="sa-card-value">{{ leads | length }}</div>
   </div>
-  <div class="card">
-    <div class="card-label">Joined</div>
-    <div class="card-value" style="font-size:14px;">{{ user.created_at or 'N/A' }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Payments</div>
+    <div class="sa-card-value">{{ payments | length }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Joined</div>
+    <div class="sa-card-value" style="font-size:14px;">{{ user.created_at.strftime('%b %d, %Y') if user.created_at else 'N/A' }}</div>
   </div>
 </div>
 
 <!-- Bots Table -->
-<div class="table-wrap">
-  <div class="table-header"><h3>Bots ({{ bots | length }})</h3></div>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Docs</th><th>Interactions</th><th>Active</th><th>Action</th></tr></thead>
+<div class="sa-table-wrap" style="margin-bottom:20px;">
+  <div class="sa-table-header">
+    <h3>Bots ({{ bots | length }})</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th data-sort="number">Docs</th>
+          <th data-sort="number">Interactions</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
       <tbody>
         {% for b in bots %}
         <tr>
-          <td>{{ b.id }}</td>
-          <td><a href="{{ url_for('super_admin_bp.bot_detail', bot_id=b.id) }}">{{ b.bot_name }}</a></td>
-          <td>{{ b.bot_type or 'general' }}</td>
+          <td>
+            <a href="{{ url_for('super_admin_bp.bot_detail', bot_id=b.id) }}"
+               style="color:var(--accent); font-weight:600; text-decoration:none;">
+              {{ b.bot_name }}
+            </a>
+          </td>
+          <td><span class="badge badge-gray">{{ b.bot_type or 'general' }}</span></td>
           <td>{{ b.documents | length }}</td>
           <td>{{ b.interaction_count or 0 }}</td>
-          <td><span class="badge {{ 'badge-green' if b.is_active else 'badge-red' }}">{{ 'Yes' if b.is_active else 'No' }}</span></td>
           <td>
-            <button onclick="deleteBot({{ b.id }}, '{{ b.bot_name | replace("'", "\\'") }}')" class="sa-btn sa-btn-danger" style="padding:4px 10px; font-size:11px;">Delete</button>
+            <span class="badge {{ 'badge-green' if b.is_active else 'badge-red' }}">
+              {{ 'Active' if b.is_active else 'Disabled' }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button onclick="toggleBot({{ b.id }}, '{{ b.bot_name | replace("'", "\\'") }}')"
+                class="sa-btn {{ 'sa-btn-danger' if b.is_active else 'sa-btn-success' }}"
+                style="padding:4px 10px; font-size:11px;">
+                {{ 'Disable' if b.is_active else 'Enable' }}
+              </button>
+              <button onclick="deleteBot({{ b.id }}, '{{ b.bot_name | replace("'", "\\'") }}')"
+                class="sa-btn sa-btn-danger"
+                style="padding:4px 10px; font-size:11px;">
+                Delete
+              </button>
+            </div>
           </td>
         </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">No bots yet</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
 
+<!-- Payments Table -->
+<div class="sa-table-wrap" style="margin-bottom:20px;">
+  <div class="sa-table-header">
+    <h3>Payments ({{ payments | length }})</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th data-sort="date">Date</th>
+          <th>Plan</th>
+          <th data-sort="number">Amount</th>
+          <th data-sort="number">Tax</th>
+          <th>Transaction ID</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td>{{ p.created_at.strftime('%b %d, %Y') if p.created_at else '—' }}</td>
+          <td>{{ (p.plan or 'N/A') | capitalize }}</td>
+          <td>₹{{ p.amount or 0 }}</td>
+          <td>₹{{ (p.tax_amount or 0) | round(2) }}</td>
+          <td><code style="font-size:11px; color:var(--text-dim);">{{ p.paddle_transaction_id or '—' }}</code></td>
+          <td>
+            {% if p.status in ('completed', 'success', 'captured') %}
+              <span class="badge badge-green">{{ p.status }}</span>
+            {% elif p.status in ('refunded', 'partially_refunded') %}
+              <span class="badge badge-yellow">{{ p.status }}</span>
+            {% else %}
+              <span class="badge badge-gray">{{ p.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">No payments yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Leads Table -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Leads ({{ leads | length }})</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th data-sort="date">Captured</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in leads[:50] %}
+        <tr>
+          <td>{{ l.name }}</td>
+          <td>{{ l.email }}</td>
+          <td>{{ l.phone or '—' }}</td>
+          <td>{{ l.captured_at.strftime('%b %d, %Y %H:%M') if l.captured_at else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">No leads yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
 <script>
+function suspendToggle(userId, userName) {
+  var isSuspended = {{ 'true' if user.is_suspended else 'false' }};
+  var action = isSuspended ? 'Restore access for' : 'Suspend';
+  if (!confirm(action + ' ' + userName + '?')) return;
+  fetch('/super_admin/users/suspend', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({user_id: userId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { alert(data.error); return; }
+    location.reload();
+  })
+  .catch(err => alert('Network error: ' + err.message));
+}
+
+function toggleBot(botId, botName) {
+  if (!confirm('Toggle status for bot: ' + botName + '?')) return;
+  fetch('/super_admin/bots/toggle', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bot_id: botId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { alert(data.error); return; }
+    location.reload();
+  })
+  .catch(err => alert('Network error: ' + err.message));
+}
+
 function deleteBot(botId, botName) {
-  if (!confirm('Delete bot "' + botName + '"? This cannot be undone.')) return;
+  if (!confirm('Permanently delete bot "' + botName + '"? This removes all its documents, scrapes, and leads. Cannot be undone.')) return;
   fetch('/super_admin/bots/delete', {
     method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
@@ -72,44 +231,4 @@ function deleteBot(botId, botName) {
   .catch(err => alert('Network error: ' + err.message));
 }
 </script>
-
-<!-- Payments Table -->
-<div class="table-wrap">
-  <div class="table-header"><h3>Payments ({{ payments | length }})</h3></div>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th></tr></thead>
-      <tbody>
-        {% for p in payments %}
-        <tr>
-          <td>{{ p.created_at }}</td>
-          <td>{{ (p.plan or 'N/A') | capitalize }}</td>
-          <td>₹{{ p.amount or 0 }}</td>
-          <td><span class="badge badge-green">{{ p.status }}</span></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Leads Table -->
-<div class="table-wrap">
-  <div class="table-header"><h3>Leads ({{ leads | length }})</h3></div>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Captured</th></tr></thead>
-      <tbody>
-        {% for l in leads[:50] %}
-        <tr>
-          <td>{{ l.name }}</td>
-          <td>{{ l.email }}</td>
-          <td>{{ l.phone or '—' }}</td>
-          <td>{{ l.captured_at }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
 {% endblock %}
