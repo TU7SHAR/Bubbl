@@ -34,10 +34,13 @@ def discover_links():
     use_spider = data.get('use_spider', False)
     find_max_links = data.get('find_max_links', False)
 
-    # Discovery preview limit — kept LOW because this blocks the web worker.
-    # For deep crawl: scan up to 50 pages (takes ~30-60s max), extrapolate the rest.
-    # The actual scrape (in Celery) will crawl the full amount.
-    DISCOVERY_LIMIT = 50
+    # Use the page limit the user set in the UI (default 20), but cap at 50
+    # to keep this synchronous request fast (blocks gunicorn worker).
+    try:
+        user_limit = int(data.get('max_urls') or 20)
+    except (ValueError, TypeError):
+        user_limit = 20
+    DISCOVERY_LIMIT = min(user_limit, 50)
 
     if not url:
         return jsonify({"error": "URL is required."}), 400
