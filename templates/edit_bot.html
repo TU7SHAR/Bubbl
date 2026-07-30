@@ -309,9 +309,9 @@
                 <div class="scrape-setting-card">
                   <div class="setting-info">
                     <span class="setting-title">Page Limit</span>
-                    <span class="setting-desc">Max URLs to process</span>
+                    <span class="setting-desc">Max links to discover when Find Max Links is off</span>
                   </div>
-                  <input type="number" id="max_urls" value="20" class="dash-input limit-input" min="1" max="500">
+                  <input type="number" id="max_urls" value="20" class="dash-input limit-input" min="1" step="1">
                 </div>
 
                 <div class="scrape-setting-card">
@@ -331,7 +331,7 @@
                 - <strong>Direct links:</strong> Found by crawling &lt;a href&gt; tags on each page (what you see in navigation/footer)<br>
                 - <strong>Extra links:</strong> URLs, emails, and phone numbers extracted from page <em>content</em> (text body, not just nav)<br>
                 - <strong>Find Max Links ON:</strong> Both direct + extra links are added to Managed Links after scraping<br>
-                - <strong>Find Max Links OFF:</strong> Only the directly crawled page URLs are used
+                - <strong>Find Max Links OFF:</strong> Discovery stops at the Page Limit, including when Deep Crawl is on
               </div>
 
               <button type="button" class="btn btn-outline" style="margin-top: 10px; width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;" id="scrape-btn">
@@ -897,7 +897,8 @@
   // Initialize on page load
   document.addEventListener('DOMContentLoaded', function() { toggleMaxLinksMode(); });
 
-  var currentPlanLimit = 50; // Will be set when discovery completes
+  // This is the actual scrape-selection limit, not the larger discovery limit.
+  var currentPlanLimit = 0;
   var currentPlanUnlimited = false;
 
   function toggleAllUrls(masterCheckbox) {
@@ -941,6 +942,8 @@
     if (el) el.textContent = count + ' of ' + total + ' selected' + (limitReached ? ' (plan max)' : '');
     var confirmCount = document.getElementById('confirm-scrape-count');
     if (confirmCount) confirmCount.textContent = count;
+    var willScrapeCount = document.getElementById('discovery-scrape-count');
+    if (willScrapeCount) willScrapeCount.textContent = count;
     var timeEstimate = document.getElementById('discovery-time-estimate');
     if (timeEstimate) timeEstimate.textContent = formatMinuteRange(count * 3, count * 7);
     var confirmButton = document.getElementById('confirm-scrape-btn');
@@ -950,6 +953,7 @@
   }
 
   function formatMinuteRange(minSeconds, maxSeconds) {
+    if (!minSeconds && !maxSeconds) return '0 min';
     var minMinutes = Math.max(1, Math.ceil((minSeconds || 0) / 60));
     var maxMinutes = Math.max(minMinutes, Math.ceil((maxSeconds || minSeconds || 0) / 60));
     return minMinutes === maxMinutes ? '~' + minMinutes + ' min' : '~' + minMinutes + '-' + maxMinutes + ' min';
@@ -1018,9 +1022,17 @@
 
           if (disc.error) { showModal(disc.error, 'error'); return; }
 
-          // Store plan limit for checkbox enforcement
-          currentPlanLimit = disc.plan_limit || 50;
-          currentPlanUnlimited = Boolean(disc.plan_unlimited);
+          if (!Object.prototype.hasOwnProperty.call(disc, 'scrape_limit')) {
+            throw new Error('Discovery did not return a scrape-selection limit.');
+          }
+          if (!Object.prototype.hasOwnProperty.call(disc, 'scrape_unlimited') || Boolean(disc.scrape_unlimited) !== (disc.scrape_limit === null)) {
+            throw new Error('Discovery returned inconsistent scrape-selection limits.');
+          }
+          currentPlanUnlimited = disc.scrape_unlimited;
+          currentPlanLimit = currentPlanUnlimited ? 0 : Number(disc.scrape_limit);
+          if (!currentPlanUnlimited && (!Number.isInteger(currentPlanLimit) || currentPlanLimit < 1)) {
+            throw new Error('Discovery returned an invalid scrape-selection limit.');
+          }
 
           // --- Show discovery preview ---
           var panel = document.getElementById('scrape-discovery');
@@ -1033,7 +1045,7 @@
 
           var statsHtml = '<span>Found: <strong>' + disc.total_found + '</strong> links</span>';
           if (disc.estimated_total > disc.total_found) statsHtml += '<span>Est. total: <strong>~' + disc.estimated_total + '+ links</strong></span>';
-          statsHtml += '<span>Will scrape: <strong>' + disc.scrape_count + '</strong></span>';
+          statsHtml += '<span>Will scrape: <strong id="discovery-scrape-count">' + disc.scrape_count + '</strong></span>';
           statsHtml += '<span>Est. time: <span id="discovery-time-estimate">' + formatMinuteRange(disc.estimated_seconds_min, disc.estimated_seconds_max) + '</span></span>';
           if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max). <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a></span>';
           document.getElementById('discovery-stats').innerHTML = statsHtml;
@@ -1056,6 +1068,10 @@
                   selectedUrls.push(decodeURIComponent(cb.getAttribute('data-url')));
               });
               if (selectedUrls.length === 0) { showModal('Please select at least one URL to scrape.', 'error'); return; }
+              if (!currentPlanUnlimited && selectedUrls.length > currentPlanLimit) {
+                  showModal('Your plan allows up to ' + currentPlanLimit + ' pages per scrape.', 'warning');
+                  return;
+              }
 
               panel.style.display = 'none';
               const logBox = document.getElementById('scrape-log-container');
@@ -1066,7 +1082,7 @@
               const res = await fetch("{{ url_for('admin_bp.start_scrape') }}", {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: selectedUrls.length, bot_id: currentBotId, find_max_links: findMaxLinks, selected_urls: selectedUrls })
+                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: selectedUrls.length, bot_id: currentBotId, discovery_id: disc.discovery_id, find_max_links: findMaxLinks, selected_urls: selectedUrls })
               });
               const data = await res.json();
               if (data.error) { logText.innerText = '> Error: ' + data.error; return; }

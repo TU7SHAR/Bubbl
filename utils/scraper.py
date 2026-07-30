@@ -73,9 +73,7 @@ def is_safe_url(url):
     except socket.gaierror:
         return False, f"Could not resolve hostname '{hostname}'. Please check the URL."
     except Exception:
-        # If DNS resolution fails for any other reason, allow it through
-        # (Firecrawl will handle the actual request and fail gracefully)
-        pass
+        return False, f"Could not safely resolve hostname '{hostname}'."
     
     # 6. Block URLs with authentication credentials
     if parsed.username or parsed.password:
@@ -86,6 +84,34 @@ def is_safe_url(url):
         return False, "URL exceeds maximum length (2048 characters)."
     
     return True, None
+
+
+def safe_request(url, method='get', max_redirects=5, **kwargs):
+    """Fetch a public URL while validating every redirect target before I/O."""
+    current_url = url
+    request_kwargs = dict(kwargs)
+    request_kwargs.pop('allow_redirects', None)
+
+    for redirect_count in range(max_redirects + 1):
+        safe, error_msg = is_safe_url(current_url)
+        if not safe:
+            raise ValueError(f"Unsafe URL blocked: {error_msg}")
+
+        response = requests.request(
+            method, current_url, allow_redirects=False, **request_kwargs
+        )
+        if response.status_code not in (301, 302, 303, 307, 308):
+            return response
+
+        location = response.headers.get('Location')
+        if not location:
+            return response
+        if redirect_count >= max_redirects:
+            raise ValueError("Too many redirects while fetching URL.")
+
+        current_url = urljoin(current_url, location)
+
+    raise ValueError("Too many redirects while fetching URL.")
 
 
 def init_firecrawl():
@@ -133,36 +159,48 @@ def extract_sitemap_urls(sitemap_url, max_urls=10):
     Filters out media files (images, PDFs) and dives into nested sitemaps.
     """
     BAD_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.pdf', '.mp4', '.zip')
+    parsed_root = urlparse(sitemap_url)
+    root_origin = (parsed_root.scheme.lower(), parsed_root.netloc.lower())
+
+    def _limit_reached(current_list):
+        return max_urls is not None and len(current_list) >= max_urls
 
     def _fetch_urls(url, visited, current_list):
-        if url in visited or len(current_list) >= max_urls:
+        if url in visited or _limit_reached(current_list):
             return
-        
+
         visited.add(url)
-        
+
         try:
             headers = {'User-Agent': 'Mozilla/5.0'}
-            resp = requests.get(url, headers=headers, timeout=10)
-            
-            if resp.status_code != 200: 
+            resp = safe_request(url, headers=headers, timeout=10)
+            if resp.status_code != 200:
                 return
-            
+
             root = ET.fromstring(resp.content)
-            
             for elem in root.iter():
-                if len(current_list) >= max_urls:
+                if _limit_reached(current_list):
                     break
-                    
-                if 'loc' in elem.tag and elem.text:
-                    loc = elem.text.strip()
-                    
-                    clean_loc = loc.split('?')[0].lower() 
-                    
-                    if clean_loc.endswith('.xml'):
-                        _fetch_urls(loc, visited, current_list)
-                    elif not clean_loc.endswith(BAD_EXTENSIONS) and loc not in current_list:
-                        current_list.append(loc)
-                        
+
+                if 'loc' not in elem.tag or not elem.text:
+                    continue
+                loc = elem.text.strip()
+                parsed_loc = urlparse(loc)
+                if (
+                    (parsed_loc.scheme.lower(), parsed_loc.netloc.lower())
+                    != root_origin
+                ):
+                    continue
+                safe, _ = is_safe_url(loc)
+                if not safe:
+                    continue
+
+                clean_loc = loc.split('?')[0].lower()
+                if clean_loc.endswith('.xml'):
+                    _fetch_urls(loc, visited, current_list)
+                elif not clean_loc.endswith(BAD_EXTENSIONS) and loc not in current_list:
+                    current_list.append(loc)
+
         except Exception as e:
             print(f"Skipping {url} due to error: {e}")
 
@@ -178,7 +216,6 @@ def extract_sitemap_urls(sitemap_url, max_urls=10):
         
     except Exception as e:
         return {"success": False, "error": str(e)}
-    import requests
 
 def crawl_website_links(start_url, max_pages=50):
     """
@@ -195,38 +232,40 @@ def crawl_website_links(start_url, max_pages=50):
     queue = [start_url]
     found_urls = []
     
-    domain = urlparse(start_url).netloc 
+    parsed_start = urlparse(start_url)
+    origin = (parsed_start.scheme.lower(), parsed_start.netloc.lower())
 
-    while queue and len(found_urls) < max_pages:
+    while queue and (max_pages is None or len(found_urls) < max_pages):
         current_url = queue.pop(0)
-        
         if current_url in visited:
             continue
-            
+
         visited.add(current_url)
-        found_urls.append(current_url)
-        
         try:
-            response = requests.get(current_url, headers=headers, timeout=5)
-            
+            response = safe_request(current_url, headers=headers, timeout=5)
+            found_urls.append(current_url)
+
             if response.status_code != 200:
                 print(f"  Blocked or Not Found ({response.status_code}): {current_url}")
                 continue
 
             soup = BeautifulSoup(response.text, 'html.parser')
-            
             for link in soup.find_all('a', href=True):
                 full_url = urljoin(current_url, link['href']).split('?')[0]
-                
-                if (urlparse(full_url).netloc == domain and 
-                    full_url not in visited and 
-                    full_url not in queue and
-                    not full_url.lower().endswith(('.pdf', '.jpg', '.png', '.xml', '.zip', '.css', '.js'))):
-                    
+                parsed_link = urlparse(full_url)
+
+                if (
+                    (parsed_link.scheme.lower(), parsed_link.netloc.lower()) == origin
+                    and full_url not in visited
+                    and full_url not in queue
+                    and not full_url.lower().endswith(
+                        ('.pdf', '.jpg', '.png', '.xml', '.zip', '.css', '.js')
+                    )
+                ):
                     queue.append(full_url)
-            
+
             print(f"  Found {len(queue)} links in queue... (Total found: {len(found_urls)})")
-                    
+
         except Exception as e:
             print(f"  Skipping {current_url} due to error: {e}")
 

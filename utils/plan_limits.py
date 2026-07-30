@@ -12,7 +12,8 @@ PLAN_LIMITS = {
         'bots': 1,
         'messages': 200,
         'documents_per_bot': 3,
-        'scrape_pages': 50,
+        'scrape_pages': 5,
+        'discover_pages': 50,
         'scrape_jobs': 5,          # Total scrape jobs allowed per month
         'text_snippets': 999999,   # Unlimited text uploads
         'file_size_mb': 5,
@@ -22,7 +23,8 @@ PLAN_LIMITS = {
         'bots': 2,
         'messages': 2000,
         'documents_per_bot': 10,
-        'scrape_pages': 200,
+        'scrape_pages': 50,
+        'discover_pages': 200,
         'scrape_jobs': 50,
         'text_snippets': 999999,
         'file_size_mb': 10,
@@ -32,7 +34,8 @@ PLAN_LIMITS = {
         'bots': 5,
         'messages': 10000,
         'documents_per_bot': 50,
-        'scrape_pages': 500,
+        'scrape_pages': 300,
+        'discover_pages': 500,
         'scrape_jobs': 300,
         'text_snippets': 999999,
         'file_size_mb': 10,
@@ -42,7 +45,8 @@ PLAN_LIMITS = {
         'bots': 999,         # Effectively unlimited
         'messages': 50000,
         'documents_per_bot': 200,
-        'scrape_pages': 999999,        # Unlimited
+        'scrape_pages': None,       # Unlimited
+        'discover_pages': None,     # Unlimited
         'scrape_jobs': 999999,     # Unlimited
         'text_snippets': 999999,
         'file_size_mb': 10,
@@ -277,6 +281,22 @@ def check_scrape_limit(org_id):
     return limits['scrape_pages']
 
 
+def check_discovery_limit(org_id):
+    """
+    Return the max URLs the link finder may discover for this org's plan.
+
+    ``None`` is the explicit unlimited value, used only by the Pro plan.
+    This limit is intentionally separate from the number of pages a user may
+    select and start scraping.
+    """
+    org = Organization.query.get(org_id)
+    if not org:
+        return PLAN_LIMITS['free']['discover_pages']
+
+    limits = PLAN_LIMITS.get(org.plan or 'free', PLAN_LIMITS['free'])
+    return limits['discover_pages']
+
+
 def check_team_member_limit(org_id):
     """
     Check if org can add more team members. Returns (allowed, current_count, limit).
@@ -339,6 +359,9 @@ def get_usage_summary(org_id):
         'members_limit': members_limit,
         'documents_per_bot_limit': limits['documents_per_bot'],
         'scrape_pages_limit': limits['scrape_pages'],
+        'scrape_pages_unlimited': limits['scrape_pages'] is None,
+        'discover_pages_limit': limits['discover_pages'],
+        'discover_pages_unlimited': limits['discover_pages'] is None,
         'scrape_jobs_limit': limits.get('scrape_jobs', 2),
         'text_snippets_limit': limits.get('text_snippets', 999999),
         'file_size_mb': limits['file_size_mb'],

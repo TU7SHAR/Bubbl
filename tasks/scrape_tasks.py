@@ -18,10 +18,17 @@ logger = get_task_logger(__name__)
 
 
 @celery.task(bind=True, soft_time_limit=1500, time_limit=1560)
-def async_discover_links_task(self, url, use_spider, discovery_limit, plan_limit, plan_name):
+def async_discover_links_task(
+    self, url, use_spider, discovery_limit, scrape_limit, plan_name
+):
     """Find selectable site URLs outside the web worker and return preview data."""
     from urllib.parse import urlparse
-    from utils.scraper import crawl_website_links, extract_sitemap_urls, is_safe_url
+    from utils.scraper import (
+        crawl_website_links,
+        extract_sitemap_urls,
+        is_safe_url,
+        safe_request,
+    )
 
     safe, error_msg = is_safe_url(url)
     if not safe:
@@ -44,11 +51,10 @@ def async_discover_links_task(self, url, use_spider, discovery_limit, plan_limit
                 parsed = urlparse(url)
                 sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
                 try:
-                    import requests as req
-                    resp = req.head(
+                    resp = safe_request(
                         sitemap_url,
+                        method='head',
                         timeout=5,
-                        allow_redirects=True,
                         headers={'User-Agent': 'Mozilla/5.0'},
                     )
                     if resp.status_code == 200:
@@ -81,16 +87,30 @@ def async_discover_links_task(self, url, use_spider, discovery_limit, plan_limit
     if estimated_total < len(urls_found):
         estimated_total = len(urls_found)
 
-    scrape_count = min(len(urls_found), plan_limit)
+    scrape_unlimited = scrape_limit is None
+    discovery_unlimited = discovery_limit is None
+    scrape_count = (
+        len(urls_found)
+        if scrape_unlimited
+        else min(len(urls_found), scrape_limit)
+    )
     return {
         "success": True,
         "total_found": len(urls_found),
         "estimated_total": estimated_total,
         "scrape_count": scrape_count,
-        "capped": estimated_total > plan_limit,
+        "capped": not scrape_unlimited and len(urls_found) > scrape_limit,
+        "discovery_capped": (
+            not discovery_unlimited and estimated_total > discovery_limit
+        ),
         "plan": plan_name,
-        "plan_limit": plan_limit,
-        "plan_unlimited": plan_limit >= 999999,
+        # Compatibility aliases: these describe actual scrape selection.
+        "plan_limit": scrape_limit,
+        "plan_unlimited": scrape_unlimited,
+        "scrape_limit": scrape_limit,
+        "scrape_unlimited": scrape_unlimited,
+        "discovery_limit": discovery_limit,
+        "discovery_unlimited": discovery_unlimited,
         "method": method_used,
         "urls": urls_found,
         "estimated_seconds_min": scrape_count * 3,
@@ -115,14 +135,41 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_link
 
     with app.app_context():
         from models.models import db, Bot, ScrapeJob, Document
-        from utils.scraper import scrape_single_url, extract_sitemap_urls, crawl_website_links, is_safe_url
+        from utils.scraper import (
+            crawl_website_links,
+            extract_sitemap_urls,
+            is_safe_url,
+            safe_request,
+            scrape_single_url,
+        )
         from bot.cloud import upload_to_gemini
 
         job = ScrapeJob.query.get(job_id)
-        target_bot = Bot.query.get(bot_id)
+        if not job:
+            logger.error(f"Job {job_id} not found. Aborting.")
+            return
 
-        if not job or not target_bot:
-            logger.error(f"Job {job_id} or Bot {bot_id} not found. Aborting.")
+        if job.bot_id != bot_id:
+            logger.error(
+                f"Job {job_id} belongs to Bot {job.bot_id}, not Bot {bot_id}. Aborting."
+            )
+            job.status = 'failed'
+            job.error_message = 'Scrape job bot mismatch.'
+            db.session.commit()
+            return
+
+        if job.url != url:
+            logger.warning(
+                f"Job {job_id} URL argument did not match persisted URL; using job URL."
+            )
+        url = job.url
+
+        target_bot = Bot.query.get(job.bot_id)
+        if not target_bot:
+            logger.error(f"Bot {job.bot_id} not found for Job {job_id}. Aborting.")
+            job.status = 'failed'
+            job.error_message = 'Scrape job bot no longer exists.'
+            db.session.commit()
             return
 
         # Mark as 'running' so we can detect interrupted jobs after restart
@@ -175,9 +222,12 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_link
                         sitemap_found = False
                         for sitemap_url in sitemap_candidates:
                             try:
-                                import requests as req
-                                resp = req.head(sitemap_url, timeout=5, allow_redirects=True,
-                                               headers={'User-Agent': 'Mozilla/5.0'})
+                                resp = safe_request(
+                                    sitemap_url,
+                                    method='head',
+                                    timeout=5,
+                                    headers={'User-Agent': 'Mozilla/5.0'},
+                                )
                                 if resp.status_code == 200:
                                     add_log(f"[Fallback] Found sitemap at: {sitemap_url}")
                                     sitemap_data = extract_sitemap_urls(sitemap_url, max_urls=crawl_limit)
