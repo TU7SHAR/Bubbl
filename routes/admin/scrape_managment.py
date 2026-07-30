@@ -72,7 +72,15 @@ def discover_links():
     estimated_total = 0  # Estimated total pages on the site (may be > urls_found)
 
     try:
-        if use_spider:
+        # Sitemap URLs always use XML parsing regardless of Deep Crawl toggle —
+        # running the spider on an XML file just finds 1 link (the XML itself).
+        if url.endswith('.xml'):
+            method_used = 'sitemap'
+            sitemap_data = extract_sitemap_urls(url, max_urls=DISCOVERY_LIMIT)
+            if sitemap_data['success']:
+                urls_found = sitemap_data['urls_to_scrape']
+                estimated_total = len(urls_found)
+        elif use_spider:
             method_used = 'deep_crawl'
             # Deep Crawl respects DISCOVERY_LIMIT — it does NOT override the page limit
             result = crawl_website_links(url, max_pages=DISCOVERY_LIMIT)
@@ -98,12 +106,6 @@ def discover_links():
                             method_used = 'sitemap_fallback'
                 except Exception:
                     pass
-        elif url.endswith('.xml'):
-            method_used = 'sitemap'
-            sitemap_data = extract_sitemap_urls(url, max_urls=DISCOVERY_LIMIT)
-            if sitemap_data['success']:
-                urls_found = sitemap_data['urls_to_scrape']
-                estimated_total = len(urls_found)
         else:
             urls_found = [url]
             estimated_total = 1

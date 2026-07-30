@@ -29,6 +29,18 @@ def billing_page():
     total_refunds = sum(p.refund_amount or 0 for p in all_payments if p.refund_amount)
     net_revenue = total_revenue - total_refunds - total_tax
 
+    # Paddle transaction fee: 5% + ₹41.5 per payment (~$0.50 at ₹83/USD)
+    # Applied per completed transaction (not on refunds)
+    PADDLE_PCT_FEE = 0.05
+    PADDLE_FIXED_FEE_INR = 41.5
+    total_paddle_fees = sum(
+        ((p.amount or 0) * PADDLE_PCT_FEE) + PADDLE_FIXED_FEE_INR
+        for p in all_payments
+    )
+    total_paddle_fees = round(total_paddle_fees, 2)
+    # What you actually receive in bank = gross - tax - refunds - paddle fees
+    payout_estimate = round(total_revenue - total_tax - total_refunds - total_paddle_fees, 2)
+
     revenue_by_plan = [
         {'plan': p.capitalize(), 'count': plan_counts.get(p, 0), 'price': plan_price.get(p, 0),
          'mrr': plan_counts.get(p, 0) * plan_price.get(p, 0)}
@@ -55,6 +67,11 @@ def billing_page():
         total_revenue_after_tax=total_revenue_after_tax,
         total_refunds=total_refunds,
         net_revenue=net_revenue,
+        total_paddle_fees=total_paddle_fees,
+        payout_estimate=payout_estimate,
+        paddle_pct_fee=int(PADDLE_PCT_FEE * 100),
+        paddle_fixed_fee=PADDLE_FIXED_FEE_INR,
+        total_transactions=len(all_payments),
     )
 
 

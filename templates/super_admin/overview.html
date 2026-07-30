@@ -52,6 +52,16 @@
     <div class="sa-card-label">Refunds</div>
     <div class="sa-card-value" style="color:var(--red);">₹{{ total_refunds | int }}</div>
   </div>
+  <div class="sa-card" style="border-left: 3px solid #f97316;" title="Paddle charges 5% + ₹41.5 per successful transaction for payment processing, tax compliance, and fraud protection.">
+    <div class="sa-card-label">Paddle Fees</div>
+    <div class="sa-card-value" style="color:#f97316;">₹{{ paddle_fees | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">5% + ₹41.5 per txn</div>
+  </div>
+  <div class="sa-card" style="border-left: 3px solid #10b981;" title="Estimated amount you receive in your bank account after deducting Paddle tax, refunds, and Paddle processing fees from gross revenue.">
+    <div class="sa-card-label">Est. Bank Payout</div>
+    <div class="sa-card-value" style="color:#10b981;">₹{{ payout_estimate | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">After tax + fees + refunds</div>
+  </div>
 </div>
 
 <!-- ═══ CORE METRICS ═══ -->

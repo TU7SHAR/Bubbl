@@ -114,6 +114,15 @@ def dashboard():
 
     net_revenue = revenue_gross - total_refunds
 
+    # Paddle transaction fee: 5% + ₹41.5 per payment (~$0.50 at ₹83/USD)
+    total_transactions = db.session.query(func.count(Payment.id)).filter(
+        Payment.status == 'completed'
+    ).scalar() or 0
+    PADDLE_PCT_FEE = 0.05
+    PADDLE_FIXED_FEE_INR = 41.5
+    paddle_fees = round((revenue_gross * PADDLE_PCT_FEE) + (total_transactions * PADDLE_FIXED_FEE_INR), 2)
+    payout_estimate = round(revenue_gross - total_refunds - paddle_fees, 2)
+
     # ═══════════════════════════════════════════
     # API / PERFORMANCE METRICS
     # ═══════════════════════════════════════════
@@ -254,6 +263,7 @@ def dashboard():
         revenue_today=revenue_today, revenue_yesterday=revenue_yesterday,
         revenue_this_month=revenue_this_month, revenue_gross=revenue_gross,
         total_refunds=total_refunds, net_revenue=net_revenue,
+        paddle_fees=paddle_fees, payout_estimate=payout_estimate,
         # API
         total_tokens=total_tokens, total_interactions=total_interactions,
         avg_latency_ms=avg_latency_ms, avg_tokens_per_msg=avg_tokens_per_msg,
