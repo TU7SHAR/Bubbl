@@ -532,22 +532,53 @@ var _botMsgIndex = 0;
 
 function createRatingButtons(msgIndex) {
   var wrapper = document.createElement("div");
-  wrapper.className = "msg-rating";
-  wrapper.style.cssText = "display:flex; gap:6px; align-self:flex-start; margin-top:-8px; margin-bottom:4px;";
-  wrapper.innerHTML = '<button class="rate-btn rate-up" data-idx="'+msgIndex+'" data-val="1" onclick="rateMsg(this)" title="Helpful">&#128077;</button>' +
+  wrapper.className = "msg-rating msg-rating--hidden";
+  wrapper.setAttribute("data-msg-idx", msgIndex);
+  wrapper.style.cssText = "display:flex; gap:6px; align-self:flex-start; margin-top:-4px; margin-bottom:4px; opacity:0; transition:opacity 0.15s;";
+  wrapper.innerHTML =
+    '<button class="rate-btn rate-up" data-idx="'+msgIndex+'" data-val="1" onclick="rateMsg(this)" title="Helpful">&#128077;</button>' +
     '<button class="rate-btn rate-down" data-idx="'+msgIndex+'" data-val="-1" onclick="rateMsg(this)" title="Not helpful">&#128078;</button>';
   return wrapper;
+}
+
+// Show rating buttons on hover/click of the bot message bubble
+function attachRatingHover(botDiv, ratingWrapper) {
+  function show() {
+    // Only show if not already rated
+    if (!ratingWrapper.classList.contains('msg-rating--rated')) {
+      ratingWrapper.style.opacity = '1';
+    }
+  }
+  function hide() {
+    if (!ratingWrapper.classList.contains('msg-rating--rated')) {
+      ratingWrapper.style.opacity = '0';
+    }
+  }
+  botDiv.addEventListener('mouseenter', show);
+  botDiv.addEventListener('mouseleave', hide);
+  botDiv.addEventListener('click', function() {
+    if (!ratingWrapper.classList.contains('msg-rating--rated')) {
+      ratingWrapper.style.opacity = ratingWrapper.style.opacity === '1' ? '0' : '1';
+    }
+  });
 }
 
 function rateMsg(btn) {
   var idx = parseInt(btn.getAttribute('data-idx'));
   var val = parseInt(btn.getAttribute('data-val'));
   var sessionId = window._chatSessionId || localStorage.getItem('bubbl_ws_session') || '';
+  var wrapper = btn.parentElement;
 
-  // Visual feedback
-  btn.parentElement.querySelectorAll('.rate-btn').forEach(function(b) { b.style.opacity='0.4'; b.disabled=true; });
+  // Mark as rated — keep visible, dim unselected button
+  wrapper.classList.add('msg-rating--rated');
+  wrapper.style.opacity = '1';
+  wrapper.querySelectorAll('.rate-btn').forEach(function(b) {
+    b.style.opacity = '0.35';
+    b.disabled = true;
+  });
   btn.style.opacity = '1';
-  btn.style.transform = 'scale(1.2)';
+  btn.style.transform = 'scale(1.25)';
+  btn.style.filter = val === 1 ? 'drop-shadow(0 0 4px rgba(16,185,129,0.5))' : 'drop-shadow(0 0 4px rgba(239,68,68,0.5))';
 
   fetch('/api/rate_message', {
     method: 'POST',
@@ -569,8 +600,10 @@ function appendBotMessage(msg) {
     botDiv.innerHTML = renderMarkdown(cleanText);
     display.appendChild(botDiv);
 
-    // Add rating buttons
-    display.appendChild(createRatingButtons(_botMsgIndex));
+    // Add rating buttons (hidden until hover)
+    const ratingWrapper = createRatingButtons(_botMsgIndex);
+    display.appendChild(ratingWrapper);
+    attachRatingHover(botDiv, ratingWrapper);
     _botMsgIndex++;
   }
 
