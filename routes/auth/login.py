@@ -47,6 +47,10 @@ def login():
         if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
             flash("Incorrect password. Please try again.", "error")
             return redirect(url_for('auth.login'))
+
+        # 4b. CATCH: Suspended account
+        if getattr(user, 'is_suspended', False):
+            return render_template('login.html', error='Your account has been suspended. Contact support.')
             
         # 5. Enforce Verification
         if not user.is_verified:

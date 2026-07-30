@@ -36,20 +36,42 @@
   <div class="table-header"><h3>Bots ({{ bots | length }})</h3></div>
   <div class="table-scroll">
     <table>
-      <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Active</th></tr></thead>
+      <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Docs</th><th>Interactions</th><th>Active</th><th>Action</th></tr></thead>
       <tbody>
         {% for b in bots %}
         <tr>
           <td>{{ b.id }}</td>
           <td><a href="{{ url_for('super_admin_bp.bot_detail', bot_id=b.id) }}">{{ b.bot_name }}</a></td>
           <td>{{ b.bot_type or 'general' }}</td>
+          <td>{{ b.documents | length }}</td>
+          <td>{{ b.interaction_count or 0 }}</td>
           <td><span class="badge {{ 'badge-green' if b.is_active else 'badge-red' }}">{{ 'Yes' if b.is_active else 'No' }}</span></td>
+          <td>
+            <button onclick="deleteBot({{ b.id }}, '{{ b.bot_name | replace("'", "\\'") }}')" class="sa-btn sa-btn-danger" style="padding:4px 10px; font-size:11px;">Delete</button>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
+<script>
+function deleteBot(botId, botName) {
+  if (!confirm('Delete bot "' + botName + '"? This cannot be undone.')) return;
+  fetch('/super_admin/bots/delete', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bot_id: botId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) { location.reload(); }
+    else { alert(data.error || 'Delete failed.'); }
+  })
+  .catch(err => alert('Network error: ' + err.message));
+}
+</script>
 
 <!-- Payments Table -->
 <div class="table-wrap">

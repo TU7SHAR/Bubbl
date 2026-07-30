@@ -131,6 +131,7 @@ class Payment(db.Model):
     # --- REFUND TRACKING ---
     refund_amount = db.Column(db.Float, default=0.0)
     refunded_at = db.Column(db.DateTime, nullable=True)
+    tax_amount = db.Column(db.Float, default=0.0)  # Tax collected by Paddle
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 

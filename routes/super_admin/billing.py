@@ -22,8 +22,12 @@ def billing_page():
     mrr = sum(plan_counts.get(p, 0) * price for p, price in plan_price.items())
     arr = mrr * 12
 
-    all_payments = Payment.query.filter_by(status='completed').order_by(Payment.created_at.desc()).limit(200).all()
+    all_payments = Payment.query.filter_by(status='completed').order_by(Payment.created_at.desc()).all()
     total_revenue = sum(p.amount or 0 for p in all_payments)
+    total_tax = sum(getattr(p, 'tax_amount', 0) or 0 for p in all_payments)
+    total_revenue_after_tax = total_revenue - total_tax
+    total_refunds = sum(p.refund_amount or 0 for p in all_payments if p.refund_amount)
+    net_revenue = total_revenue - total_refunds - total_tax
 
     revenue_by_plan = [
         {'plan': p.capitalize(), 'count': plan_counts.get(p, 0), 'price': plan_price.get(p, 0),
@@ -40,12 +44,17 @@ def billing_page():
             'amount': pm.amount or 0,
             'transaction_id': pm.paddle_transaction_id or '—',
             'status': pm.status or 'completed',
+            'tax': getattr(pm, 'tax_amount', 0) or 0,
         })
 
     return render_template('super_admin/billing.html',
         mrr=mrr, arr=arr, active_subscriptions=active_subs,
         total_revenue=total_revenue, revenue_by_plan=revenue_by_plan,
         recent_payments=recent_payments, plan_counts=plan_counts,
+        total_tax=total_tax,
+        total_revenue_after_tax=total_revenue_after_tax,
+        total_refunds=total_refunds,
+        net_revenue=net_revenue,
     )
 
 

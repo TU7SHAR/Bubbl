@@ -78,7 +78,7 @@
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_messages }} total messages</div>
   </div>
   <div class="sa-card" title="Organizations on a paid plan (Starter/Growth/Pro). Conversion rate = paid orgs ÷ total orgs × 100.">
-    <div class="sa-card-label">Paid Orgs</div>
+    <div class="sa-card-label">Paid Organizations</div>
     <div class="sa-card-value">{{ active_subscriptions }}</div>
     <div style="font-size:11px; color:var(--accent); margin-top:4px;">{{ conversion_rate }}% of {{ total_orgs }} orgs</div>
   </div>
@@ -103,7 +103,7 @@
 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
   <!-- Plan Breakdown -->
   <div class="sa-table-wrap" style="padding:20px;">
-    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;" title="How many organizations are on each plan. Percentage shows the share of total orgs on that plan.">Plan Distribution <span style="font-size:11px; color:var(--text-muted); font-weight:400;">({{ total_orgs }} orgs)</span></h3>
+    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;" title="How many organizations are on each plan. Percentage shows the share of total orgs on that plan.">Subscription Plan Distribution <span style="font-size:11px; color:var(--text-muted); font-weight:400;">({{ total_orgs }} orgs)</span></h3>
     <div style="display:flex; flex-direction:column; gap:10px;">
       {% for plan_name, count in plan_counts.items() %}
       {% set pct = ((count / (total_orgs if total_orgs > 0 else 1)) * 100) | round(1) %}
@@ -145,8 +145,8 @@
 
 <!-- ═══ CHARTS ═══ -->
 <div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-bottom:24px;">
-  <div class="sa-table-wrap" style="padding:20px;" title="Leads = contact info captured from visitors. Messages = individual chat messages sent/received. Both filtered by the date range selected above.">
-    <h3 style="margin-bottom:16px; font-size:14px; font-weight:700;">Leads & Messages Over Time</h3>
+  <div class="sa-table-wrap" style="padding:20px;" title="Leads = contact info captured from visitors. Messages = individual chat messages sent/received. Conversations = distinct chat sessions. All filtered by the date range selected above.">
+    <h3 style="margin-bottom:16px; font-size:14px; font-weight:700;">Lead & Message Trends</h3>
     <canvas id="combinedChart" height="80"></canvas>
   </div>
 </div>
@@ -189,7 +189,7 @@
 
   <!-- Scrape Jobs -->
   <div class="sa-table-wrap" style="padding:20px;" title="Background web scraping jobs run by Celery. Scraping fetches website content and uploads it to Gemini's vector store for bot training.">
-    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">Scrape Jobs</h3>
+    <h3 style="font-size:14px; font-weight:700; margin-bottom:14px;">Scraping Jobs</h3>
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
       <div title="Scrape jobs that finished successfully — all URLs scraped and uploaded to the bot's knowledge base.">
         <div style="font-size:24px; font-weight:800; color:var(--green);">{{ scrapes_completed }}</div>
@@ -309,6 +309,17 @@ document.addEventListener('DOMContentLoaded', function() {
           backgroundColor: 'rgba(139,92,246,0.05)',
           borderWidth: 2,
           fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          pointHoverRadius: 4,
+        },
+        {
+          label: 'Conversations',
+          data: {{ chart_data.conversations | tojson }},
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.05)',
+          borderWidth: 2,
+          fill: false,
           tension: 0.3,
           pointRadius: 2,
           pointHoverRadius: 4,

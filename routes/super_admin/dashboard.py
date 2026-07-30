@@ -58,7 +58,11 @@ def dashboard():
     total_leads_all = Lead.query.count()
     leads_today = Lead.query.filter(Lead.captured_at >= today_start).count()
     leads_yesterday = Lead.query.filter(Lead.captured_at >= yesterday_start, Lead.captured_at < today_start).count()
-    total_conversations = db.session.query(func.count(func.distinct(ChatMessage.session_id))).scalar() or 0
+    total_conversations = db.session.query(func.count(func.distinct(ChatMessage.session_id))).filter(
+        ChatMessage.created_at >= start_date,
+        ChatMessage.created_at <= end_date
+    ).scalar() or 0
+    total_conversations_all = db.session.query(func.count(func.distinct(ChatMessage.session_id))).scalar() or 0
     total_messages = ChatMessage.query.count()
     messages_today = ChatMessage.query.filter(ChatMessage.created_at >= today_start).count()
     messages_yesterday = ChatMessage.query.filter(ChatMessage.created_at >= yesterday_start, ChatMessage.created_at < today_start).count()
@@ -150,6 +154,7 @@ def dashboard():
 
     date_counts_leads = {}
     date_counts_msgs = {}
+    date_counts_convos = {}
 
     if days_count <= 2:
         temp = start_date
@@ -157,6 +162,7 @@ def dashboard():
             key = temp.strftime('%H:00')
             date_counts_leads[key] = 0
             date_counts_msgs[key] = 0
+            date_counts_convos[key] = 0
             temp += timedelta(hours=1)
         for lead in chart_leads:
             h = lead.captured_at.strftime('%H:00')
@@ -166,11 +172,26 @@ def dashboard():
             h = msg.created_at.strftime('%H:00')
             if h in date_counts_msgs:
                 date_counts_msgs[h] += 1
+        # Conversations: count distinct session_ids per bucket
+        chart_convos_raw = ChatMessage.query.filter(
+            ChatMessage.created_at >= start_date,
+            ChatMessage.created_at <= end_date
+        ).with_entities(ChatMessage.session_id, ChatMessage.created_at).all()
+        seen_sessions_by_bucket = {}
+        for row in chart_convos_raw:
+            h = row.created_at.strftime('%H:00')
+            if h in date_counts_convos:
+                if h not in seen_sessions_by_bucket:
+                    seen_sessions_by_bucket[h] = set()
+                seen_sessions_by_bucket[h].add(row.session_id)
+        for h, sessions in seen_sessions_by_bucket.items():
+            date_counts_convos[h] = len(sessions)
     else:
         for i in range(days_count - 1, -1, -1):
             d = (end_date - timedelta(days=i)).strftime('%b %d')
             date_counts_leads[d] = 0
             date_counts_msgs[d] = 0
+            date_counts_convos[d] = 0
         for lead in chart_leads:
             d = lead.captured_at.strftime('%b %d')
             if d in date_counts_leads:
@@ -179,11 +200,26 @@ def dashboard():
             d = msg.created_at.strftime('%b %d')
             if d in date_counts_msgs:
                 date_counts_msgs[d] += 1
+        # Conversations: count distinct session_ids per day
+        chart_convos_raw = ChatMessage.query.filter(
+            ChatMessage.created_at >= start_date,
+            ChatMessage.created_at <= end_date
+        ).with_entities(ChatMessage.session_id, ChatMessage.created_at).all()
+        seen_sessions_by_day = {}
+        for row in chart_convos_raw:
+            d = row.created_at.strftime('%b %d')
+            if d in date_counts_convos:
+                if d not in seen_sessions_by_day:
+                    seen_sessions_by_day[d] = set()
+                seen_sessions_by_day[d].add(row.session_id)
+        for d, sessions in seen_sessions_by_day.items():
+            date_counts_convos[d] = len(sessions)
 
     chart_data = {
         "labels": list(date_counts_leads.keys()),
         "leads": list(date_counts_leads.values()),
         "messages": list(date_counts_msgs.values()),
+        "conversations": list(date_counts_convos.values()),
     }
 
     # ═══════════════════════════════════════════
@@ -206,6 +242,7 @@ def dashboard():
         total_leads=total_leads, total_leads_all=total_leads_all,
         leads_today=leads_today, leads_yesterday=leads_yesterday,
         total_conversations=total_conversations, total_messages=total_messages,
+        total_conversations_all=total_conversations_all,
         messages_today=messages_today, messages_yesterday=messages_yesterday,
         new_users_period=new_users_period, new_users_today=new_users_today,
         # Revenue

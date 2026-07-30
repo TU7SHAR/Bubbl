@@ -215,6 +215,12 @@ def paddle_webhook():
         except (ValueError, TypeError):
             amount = 0.0
 
+        raw_tax = totals.get('tax') or '0'
+        try:
+            tax_amount = round(int(raw_tax) / 100.0, 2)
+        except (ValueError, TypeError):
+            tax_amount = 0.0
+
         org = _resolve_org(payload)
         customer_id = payload.get('customer_id', '')
         subscription_id = payload.get('subscription_id', '')
@@ -247,6 +253,7 @@ def paddle_webhook():
             payment_method=method_type,
             card_brand=card_brand,
             card_last4=card_last4,
+            tax_amount=tax_amount,
             status='completed',
         )
         db.session.add(payment)

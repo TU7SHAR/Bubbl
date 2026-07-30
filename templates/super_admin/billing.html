@@ -6,20 +6,30 @@
 <!-- Stats Grid -->
 <div class="sa-grid">
   <div class="sa-card">
-    <div class="sa-card-label">MRR (₹)</div>
+    <div class="sa-card-label">Monthly Recurring Revenue (MRR)</div>
     <div class="sa-card-value">₹{{ mrr | int }}</div>
   </div>
   <div class="sa-card">
-    <div class="sa-card-label">ARR (₹)</div>
+    <div class="sa-card-label">Annual Recurring Revenue (ARR)</div>
     <div class="sa-card-value">₹{{ arr | int }}</div>
   </div>
   <div class="sa-card">
-    <div class="sa-card-label">Active Subs</div>
+    <div class="sa-card-label">Active Subscriptions</div>
     <div class="sa-card-value">{{ active_subscriptions }}</div>
   </div>
   <div class="sa-card">
-    <div class="sa-card-label">Total Collected (₹)</div>
+    <div class="sa-card-label">Total Revenue Collected</div>
     <div class="sa-card-value">₹{{ total_revenue | int }}</div>
+  </div>
+  <div class="sa-card" style="border-left: 3px solid var(--yellow);">
+    <div class="sa-card-label">Tax Collected (Paddle)</div>
+    <div class="sa-card-value" style="color:var(--yellow);">₹{{ total_tax | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Collected & remitted by Paddle</div>
+  </div>
+  <div class="sa-card" style="border-left: 3px solid var(--green);">
+    <div class="sa-card-label">Net Revenue (After Tax & Refunds)</div>
+    <div class="sa-card-value" style="color:var(--green);">₹{{ net_revenue | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">After Paddle tax + refunds</div>
   </div>
 </div>
 
@@ -75,6 +85,7 @@
           <th data-sort="text">Customer</th>
           <th data-sort="text">Plan</th>
           <th data-sort="number">Amount</th>
+          <th data-sort="number">Tax</th>
           <th>Transaction ID</th>
           <th data-sort="text">Status</th>
         </tr>
@@ -86,6 +97,7 @@
           <td>{{ p.email }}</td>
           <td>{{ p.plan }}</td>
           <td>₹{{ p.amount }}</td>
+          <td>₹{{ p.tax }}</td>
           <td><code style="font-size:11px; color:var(--text-dim);">{{ p.transaction_id }}</code></td>
           <td>
             {% if p.status == 'success' or p.status == 'captured' %}
