@@ -1,10 +1,12 @@
 import os
+import uuid
+import json
 from flask import request, jsonify, session
 
 from models.models import db, Bot, ScrapeJob, Organization
-from tasks.scrape_tasks import async_scrape_task
+from tasks.scrape_tasks import async_scrape_task, async_discover_task
 from utils.scraper import is_safe_url
-from utils.plan_limits import check_scrape_limit
+from utils.plan_limits import check_scrape_limit, check_discover_limit
 from extensions import limiter
 from . import admin_bp
 
@@ -16,13 +18,17 @@ SECONDS_PER_PAGE = 4
 def discover_links():
     """
     Quick link discovery — finds URLs on a site WITHOUT scraping content.
-    
+
     IMPORTANT: This runs SYNCHRONOUSLY in the gunicorn worker. It MUST be fast
     (< 30 seconds) or it blocks all other requests on this single-worker server.
-    
-    Strategy: Crawl up to 50 pages for discovery preview. If the site has more,
-    we report the estimated total based on the link queue size at cutoff.
-    The actual full crawl (up to plan limit) happens in Celery when user confirms.
+
+    Discovery limit and scrape limit are separate:
+      - Discovery limit: how many links can be surfaced for selection (plan-based)
+      - Scrape limit: how many of those links can actually have content fetched
+
+    Find Max ON  → use the full plan discovery limit
+    Find Max OFF → use the user's entered page limit (capped by the discovery limit)
+    Deep Crawl   → never overrides the page limit; uses it as its own max_pages cap
     """
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
@@ -34,13 +40,25 @@ def discover_links():
     use_spider = data.get('use_spider', False)
     find_max_links = data.get('find_max_links', False)
 
-    # Use the page limit the user set in the UI (default 20), but cap at 50
-    # to keep this synchronous request fast (blocks gunicorn worker).
-    try:
-        user_limit = int(data.get('max_urls') or 20)
-    except (ValueError, TypeError):
-        user_limit = 20
-    DISCOVERY_LIMIT = min(user_limit, 50)
+    # Separate plan limits
+    plan_discover_limit = check_discover_limit(session.get('org_id'))
+    plan_scrape_limit   = check_scrape_limit(session.get('org_id'))
+
+    org = Organization.query.get(session.get('org_id'))
+    plan_name = (org.plan if org else 'free') or 'free'
+
+    # Determine how many links to surface during discovery:
+    #   Find Max ON  → full plan discovery limit (let user see everything available)
+    #   Find Max OFF → respect the user's page limit input, capped by discovery limit
+    if find_max_links:
+        DISCOVERY_LIMIT = plan_discover_limit
+    else:
+        try:
+            user_limit = int(data.get('max_urls') or 20)
+        except (ValueError, TypeError):
+            user_limit = 20
+        # Cap user's input by the plan discovery limit (not scrape limit)
+        DISCOVERY_LIMIT = min(user_limit, plan_discover_limit)
 
     if not url:
         return jsonify({"error": "URL is required."}), 400
@@ -49,11 +67,6 @@ def discover_links():
     if not safe:
         return jsonify({"error": f"Invalid URL: {error_msg}"}), 400
 
-    # --- PLAN LIMIT ---
-    plan_limit = check_scrape_limit(session.get('org_id'))
-    org = Organization.query.get(session.get('org_id'))
-    plan_name = (org.plan if org else 'free') or 'free'
-
     urls_found = []
     method_used = 'single'
     estimated_total = 0  # Estimated total pages on the site (may be > urls_found)
@@ -61,7 +74,7 @@ def discover_links():
     try:
         if use_spider:
             method_used = 'deep_crawl'
-            # Only crawl up to DISCOVERY_LIMIT pages for the preview
+            # Deep Crawl respects DISCOVERY_LIMIT — it does NOT override the page limit
             result = crawl_website_links(url, max_pages=DISCOVERY_LIMIT)
             if result['success']:
                 urls_found = result['urls']
@@ -78,7 +91,7 @@ def discover_links():
                     import requests as req
                     resp = req.head(sitemap_url, timeout=5, allow_redirects=True, headers={'User-Agent': 'Mozilla/5.0'})
                     if resp.status_code == 200:
-                        sitemap_data = extract_sitemap_urls(sitemap_url, max_urls=500)
+                        sitemap_data = extract_sitemap_urls(sitemap_url, max_urls=DISCOVERY_LIMIT)
                         if sitemap_data['success'] and len(sitemap_data['urls_to_scrape']) > len(urls_found):
                             urls_found = sitemap_data['urls_to_scrape']
                             estimated_total = len(urls_found)
@@ -87,7 +100,7 @@ def discover_links():
                     pass
         elif url.endswith('.xml'):
             method_used = 'sitemap'
-            sitemap_data = extract_sitemap_urls(url, max_urls=500)
+            sitemap_data = extract_sitemap_urls(url, max_urls=DISCOVERY_LIMIT)
             if sitemap_data['success']:
                 urls_found = sitemap_data['urls_to_scrape']
                 estimated_total = len(urls_found)
@@ -101,20 +114,22 @@ def discover_links():
     if estimated_total < len(urls_found):
         estimated_total = len(urls_found)
 
-    # Show ALL found URLs, but note how many will actually be scraped
-    capped = estimated_total > plan_limit
-    scrape_count = min(estimated_total, plan_limit)
+    # How many of the discovered links the user is allowed to actually scrape
+    # (based on scrape limit, NOT discovery limit)
+    scrape_count = min(len(urls_found), plan_scrape_limit)
 
     return jsonify({
         "success": True,
         "total_found": len(urls_found),
         "estimated_total": estimated_total,
-        "scrape_count": scrape_count,
-        "capped": capped,
+        "scrape_count": scrape_count,          # pre-selected count (up to scrape limit)
+        "capped": len(urls_found) > plan_scrape_limit,
         "plan": plan_name,
-        "plan_limit": plan_limit,
+        "plan_limit": plan_scrape_limit,       # actual scrape limit (for checkbox enforcement)
+        "discover_limit": plan_discover_limit, # discovery limit (informational)
         "method": method_used,
-        "urls": urls_found,  # The URLs we actually discovered (up to 50)
+        "urls": urls_found,
+        # Estimated scrape time based on pre-selected count only
         "estimated_seconds": scrape_count * SECONDS_PER_PAGE,
     })
 
@@ -154,17 +169,20 @@ def start_scrape():
     if not safe:
         return jsonify({"error": f"Invalid URL: {error_msg}"}), 400
 
-    # --- PLAN LIMIT: Cap max pages to plan allowance ---
+    # --- PLAN LIMIT: Cap actual scrape count to the plan's scrape limit ---
+    # Discovery limit is irrelevant here — only the scrape limit matters.
     plan_scrape_limit = check_scrape_limit(session.get('org_id'))
     
-    # If user selected specific URLs, use those (capped by plan)
+    # If user selected specific URLs, use those (capped by scrape limit)
     if selected_urls and isinstance(selected_urls, list):
-        max_urls = min(len(selected_urls), plan_scrape_limit)
+        if len(selected_urls) > plan_scrape_limit:
+            return jsonify({
+                "error": f"You selected {len(selected_urls)} pages but your plan allows scraping up to {plan_scrape_limit}. Please deselect some pages or upgrade your plan."
+            }), 400
+        max_urls = len(selected_urls)
         selected_urls = selected_urls[:plan_scrape_limit]
     else:
-        requested = max_urls
-        capped = requested > plan_scrape_limit
-        if capped:
+        if max_urls > plan_scrape_limit:
             max_urls = plan_scrape_limit
         selected_urls = None
 
@@ -179,7 +197,7 @@ def start_scrape():
     # Pass selected_urls so Celery only scrapes those specific pages
     async_scrape_task.delay(new_job.id, url, bot_id, use_spider, find_max_links, selected_urls)
 
-    # Time estimate (single page scrapes are quick; deep crawl scales with pages)
+    # Time estimate based on the number of pages that will actually be scraped
     est_seconds = max_urls * SECONDS_PER_PAGE
 
     return jsonify({
@@ -211,3 +229,79 @@ def check_scrape_status(job_id):
         "error": job.error_message,
         "logs": job.logs or ""
     })
+
+
+@admin_bp.route('/api/scrape/discover/async', methods=['POST'])
+def start_async_discover():
+    """
+    Kicks off a background discovery task and returns a discover_id.
+    The frontend polls /api/scrape/discover/status/<id> to get live progress.
+    """
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+    url = (data.get('url') or '').strip()
+    use_spider = data.get('use_spider', False)
+    find_max_links = data.get('find_max_links', False)
+
+    if not url:
+        return jsonify({"error": "URL is required."}), 400
+
+    safe, error_msg = is_safe_url(url)
+    if not safe:
+        return jsonify({"error": f"Invalid URL: {error_msg}"}), 400
+
+    plan_discover_limit = check_discover_limit(session.get('org_id'))
+    plan_scrape_limit   = check_scrape_limit(session.get('org_id'))
+    org = Organization.query.get(session.get('org_id'))
+    plan_name = (org.plan if org else 'free') or 'free'
+
+    if find_max_links:
+        discovery_limit = plan_discover_limit
+    else:
+        try:
+            user_limit = int(data.get('max_urls') or 20)
+        except (ValueError, TypeError):
+            user_limit = 20
+        discovery_limit = min(user_limit, plan_discover_limit)
+
+    discover_id = uuid.uuid4().hex
+
+    async_discover_task.delay(
+        discover_id, url, use_spider, find_max_links,
+        discovery_limit, plan_scrape_limit
+    )
+
+    return jsonify({
+        "success": True,
+        "discover_id": discover_id,
+        "plan": plan_name,
+        "plan_limit": plan_scrape_limit,
+        "discover_limit": plan_discover_limit,
+    })
+
+
+@admin_bp.route('/api/scrape/discover/status/<discover_id>', methods=['GET'])
+@limiter.exempt
+def poll_discover_status(discover_id):
+    """
+    Returns current discovery progress from Redis.
+    Called by frontend every 500ms during live discovery.
+    """
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        from celery_app import REDIS_URL
+        import redis as redis_lib
+        r = redis_lib.from_url(REDIS_URL, decode_responses=True)
+        raw = r.get(f"discover:{discover_id}")
+    except Exception as e:
+        return jsonify({"error": f"Redis unavailable: {str(e)[:100]}"}), 500
+
+    if not raw:
+        return jsonify({"error": "Discovery job not found or expired."}), 404
+
+    data = json.loads(raw)
+    return jsonify(data)

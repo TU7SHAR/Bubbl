@@ -220,6 +220,7 @@ def csrf_protect():
         'https://app.bubbl.ooo',
         os.getenv('HOST_URL', 'http://localhost:5000'),
         'http://localhost:5000',
+        'http://127.0.0.1:5000',
     }
 
     # Check Origin first (most reliable), then Referer

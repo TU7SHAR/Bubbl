@@ -436,3 +436,159 @@ from celery.signals import worker_ready
 def on_worker_ready(**kwargs):
     """When the Celery worker boots up, check for stuck jobs and re-queue them."""
     recover_stuck_scrape_jobs.delay()
+
+
+# ═══════════════════════════════════════════
+# ASYNC DISCOVERY TASK — Live link counter
+# ═══════════════════════════════════════════
+
+@celery.task(bind=True, soft_time_limit=120, time_limit=150)
+def async_discover_task(self, discover_id, url, use_spider, find_max_links, discovery_limit, scrape_limit):
+    """
+    Runs link discovery in a Celery worker and writes progress to Redis
+    so the frontend can poll and show a live incrementing counter.
+
+    State stored in Redis under key: discover:{discover_id}
+    Format: JSON  { status, urls, total_found, estimated_total,
+                    scrape_count, method, error }
+    TTL: 5 minutes (discovery results are short-lived)
+    """
+    import json
+    import redis as redis_lib
+    from celery_app import REDIS_URL
+
+    r = redis_lib.from_url(REDIS_URL, decode_responses=True)
+    key = f"discover:{discover_id}"
+    TTL = 300  # 5 minutes
+
+    def save(data):
+        r.setex(key, TTL, json.dumps(data))
+
+    # Initial state
+    save({"status": "running", "urls": [], "total_found": 0,
+          "estimated_total": 0, "scrape_count": 0, "method": "unknown", "error": None})
+
+    try:
+        from utils.scraper import crawl_website_links, extract_sitemap_urls, is_safe_url
+        from urllib.parse import urlparse
+
+        urls_found = []
+        method_used = "single_page"
+        estimated_total = 0
+
+        if use_spider:
+            method_used = "deep_crawl"
+            # Patch crawl_website_links to emit progress after each page
+            headers_req = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            import requests as req
+            from bs4 import BeautifulSoup
+            from urllib.parse import urljoin
+
+            visited = set()
+            queue = [url]
+            domain = urlparse(url).netloc
+
+            BAD_EXT = ('.pdf', '.jpg', '.png', '.xml', '.zip', '.css', '.js',
+                       '.jpeg', '.gif', '.webp', '.svg', '.mp4', '.woff', '.ttf')
+
+            while queue and len(urls_found) < discovery_limit:
+                current = queue.pop(0)
+                if current in visited:
+                    continue
+                visited.add(current)
+                urls_found.append(current)
+
+                # Push live progress to Redis after every URL found
+                save({
+                    "status": "running",
+                    "urls": urls_found[:],
+                    "total_found": len(urls_found),
+                    "estimated_total": len(urls_found) + len(queue),
+                    "scrape_count": min(len(urls_found), scrape_limit),
+                    "method": method_used,
+                    "error": None,
+                })
+
+                try:
+                    resp = req.get(current, headers=headers_req, timeout=5)
+                    if resp.status_code != 200:
+                        continue
+                    soup = BeautifulSoup(resp.text, 'html.parser')
+                    for link in soup.find_all('a', href=True):
+                        full = urljoin(current, link['href']).split('?')[0]
+                        if (urlparse(full).netloc == domain
+                                and full not in visited
+                                and full not in queue
+                                and not full.lower().endswith(BAD_EXT)):
+                            queue.append(full)
+                except Exception:
+                    pass
+
+            estimated_total = len(urls_found) + len(queue)
+
+            # Fallback: sitemap if spider found very few
+            if len(urls_found) < 3:
+                parsed = urlparse(url)
+                sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
+                try:
+                    resp = req.head(sitemap_url, timeout=5, allow_redirects=True,
+                                    headers={'User-Agent': 'Mozilla/5.0'})
+                    if resp.status_code == 200:
+                        sd = extract_sitemap_urls(sitemap_url, max_urls=discovery_limit)
+                        if sd['success'] and len(sd['urls_to_scrape']) > len(urls_found):
+                            urls_found = sd['urls_to_scrape']
+                            estimated_total = len(urls_found)
+                            method_used = "sitemap_fallback"
+                except Exception:
+                    pass
+
+        elif url.endswith('.xml'):
+            method_used = "sitemap"
+            # For sitemap: parse all at once but emit progress per-URL
+            sd = extract_sitemap_urls(url, max_urls=discovery_limit)
+            if sd['success']:
+                for u in sd['urls_to_scrape']:
+                    urls_found.append(u)
+                    save({
+                        "status": "running",
+                        "urls": urls_found[:],
+                        "total_found": len(urls_found),
+                        "estimated_total": len(urls_found),
+                        "scrape_count": min(len(urls_found), scrape_limit),
+                        "method": method_used,
+                        "error": None,
+                    })
+            estimated_total = len(urls_found)
+
+        else:
+            urls_found = [url]
+            estimated_total = 1
+            method_used = "single_page"
+
+        if estimated_total < len(urls_found):
+            estimated_total = len(urls_found)
+
+        # Final state
+        save({
+            "status": "done",
+            "urls": urls_found,
+            "total_found": len(urls_found),
+            "estimated_total": estimated_total,
+            "scrape_count": min(len(urls_found), scrape_limit),
+            "method": method_used,
+            "error": None,
+        })
+
+    except Exception as exc:
+        save({
+            "status": "error",
+            "urls": [],
+            "total_found": 0,
+            "estimated_total": 0,
+            "scrape_count": 0,
+            "method": "unknown",
+            "error": str(exc)[:300],
+        })
+        raise

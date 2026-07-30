@@ -306,18 +306,18 @@
                   </label>
                 </div>
 
-                <div class="scrape-setting-card">
+                <div class="scrape-setting-card" id="page-limit-card">
                   <div class="setting-info">
                     <span class="setting-title">Page Limit</span>
-                    <span class="setting-desc">Max URLs to process</span>
+                    <span class="setting-desc">Max URLs to discover and select from</span>
                   </div>
-                  <input type="number" id="max_urls" value="20" class="dash-input limit-input" min="1" max="500">
+                  <input type="number" id="max_urls" value="20" class="dash-input limit-input" min="1" max="9999">
                 </div>
 
                 <div class="scrape-setting-card">
                   <div class="setting-info">
                     <span class="setting-title">Find Max Links</span>
-                    <span class="setting-desc">Extract extra URLs from page content (emails, internal links not in nav)</span>
+                    <span class="setting-desc">Discover all pages up to your plan limit, then choose which to scrape</span>
                   </div>
                   <label class="toggle-switch">
                     <input type="checkbox" id="find_max_links" checked onchange="toggleMaxLinksMode()">
@@ -328,10 +328,10 @@
 
               <div id="scrape-info-box" style="margin-top:12px; padding:12px 16px; background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15); border-radius:10px; font-size:12px; color:#1e40af; line-height:1.5;">
                 <strong>How it works:</strong><br>
-                - <strong>Direct links:</strong> Found by crawling &lt;a href&gt; tags on each page (what you see in navigation/footer)<br>
-                - <strong>Extra links:</strong> URLs, emails, and phone numbers extracted from page <em>content</em> (text body, not just nav)<br>
-                - <strong>Find Max Links ON:</strong> Both direct + extra links are added to Managed Links after scraping<br>
-                - <strong>Find Max Links OFF:</strong> Only the directly crawled page URLs are used
+                - <strong>Find Max ON:</strong> Discovers up to your plan's discovery limit so you can browse and pick pages<br>
+                - <strong>Find Max OFF:</strong> Discovers up to your Page Limit input so you can select which to scrape<br>
+                - <strong>Deep Crawl:</strong> Follows &lt;a href&gt; links across sub-pages — respects whichever limit applies<br>
+                - After discovery, check the pages you want and hit <em>Start Scraping</em>. Only selected pages count against your scrape limit.
               </div>
 
               <button type="button" class="btn btn-outline" style="margin-top: 10px; width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;" id="scrape-btn">
@@ -339,14 +339,46 @@
                   Discover Links
               </button>
 
+              <!-- Discovery loading animation -->
+              <div id="scrape-discovering" style="display:none; margin-top:16px; background:#f0f4ff; border:1.5px solid rgba(59,130,246,0.2); border-radius:14px; padding:20px; text-align:center;">
+                <style>
+                  @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
+                  @keyframes pulse-dot { 0%,80%,100% { opacity:0.2 } 40% { opacity:1 } }
+                  .discover-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#3b82f6; animation:pulse-dot 1.4s ease-in-out infinite; }
+                  .discover-dot:nth-child(2) { animation-delay:0.2s; }
+                  .discover-dot:nth-child(3) { animation-delay:0.4s; }
+                </style>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="animation:spin 1.2s linear infinite; margin-bottom:10px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <div style="font-size:14px; font-weight:700; color:#1e40af; margin-bottom:4px;">Discovering links…</div>
+                <div id="discover-live-count" style="font-size:22px; font-weight:800; color:#3b82f6; margin:6px 0; letter-spacing:-0.5px;">0</div>
+                <div class="setting-desc" style="font-size:12px; color:#6b7280; margin-bottom:12px;">links found so far</div>
+                <div style="display:flex; justify-content:center; gap:6px;">
+                  <span class="discover-dot"></span><span class="discover-dot"></span><span class="discover-dot"></span>
+                </div>
+              </div>
+
               <!-- Link Discovery Preview Panel -->
               <div id="scrape-discovery" style="display:none; margin-top:16px; background:#f9fafb; border:1.5px solid rgba(0,0,0,0.08); border-radius:14px; padding:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                   <h4 style="margin:0; font-size:15px; font-weight:700; color:#111827;">🔍 Links Discovered</h4>
                   <span id="discovery-method" style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(59,130,246,0.1); color:#3b82f6; font-weight:600;"></span>
                 </div>
-                <div id="discovery-stats" style="display:flex; gap:16px; margin-bottom:12px; font-size:13px; color:#6b7280;"></div>
-                <div id="discovery-urls" style="max-height:200px; overflow-y:auto; background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:10px; padding:10px; font-size:12px; font-family:monospace;"></div>
+
+                <!-- Four separate stat pills -->
+                <div id="discovery-stats" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;"></div>
+
+                <!-- Upgrade warning if capped -->
+                <div id="discovery-cap-warning" style="display:none; margin-bottom:10px; padding:9px 12px; background:rgba(232,114,42,0.07); border:1px solid rgba(232,114,42,0.3); border-radius:8px; font-size:12px; color:#92400e;">
+                  ⚠ <span id="discovery-cap-text"></span> <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a>
+                </div>
+
+                <div id="discovery-urls" style="max-height:260px; overflow-y:auto; background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:10px; padding:10px; font-size:12px; font-family:monospace;"></div>
+
+                <!-- Live estimate bar updates as checkboxes change -->
+                <div id="scrape-estimate-bar" style="margin-top:12px; padding:9px 12px; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:8px; font-size:12px; color:#065f46; display:none;">
+                  📊 <strong id="est-selected">0</strong> pages selected · Est. scrape time: ~<strong id="est-time">1</strong> min
+                </div>
+
                 <div style="display:flex; gap:10px; margin-top:14px;">
                   <button type="button" class="btn btn-solid" style="flex:1; border-radius:10px; padding:12px; font-weight:700;" id="confirm-scrape-btn">
                     ✓ Start Scraping (<span id="confirm-scrape-count">0</span> pages)
@@ -874,79 +906,127 @@
   function toggleMaxLinksMode() {
     var maxLinksOn = document.getElementById('find_max_links').checked;
     var limitInput = document.getElementById('max_urls');
+    var limitCard  = document.getElementById('page-limit-card');
     if (maxLinksOn) {
       limitInput.disabled = true;
       limitInput.style.opacity = '0.4';
       limitInput.style.cursor = 'not-allowed';
-      limitInput.title = 'Disabled — Find Max Links will discover all pages automatically';
+      limitInput.title = 'Disabled — Find Max Links will discover all pages up to your plan limit';
+      if (limitCard) limitCard.style.opacity = '0.5';
     } else {
       limitInput.disabled = false;
       limitInput.style.opacity = '1';
       limitInput.style.cursor = '';
-      limitInput.title = 'Max URLs to process';
+      limitInput.title = 'Max URLs to discover and select from';
+      if (limitCard) limitCard.style.opacity = '1';
     }
   }
   // Initialize on page load
   document.addEventListener('DOMContentLoaded', function() { toggleMaxLinksMode(); });
 
-  var currentPlanLimit = 999; // Will be set when discovery completes
+  // Separate tracking for discovery limit (how many we can surface) vs scrape limit (how many we can actually fetch)
+  var currentScrapeLimit = 5;    // actual scrape limit — enforced on checkboxes
+  var SECONDS_PER_PAGE   = 4;    // kept in sync with backend constant
+
+  function makeStat(label, value, color) {
+    return '<div style="display:flex; flex-direction:column; padding:8px 14px; background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:10px; min-width:100px;">'
+      + '<span style="font-size:10px; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">' + label + '</span>'
+      + '<span style="font-size:16px; font-weight:700; color:' + (color || '#111827') + '; margin-top:2px;">' + value + '</span>'
+      + '</div>';
+  }
 
   function toggleAllUrls(masterCheckbox) {
     var checkboxes = document.querySelectorAll('.url-check');
     if (masterCheckbox.checked) {
-      // Only check up to plan limit
       var checked = 0;
       checkboxes.forEach(function(cb) {
-        if (checked < currentPlanLimit) { cb.checked = true; checked++; }
+        if (checked < currentScrapeLimit) { cb.checked = true; checked++; }
         else { cb.checked = false; }
       });
-      if (checkboxes.length > currentPlanLimit) {
-        showModal('Your plan allows scraping up to ' + currentPlanLimit + ' pages. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade</a> to scrape more.', 'warning');
+      if (checkboxes.length > currentScrapeLimit) {
+        showModal('Your plan allows scraping up to ' + currentScrapeLimit + ' pages at a time. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade</a> to scrape more.', 'warning');
       }
     } else {
       checkboxes.forEach(function(cb) { cb.checked = false; });
     }
     updateSelectedCount();
   }
+
   function updateSelectedCount() {
     var count = document.querySelectorAll('.url-check:checked').length;
     var total = document.querySelectorAll('.url-check').length;
-    // Enforce plan limit — if user manually checked beyond limit, uncheck and warn
-    if (count > currentPlanLimit) {
+
+    // Enforce scrape limit — if user manually checked beyond limit, uncheck and warn
+    if (count > currentScrapeLimit) {
       var checked = 0;
       document.querySelectorAll('.url-check').forEach(function(cb) {
         if (cb.checked) {
           checked++;
-          if (checked > currentPlanLimit) cb.checked = false;
+          if (checked > currentScrapeLimit) cb.checked = false;
         }
       });
-      count = currentPlanLimit;
-      showModal('You can only scrape up to ' + currentPlanLimit + ' pages on your current plan. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a>', 'warning');
+      count = currentScrapeLimit;
+      showModal('You can only scrape up to ' + currentScrapeLimit + ' pages on your current plan. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a>', 'warning');
     }
+
+    // Update selected-count label inside the URL list header
     var el = document.getElementById('selected-count');
-    if (el) el.textContent = count + ' of ' + total + ' selected' + (count >= currentPlanLimit ? ' (plan max)' : '');
+    if (el) {
+      el.textContent = count + ' of ' + total + ' selected' + (count >= currentScrapeLimit && total > currentScrapeLimit ? ' (plan max)' : '');
+    }
+
+    // Update confirm button label
     var confirmCount = document.getElementById('confirm-scrape-count');
     if (confirmCount) confirmCount.textContent = count;
+
+    // Sync the select-all checkbox
     var selectAll = document.getElementById('select-all-urls');
-    if (selectAll) selectAll.checked = (count === total) || (count >= currentPlanLimit);
+    if (selectAll) selectAll.checked = total > 0 && (count === total || count >= currentScrapeLimit);
+
+    // Update live estimate bar (based only on currently selected count)
+    var estimateBar = document.getElementById('scrape-estimate-bar');
+    var estSelected = document.getElementById('est-selected');
+    var estTime     = document.getElementById('est-time');
+    if (estimateBar) {
+      if (count > 0) {
+        estimateBar.style.display = 'block';
+        if (estSelected) estSelected.textContent = count;
+        if (estTime) estTime.textContent = Math.max(1, Math.round((count * SECONDS_PER_PAGE) / 60));
+      } else {
+        estimateBar.style.display = 'none';
+      }
+    }
   }
 
   document.getElementById('scrape-btn').addEventListener('click', async function() {
-      const url = document.getElementById('scrape_url').value;
-      if(!url) return showModal('Please enter a URL.', 'error');
+      const url = document.getElementById('scrape_url').value.trim();
+      if (!url) return showModal('Please enter a URL.', 'error');
 
-      const isDeep = document.getElementById('use_deep_crawl').checked;
+      const isDeep       = document.getElementById('use_deep_crawl').checked;
       const findMaxLinks = document.getElementById('find_max_links').checked;
-      const limit = findMaxLinks ? 500 : (document.getElementById('max_urls').value || 20);
-      const currentBotId = "{{ bot.id }}"; // Jinja injects the ID here
-      const btn = this; // Reference to the clicked button
+      const limit = findMaxLinks ? 0 : (parseInt(document.getElementById('max_urls').value) || 20);
+      const currentBotId = "{{ bot.id }}";
+      const btn = this;
 
-      // Show loading state
+      // Hide any previous panels
+      document.getElementById('scrape-discovery').style.display = 'none';
+      document.getElementById('scrape-log-container').style.display = 'none';
+      document.getElementById('scrape-notice').style.display = 'none';
+
+      // Show loading box
       btn.disabled = true;
       btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10"></circle></svg> Discovering links...';
+      document.getElementById('scrape-discovering').style.display = 'block';
+
+      const resetBtn = function() {
+          btn.disabled = false;
+          btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> Discover Links';
+          document.getElementById('scrape-discovering').style.display = 'none';
+      };
 
       try {
-          const discRes = await fetch('/admin/api/scrape/discover', {
+          // Start async discovery
+          const startRes = await fetch('/admin/api/scrape/discover/async', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({
@@ -957,92 +1037,154 @@
                   find_max_links: findMaxLinks
               })
           });
-          const disc = await discRes.json();
+          const startData = await startRes.json();
 
-          btn.disabled = false;
-          btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> Discover Links';
+          if (startData.error) { resetBtn(); showModal(startData.error, 'error'); return; }
 
-          if (disc.error) { showModal(disc.error, 'error'); return; }
+          const discoverId = startData.discover_id;
+          currentScrapeLimit = startData.plan_limit || 5;
 
-          // Store plan limit for checkbox enforcement
-          currentPlanLimit = disc.plan_limit || 5;
+          // Poll for progress every 500ms
+          const poll = setInterval(async () => {
+              try {
+                  const statusRes = await fetch('/admin/api/scrape/discover/status/' + discoverId);
+                  const disc = await statusRes.json();
 
-          // --- Show discovery preview ---
-          var panel = document.getElementById('scrape-discovery');
-          panel.style.display = 'block';
+                  if (disc.error) {
+                      clearInterval(poll);
+                      resetBtn();
+                      showModal(disc.error, 'error');
+                      return;
+                  }
 
-          document.getElementById('discovery-method').textContent =
-            disc.method === 'deep_crawl' ? '🕷 Deep Crawl' :
-            disc.method === 'sitemap' ? '📄 Sitemap' :
-            disc.method === 'sitemap_fallback' ? '📄 Sitemap (fallback)' : '📃 Single Page';
+                  // Update live counter in the loading box
+                  var liveCount = document.getElementById('discover-live-count');
+                  if (liveCount) liveCount.textContent = disc.total_found;
 
-          var statsHtml = '<span>Found: <strong>' + disc.total_found + '</strong> links</span>';
-          if (disc.estimated_total > disc.total_found) statsHtml += '<span>Est. total: <strong>~' + disc.estimated_total + '</strong></span>';
-          statsHtml += '<span>Will scrape: <strong>' + disc.scrape_count + '</strong></span>';
-          statsHtml += '<span>Est. time: ~' + Math.max(1, Math.round(disc.estimated_seconds / 60)) + ' min</span>';
-          if (disc.capped) statsHtml += '<span style="color:#E8722A;">⚠ Capped by ' + disc.plan + ' plan (' + disc.plan_limit + ' max). <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a></span>';
-          document.getElementById('discovery-stats').innerHTML = statsHtml;
+                  // If done, show the results panel
+                  if (disc.status === 'done') {
+                      clearInterval(poll);
+                      resetBtn();
 
-          var selectAllChecked = disc.scrape_count >= disc.total_found ? 'checked' : '';
-          var urlsHtml = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(0,0,0,0.06);"><label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:#374151;"><input type="checkbox" id="select-all-urls" ' + selectAllChecked + ' onchange="toggleAllUrls(this)" style="accent-color:#E8722A; width:14px; height:14px;"> Select All</label><span id="selected-count" style="font-size:11px; color:#6b7280;"></span></div>';
-          disc.urls.forEach(function(u, idx) {
-            var isChecked = idx < disc.scrape_count ? 'checked' : '';
-            urlsHtml += '<div style="padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); display:flex; align-items:center; gap:8px;"><input type="checkbox" class="url-check" data-url="' + u + '" ' + isChecked + ' onchange="updateSelectedCount()" style="accent-color:#E8722A; width:14px; height:14px; cursor:pointer; flex-shrink:0;"><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">' + (idx+1) + '. ' + u + '</span></div>';
-          });
-          document.getElementById('discovery-urls').innerHTML = urlsHtml || '<p style="color:#999;">No links found.</p>';
-          updateSelectedCount();
-          document.getElementById('confirm-scrape-count').textContent = document.querySelectorAll('.url-check:checked').length;
+                      // --- Show discovery panel ---
+                      var panel = document.getElementById('scrape-discovery');
+                      panel.style.display = 'block';
 
-          // --- STEP 2: Confirm button starts the actual scrape ---
-          document.getElementById('confirm-scrape-btn').onclick = async function() {
-              // Get selected URLs from checkboxes
-              var selectedUrls = [];
-              document.querySelectorAll('.url-check:checked').forEach(function(cb) {
-                  selectedUrls.push(cb.getAttribute('data-url'));
-              });
-              if (selectedUrls.length === 0) { showModal('Please select at least one URL to scrape.', 'error'); return; }
+                      document.getElementById('discovery-method').textContent =
+                        disc.method === 'deep_crawl'       ? '🕷 Deep Crawl' :
+                        disc.method === 'sitemap'           ? '📄 Sitemap' :
+                        disc.method === 'sitemap_fallback'  ? '📄 Sitemap (fallback)' : '📃 Single Page';
 
-              panel.style.display = 'none';
-              const logBox = document.getElementById('scrape-log-container');
-              const logText = document.getElementById('scrape-terminal-text');
-              logBox.style.display = 'block';
-              logText.innerText = "> Starting scrape of " + selectedUrls.length + " selected pages...";
-
-              const res = await fetch("{{ url_for('admin_bp.start_scrape') }}", {
-                  method: 'POST',
-                  headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ url: url, use_spider: isDeep, max_urls: selectedUrls.length, bot_id: currentBotId, find_max_links: findMaxLinks, selected_urls: selectedUrls })
-              });
-              const data = await res.json();
-              if (data.error) { logText.innerText = '> Error: ' + data.error; return; }
-
-              // Show notice
-              const notice = document.getElementById('scrape-notice');
-              if (notice) {
-                  const estMin = Math.max(1, Math.round((data.estimated_seconds || 0) / 60));
-                  notice.style.display = 'block';
-                  notice.style.background = 'rgba(16,185,129,0.08)';
-                  notice.style.border = '1px solid rgba(16,185,129,0.25)';
-                  notice.style.color = '#047857';
-                  notice.innerHTML = '🕐 Scraping ' + data.pages + ' pages (~' + estMin + ' min)';
-              }
-
-              if (data.job_id) {
-                  const poll = setInterval(async () => {
-                      const sRes = await fetch('/admin/api/scrape/status/' + data.job_id);
-                      const sData = await sRes.json();
-                      if (sData.logs) logText.innerText = sData.logs;
-                      if (sData.status === 'completed' || sData.status === 'failed') {
-                          clearInterval(poll);
-                          if (sData.status === 'completed') window.location.reload();
+                      var statsHtml = '';
+                      statsHtml += makeStat('Links Found',          disc.total_found);
+                      if (disc.estimated_total > disc.total_found) {
+                        statsHtml += makeStat('Est. Site Total', '~' + disc.estimated_total, '#6b7280');
                       }
-                  }, 2000);
+                      statsHtml += makeStat('Scrape Limit',   currentScrapeLimit, '#E8722A');
+                      document.getElementById('discovery-stats').innerHTML = statsHtml;
+
+                      var capWarn = document.getElementById('discovery-cap-warning');
+                      var capText = document.getElementById('discovery-cap-text');
+                      if (disc.total_found > currentScrapeLimit) {
+                        capWarn.style.display = 'block';
+                        capText.textContent = 'Your ' + startData.plan + ' plan can scrape up to ' + currentScrapeLimit + ' pages per job. Select which ' + currentScrapeLimit + ' to include below, or';
+                      } else {
+                        capWarn.style.display = 'none';
+                      }
+
+                      var selectAllChecked = disc.scrape_count >= disc.total_found ? 'checked' : '';
+                      var urlsHtml = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(0,0,0,0.06);">'
+                        + '<label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:600; color:#374151;">'
+                        + '<input type="checkbox" id="select-all-urls" ' + selectAllChecked + ' onchange="toggleAllUrls(this)" style="accent-color:#E8722A; width:14px; height:14px;"> Select All'
+                        + '</label>'
+                        + '<span id="selected-count" style="font-size:11px; color:#6b7280;"></span>'
+                        + '</div>';
+
+                      disc.urls.forEach(function(u, idx) {
+                        var isChecked = idx < disc.scrape_count ? 'checked' : '';
+                        urlsHtml += '<div style="padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); display:flex; align-items:center; gap:8px;">'
+                          + '<input type="checkbox" class="url-check" data-url="' + u + '" ' + isChecked
+                          + ' onchange="updateSelectedCount()" style="accent-color:#E8722A; width:14px; height:14px; cursor:pointer; flex-shrink:0;">'
+                          + '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" title="' + u + '">' + (idx + 1) + '. ' + u + '</span>'
+                          + '</div>';
+                      });
+                      document.getElementById('discovery-urls').innerHTML = urlsHtml || '<p style="color:#999;">No links found.</p>';
+                      updateSelectedCount();
+
+                      // --- STEP 2: Confirm button starts the actual scrape ---
+                      document.getElementById('confirm-scrape-btn').onclick = async function() {
+                          var selectedUrls = [];
+                          document.querySelectorAll('.url-check:checked').forEach(function(cb) {
+                              selectedUrls.push(cb.getAttribute('data-url'));
+                          });
+                          if (selectedUrls.length === 0) { showModal('Please select at least one URL to scrape.', 'error'); return; }
+                          if (selectedUrls.length > currentScrapeLimit) {
+                              showModal('You selected ' + selectedUrls.length + ' pages but your plan allows scraping up to ' + currentScrapeLimit + '. Please deselect some. <a href="/pricing" style="color:#E8722A; font-weight:700;">Upgrade →</a>', 'warning');
+                              return;
+                          }
+
+                          panel.style.display = 'none';
+                          const logBox  = document.getElementById('scrape-log-container');
+                          const logText = document.getElementById('scrape-terminal-text');
+                          logBox.style.display = 'block';
+                          logText.innerText = '> Starting scrape of ' + selectedUrls.length + ' selected page(s)…';
+
+                          const res = await fetch("{{ url_for('admin_bp.start_scrape') }}", {
+                              method: 'POST',
+                              headers: {'Content-Type': 'application/json'},
+                              body: JSON.stringify({
+                                  url: url,
+                                  use_spider: isDeep,
+                                  max_urls: selectedUrls.length,
+                                  bot_id: currentBotId,
+                                  find_max_links: findMaxLinks,
+                                  selected_urls: selectedUrls
+                              })
+                          });
+                          const data = await res.json();
+                          if (data.error) { logText.innerText = '> Error: ' + data.error; return; }
+
+                          const notice = document.getElementById('scrape-notice');
+                          if (notice) {
+                              const estMin = Math.max(1, Math.round((data.estimated_seconds || 0) / 60));
+                              notice.style.display = 'block';
+                              notice.style.background = 'rgba(16,185,129,0.08)';
+                              notice.style.border = '1px solid rgba(16,185,129,0.25)';
+                              notice.style.color = '#047857';
+                              notice.innerHTML = '🕐 Scraping ' + data.pages + ' page(s) (~' + estMin + ' min)';
+                          }
+
+                          if (data.job_id) {
+                              const pollScrape = setInterval(async () => {
+                                  const sRes  = await fetch('/admin/api/scrape/status/' + data.job_id);
+                                  const sData = await sRes.json();
+                                  if (sData.logs) logText.innerText = sData.logs;
+                                  logText.scrollTop = logText.scrollHeight;
+                                  if (sData.status === 'completed' || sData.status === 'failed') {
+                                      clearInterval(pollScrape);
+                                      if (sData.status === 'completed') window.location.reload();
+                                  }
+                              }, 2000);
+                          }
+                      };
+                  }
+
+                  // If error
+                  if (disc.status === 'error') {
+                      clearInterval(poll);
+                      resetBtn();
+                      showModal('Discovery failed: ' + (disc.error || 'Unknown error'), 'error');
+                  }
+
+              } catch (pollErr) {
+                  clearInterval(poll);
+                  resetBtn();
+                  showModal('Polling error: ' + pollErr.message, 'error');
               }
-          };
+          }, 500);  // Poll every 500ms
 
       } catch (err) {
-          btn.disabled = false;
-          btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> Discover Links';
+          resetBtn();
           showModal('Network error: ' + err.message, 'error');
       }
   });

@@ -12,9 +12,10 @@ PLAN_LIMITS = {
         'bots': 1,
         'messages': 200,
         'documents_per_bot': 3,
-        'scrape_pages': 5,
-        'scrape_jobs': 5,          # Total scrape jobs allowed per month
-        'text_snippets': 999999,   # Unlimited text uploads
+        'scrape_pages': 5,          # Actual pages scraped (content fetched) per job
+        'discover_pages': 50,       # Max links surfaced during discovery preview
+        'scrape_jobs': 5,           # Total scrape jobs allowed per month
+        'text_snippets': 999999,    # Unlimited text uploads
         'file_size_mb': 5,
         'team_members': 1,
     },
@@ -22,7 +23,8 @@ PLAN_LIMITS = {
         'bots': 2,
         'messages': 2000,
         'documents_per_bot': 10,
-        'scrape_pages': 20,
+        'scrape_pages': 50,         # Actual pages scraped per job
+        'discover_pages': 200,      # Max links surfaced during discovery preview
         'scrape_jobs': 50,
         'text_snippets': 999999,
         'file_size_mb': 10,
@@ -32,18 +34,20 @@ PLAN_LIMITS = {
         'bots': 5,
         'messages': 10000,
         'documents_per_bot': 50,
-        'scrape_pages': 100,
+        'scrape_pages': 300,        # Actual pages scraped per job
+        'discover_pages': 500,      # Max links surfaced during discovery preview
         'scrape_jobs': 300,
         'text_snippets': 999999,
         'file_size_mb': 10,
         'team_members': 10,
     },
     'pro': {
-        'bots': 999,         # Effectively unlimited
+        'bots': 999,                # Effectively unlimited
         'messages': 50000,
         'documents_per_bot': 200,
-        'scrape_pages': 500,
-        'scrape_jobs': 999999,     # Unlimited
+        'scrape_pages': 999999,     # Unlimited scraping
+        'discover_pages': 999999,   # Discover all available internal links
+        'scrape_jobs': 999999,      # Unlimited
         'text_snippets': 999999,
         'file_size_mb': 10,
         'team_members': 50,
@@ -267,7 +271,7 @@ def check_document_limit(org_id, bot_id):
 def check_scrape_limit(org_id):
     """
     Check the max pages allowed per scrape job for this org's plan.
-    Returns the max_pages cap for the plan.
+    Returns the max_pages cap for the plan (actual content fetched).
     """
     org = Organization.query.get(org_id)
     if not org:
@@ -275,6 +279,20 @@ def check_scrape_limit(org_id):
 
     limits = PLAN_LIMITS.get(org.plan or 'free', PLAN_LIMITS['free'])
     return limits['scrape_pages']
+
+
+def check_discover_limit(org_id):
+    """
+    Check the max links that can be surfaced during discovery for this org's plan.
+    Discovery and scraping are separate limits — discovery is always higher to let
+    users browse and select which pages to actually scrape.
+    """
+    org = Organization.query.get(org_id)
+    if not org:
+        return PLAN_LIMITS['free']['discover_pages']
+
+    limits = PLAN_LIMITS.get(org.plan or 'free', PLAN_LIMITS['free'])
+    return limits.get('discover_pages', limits['scrape_pages'])
 
 
 def check_team_member_limit(org_id):
@@ -339,6 +357,7 @@ def get_usage_summary(org_id):
         'members_limit': members_limit,
         'documents_per_bot_limit': limits['documents_per_bot'],
         'scrape_pages_limit': limits['scrape_pages'],
+        'discover_pages_limit': limits.get('discover_pages', limits['scrape_pages']),
         'scrape_jobs_limit': limits.get('scrape_jobs', 2),
         'text_snippets_limit': limits.get('text_snippets', 999999),
         'file_size_mb': limits['file_size_mb'],
