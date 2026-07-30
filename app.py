@@ -63,6 +63,7 @@ ALLOWED_ORIGINS = [
 CORS(app, resources={
     r"/api/chat": {"origins": "*"},          # Embed widget on any domain
     r"/api/lead": {"origins": "*"},          # Lead capture from any domain
+    r"/api/rate_message": {"origins": "*"},  # Bot response rating from embed
     r"/api/platform-feedback": {"origins": "*"},  # Public feedback
     r"/api/bot_avatar/*": {"origins": "*"},  # Avatar fetch from embed
     r"/api/waitlist": {"origins": "*"},      # Marketing site waitlist
@@ -127,6 +128,7 @@ def _run_auto_migrations():
             created_at TIMESTAMP DEFAULT NOW())""",
         'CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)',
         'ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45)',
+        'ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS rating SMALLINT',
     ]
     for s in sqls:
         try:

@@ -216,4 +216,5 @@ class ChatMessage(db.Model):
     content = db.Column(db.Text, nullable=False)
     tokens_used = db.Column(db.Integer, default=0)  # Tokens for this specific response
     ip_address = db.Column(db.String(45), nullable=True)  # Visitor IP (IPv4/IPv6), captured on user messages
+    rating = db.Column(db.SmallInteger, nullable=True)  # 1 = thumbs up, -1 = thumbs down, NULL = not rated
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

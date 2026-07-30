@@ -505,3 +505,30 @@ def capture_lead():
         db.session.rollback()
         logging.error(f"Lead Capture Database Error: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
+
+
+
+@api_bp.route('/api/rate_message', methods=['POST'])
+def rate_message():
+    """Rate a bot response (thumbs up/down). Called from the chat widget."""
+    data = request.json or {}
+    session_id = data.get('session_id')
+    message_index = data.get('message_index')  # which bot message (0-indexed) in the session
+    rating = data.get('rating')  # 1 or -1
+
+    if not session_id or message_index is None or rating not in (1, -1):
+        return jsonify({"error": "Invalid request."}), 400
+
+    # Find the Nth bot message in this session
+    bot_messages = ChatMessage.query.filter_by(
+        session_id=session_id, role='bot'
+    ).order_by(ChatMessage.created_at.asc()).all()
+
+    if message_index >= len(bot_messages) or message_index < 0:
+        return jsonify({"error": "Message not found."}), 404
+
+    msg = bot_messages[message_index]
+    msg.rating = rating
+    db.session.commit()
+
+    return jsonify({"success": True, "message_id": msg.id, "rating": rating})
