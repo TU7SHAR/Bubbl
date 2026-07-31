@@ -311,7 +311,8 @@ def stop_impersonate():
 
 @super_admin_bp.route('/users/<int:user_id>')
 @super_admin_required
-def user_detail(user_id):    """Detailed view of a single user."""
+def user_detail(user_id):
+    """Detailed view of a single user."""
     user = User.query.get(user_id)
     if not user:
         return redirect(url_for('super_admin_bp.users_page'))
