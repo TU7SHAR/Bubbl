@@ -1,20 +1,29 @@
 {% extends "super_admin/base.html" %}
-{% block title %}Failed Scrapes{% endblock %}
+{% block page_title %}Scrape Jobs{% endblock %}
 
 {% block admin_content %}
-<h1 class="page-title">Failed Scrape Jobs</h1>
+
+<!-- Status filter tabs -->
+<div style="display:flex; gap:8px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+  <a href="/super_admin/scrapes?status=failed"
+    class="sa-btn {% if status_filter == 'failed' %}sa-btn-primary{% else %}sa-btn-ghost{% endif %}"
+    style="font-size:12px;">Failed</a>
+  <a href="/super_admin/scrapes?status=pending"
+    class="sa-btn {% if status_filter == 'pending' %}sa-btn-primary{% else %}sa-btn-ghost{% endif %}"
+    style="font-size:12px;">Pending</a>
+  <a href="/super_admin/scrapes?status=all"
+    class="sa-btn {% if status_filter == 'all' %}sa-btn-primary{% else %}sa-btn-ghost{% endif %}"
+    style="font-size:12px;">All Jobs</a>
+  <span style="font-size:12px; color:var(--text-muted); margin-left:4px;">{{ scrapes | length }} job{{ 's' if scrapes | length != 1 else '' }}</span>
+</div>
 
 <div class="sa-table-wrap">
   <div class="sa-table-header">
-    <h3>{{ scrapes | length }} failed jobs</h3>
+    <h3>{{ status_filter | capitalize }} Scrape Jobs ({{ scrapes | length }})</h3>
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <input type="text" class="sa-search-input" placeholder="Search scrapes..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
-      <select class="sa-filter-select" data-col="2" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
-        <option value="">All Errors</option>
-        <option value="timeout">Timeout</option>
-        <option value="blocked">Blocked</option>
-        <option value="failed">Failed</option>
-      </select>
+      <input type="text" class="sa-search-input" placeholder="Search URL or error..."
+        style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border);
+               background:var(--card-bg); color:var(--text); width:220px; outline:none;">
     </div>
   </div>
   <div class="sa-table-scroll">
@@ -23,6 +32,7 @@
         <tr>
           <th data-sort="number">ID</th>
           <th data-sort="text">URL</th>
+          <th>Status</th>
           <th>Error</th>
           <th data-sort="date">Created</th>
           <th>Actions</th>
@@ -32,17 +42,32 @@
         {% for s in scrapes %}
         <tr id="scrape-row-{{ s.id }}">
           <td>{{ s.id }}</td>
-          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">{{ s.url }}</td>
-          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;color:var(--red);">{{ s.error_message or '—' }}</td>
-          <td>{{ s.created_at }}</td>
+          <td style="max-width:260px; overflow:hidden; text-overflow:ellipsis; font-size:12px; font-family:monospace;">{{ s.url }}</td>
           <td>
-            <button class="btn btn-outline" onclick="retryScrape({{ s.id }})">Retry</button>
-            <button class="btn btn-danger" onclick="deleteScrape({{ s.id }})">Delete</button>
+            <span class="badge {% if s.status == 'completed' %}badge-green{% elif s.status == 'failed' %}badge-red{% elif s.status == 'pending' %}badge-yellow{% else %}badge-gray{% endif %}">
+              {{ s.status }}
+            </span>
+          </td>
+          <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis; color:var(--red); font-size:12px;">
+            {{ s.error_message or '—' }}
+          </td>
+          <td>{{ s.created_at.strftime('%b %d, %Y %H:%M') if s.created_at else '—' }}</td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              {% if s.status == 'failed' %}
+              <button class="sa-btn sa-btn-ghost" style="padding:4px 10px; font-size:11px;" onclick="retryScrape({{ s.id }})">Retry</button>
+              {% endif %}
+              <button class="sa-btn sa-btn-danger" style="padding:4px 10px; font-size:11px;" onclick="deleteScrape({{ s.id }})">Delete</button>
+            </div>
           </td>
         </tr>
         {% endfor %}
         {% if not scrapes %}
-        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No failed scrape jobs.</td></tr>
+        <tr>
+          <td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">
+            ✓ No {{ status_filter }} scrape jobs.
+          </td>
+        </tr>
         {% endif %}
       </tbody>
     </table>
@@ -54,22 +79,35 @@
 <script>
 function retryScrape(jobId) {
   fetch('/super_admin/scrapes/retry', {
-    method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({job_id: jobId})
-  }).then(r => r.json()).then(d => {
-    if (d.success) { document.getElementById('scrape-row-' + jobId).remove(); }
-    else { alert(d.error || 'Failed'); }
-  });
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      var row = document.getElementById('scrape-row-' + jobId);
+      if (row) row.remove();
+    } else { alert(d.error || 'Failed to retry.'); }
+  })
+  .catch(err => alert('Network error: ' + err.message));
 }
+
 function deleteScrape(jobId) {
-  if (!confirm('Delete this scrape job?')) return;
+  if (!confirm('Delete this scrape job permanently?')) return;
   fetch('/super_admin/scrapes/delete', {
-    method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'},
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({job_id: jobId})
-  }).then(r => r.json()).then(d => {
-    if (d.success) { document.getElementById('scrape-row-' + jobId).remove(); }
-    else { alert(d.error || 'Failed'); }
-  });
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      var row = document.getElementById('scrape-row-' + jobId);
+      if (row) row.remove();
+    } else { alert(d.error || 'Failed to delete.'); }
+  })
+  .catch(err => alert('Network error: ' + err.message));
 }
 </script>
 {% endblock %}

@@ -32,26 +32,32 @@
   <div class="sa-card">
     <div class="sa-card-label">Plan</div>
     <div class="sa-card-value" style="font-size:18px;">{{ (org.plan if org else 'free') | capitalize }}</div>
-  </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Role</div>
-    <div class="sa-card-value" style="font-size:18px;">{{ user.role }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ (org.subscription_status if org else 'free') | capitalize }}</div>
   </div>
   <div class="sa-card">
     <div class="sa-card-label">Bots</div>
     <div class="sa-card-value">{{ bots | length }}</div>
   </div>
   <div class="sa-card">
-    <div class="sa-card-label">Leads</div>
+    <div class="sa-card-label">Leads Captured</div>
     <div class="sa-card-value">{{ leads | length }}</div>
   </div>
   <div class="sa-card">
-    <div class="sa-card-label">Payments</div>
-    <div class="sa-card-value">{{ payments | length }}</div>
+    <div class="sa-card-label">Total Paid</div>
+    {% set total_paid = payments | sum(attribute='amount') %}
+    <div class="sa-card-value" style="color:var(--green);">₹{{ total_paid | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ payments | length }} payment{{ 's' if payments | length != 1 else '' }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Refunded</div>
+    {% set total_refunded = payments | selectattr('refund_amount') | sum(attribute='refund_amount') %}
+    <div class="sa-card-value" style="color:{% if total_refunded > 0 %}var(--red){% else %}var(--text-muted){% endif %};">₹{{ total_refunded | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">all-time</div>
   </div>
   <div class="sa-card">
     <div class="sa-card-label">Joined</div>
     <div class="sa-card-value" style="font-size:14px;">{{ user.created_at.strftime('%b %d, %Y') if user.created_at else 'N/A' }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ user.role }}</div>
   </div>
 </div>
 
@@ -125,6 +131,7 @@
           <th>Plan</th>
           <th data-sort="number">Amount</th>
           <th data-sort="number">Tax</th>
+          <th data-sort="number">Refund</th>
           <th>Transaction ID</th>
           <th>Status</th>
         </tr>
@@ -136,6 +143,13 @@
           <td>{{ (p.plan or 'N/A') | capitalize }}</td>
           <td>₹{{ p.amount or 0 }}</td>
           <td>₹{{ (p.tax_amount or 0) | round(2) }}</td>
+          <td>
+            {% if p.refund_amount and p.refund_amount > 0 %}
+              <span style="color:var(--red); font-weight:600;">₹{{ p.refund_amount | round(2) }}</span>
+            {% else %}
+              <span style="color:var(--text-muted);">—</span>
+            {% endif %}
+          </td>
           <td><code style="font-size:11px; color:var(--text-dim);">{{ p.paddle_transaction_id or '—' }}</code></td>
           <td>
             {% if p.status in ('completed', 'success', 'captured') %}
@@ -148,7 +162,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">No payments yet</td></tr>
+        <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">No payments yet</td></tr>
         {% endfor %}
       </tbody>
     </table>

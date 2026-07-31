@@ -57,6 +57,7 @@ def billing_page():
             'transaction_id': pm.paddle_transaction_id or '—',
             'status': pm.status or 'completed',
             'tax': getattr(pm, 'tax_amount', 0) or 0,
+            'refund_amount': pm.refund_amount or 0,
         })
 
     return render_template('super_admin/billing.html',

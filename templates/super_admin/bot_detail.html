@@ -1,57 +1,92 @@
 {% extends "super_admin/base.html" %}
-{% block title %}Bot: {{ bot.bot_name }}{% endblock %}
+{% block page_title %}Bot: {{ bot.bot_name }}{% endblock %}
 
 {% block admin_content %}
-<h1 class="page-title">Bot: {{ bot.bot_name }}</h1>
 
-<div class="grid">
-  <div class="card">
-    <div class="card-label">Owner</div>
-    <div class="card-value" style="font-size:14px;">{{ owner.name if owner else 'System' }}</div>
+<!-- Header -->
+<div style="display:flex; align-items:center; gap:14px; margin-bottom:20px; flex-wrap:wrap;">
+  <a href="/super_admin/bots" class="sa-btn sa-btn-ghost" style="padding:6px 14px; font-size:12px;">← Back to Bots</a>
+  <div style="flex:1;">
+    <h2 style="margin:0; font-size:18px; font-weight:700; color:var(--text);">{{ bot.bot_name }}</h2>
+    <span style="font-size:12px; color:var(--text-muted);">ID: {{ bot.id }} · Type: {{ bot.bot_type or 'general' }}</span>
   </div>
-  <div class="card">
-    <div class="card-label">Type</div>
-    <div class="card-value" style="font-size:14px;">{{ bot.bot_type or 'general' }}</div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <button onclick="toggleBot({{ bot.id }}, '{{ bot.bot_name | replace("'", "\\'") }}')"
+      class="sa-btn {{ 'sa-btn-danger' if bot.is_active else 'sa-btn-success' }}"
+      style="padding:6px 14px; font-size:12px;">
+      {{ 'Disable Bot' if bot.is_active else 'Enable Bot' }}
+    </button>
+    <button onclick="deleteBot({{ bot.id }}, '{{ bot.bot_name | replace("'", "\\'") }}')"
+      class="sa-btn sa-btn-danger" style="padding:6px 14px; font-size:12px;">
+      Delete Bot
+    </button>
   </div>
-  <div class="card">
-    <div class="card-label">Documents</div>
-    <div class="card-value">{{ docs | length }}</div>
+</div>
+
+<!-- Stat cards -->
+<div class="sa-grid" style="margin-bottom:20px;">
+  <div class="sa-card">
+    <div class="sa-card-label">Owner</div>
+    <div class="sa-card-value" style="font-size:16px;">{{ owner.name if owner else 'System' }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ owner.email if owner else '—' }}</div>
   </div>
-  <div class="card">
-    <div class="card-label">Scrape Jobs</div>
-    <div class="card-value">{{ scrapes | length }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Status</div>
+    <div class="sa-card-value" style="font-size:16px;">
+      <span class="badge {{ 'badge-green' if bot.is_active else 'badge-red' }}">
+        {{ 'Active' if bot.is_active else 'Disabled' }}
+      </span>
+    </div>
   </div>
-  <div class="card">
-    <div class="card-label">Leads</div>
-    <div class="card-value">{{ leads | length }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Documents</div>
+    <div class="sa-card-value">{{ docs | length }}</div>
   </div>
-  <div class="card">
-    <div class="card-label">Messages</div>
-    <div class="card-value">{{ messages_count }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Leads</div>
+    <div class="sa-card-value">{{ leads | length }}</div>
   </div>
-  <div class="card">
-    <div class="card-label">Interactions</div>
-    <div class="card-value">{{ bot.interaction_count or 0 }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Messages</div>
+    <div class="sa-card-value">{{ messages_count }}</div>
   </div>
-  <div class="card">
-    <div class="card-label">Tokens Used</div>
-    <div class="card-value">{{ bot.tokens_used or 0 }}</div>
+  <div class="sa-card">
+    <div class="sa-card-label">Interactions</div>
+    <div class="sa-card-value">{{ bot.interaction_count or 0 }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Tokens Used</div>
+    <div class="sa-card-value">{{ "{:,}".format(bot.tokens_used or 0) }}</div>
+  </div>
+  <div class="sa-card">
+    <div class="sa-card-label">Scrape Jobs</div>
+    <div class="sa-card-value">{{ scrapes | length }}</div>
   </div>
 </div>
 
 <!-- Documents Table -->
-<div class="table-wrap">
-  <div class="table-header"><h3>Documents ({{ docs | length }})</h3></div>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>ID</th><th>Filename</th><th>Created</th></tr></thead>
+<div class="sa-table-wrap" style="margin-bottom:20px;">
+  <div class="sa-table-header">
+    <h3>Documents ({{ docs | length }})</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th data-sort="number">ID</th>
+          <th>Filename</th>
+          <th data-sort="date">Created</th>
+        </tr>
+      </thead>
       <tbody>
         {% for d in docs %}
         <tr>
           <td>{{ d.id }}</td>
-          <td>{{ d.filename }}</td>
-          <td>{{ d.created_at or '—' }}</td>
+          <td style="font-family:monospace; font-size:12px;">{{ d.filename }}</td>
+          <td>{{ d.created_at.strftime('%b %d, %Y') if d.created_at else '—' }}</td>
         </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:20px;">No documents</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -59,39 +94,36 @@
 </div>
 
 <!-- Scrape Jobs Table -->
-<div class="table-wrap">
-  <div class="table-header"><h3>Scrape Jobs ({{ scrapes | length }})</h3></div>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>ID</th><th>URL</th><th>Status</th><th>Created</th></tr></thead>
+<div class="sa-table-wrap" style="margin-bottom:20px;">
+  <div class="sa-table-header">
+    <h3>Scrape Jobs ({{ scrapes | length }})</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th data-sort="number">ID</th>
+          <th>URL</th>
+          <th>Status</th>
+          <th>Pages</th>
+          <th data-sort="date">Created</th>
+        </tr>
+      </thead>
       <tbody>
         {% for s in scrapes %}
         <tr>
           <td>{{ s.id }}</td>
-          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">{{ s.url }}</td>
-          <td><span class="badge {{ 'badge-green' if s.status=='completed' else 'badge-red' if s.status=='failed' else 'badge-orange' }}">{{ s.status }}</span></td>
-          <td>{{ s.created_at }}</td>
+          <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; font-size:12px;">{{ s.url }}</td>
+          <td>
+            <span class="badge {% if s.status == 'completed' %}badge-green{% elif s.status == 'failed' %}badge-red{% else %}badge-yellow{% endif %}">
+              {{ s.status }}
+            </span>
+          </td>
+          <td>{{ s.limit }}</td>
+          <td>{{ s.created_at.strftime('%b %d, %Y') if s.created_at else '—' }}</td>
         </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Feedback Table -->
-<div class="table-wrap">
-  <div class="table-header"><h3>Feedback ({{ feedback | length }})</h3></div>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>ID</th><th>Rating</th><th>Comment</th><th>Date</th></tr></thead>
-      <tbody>
-        {% for f in feedback %}
-        <tr>
-          <td>{{ f.id }}</td>
-          <td>{{ f.rating }}/5</td>
-          <td>{{ f.comment or '—' }}</td>
-          <td>{{ f.created_at }}</td>
-        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">No scrape jobs</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -99,22 +131,101 @@
 </div>
 
 <!-- Leads Table -->
-<div class="table-wrap">
-  <div class="table-header"><h3>Leads ({{ leads | length }})</h3></div>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Captured</th></tr></thead>
+<div class="sa-table-wrap" style="margin-bottom:20px;">
+  <div class="sa-table-header">
+    <h3>Leads ({{ leads | length }})</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th data-sort="date">Captured</th>
+        </tr>
+      </thead>
       <tbody>
         {% for l in leads[:50] %}
         <tr>
           <td>{{ l.name }}</td>
           <td>{{ l.email }}</td>
           <td>{{ l.phone or '—' }}</td>
-          <td>{{ l.captured_at }}</td>
+          <td>{{ l.captured_at.strftime('%b %d, %Y %H:%M') if l.captured_at else '—' }}</td>
         </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">No leads</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
+<!-- Feedback Table -->
+<div class="sa-table-wrap">
+  <div class="sa-table-header">
+    <h3>Feedback ({{ feedback | length }})</h3>
+  </div>
+  <div class="sa-table-scroll">
+    <table class="sa-table">
+      <thead>
+        <tr>
+          <th data-sort="number">Rating</th>
+          <th>Comment</th>
+          <th data-sort="date">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in feedback %}
+        <tr>
+          <td>
+            <span style="color:#f59e0b;">
+              {% for i in range(f.rating or 0) %}★{% endfor %}{% for i in range(5 - (f.rating or 0)) %}☆{% endfor %}
+            </span>
+          </td>
+          <td>{{ f.comment or '—' }}</td>
+          <td>{{ f.created_at.strftime('%b %d, %Y') if f.created_at else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:20px;">No feedback</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleBot(botId, botName) {
+  if (!confirm('Toggle status for bot: ' + botName + '?')) return;
+  fetch('/super_admin/bots/toggle', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bot_id: botId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { alert(data.error); return; }
+    location.reload();
+  })
+  .catch(err => alert('Network error: ' + err.message));
+}
+
+function deleteBot(botId, botName) {
+  if (!confirm('Permanently delete bot "' + botName + '"? This removes all documents, scrapes, leads, and messages. Cannot be undone.')) return;
+  fetch('/super_admin/bots/delete', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bot_id: botId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) { window.location.href = '/super_admin/bots'; }
+    else { alert(data.error || 'Delete failed.'); }
+  })
+  .catch(err => alert('Network error: ' + err.message));
+}
+</script>
 {% endblock %}

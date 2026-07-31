@@ -1,18 +1,74 @@
 {% extends "super_admin/base.html" %}
-{% block title %}System Logs{% endblock %}
+{% block page_title %}System Logs{% endblock %}
 
 {% block admin_content %}
-<h1 class="page-title">System Logs</h1>
+<h2 style="font-size:18px; font-weight:700; color:var(--text); margin-bottom:16px;">System Logs</h2>
 
-<div class="card" style="padding:24px;">
-  <p style="margin-bottom:12px;color:var(--text-secondary);">
-    Logs are available via the server's journal. SSH into the server and run:
+<div class="sa-table-wrap" style="padding:24px;">
+  <p style="margin-bottom:16px; color:var(--text-muted); font-size:13px;">
+    Logs stream from the server's systemd journal. SSH in and run one of the commands below.
   </p>
-  <code style="display:block;background:var(--bg-alt);padding:12px;border-radius:6px;font-size:13px;border:1px solid var(--border);">
-    journalctl -u bubbl -n 100
-  </code>
-  <p style="margin-top:12px;color:var(--text-muted);font-size:12px;">
-    For real-time monitoring: <code>journalctl -u bubbl -f</code>
-  </p>
+
+  <div style="display:flex; flex-direction:column; gap:12px;">
+    <div>
+      <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Last 100 lines</div>
+      <code style="display:block; background:var(--bg); border:1px solid var(--card-border); padding:12px 16px; border-radius:8px; font-size:12px; color:var(--green); letter-spacing:0.02em;">
+        journalctl -u bubbl -n 100
+      </code>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Live tail</div>
+      <code style="display:block; background:var(--bg); border:1px solid var(--card-border); padding:12px 16px; border-radius:8px; font-size:12px; color:var(--green); letter-spacing:0.02em;">
+        journalctl -u bubbl -f
+      </code>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Celery worker logs</div>
+      <code style="display:block; background:var(--bg); border:1px solid var(--card-border); padding:12px 16px; border-radius:8px; font-size:12px; color:var(--green); letter-spacing:0.02em;">
+        journalctl -u celery-bubbl -n 100 -f
+      </code>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Filter errors only</div>
+      <code style="display:block; background:var(--bg); border:1px solid var(--card-border); padding:12px 16px; border-radius:8px; font-size:12px; color:var(--red); letter-spacing:0.02em;">
+        journalctl -u bubbl -p err -n 50
+      </code>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Run DB migration (adds missing columns)</div>
+      <button class="sa-btn sa-btn-primary" onclick="runMigration()" style="margin-top:4px;">Run migrate_db</button>
+      <div id="migrate-status" style="margin-top:10px; font-size:12px;"></div>
+      <pre id="migrate-results" style="display:none; margin-top:8px; background:var(--bg); border:1px solid var(--card-border); padding:12px; border-radius:8px; font-size:11px; max-height:300px; overflow-y:auto; white-space:pre-wrap; color:var(--text-muted);"></pre>
+    </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function runMigration() {
+  var statusEl = document.getElementById('migrate-status');
+  var resultsEl = document.getElementById('migrate-results');
+  statusEl.innerHTML = '<span style="color:var(--yellow);">Running migrations...</span>';
+  resultsEl.style.display = 'none';
+
+  fetch('/super_admin/migrate_db', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      statusEl.innerHTML = '<span style="color:var(--green);">✓ Migration complete (' + (data.results || []).length + ' statements)</span>';
+      resultsEl.style.display = 'block';
+      resultsEl.textContent = (data.results || []).join('\n');
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--red);">Error: ' + (data.error || 'Unknown') + '</span>';
+    }
+  })
+  .catch(err => {
+    statusEl.innerHTML = '<span style="color:var(--red);">Network error: ' + err.message + '</span>';
+  });
+}
+</script>
 {% endblock %}

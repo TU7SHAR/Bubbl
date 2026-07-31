@@ -3,12 +3,12 @@
 {% block page_title %}Revenue & Billing{% endblock %}
 
 {% block admin_content %}
-<!-- Stats Grid -->
-<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:20px;">
+<!-- Stats Grid — Row 1: Volume -->
+<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:12px;">
   <div class="sa-card" style="min-height:110px;">
     <div class="sa-card-label">Projected MRR</div>
     <div class="sa-card-value">₹{{ mrr | int }}</div>
-    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">if no cancellations</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">from active subscriptions</div>
   </div>
   <div class="sa-card" style="min-height:110px;">
     <div class="sa-card-label">Projected ARR</div>
@@ -21,10 +21,13 @@
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">paid plans</div>
   </div>
   <div class="sa-card" style="min-height:110px;">
-    <div class="sa-card-label">Total Revenue Collected</div>
+    <div class="sa-card-label">Total Collected (Gross)</div>
     <div class="sa-card-value">₹{{ total_revenue | int }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_transactions }} transaction{{ 's' if total_transactions != 1 else '' }}</div>
   </div>
+</div>
+<!-- Stats Grid — Row 2: Deductions & Payout -->
+<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:20px;">
   <div class="sa-card" style="min-height:110px; border-left:3px solid var(--red);">
     <div class="sa-card-label">Refunds</div>
     <div class="sa-card-value" style="color:var(--red);">₹{{ total_refunds | int }}</div>
@@ -43,7 +46,7 @@
   <div class="sa-card" style="min-height:110px; border-left:3px solid var(--green);">
     <div class="sa-card-label">Est. Bank Payout</div>
     <div class="sa-card-value" style="color:var(--green);">₹{{ payout_estimate | int }}</div>
-    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">after tax + refunds + fees</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">gross − refunds − tax − fees</div>
   </div>
 </div>
 
@@ -100,6 +103,7 @@
           <th data-sort="text">Plan</th>
           <th data-sort="number">Amount</th>
           <th data-sort="number">Tax</th>
+          <th data-sort="number">Refund</th>
           <th>Transaction ID</th>
           <th data-sort="text">Status</th>
         </tr>
@@ -112,12 +116,21 @@
           <td>{{ p.plan }}</td>
           <td>₹{{ p.amount }}</td>
           <td>₹{{ p.tax }}</td>
+          <td>
+            {% if p.refund_amount and p.refund_amount > 0 %}
+              <span style="color:var(--red); font-weight:600;">₹{{ p.refund_amount }}</span>
+            {% else %}
+              <span style="color:var(--text-muted);">—</span>
+            {% endif %}
+          </td>
           <td><code style="font-size:11px; color:var(--text-dim);">{{ p.transaction_id }}</code></td>
           <td>
             {% if p.status == 'success' or p.status == 'captured' %}
               <span class="badge badge-green">{{ p.status }}</span>
             {% elif p.status == 'failed' %}
               <span class="badge badge-red">{{ p.status }}</span>
+            {% elif p.status in ('refunded', 'partially_refunded') %}
+              <span class="badge badge-yellow">{{ p.status }}</span>
             {% else %}
               <span class="badge badge-gray">{{ p.status }}</span>
             {% endif %}

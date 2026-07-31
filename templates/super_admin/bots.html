@@ -6,9 +6,14 @@
 <div class="sa-table-wrap">
   <div class="sa-table-header">
     <h3>All Bots</h3>
-    <div style="display:flex; align-items:center; gap:10px;">
-      <input type="text" class="sa-search-input" placeholder="Search bots..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
-      <select class="sa-filter-select" data-col="7" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <input type="text" class="sa-search-input" placeholder="Search bots..."
+        style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border);
+               background:var(--card-bg); color:var(--text); width:200px; outline:none;">
+      <!-- Status is col 7 (0-indexed) -->
+      <select class="sa-filter-select" data-col="7"
+        style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border);
+               background:var(--card-bg); color:var(--text); cursor:pointer;">
         <option value="">All Status</option>
         <option value="active">Active</option>
         <option value="disabled">Disabled</option>
@@ -24,9 +29,9 @@
           <th data-sort="text">Owner</th>
           <th data-sort="text">Type</th>
           <th data-sort="number">Docs</th>
-          <th data-sort="number">Scrapes</th>
           <th data-sort="number">Leads</th>
           <th data-sort="number">Interactions</th>
+          <th data-sort="number">Tokens</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
@@ -34,16 +39,25 @@
       <tbody>
         {% for b in bots %}
         <tr>
-          <td><strong style="color:var(--text);">{{ b.name }}</strong></td>
           <td>
-            {{ b.owner }}<br>
-            <span style="font-size:11px; color:var(--text-dim);">{{ b.owner_email }}</span>
+            <a href="/super_admin/bots/{{ b.id }}"
+              style="color:var(--accent); font-weight:700; text-decoration:none; display:flex; align-items:center; gap:4px;"
+              onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+              {{ b.name }}
+            </a>
+            {% if b.store_id %}
+            <div style="font-size:10px; color:var(--text-muted); font-family:monospace; margin-top:2px;">{{ b.store_id[:20] }}…</div>
+            {% endif %}
           </td>
-          <td>{{ b.type }}</td>
+          <td>
+            <span style="font-weight:600;">{{ b.owner }}</span><br>
+            <span style="font-size:11px; color:var(--text-muted);">{{ b.owner_email }}</span>
+          </td>
+          <td><span class="badge badge-gray">{{ b.type }}</span></td>
           <td>{{ b.docs }}</td>
-          <td>{{ b.scrapes }}</td>
           <td>{{ b.leads }}</td>
           <td>{{ b.interactions }}</td>
+          <td>{{ "{:,}".format(b.tokens) }}</td>
           <td>
             {% if b.is_active %}
               <span class="badge badge-green">Active</span>
@@ -52,9 +66,18 @@
             {% endif %}
           </td>
           <td>
-            <button class="sa-btn {% if b.is_active %}sa-btn-danger{% else %}sa-btn-success{% endif %}" style="padding:4px 10px; font-size:11px;" onclick="toggleBot('{{ b.id }}', '{{ b.name }}')">
-              {% if b.is_active %}Disable{% else %}Enable{% endif %}
-            </button>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="sa-btn {% if b.is_active %}sa-btn-danger{% else %}sa-btn-success{% endif %}"
+                style="padding:4px 10px; font-size:11px;"
+                onclick="toggleBot('{{ b.id }}', '{{ b.name | replace("'", "\\'") }}')">
+                {{ 'Disable' if b.is_active else 'Enable' }}
+              </button>
+              <button class="sa-btn sa-btn-danger"
+                style="padding:4px 10px; font-size:11px;"
+                onclick="deleteBot('{{ b.id }}', '{{ b.name | replace("'", "\\'") }}')">
+                Delete
+              </button>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -66,8 +89,8 @@
 
 {% block scripts %}
 <script>
-function toggleBot(botId, name) {
-  if (!confirm('Toggle status for bot: ' + name + '?')) return;
+function toggleBot(botId, botName) {
+  if (!confirm('Toggle status for bot: ' + botName + '?')) return;
   fetch('/super_admin/bots/toggle', {
     method: 'POST', credentials: 'include',
     headers: {'Content-Type': 'application/json'},
@@ -75,13 +98,29 @@ function toggleBot(botId, name) {
   })
   .then(r => r.json())
   .then(data => {
-    if (data.error) { openModal('Error', '<p style="color:#f87171;">' + data.error + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>'); return; }
-    var state = (data.status || (data.is_active ? 'enabled' : 'disabled'));
-    openModal('Bot Updated', '<p>Bot <strong>' + name + '</strong> is now ' + state + '.</p><br><button class="sa-btn sa-btn-primary" onclick="location.reload()">OK</button>');
+    if (data.error) {
+      openModal('Error', '<p style="color:var(--red);">' + data.error + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
+      return;
+    }
+    var state = data.is_active ? 'enabled' : 'disabled';
+    openModal('Bot Updated', '<p>Bot <strong>' + botName + '</strong> is now ' + state + '.</p><br><button class="sa-btn sa-btn-primary" onclick="location.reload()">OK</button>');
   })
-  .catch(err => {
-    openModal('Error', '<p style="color:#f87171;">' + err.message + '</p><br><button class="sa-btn sa-btn-ghost" onclick="closeModal()">Close</button>');
-  });
+  .catch(err => alert('Network error: ' + err.message));
+}
+
+function deleteBot(botId, botName) {
+  if (!confirm('Permanently delete bot "' + botName + '"? This removes all documents, leads, scrapes, and messages. Cannot be undone.')) return;
+  fetch('/super_admin/bots/delete', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bot_id: botId})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) { location.reload(); }
+    else { alert(data.error || 'Delete failed.'); }
+  })
+  .catch(err => alert('Network error: ' + err.message));
 }
 </script>
 {% endblock %}

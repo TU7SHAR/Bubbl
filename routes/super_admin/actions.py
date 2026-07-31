@@ -71,12 +71,21 @@ def migrate_db():
         "CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)",
         "CREATE INDEX IF NOT EXISTS idx_chat_message_bot ON chat_message(bot_id)",
         "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45)",
+        "ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS rating SMALLINT",
 
         # ═══ CLEANUP: Remove redundant columns ═══
         "ALTER TABLE organization DROP COLUMN IF EXISTS payment_method",
         "ALTER TABLE organization DROP COLUMN IF EXISTS card_brand",
         "ALTER TABLE organization DROP COLUMN IF EXISTS card_last4",
         "ALTER TABLE bot DROP COLUMN IF EXISTS theme_color",
+
+        # ═══ PAYMENT — extra columns ═══
+        "ALTER TABLE payment ADD COLUMN IF NOT EXISTS tax_amount FLOAT DEFAULT 0.0",
+        "ALTER TABLE payment ADD COLUMN IF NOT EXISTS refund_amount FLOAT DEFAULT 0.0",
+        "ALTER TABLE payment ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMP",
+        "ALTER TABLE payment ADD COLUMN IF NOT EXISTS payment_method VARCHAR(30)",
+        "ALTER TABLE payment ADD COLUMN IF NOT EXISTS card_brand VARCHAR(30)",
+        "ALTER TABLE payment ADD COLUMN IF NOT EXISTS card_last4 VARCHAR(4)",
     ]
 
 

@@ -8,7 +8,7 @@
     <h3>All Users</h3>
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <input type="text" class="sa-search-input" placeholder="Search users..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:220px; outline:none;">
-      <select class="sa-filter-select" data-col="2" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
+      <select class="sa-filter-select" data-col="1" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
         <option value="">All Plans</option>
         <option value="free">Free</option>
         <option value="starter">Starter</option>
@@ -23,9 +23,9 @@
       <thead>
         <tr>
           <th data-sort="text">Name / Email</th>
-          <th data-sort="text">Role</th>
           <th data-sort="text">Plan</th>
           <th>Status</th>
+          <th data-sort="number">Usage</th>
           <th data-sort="number">Bots</th>
           <th data-sort="number">Leads</th>
           <th>Actions</th>
@@ -39,9 +39,8 @@
               {{ u.name }}
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             </a>
-            <span style="font-size:11px;">{{ u.email }}</span>
+            <span style="font-size:11px; color:var(--text-muted);">{{ u.email }}</span>
           </td>
-          <td>{{ u.role }}</td>
           <td>
             {% if u.plan == 'pro' %}
               <span class="badge badge-yellow">Pro</span>
@@ -65,7 +64,7 @@
           </td>
           <td>
             {% set pct = ((u.messages_used / u.messages_limit) * 100) if u.messages_limit > 0 else 0 %}
-            <div style="min-width:100px;">
+            <div style="min-width:110px;">
               <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
                 <span>{{ u.messages_used }}</span>
                 <span style="color:var(--text-muted);">/ {{ u.messages_limit }}</span>
