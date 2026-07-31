@@ -4,21 +4,27 @@
 {% block admin_content %}
 
 <!-- Header bar -->
-<div style="display:flex; align-items:center; gap:14px; margin-bottom:20px;">
+<div style="display:flex; align-items:center; gap:14px; margin-bottom:20px; flex-wrap:wrap;">
   <a href="/super_admin/users" class="sa-btn sa-btn-ghost" style="padding:6px 14px; font-size:12px;">← Back to Users</a>
-  <div>
+  <div style="flex:1;">
     <h2 style="margin:0; font-size:18px; font-weight:700; color:var(--text);">{{ user.name }}</h2>
-    <span style="font-size:12px; color:var(--text-muted);">{{ user.email }}</span>
+    <span style="font-size:12px; color:var(--text-muted);">{{ user.email }} · ID: usr_{{ user.id }}</span>
   </div>
-  {% if user.is_suspended %}
-    <span class="badge badge-red" style="margin-left:auto;">Suspended</span>
-    <button class="sa-btn" style="padding:6px 14px; font-size:12px; background:#10b981; color:#fff; border:none;"
-      onclick="suspendToggle({{ user.id }}, '{{ user.name }}')">Unsuspend</button>
-  {% else %}
-    <span class="badge badge-green" style="margin-left:auto;">Active</span>
-    <button class="sa-btn sa-btn-danger" style="padding:6px 14px; font-size:12px;"
-      onclick="suspendToggle({{ user.id }}, '{{ user.name }}')">Suspend</button>
-  {% endif %}
+  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <button class="sa-btn sa-btn-primary" style="padding:6px 14px; font-size:12px;"
+      onclick="openCreateBotModal()">+ Create Bot</button>
+    <a href="/super_admin/users/{{ user.id }}/impersonate" class="sa-btn sa-btn-ghost" style="padding:6px 14px; font-size:12px;"
+      onclick="return confirm('Impersonate {{ user.name }}? You will be logged in as this user.')">Impersonate</a>
+    {% if user.is_suspended %}
+      <span class="badge badge-red">Suspended</span>
+      <button class="sa-btn" style="padding:6px 14px; font-size:12px; background:#10b981; color:#fff; border:none;"
+        onclick="suspendToggle({{ user.id }}, '{{ user.name }}')">Unsuspend</button>
+    {% else %}
+      <span class="badge badge-green">Active</span>
+      <button class="sa-btn sa-btn-danger" style="padding:6px 14px; font-size:12px;"
+        onclick="suspendToggle({{ user.id }}, '{{ user.name }}')">Suspend</button>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Stat cards -->
@@ -229,6 +235,47 @@ function deleteBot(botId, botName) {
     else { alert(data.error || 'Delete failed.'); }
   })
   .catch(err => alert('Network error: ' + err.message));
+}
+
+// Create Bot modal
+function openCreateBotModal() {
+  var html = '<div style="margin-bottom:16px;">'
+    + '<label style="font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px;">Bot Name</label>'
+    + '<input type="text" id="new-bot-name" class="sa-input" placeholder="e.g. Support Bot" style="width:100%;" autofocus>'
+    + '</div>'
+    + '<div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">This will create a new bot under <strong>{{ user.name }}</strong>\'s account and set up a Gemini vector store.</div>'
+    + '<div style="display:flex; gap:8px;">'
+    + '<button class="sa-btn sa-btn-primary" onclick="submitCreateBot()">Create Bot</button>'
+    + '<button class="sa-btn sa-btn-ghost" onclick="closeModal()">Cancel</button>'
+    + '</div>'
+    + '<div id="create-bot-status" style="font-size:12px; margin-top:8px;"></div>';
+  openModal('Create Bot for {{ user.name }}', html);
+  setTimeout(function() {
+    var inp = document.getElementById('new-bot-name');
+    if (inp) inp.focus();
+  }, 100);
+}
+
+function submitCreateBot() {
+  var name = (document.getElementById('new-bot-name') || {}).value || '';
+  var status = document.getElementById('create-bot-status');
+  if (!name.trim()) { if (status) status.innerHTML = '<span style="color:var(--red);">Bot name is required.</span>'; return; }
+  if (status) status.innerHTML = '<span style="color:var(--text-muted);">Creating bot and vector store...</span>';
+  fetch('/super_admin/users/{{ user.id }}/create_bot', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({bot_name: name.trim()})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      if (status) status.innerHTML = '<span style="color:var(--green);">✓ Bot "' + data.bot_name + '" created (ID: ' + data.bot_id + ')</span>';
+      setTimeout(function() { closeModal(); location.reload(); }, 1200);
+    } else {
+      if (status) status.innerHTML = '<span style="color:var(--red);">' + (data.error || 'Failed') + '</span>';
+    }
+  })
+  .catch(err => { if (status) status.innerHTML = '<span style="color:var(--red);">Network error: ' + err.message + '</span>'; });
 }
 </script>
 {% endblock %}

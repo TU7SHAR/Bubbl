@@ -27,40 +27,40 @@
 
 <!-- ═══ REVENUE ROW ═══ -->
 <p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">💰 Revenue metrics — <strong>not affected</strong> by the date filter above (always all-time/monthly)</p>
-<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:20px;">
-  <div class="sa-card" style="border-left: 3px solid var(--green);" title="Total revenue earned today (UTC midnight to now). Only includes completed Paddle transactions.">
+<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:20px;">
+  <div class="sa-card" style="border-left:3px solid var(--green); min-height:90px;" title="Total revenue earned today (UTC midnight to now).">
     <div class="sa-card-label">Revenue Today</div>
     <div class="sa-card-value" style="color:var(--green);">₹{{ revenue_today | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--blue);" title="Total revenue earned yesterday (full day UTC). Useful to compare day-over-day growth.">
+  <div class="sa-card" style="border-left:3px solid var(--blue); min-height:90px;" title="Total revenue earned yesterday (full day UTC).">
     <div class="sa-card-label">Yesterday</div>
     <div class="sa-card-value" style="color:var(--blue);">₹{{ revenue_yesterday | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--purple);" title="Revenue collected from the 1st of this month until now. Resets every month.">
+  <div class="sa-card" style="border-left:3px solid var(--purple); min-height:90px;" title="Revenue from the 1st of this month until now.">
     <div class="sa-card-label">This Month</div>
     <div class="sa-card-value" style="color:var(--purple);">₹{{ revenue_this_month | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--accent);" title="Total revenue ever collected (all completed Paddle transactions combined, before refunds).">
+  <div class="sa-card" style="border-left:3px solid var(--accent); min-height:90px;" title="Total revenue ever collected before refunds.">
     <div class="sa-card-label">Gross Revenue</div>
     <div class="sa-card-value">₹{{ revenue_gross | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--yellow);" title="Monthly Recurring Revenue — sum of all active subscription plan prices. This is what you'd earn every month if no one cancels.">
-    <div class="sa-card-label">MRR</div>
+  <div class="sa-card" style="border-left:3px solid var(--yellow); min-height:90px;" title="Projected MRR from current active subscriptions.">
+    <div class="sa-card-label">Projected MRR</div>
     <div class="sa-card-value" style="color:var(--yellow);">₹{{ mrr | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--red);" title="Total amount refunded to customers (all-time). Deducted from gross to calculate net revenue.">
+  <div class="sa-card" style="border-left:3px solid var(--red); min-height:90px;" title="Total refunded to customers (all-time).">
     <div class="sa-card-label">Refunds</div>
     <div class="sa-card-value" style="color:var(--red);">₹{{ total_refunds | int }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid #f97316;" title="Paddle charges 5% + ₹41.5 per successful transaction for payment processing, tax compliance, and fraud protection.">
+  <div class="sa-card" style="border-left:3px solid #f97316; min-height:90px;" title="Paddle's 5% + ₹41.5 per transaction fee.">
     <div class="sa-card-label">Paddle Fees</div>
     <div class="sa-card-value" style="color:#f97316;">₹{{ paddle_fees | int }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">5% + ₹41.5 per txn</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid #10b981;" title="Estimated amount you receive in your bank account after deducting Paddle tax, refunds, and Paddle processing fees from gross revenue.">
+  <div class="sa-card" style="border-left:3px solid #10b981; min-height:90px;" title="Estimated bank payout after tax, refunds, and Paddle fees.">
     <div class="sa-card-label">Est. Bank Payout</div>
     <div class="sa-card-value" style="color:#10b981;">₹{{ payout_estimate | int }}</div>
-    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">After tax + fees + refunds</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">after tax + fees + refunds</div>
   </div>
 </div>
 
@@ -103,7 +103,7 @@
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">in {{ days_count }} day{{ 's' if days_count != 1 else '' }}</div>
   </div>
   <div class="sa-card" title="Annual Recurring Revenue = MRR × 12. Projects yearly revenue if all current subscriptions continue unchanged.">
-    <div class="sa-card-label">ARR</div>
+    <div class="sa-card-label">Projected ARR</div>
     <div class="sa-card-value">₹{{ arr | int }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">annualized</div>
   </div>

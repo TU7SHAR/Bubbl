@@ -35,7 +35,10 @@
         {% for u in users %}
         <tr>
           <td>
-            <a href="/super_admin/users/{{ u.id }}" style="color:var(--text); font-weight:700; text-decoration:none;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">{{ u.name }}</a><br>
+            <a href="/super_admin/users/{{ u.id }}" style="color:var(--text); font-weight:700; text-decoration:none; display:flex; align-items:center; gap:4px;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">
+              {{ u.name }}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4; flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
             <span style="font-size:11px;">{{ u.email }}</span>
           </td>
           <td>{{ u.role }}</td>

@@ -1,39 +1,131 @@
 {% extends 'super_admin/base.html' %}
-
 {% block page_title %}Chat: {{ bot_name }}{% endblock %}
 
 {% block admin_content %}
-<!-- Back Link -->
-<div style="margin-bottom:20px;">
-  <a href="/super_admin/conversations" class="sa-btn sa-btn-ghost">← Back to Conversations</a>
+<!-- Header -->
+<div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+  <a href="/super_admin/conversations" class="sa-btn sa-btn-ghost">← Back</a>
+  <div style="flex:1;">
+    <h2 style="margin:0; font-size:16px; font-weight:700; color:var(--text);">{{ bot_name }}</h2>
+    <span style="font-size:11px; color:var(--text-muted); font-family:monospace;">{{ session_id }}</span>
+  </div>
+  <a href="/super_admin/conversations/{{ session_id }}/export" class="sa-btn sa-btn-ghost" style="font-size:12px; padding:6px 14px;">
+    ↓ Export CSV
+  </a>
 </div>
 
-<!-- Session Info -->
-<div class="sa-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:24px;">
-  <div class="sa-card">
-    <div class="sa-card-label">Session ID</div>
-    <div class="sa-card-value" style="font-size:14px; font-family:monospace;">{{ session_id }}</div>
-  </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Bot</div>
-    <div class="sa-card-value" style="font-size:18px;">{{ bot_name }}</div>
-  </div>
-  <div class="sa-card">
+<!-- Stats row -->
+<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px;">
+  <div class="sa-card" style="min-height:80px;">
     <div class="sa-card-label">Messages</div>
     <div class="sa-card-value">{{ messages|length }}</div>
   </div>
-</div>
-
-<!-- Chat Transcript -->
-<div class="sa-table-wrap" style="padding:20px;">
-  <h3 style="margin-bottom:16px; font-size:14px; font-weight:600;">Transcript</h3>
-  <div style="display:flex; flex-direction:column; gap:8px;">
-    {% for msg in messages %}
-    <div class="chat-bubble {% if msg.role == 'user' %}chat-user{% else %}chat-bot{% endif %}">
-      {{ msg.content }}
-      <div class="chat-meta">{{ msg.created_at.strftime('%b %d, %Y %H:%M') }}</div>
+  <div class="sa-card" style="min-height:80px;">
+    <div class="sa-card-label">Bot Replies</div>
+    <div class="sa-card-value">{{ messages|selectattr('role','eq','bot')|list|length }}</div>
+  </div>
+  <div class="sa-card" style="min-height:80px; border-left:3px solid var(--green);">
+    <div class="sa-card-label">👍 Liked</div>
+    <div class="sa-card-value" style="color:var(--green);">{{ liked }}</div>
+  </div>
+  <div class="sa-card" style="min-height:80px; border-left:3px solid var(--red);">
+    <div class="sa-card-label">👎 Disliked</div>
+    <div class="sa-card-value" style="color:var(--red);">{{ disliked }}</div>
+  </div>
+  <div class="sa-card" style="min-height:80px; border-left:3px solid var(--yellow);">
+    <div class="sa-card-label">Satisfaction</div>
+    <div class="sa-card-value" style="color:var(--yellow);">
+      {% if liked + disliked > 0 %}{{ ((liked / (liked + disliked)) * 100) | int }}%{% else %}—{% endif %}
     </div>
-    {% endfor %}
   </div>
 </div>
+
+<!-- Filter bar -->
+<div style="display:flex; gap:10px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+  <input type="text" id="msg-search" placeholder="Search messages…" oninput="filterMsgs()"
+    style="flex:1; min-width:200px; padding:8px 14px; font-size:13px; border-radius:8px;
+           border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); outline:none;">
+  <select id="rating-filter" onchange="filterMsgs()"
+    style="padding:8px 12px; font-size:12px; border-radius:8px; border:1px solid var(--card-border);
+           background:var(--card-bg); color:var(--text); cursor:pointer;">
+    <option value="all">All messages</option>
+    <option value="liked">👍 Liked only</option>
+    <option value="disliked">👎 Disliked only</option>
+    <option value="rated">Rated (any)</option>
+  </select>
+</div>
+
+<!-- Transcript -->
+<div class="sa-table-wrap" style="padding:20px;">
+  <div id="transcript" style="display:flex; flex-direction:column; gap:10px;">
+    {% for msg in messages %}
+    <div class="sa-msg-wrap"
+         data-role="{{ msg.role }}"
+         data-rating="{{ msg.rating if msg.rating else '0' }}"
+         style="display:flex; flex-direction:column; align-items:{{ 'flex-end' if msg.role == 'user' else 'flex-start' }};">
+
+      <!-- Role label -->
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+                  color:var(--text-muted); margin-bottom:3px; padding:0 4px;">
+        {{ 'Visitor' if msg.role == 'user' else bot_name }}
+      </div>
+
+      <!-- Bubble -->
+      <div style="max-width:78%; padding:12px 16px; border-radius:16px; font-size:13px; line-height:1.6;
+                  word-wrap:break-word; position:relative;
+                  {% if msg.role == 'user' %}
+                    background:rgba(59,130,246,0.12); color:var(--text); border-bottom-right-radius:4px;
+                  {% else %}
+                    background:var(--card-bg); border:1px solid var(--card-border); border-bottom-left-radius:4px;
+                    {% if msg.rating == 1 %}border-color:var(--green); box-shadow:0 0 0 1px var(--green);{% endif %}
+                    {% if msg.rating == -1 %}border-color:var(--red); box-shadow:0 0 0 1px var(--red);{% endif %}
+                  {% endif %}">
+
+        {{ msg.content }}
+
+        <!-- Footer -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:10px; color:var(--text-muted);">
+            {{ msg.created_at.strftime('%H:%M:%S') if msg.created_at else '' }}
+          </span>
+          {% if msg.tokens_used %}
+          <span style="font-size:9px; color:var(--text-muted);">{{ msg.tokens_used }} tokens</span>
+          {% endif %}
+          {% if msg.rating == 1 %}
+            <span style="font-size:13px; background:rgba(16,185,129,0.15); padding:2px 8px;
+                         border-radius:10px; color:#10b981; font-weight:700;">👍 Liked</span>
+          {% elif msg.rating == -1 %}
+            <span style="font-size:13px; background:rgba(239,68,68,0.15); padding:2px 8px;
+                         border-radius:10px; color:#ef4444; font-weight:700;">👎 Disliked</span>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+
+    {% if not messages %}
+    <p style="text-align:center; color:var(--text-muted); padding:40px;">No messages in this conversation.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterMsgs() {
+  var query = document.getElementById('msg-search').value.toLowerCase().trim();
+  var rFilter = document.getElementById('rating-filter').value;
+  document.querySelectorAll('#transcript .sa-msg-wrap').forEach(function(el) {
+    var text = el.textContent.toLowerCase();
+    var rating = el.getAttribute('data-rating');
+    var matchText = !query || text.indexOf(query) !== -1;
+    var matchRating = true;
+    if (rFilter === 'liked')    matchRating = rating === '1';
+    if (rFilter === 'disliked') matchRating = rating === '-1';
+    if (rFilter === 'rated')    matchRating = rating === '1' || rating === '-1';
+    el.style.display = (matchText && matchRating) ? '' : 'none';
+  });
+}
+</script>
 {% endblock %}

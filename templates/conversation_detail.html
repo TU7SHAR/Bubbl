@@ -128,6 +128,18 @@
       <div class="conv-meta-val">{{ bot_msg_count }}</div>
       <div class="conv-meta-label">Bot Replies</div>
     </div>
+    {% set liked_count = messages | selectattr('rating', 'eq', 1) | list | length %}
+    {% set disliked_count = messages | selectattr('rating', 'eq', -1) | list | length %}
+    {% if liked_count or disliked_count %}
+    <div class="conv-meta-item" style="color:#10b981;">
+      <div class="conv-meta-val">{{ liked_count }}</div>
+      <div class="conv-meta-label">👍 Liked</div>
+    </div>
+    <div class="conv-meta-item" style="color:#ef4444;">
+      <div class="conv-meta-val">{{ disliked_count }}</div>
+      <div class="conv-meta-label">👎 Disliked</div>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Lead Card (if captured) -->

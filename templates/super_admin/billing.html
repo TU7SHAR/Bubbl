@@ -4,43 +4,46 @@
 
 {% block admin_content %}
 <!-- Stats Grid -->
-<div class="sa-grid">
-  <div class="sa-card">
-    <div class="sa-card-label">Monthly Recurring Revenue (MRR)</div>
+<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:20px;">
+  <div class="sa-card" style="min-height:110px;">
+    <div class="sa-card-label">Projected MRR</div>
     <div class="sa-card-value">₹{{ mrr | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">if no cancellations</div>
   </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Annual Recurring Revenue (ARR)</div>
+  <div class="sa-card" style="min-height:110px;">
+    <div class="sa-card-label">Projected ARR</div>
     <div class="sa-card-value">₹{{ arr | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">MRR × 12</div>
   </div>
-  <div class="sa-card">
+  <div class="sa-card" style="min-height:110px;">
     <div class="sa-card-label">Active Subscriptions</div>
     <div class="sa-card-value">{{ active_subscriptions }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">paid plans</div>
   </div>
-  <div class="sa-card">
+  <div class="sa-card" style="min-height:110px;">
     <div class="sa-card-label">Total Revenue Collected</div>
     <div class="sa-card-value">₹{{ total_revenue | int }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_transactions }} transaction{{ 's' if total_transactions != 1 else '' }}</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--yellow);">
+  <div class="sa-card" style="min-height:110px; border-left:3px solid var(--red);">
+    <div class="sa-card-label">Refunds</div>
+    <div class="sa-card-value" style="color:var(--red);">₹{{ total_refunds | int }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">all-time refunded</div>
+  </div>
+  <div class="sa-card" style="min-height:110px; border-left:3px solid var(--yellow);">
     <div class="sa-card-label">Tax Collected (Paddle)</div>
     <div class="sa-card-value" style="color:var(--yellow);">₹{{ total_tax | int }}</div>
-    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Collected &amp; remitted by Paddle</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">collected &amp; remitted by Paddle</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--red);">
+  <div class="sa-card" style="min-height:110px; border-left:3px solid #f97316;">
     <div class="sa-card-label">Paddle Processing Fees</div>
-    <div class="sa-card-value" style="color:var(--red);">₹{{ total_paddle_fees | int }}</div>
+    <div class="sa-card-value" style="color:#f97316;">₹{{ total_paddle_fees | int }}</div>
     <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ paddle_pct_fee }}% + ₹{{ paddle_fixed_fee | int }} per txn</div>
   </div>
-  <div class="sa-card" style="border-left: 3px solid var(--green);">
+  <div class="sa-card" style="min-height:110px; border-left:3px solid var(--green);">
     <div class="sa-card-label">Est. Bank Payout</div>
     <div class="sa-card-value" style="color:var(--green);">₹{{ payout_estimate | int }}</div>
-    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">After tax + refunds + Paddle fees</div>
-  </div>
-  <div class="sa-card">
-    <div class="sa-card-label">Net Revenue (After Tax &amp; Refunds)</div>
-    <div class="sa-card-value">₹{{ net_revenue | int }}</div>
-    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Excl. Paddle processing fees</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">after tax + refunds + fees</div>
   </div>
 </div>
 

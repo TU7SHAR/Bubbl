@@ -311,16 +311,20 @@ def stop_impersonate():
 
 @super_admin_bp.route('/users/<int:user_id>')
 @super_admin_required
-def user_detail(user_id):
-    """Detailed view of a single user."""
+def user_detail(user_id):    """Detailed view of a single user."""
     user = User.query.get(user_id)
     if not user:
         return redirect(url_for('super_admin_bp.users_page'))
 
     org = Organization.query.get(user.org_id) if user.org_id else None
     bots = Bot.query.filter_by(created_by=user.id).all()
-    payments = Payment.query.filter_by(user_id=user.id).order_by(Payment.created_at.desc()).all()
 
+    # Payments: check both user_id and org_id — most are linked via org_id only
+    payments = Payment.query.filter(
+        (Payment.user_id == user.id) | (Payment.org_id == (org.id if org else -1))
+    ).order_by(Payment.created_at.desc()).all()
+
+    # Leads: from all bots this user owns
     bot_ids = [b.id for b in bots]
     leads = Lead.query.filter(Lead.bot_id.in_(bot_ids)).order_by(Lead.captured_at.desc()).all() if bot_ids else []
 
@@ -390,3 +394,45 @@ def export_users_csv():
     response.headers['Content-Type'] = 'text/csv'
     response.headers['Content-Disposition'] = 'attachment; filename=users_export.csv'
     return response
+
+
+@super_admin_bp.route('/users/<int:user_id>/create_bot', methods=['POST'])
+@super_admin_required
+def create_bot_for_user(user_id):
+    """Create a new bot on behalf of a user from the super admin panel."""
+    from models.models import BotUI
+    from bot.cloud import create_dynamic_store
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    data = request.get_json(silent=True) or {}
+    bot_name = (data.get('bot_name') or '').strip()
+    if not bot_name:
+        return jsonify({"error": "Bot name is required."}), 400
+
+    # Create Gemini vector store
+    store_id = None
+    try:
+        store_id = create_dynamic_store(bot_name)
+    except Exception as e:
+        return jsonify({"error": f"Could not create vector store: {str(e)[:100]}"}), 500
+
+    new_bot = Bot(
+        org_id=user.org_id,
+        created_by=user.id,
+        bot_name=bot_name,
+        store_id=store_id,
+        visibility='private',
+        bot_type='general',
+    )
+    db.session.add(new_bot)
+    db.session.flush()  # get the bot.id before committing
+
+    # Default UI settings
+    ui = BotUI(bot_id=new_bot.id)
+    db.session.add(ui)
+    db.session.commit()
+
+    return jsonify({"success": True, "bot_id": new_bot.id, "bot_name": new_bot.bot_name})

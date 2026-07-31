@@ -1,17 +1,52 @@
 {% extends 'super_admin/base.html' %}
-
 {% block page_title %}Conversations ({{ total_conversations }}){% endblock %}
 
 {% block admin_content %}
+
+<!-- Global rating analytics -->
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;">
+  <div class="sa-card" style="min-height:80px;">
+    <div class="sa-card-label">Total Sessions</div>
+    <div class="sa-card-value">{{ total_conversations }}</div>
+  </div>
+  <div class="sa-card" style="min-height:80px; border-left:3px solid var(--green);">
+    <div class="sa-card-label">👍 Total Liked</div>
+    <div class="sa-card-value" style="color:var(--green);">{{ total_liked }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">bot messages rated helpful</div>
+  </div>
+  <div class="sa-card" style="min-height:80px; border-left:3px solid var(--red);">
+    <div class="sa-card-label">👎 Total Disliked</div>
+    <div class="sa-card-value" style="color:var(--red);">{{ total_disliked }}</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">bot messages rated unhelpful</div>
+  </div>
+  <div class="sa-card" style="min-height:80px; border-left:3px solid var(--yellow);">
+    <div class="sa-card-label">Satisfaction Rate</div>
+    <div class="sa-card-value" style="color:var(--yellow);">
+      {% if total_rated > 0 %}{{ ((total_liked / total_rated) * 100) | int }}%{% else %}—{% endif %}
+    </div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_rated }} ratings total</div>
+  </div>
+</div>
+
+<!-- Sessions table -->
 <div class="sa-table-wrap">
   <div class="sa-table-header">
     <h3>All Conversations</h3>
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <input type="text" class="sa-search-input" placeholder="Search conversations..." style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); width:200px; outline:none;">
-      <select class="sa-filter-select" data-col="1" style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border); background:var(--card-bg); color:var(--text); cursor:pointer;">
+      <input type="text" class="sa-search-input" placeholder="Search conversations…"
+        style="padding:7px 14px; font-size:13px; border-radius:8px; border:1px solid var(--card-border);
+               background:var(--card-bg); color:var(--text); width:200px; outline:none;">
+      <select class="sa-filter-select" data-col="1"
+        style="padding:7px 10px; font-size:12px; border-radius:8px; border:1px solid var(--card-border);
+               background:var(--card-bg); color:var(--text); cursor:pointer;">
         <option value="">All Bots</option>
         {% set seen_conv_bots = [] %}
-        {% for s in sessions %}{% if s.bot_name not in seen_conv_bots %}{% set _ = seen_conv_bots.append(s.bot_name) %}<option value="{{ s.bot_name }}">{{ s.bot_name }}</option>{% endif %}{% endfor %}
+        {% for s in sessions %}
+          {% if s.bot_name not in seen_conv_bots %}
+            {% set _ = seen_conv_bots.append(s.bot_name) %}
+            <option value="{{ s.bot_name }}">{{ s.bot_name }}</option>
+          {% endif %}
+        {% endfor %}
       </select>
     </div>
   </div>
@@ -22,9 +57,10 @@
           <th>Session</th>
           <th data-sort="text">Bot</th>
           <th data-sort="text">Admin</th>
-          <th>Visitor IP</th>
+          <th>IP</th>
           <th data-sort="number">Msgs</th>
-          <th data-sort="date">Last Activity</th>
+          <th>Ratings</th>
+          <th data-sort="date">Last Active</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -39,9 +75,26 @@
           </td>
           <td><code style="font-size:12px;">{{ s.ip_address }}</code></td>
           <td>{{ s.msg_count }}</td>
+          <td>
+            {% if s.liked or s.disliked %}
+              <span style="display:inline-flex; gap:6px; align-items:center;">
+                {% if s.liked %}
+                  <span style="background:rgba(16,185,129,0.12); color:#10b981; font-size:11px;
+                               font-weight:700; padding:2px 7px; border-radius:8px;">👍 {{ s.liked }}</span>
+                {% endif %}
+                {% if s.disliked %}
+                  <span style="background:rgba(239,68,68,0.12); color:#ef4444; font-size:11px;
+                               font-weight:700; padding:2px 7px; border-radius:8px;">👎 {{ s.disliked }}</span>
+                {% endif %}
+              </span>
+            {% else %}
+              <span style="color:var(--text-muted); font-size:11px;">—</span>
+            {% endif %}
+          </td>
           <td>{{ s.last_activity.strftime('%b %d, %H:%M') }}</td>
           <td>
-            <a href="/super_admin/conversations/{{ s.session_id }}" class="sa-btn sa-btn-ghost" style="padding:4px 10px; font-size:11px;">View</a>
+            <a href="/super_admin/conversations/{{ s.session_id }}"
+               class="sa-btn sa-btn-ghost" style="padding:4px 10px; font-size:11px;">View</a>
           </td>
         </tr>
         {% endfor %}
@@ -53,19 +106,12 @@
 <!-- Pagination -->
 {% if total_pages > 1 %}
 <div class="sa-pagination">
-  {% if page > 1 %}
-    <a href="?page={{ page - 1 }}">← Prev</a>
-  {% endif %}
+  {% if page > 1 %}<a href="?page={{ page - 1 }}">← Prev</a>{% endif %}
   {% for p in range(1, total_pages + 1) %}
-    {% if p == page %}
-      <span class="current">{{ p }}</span>
-    {% else %}
-      <a href="?page={{ p }}">{{ p }}</a>
-    {% endif %}
+    {% if p == page %}<span class="current">{{ p }}</span>
+    {% else %}<a href="?page={{ p }}">{{ p }}</a>{% endif %}
   {% endfor %}
-  {% if page < total_pages %}
-    <a href="?page={{ page + 1 }}">Next →</a>
-  {% endif %}
+  {% if page < total_pages %}<a href="?page={{ page + 1 }}">Next →</a>{% endif %}
 </div>
 {% endif %}
 {% endblock %}
