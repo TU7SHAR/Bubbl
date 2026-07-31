@@ -543,19 +543,35 @@ function createRatingButtons(msgIndex) {
 
 // Show rating buttons on hover/click of the bot message bubble
 function attachRatingHover(botDiv, ratingWrapper) {
+  var hideTimer = null;
+
   function show() {
     // Only show if not already rated
     if (!ratingWrapper.classList.contains('msg-rating--rated')) {
+      if (hideTimer) clearTimeout(hideTimer);
       ratingWrapper.style.opacity = '1';
     }
   }
+
   function hide() {
     if (!ratingWrapper.classList.contains('msg-rating--rated')) {
-      ratingWrapper.style.opacity = '0';
+      // Keep visible for 2 seconds after mouse leaves, giving time to click
+      hideTimer = setTimeout(function() {
+        ratingWrapper.style.opacity = '0';
+      }, 2000);
     }
   }
+
+  // Also keep visible when hovering over the rating buttons themselves
+  ratingWrapper.addEventListener('mouseenter', function() {
+    if (hideTimer) clearTimeout(hideTimer);
+    ratingWrapper.style.opacity = '1';
+  });
+
+  ratingWrapper.addEventListener('mouseleave', hide);
   botDiv.addEventListener('mouseenter', show);
   botDiv.addEventListener('mouseleave', hide);
+
   botDiv.addEventListener('click', function() {
     if (!ratingWrapper.classList.contains('msg-rating--rated')) {
       ratingWrapper.style.opacity = ratingWrapper.style.opacity === '1' ? '0' : '1';
