@@ -814,10 +814,14 @@ function initWebSocket() {
             const display = document.getElementById("chat-display");
             renderButtons(buttons, display);
           }
+          // Save reference before nulling — needed for rating hover listeners
+          const completedBotDiv = streamingBotDiv;
           streamingBotDiv = null;
           // Add rating buttons after streaming completes
           const display2 = document.getElementById("chat-display");
-          display2.appendChild(createRatingButtons(_botMsgIndex));
+          const ratingWrapper = createRatingButtons(_botMsgIndex);
+          display2.appendChild(ratingWrapper);
+          attachRatingHover(completedBotDiv, ratingWrapper);
           _botMsgIndex++;
         } else {
           removeTypingIndicator();
