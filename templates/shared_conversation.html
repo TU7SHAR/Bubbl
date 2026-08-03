@@ -180,7 +180,7 @@
         <div class="shared-messages">
             {% for msg in messages %}
             <div class="shared-msg {{ msg.role }}">
-                {{ msg.content }}
+                <div class="msg-text">{{ msg.content | e | replace('\n', '<br>') | safe }}</div>
                 {% if msg.created_at %}
                 <div class="msg-time">{{ msg.created_at[:16] | replace('T', ' ') }}</div>
                 {% endif %}
