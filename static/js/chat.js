@@ -307,11 +307,171 @@ async function submitLeadForm(prefix) {
 
 function appendUserMessage(msg) {
   const display = document.getElementById("chat-display");
+
+  // Wrapper holds both the message bubble and the edit button
+  const wrapper = document.createElement("div");
+  wrapper.className = "msg-user-wrapper";
+
   const userDiv = document.createElement("div");
   userDiv.className = "msg user";
   userDiv.innerText = msg;
-  display.appendChild(userDiv);
+
+  // Edit button (pencil icon) — shown on hover
+  const editBtn = document.createElement("button");
+  editBtn.className = "msg-edit-btn";
+  editBtn.title = "Edit & regenerate";
+  editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+  editBtn.onclick = function() { startEditMessage(wrapper, userDiv, msg); };
+
+  wrapper.appendChild(editBtn);
+  wrapper.appendChild(userDiv);
+  display.appendChild(wrapper);
   display.scrollTop = display.scrollHeight;
+}
+
+function startEditMessage(wrapper, userDiv, originalMsg) {
+  // Don't allow edit while bot is responding
+  const sendButton = document.getElementById("send-btn-icon");
+  if (sendButton && sendButton.disabled) return;
+
+  // Replace the message bubble with an editable input
+  const editContainer = document.createElement("div");
+  editContainer.className = "msg-edit-container";
+  editContainer.innerHTML = `
+    <textarea class="msg-edit-input" rows="2">${originalMsg}</textarea>
+    <div class="msg-edit-actions">
+      <button class="msg-edit-save" title="Send edited message">&#10003;</button>
+      <button class="msg-edit-cancel" title="Cancel">&#10005;</button>
+    </div>
+  `;
+
+  // Hide the original message and edit button
+  userDiv.style.display = "none";
+  const editBtn = wrapper.querySelector('.msg-edit-btn');
+  if (editBtn) editBtn.style.display = "none";
+
+  wrapper.appendChild(editContainer);
+
+  const textarea = editContainer.querySelector('.msg-edit-input');
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+  // Handle Enter key (without shift) to submit
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitEdit();
+    }
+  });
+
+  editContainer.querySelector('.msg-edit-cancel').onclick = function() {
+    editContainer.remove();
+    userDiv.style.display = "";
+    if (editBtn) editBtn.style.display = "";
+  };
+
+  editContainer.querySelector('.msg-edit-save').onclick = submitEdit;
+
+  function submitEdit() {
+    const newMsg = textarea.value.trim();
+    if (!newMsg) return;
+
+    // Remove the edit container, show the updated message
+    editContainer.remove();
+    userDiv.innerText = newMsg;
+    userDiv.style.display = "";
+    if (editBtn) editBtn.style.display = "";
+    editBtn.onclick = function() { startEditMessage(wrapper, userDiv, newMsg); };
+
+    // Remove all messages AFTER this wrapper (the bot response + any following messages)
+    const display = document.getElementById("chat-display");
+    let removeNext = false;
+    const toRemove = [];
+    for (let i = 0; i < display.children.length; i++) {
+      const child = display.children[i];
+      if (removeNext) {
+        toRemove.push(child);
+      }
+      if (child === wrapper) {
+        removeNext = true;
+      }
+    }
+    toRemove.forEach(el => el.remove());
+
+    // Update chatHistory — find this message's index and truncate after it
+    const wrapperIndex = Array.from(display.children).indexOf(wrapper);
+    // Count how many user messages precede this one (to find chatHistory index)
+    let userMsgCount = 0;
+    for (let i = 0; i < display.children.length; i++) {
+      const child = display.children[i];
+      if (child === wrapper) break;
+      if (child.classList && child.classList.contains('msg-user-wrapper')) userMsgCount++;
+    }
+    // The chatHistory has alternating user/bot entries
+    // Find the user entry at this position and truncate everything after
+    let histIdx = 0;
+    let uCount = 0;
+    for (let i = 0; i < chatHistory.length; i++) {
+      if (chatHistory[i].role === 'user') {
+        if (uCount === userMsgCount) {
+          histIdx = i;
+          break;
+        }
+        uCount++;
+      }
+    }
+    // Keep everything up to (but not including) this user message, then add the new one
+    chatHistory = chatHistory.slice(0, histIdx);
+    chatHistory.push({ role: "user", text: newMsg });
+
+    // Decrement _botMsgIndex for removed bot messages
+    _botMsgIndex = document.querySelectorAll('.msg-rating').length;
+
+    // Regenerate the response
+    saveChatState();
+    setInputState(true);
+    if (window.SpriteBot) SpriteBot.setState("thinking");
+    showTypingIndicator();
+
+    const payload = {
+      message: newMsg,
+      history: chatHistory,
+      session_id: window._chatSessionId || null,
+    };
+    if (window.EMBEDDED_BOT_ID) payload.bot_id = window.EMBEDDED_BOT_ID;
+
+    // Use WebSocket if available
+    if (useWebSocket && socket && socket.connected) {
+      streamingBotDiv = null;
+      socket.emit('chat_message', payload);
+    } else {
+      // HTTP fallback
+      fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      .then(res => res.json())
+      .then(data => {
+        removeTypingIndicator();
+        if (data.error) {
+          appendBotMessage("SYSTEM ERROR: " + data.error);
+        } else if (data.response) {
+          let replyText = data.response.replace("[SHOW_FORM]", "").trim();
+          appendBotMessage(replyText);
+          chatHistory.push({ role: "bot", text: replyText });
+          saveChatState();
+        }
+        setInputState(false);
+        if (window.SpriteBot) SpriteBot.setState("idle");
+      })
+      .catch(() => {
+        removeTypingIndicator();
+        appendBotMessage("Error connecting to server.");
+        setInputState(false);
+      });
+    }
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -956,4 +1116,102 @@ async function sendMessage() {
     appendBotMessage("Error connecting to server.");
     setInputState(false);
   }
+}
+
+
+// ═══════════════════════════════════════════
+// SHARE CONVERSATION — Copy or share entire chat
+// ═══════════════════════════════════════════
+
+function shareConversation() {
+  if (!chatHistory || chatHistory.length === 0) {
+    showShareToast("No messages to share yet.");
+    return;
+  }
+
+  // Build a clean text version of the conversation
+  const botName = document.querySelector('.chat-header-title')
+    ? document.querySelector('.chat-header-title').innerText
+    : 'Bot';
+
+  let text = "--- Conversation with " + botName + " ---\n\n";
+  for (let i = 0; i < chatHistory.length; i++) {
+    const entry = chatHistory[i];
+    const label = entry.role === 'user' ? 'You' : botName;
+    // Strip any [[LEAD:...]] or [[BUTTONS:...]] tags from the export
+    let content = entry.text || '';
+    content = content.replace(/\[\[LEAD:.*?\]\]/gs, '').trim();
+    content = content.replace(/\[\[BUTTONS:.*?\]\]/gs, '').trim();
+    content = content.replace(/\[SHOW_FORM\]/g, '').trim();
+    text += label + ": " + content + "\n\n";
+  }
+  text += "---\nPowered by bubbl.ooo";
+
+  // Try native share API first (mobile), fallback to clipboard
+  if (navigator.share) {
+    navigator.share({
+      title: 'Conversation with ' + botName,
+      text: text,
+    }).catch(function() {
+      // User cancelled or share failed — fallback to clipboard
+      copyToClipboard(text);
+    });
+  } else {
+    copyToClipboard(text);
+  }
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      showShareToast("Conversation copied to clipboard!");
+    }).catch(function() {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  var textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    showShareToast("Conversation copied to clipboard!");
+  } catch (e) {
+    showShareToast("Could not copy. Please try again.");
+  }
+  document.body.removeChild(textarea);
+}
+
+function showShareToast(message) {
+  // Remove existing toast
+  var existing = document.getElementById('share-toast');
+  if (existing) existing.remove();
+
+  var toast = document.createElement('div');
+  toast.id = 'share-toast';
+  toast.className = 'share-toast';
+  toast.innerText = message;
+
+  var chatPopup = document.getElementById('chat-window-popup');
+  if (chatPopup) {
+    chatPopup.appendChild(toast);
+  } else {
+    document.body.appendChild(toast);
+  }
+
+  // Animate in
+  setTimeout(function() { toast.classList.add('share-toast--visible'); }, 10);
+
+  // Auto-remove after 2.5s
+  setTimeout(function() {
+    toast.classList.remove('share-toast--visible');
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 2500);
 }
