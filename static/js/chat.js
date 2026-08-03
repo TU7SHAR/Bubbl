@@ -1208,21 +1208,121 @@ function downloadChat() {
     ? document.querySelector('.chat-header-title').innerText
     : 'Bubbl';
 
-  // Build a beautiful standalone HTML file
+  // Build a print-optimized HTML with rendered markdown, then trigger print-to-PDF
   var html = buildChatExportHTML(botName, chatHistory);
 
-  // Trigger download
-  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'chat-with-' + botName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Open in a new window and trigger print (Save as PDF)
+  var printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    // Give it a moment to render, then trigger print
+    setTimeout(function() {
+      printWindow.print();
+    }, 400);
+    showShareToast("PDF ready — use Save as PDF!", "success");
+  } else {
+    // Popup blocked — fallback to direct HTML download
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'chat-with-' + botName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showShareToast("Chat downloaded!", "success");
+  }
+}
 
-  showShareToast("Chat downloaded!", "success");
+function _renderMarkdownForExport(text) {
+  /**
+   * Renders markdown in bot messages for PDF export.
+   * Handles: tables, bold, italic, lists, code blocks, inline code, links.
+   */
+  // Escape HTML first
+  var html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Code blocks (``` ... ```)
+  html = html.replace(/```([\s\S]*?)```/g, function(m, code) {
+    return '<pre style="background:#f3f4f6;padding:10px 14px;border-radius:8px;font-size:12px;overflow-x:auto;margin:8px 0;font-family:monospace;">' + code.trim() + '</pre>';
+  });
+
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:2px 5px;border-radius:4px;font-size:12px;font-family:monospace;">$1</code>');
+
+  // Tables — detect lines with | separators
+  html = html.replace(/((?:^|\n)\|.+\|(?:\n\|.+\|)+)/g, function(tableBlock) {
+    var rows = tableBlock.trim().split('\n').filter(function(r) { return r.trim(); });
+    if (rows.length < 2) return tableBlock;
+
+    var tableHtml = '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:13px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">';
+    var headerDone = false;
+
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i].trim();
+      // Skip separator rows (|---|---|)
+      if (/^\|[\s\-:]+\|$/.test(row) || /^\|(\s*[-:]+\s*\|)+$/.test(row)) {
+        headerDone = true;
+        continue;
+      }
+      var cells = row.split('|').filter(function(c, idx, arr) { return idx > 0 && idx < arr.length - 1; });
+      var tag = (!headerDone && i === 0) ? 'th' : 'td';
+      var bgStyle = tag === 'th' ? 'background:#f8f9fa;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.3px;' : '';
+      tableHtml += '<tr>';
+      for (var j = 0; j < cells.length; j++) {
+        var cellContent = cells[j].trim();
+        // Render bold inside cells
+        cellContent = cellContent.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        tableHtml += '<' + tag + ' style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:left;' + bgStyle + '">' + cellContent + '</' + tag + '>';
+      }
+      tableHtml += '</tr>';
+      if (tag === 'th') headerDone = true;
+    }
+    tableHtml += '</table>';
+    return tableHtml;
+  });
+
+  // Bold (**text**)
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Italic (*text*)
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+  // Unordered lists (- item)
+  html = html.replace(/((?:^|\n)[\-\*]\s.+)+/g, function(block) {
+    var items = block.trim().split('\n');
+    var listHtml = '<ul style="margin:6px 0;padding-left:20px;">';
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i].replace(/^[\-\*]\s+/, '').trim();
+      if (item) listHtml += '<li style="margin-bottom:3px;">' + item + '</li>';
+    }
+    listHtml += '</ul>';
+    return listHtml;
+  });
+
+  // Ordered lists (1. item)
+  html = html.replace(/((?:^|\n)\d+\.\s.+)+/g, function(block) {
+    var items = block.trim().split('\n');
+    var listHtml = '<ol style="margin:6px 0;padding-left:20px;">';
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i].replace(/^\d+\.\s+/, '').trim();
+      if (item) listHtml += '<li style="margin-bottom:3px;">' + item + '</li>';
+    }
+    listHtml += '</ol>';
+    return listHtml;
+  });
+
+  // Paragraphs — double newlines
+  html = html.replace(/\n{2,}/g, '</p><p style="margin:8px 0;">');
+  // Single newlines
+  html = html.replace(/\n/g, '<br>');
+
+  return html;
 }
 
 function buildChatExportHTML(botName, history) {
@@ -1238,58 +1338,61 @@ function buildChatExportHTML(botName, history) {
     content = content.replace(/\[\[LEAD:.*?\]\]/gs, '').trim();
     content = content.replace(/\[\[BUTTONS:.*?\]\]/gs, '').trim();
     content = content.replace(/\[SHOW_FORM\]/g, '').trim();
-    // Escape HTML
-    content = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    // Basic formatting for bot messages
-    if (role === 'bot') {
-      content = content.replace(/\n/g, '<br>');
-    }
 
     var roleClass = role === 'user' ? 'user' : 'bot';
-    var label = role === 'user' ? 'You' : botName;
-    messagesHtml += '<div class="msg ' + roleClass + '">' +
-      '<div class="msg-label">' + label + '</div>' +
-      '<div class="msg-content">' + content + '</div>' +
-      '</div>';
+    var label = role === 'user' ? 'YOU' : botName.toUpperCase();
+
+    // Render markdown for bot messages, simple escape for user messages
+    var renderedContent;
+    if (role === 'bot') {
+      renderedContent = _renderMarkdownForExport(content);
+    } else {
+      renderedContent = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    if (role === 'user') {
+      messagesHtml += '<div style="display:flex;justify-content:flex-end;margin:6px 0;">' +
+        '<div style="max-width:75%;padding:12px 16px;background:#1a1a1a;color:#fff;border-radius:16px 16px 4px 16px;font-size:14px;line-height:1.5;">' +
+        '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(255,255,255,0.5);margin-bottom:4px;">' + label + '</div>' +
+        renderedContent +
+        '</div></div>';
+    } else {
+      messagesHtml += '<div style="display:flex;justify-content:flex-start;margin:6px 0;">' +
+        '<div style="max-width:80%;padding:14px 18px;background:#ffffff;border:1px solid #f0f0f0;border-radius:16px 16px 16px 4px;font-size:14px;line-height:1.6;color:#1a1a1a;box-shadow:0 1px 4px rgba(0,0,0,0.04);">' +
+        '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:6px;">' + label + '</div>' +
+        renderedContent +
+        '</div></div>';
+    }
   }
 
   return '<!DOCTYPE html><html lang="en"><head>' +
     '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
     '<title>Chat with ' + botName + '</title>' +
     '<style>' +
+    '@page{size:A4;margin:20mm 15mm;}' +
     '*{margin:0;padding:0;box-sizing:border-box}' +
     'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
-    'background:linear-gradient(135deg,#fdf8f4 0%,#f0f4ff 50%,#f5f0ff 100%);min-height:100vh;padding:24px}' +
+    'background:#f9fafb;min-height:100vh;padding:24px;color:#1a1a1a;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
     '.container{max-width:680px;margin:0 auto}' +
-    '.header{text-align:center;padding:28px;background:rgba(255,255,255,0.75);' +
-    'backdrop-filter:blur(20px);border-radius:20px;border:1px solid rgba(255,255,255,0.8);' +
-    'box-shadow:0 8px 32px rgba(0,0,0,0.06);margin-bottom:20px}' +
-    '.header .avatar{width:52px;height:52px;border-radius:50%;background:#E8722A;color:#fff;' +
-    'display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;margin-bottom:10px}' +
-    '.header h1{font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:4px}' +
-    '.header p{font-size:12px;color:#6b7280}' +
-    '.messages{display:flex;flex-direction:column;gap:10px}' +
-    '.msg{max-width:80%;padding:14px 18px;border-radius:16px;font-size:14px;line-height:1.6}' +
-    '.msg.bot{background:rgba(255,255,255,0.8);align-self:flex-start;border-bottom-left-radius:4px;' +
-    'box-shadow:0 2px 10px rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.04)}' +
-    '.msg.user{background:#1a1a1a;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;' +
-    'box-shadow:0 4px 16px rgba(0,0,0,0.1)}' +
-    '.msg-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;' +
-    'margin-bottom:4px;opacity:0.5}' +
-    '.msg.user .msg-label{color:rgba(255,255,255,0.6)}' +
-    '.msg-content{word-wrap:break-word}' +
-    '.footer{text-align:center;margin-top:28px;font-size:11px;color:#9ca3af}' +
+    '.header{text-align:center;padding:28px 20px;background:#fff;border-radius:16px;border:1px solid #f0f0f0;' +
+    'box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:24px}' +
+    '.avatar{width:48px;height:48px;border-radius:50%;background:#E8722A;color:#fff;' +
+    'display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;margin-bottom:10px}' +
+    'h1{font-size:18px;font-weight:800;color:#1a1a1a;margin-bottom:4px}' +
+    '.meta{font-size:12px;color:#6b7280}' +
+    '.messages{display:flex;flex-direction:column;gap:4px}' +
+    '.footer{text-align:center;margin-top:32px;font-size:11px;color:#9ca3af;padding:16px}' +
     '.footer a{color:#E8722A;text-decoration:none;font-weight:600}' +
-    '@media(max-width:600px){body{padding:12px}.msg{max-width:90%;font-size:13px;padding:10px 14px}}' +
+    '@media print{body{background:#fff;padding:0}.header{box-shadow:none;border:1px solid #eee}}' +
     '</style></head><body>' +
     '<div class="container">' +
     '<div class="header">' +
     '<div class="avatar">' + botName.charAt(0).toUpperCase() + '</div>' +
     '<h1>Chat with ' + botName + '</h1>' +
-    '<p>' + msgCount + ' messages &middot; ' + now + '</p>' +
+    '<p class="meta">' + msgCount + ' messages &middot; ' + now + '</p>' +
     '</div>' +
     '<div class="messages">' + messagesHtml + '</div>' +
-    '<div class="footer">Exported from <a href="https://bubbl.ooo" target="_blank">bubbl.ooo</a></div>' +
+    '<div class="footer">Exported from <a href="https://bubbl.ooo">bubbl.ooo</a></div>' +
     '</div></body></html>';
 }
 
