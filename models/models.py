@@ -218,3 +218,19 @@ class ChatMessage(db.Model):
     ip_address = db.Column(db.String(45), nullable=True)  # Visitor IP (IPv4/IPv6), captured on user messages
     rating = db.Column(db.SmallInteger, nullable=True)  # 1 = thumbs up, -1 = thumbs down, NULL = not rated
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+
+# ═══════════════════════════════════════════
+# SHARED CONVERSATION — Public share links for chat sessions
+# ═══════════════════════════════════════════
+class SharedConversation(db.Model):
+    """Stores a shareable snapshot of a conversation."""
+    id = db.Column(db.Integer, primary_key=True)
+    share_token = db.Column(db.String(16), unique=True, nullable=False, index=True)
+    session_id = db.Column(db.String(64), nullable=False)
+    bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=True)
+    bot_name = db.Column(db.String(100), nullable=True)  # Snapshot of bot name at share time
+    messages_snapshot = db.Column(db.JSON, nullable=False)  # [{role, content, created_at}]
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=True)  # Optional expiry (30 days default)
