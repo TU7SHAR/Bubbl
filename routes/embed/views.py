@@ -59,7 +59,7 @@ def view_shared_conversation(share_token):
         from models.models import SharedConversation
         shared = SharedConversation.query.filter_by(share_token=share_token).first()
         if not shared:
-            return render_template('404.html'), 404
+            return '<h1>404 — Conversation not found</h1><p>This shared link does not exist or has been removed.</p>', 404
 
         # Check expiry (handle both naive and aware datetimes from DB)
         if shared.expires_at:
@@ -75,13 +75,30 @@ def view_shared_conversation(share_token):
             import json as _json
             messages = _json.loads(messages)
 
+        # Safety: ensure each message dict has required keys (prevent template crash)
+        safe_messages = []
+        for m in (messages or []):
+            safe_messages.append({
+                'role': m.get('role', 'bot') if isinstance(m, dict) else 'bot',
+                'content': m.get('content', '') if isinstance(m, dict) else str(m),
+                'created_at': m.get('created_at') if isinstance(m, dict) else None,
+            })
+
         return render_template('shared_conversation.html',
                                shared=shared,
-                               messages=messages or [],
+                               messages=safe_messages,
                                bot_name=shared.bot_name or 'Bubbl')
     except Exception as e:
-        logging.error(f"[shared_conversation] Error rendering /shared/{share_token}: {e}")
-        return render_template('404.html'), 500
+        logging.error(f"[shared_conversation] Error rendering /shared/{share_token}: {e}", exc_info=True)
+        # Return plain HTML error (avoid render_template which might also crash)
+        return (
+            f'<html><body style="font-family:sans-serif;padding:40px;max-width:600px;margin:auto;">'
+            f'<h2>Something went wrong</h2>'
+            f'<p style="color:#666;">Error loading shared conversation.</p>'
+            f'<pre style="background:#f5f5f5;padding:12px;border-radius:8px;font-size:12px;overflow:auto;">{str(e)}</pre>'
+            f'<p><a href="https://bubbl.ooo" style="color:#E8722A;">Back to Bubbl</a></p>'
+            f'</body></html>'
+        ), 500
 
 @views_bp.route('/robots.txt')
 def robots():
