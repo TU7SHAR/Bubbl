@@ -539,3 +539,193 @@
 .rate-btn:disabled {
   cursor: default;
 }
+
+
+
+/* =========================================
+   EDIT MESSAGE — Inline editing on user messages
+   ========================================= */
+
+.msg-user-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  align-self: flex-end;
+  max-width: 85%;
+  position: relative;
+}
+
+.msg-user-wrapper .msg.user {
+  align-self: auto;
+  max-width: 100%;
+}
+
+.msg-edit-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  color: #9ca3af;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  flex-shrink: 0;
+}
+
+.msg-user-wrapper:hover .msg-edit-btn {
+  opacity: 0.7;
+}
+
+.msg-edit-btn:hover {
+  opacity: 1 !important;
+  color: #4b5563;
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+
+.msg-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  align-self: flex-end;
+}
+
+.msg-edit-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.8);
+  color: #1a1a1a;
+  transition: border-color 0.2s;
+}
+
+.msg-edit-input:focus {
+  border-color: var(--theme-color, #E8722A);
+}
+
+.msg-edit-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.msg-edit-save,
+.msg-edit-cancel {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.msg-edit-save {
+  background: #10b981;
+  color: #fff;
+}
+
+.msg-edit-save:hover {
+  transform: scale(1.1);
+  background: #059669;
+}
+
+.msg-edit-cancel {
+  background: rgba(0, 0, 0, 0.08);
+  color: #6b7280;
+}
+
+.msg-edit-cancel:hover {
+  transform: scale(1.1);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+
+/* =========================================
+   SHARE CONVERSATION — Header button + Toast
+   ========================================= */
+
+.share-chat-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.share-chat-btn:hover {
+  color: #1a1a1a;
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.05);
+}
+
+.share-chat-btn:active {
+  transform: scale(0.95);
+}
+
+/* Toast notification */
+.share-toast {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: #1a1a1a;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 300;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.share-toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 600px) {
+  .msg-user-wrapper {
+    max-width: 90%;
+  }
+
+  .msg-edit-btn {
+    opacity: 0.5; /* Always slightly visible on mobile (no hover) */
+  }
+
+  .msg-edit-input {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .share-toast {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+}
