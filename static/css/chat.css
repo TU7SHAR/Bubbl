@@ -658,33 +658,108 @@
 
 
 /* =========================================
-   SHARE CONVERSATION — Header button + Toast
+   SHARE CONVERSATION — Dropdown + Toast
    ========================================= */
 
 .share-chat-btn {
   background: none;
   border: none;
-  padding: 4px;
+  padding: 6px;
   cursor: pointer;
   color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: 8px;
   transition: color 0.2s, background 0.2s, transform 0.15s;
 }
 
 .share-chat-btn:hover {
   color: #1a1a1a;
-  background: rgba(0, 0, 0, 0.05);
-  transform: scale(1.05);
+  background: rgba(0, 0, 0, 0.06);
+  transform: scale(1.08);
 }
 
 .share-chat-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.93);
 }
 
-/* Toast notification */
+/* --- Share Dropdown Menu --- */
+.share-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 210px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 6px;
+  z-index: 500;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(0.96);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+.share-dropdown--open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.share-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+  color: #1a1a1a;
+}
+
+.share-dropdown-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.share-dropdown-item:active {
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(0.98);
+}
+
+.share-dropdown-item svg {
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
+.share-dropdown-item:hover svg {
+  color: var(--theme-color, #E8722A);
+}
+
+.share-dropdown-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.share-dropdown-desc {
+  display: block;
+  font-size: 10.5px;
+  color: #9ca3af;
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+/* --- Toast Notification (enhanced) --- */
 .share-toast {
   position: absolute;
   top: 60px;
@@ -692,21 +767,36 @@
   transform: translateX(-50%) translateY(-8px);
   background: #1a1a1a;
   color: #fff;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 9px 16px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 500;
-  z-index: 300;
+  z-index: 600;
   opacity: 0;
   transition: opacity 0.25s ease, transform 0.25s ease;
   pointer-events: none;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .share-toast--visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+.share-toast--success { background: #065f46; }
+.share-toast--error { background: #7f1d1d; }
+.share-toast--loading { background: #1e3a5f; }
+
+@keyframes share-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.share-toast-spin {
+  animation: share-spin 1s linear infinite;
 }
 
 /* Mobile adjustments */
@@ -724,8 +814,13 @@
     padding: 8px 12px;
   }
 
+  .share-dropdown {
+    width: 190px;
+    right: -20px;
+  }
+
   .share-toast {
     font-size: 11px;
-    padding: 6px 12px;
+    padding: 7px 12px;
   }
 }

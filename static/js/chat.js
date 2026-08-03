@@ -1120,60 +1120,193 @@ async function sendMessage() {
 
 
 // ═══════════════════════════════════════════
-// SHARE CONVERSATION — Copy or share entire chat
+// SHARE CONVERSATION — Dropdown with 2 options
 // ═══════════════════════════════════════════
 
-function shareConversation() {
+function toggleShareMenu() {
+  var menu = document.getElementById('share-dropdown');
+  if (!menu) return;
+
+  if (menu.classList.contains('share-dropdown--open')) {
+    menu.classList.remove('share-dropdown--open');
+  } else {
+    menu.classList.add('share-dropdown--open');
+    // Close on outside click
+    setTimeout(function() {
+      document.addEventListener('click', closeShareMenuOutside);
+    }, 10);
+  }
+}
+
+function closeShareMenuOutside(e) {
+  var menu = document.getElementById('share-dropdown');
+  var btn = document.querySelector('.share-chat-btn');
+  if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
+    menu.classList.remove('share-dropdown--open');
+    document.removeEventListener('click', closeShareMenuOutside);
+  }
+}
+
+function shareViaLink() {
+  // Close the dropdown
+  var menu = document.getElementById('share-dropdown');
+  if (menu) menu.classList.remove('share-dropdown--open');
+
   if (!chatHistory || chatHistory.length === 0) {
-    showShareToast("No messages to share yet.");
+    showShareToast("No messages to share yet.", "error");
     return;
   }
 
-  // Build a clean text version of the conversation
-  const botName = document.querySelector('.chat-header-title')
+  var sessionId = window._chatSessionId || localStorage.getItem('bubbl_ws_session') || '';
+  var botId = window.EMBEDDED_BOT_ID || '';
+  var botName = document.querySelector('.chat-header-title')
     ? document.querySelector('.chat-header-title').innerText
-    : 'Bot';
+    : 'Bubbl';
 
-  let text = "--- Conversation with " + botName + " ---\n\n";
-  for (let i = 0; i < chatHistory.length; i++) {
-    const entry = chatHistory[i];
-    const label = entry.role === 'user' ? 'You' : botName;
-    // Strip any [[LEAD:...]] or [[BUTTONS:...]] tags from the export
-    let content = entry.text || '';
+  if (!sessionId) {
+    showShareToast("Start a conversation first.", "error");
+    return;
+  }
+
+  // Show loading state
+  showShareToast("Generating link...", "loading");
+
+  fetch('/api/share_conversation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: sessionId,
+      bot_id: botId,
+      bot_name: botName
+    })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.share_url) {
+      // Copy link to clipboard
+      copyToClipboard(data.share_url, "Link copied to clipboard!");
+    } else {
+      showShareToast(data.error || "Could not generate link.", "error");
+    }
+  })
+  .catch(function() {
+    showShareToast("Error connecting to server.", "error");
+  });
+}
+
+function downloadChat() {
+  // Close the dropdown
+  var menu = document.getElementById('share-dropdown');
+  if (menu) menu.classList.remove('share-dropdown--open');
+
+  if (!chatHistory || chatHistory.length === 0) {
+    showShareToast("No messages to download yet.", "error");
+    return;
+  }
+
+  var botName = document.querySelector('.chat-header-title')
+    ? document.querySelector('.chat-header-title').innerText
+    : 'Bubbl';
+
+  // Build a beautiful standalone HTML file
+  var html = buildChatExportHTML(botName, chatHistory);
+
+  // Trigger download
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'chat-with-' + botName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showShareToast("Chat downloaded!", "success");
+}
+
+function buildChatExportHTML(botName, history) {
+  var now = new Date().toLocaleString();
+  var msgCount = history.length;
+
+  var messagesHtml = '';
+  for (var i = 0; i < history.length; i++) {
+    var entry = history[i];
+    var role = entry.role;
+    var content = entry.text || '';
+    // Strip internal tags
     content = content.replace(/\[\[LEAD:.*?\]\]/gs, '').trim();
     content = content.replace(/\[\[BUTTONS:.*?\]\]/gs, '').trim();
     content = content.replace(/\[SHOW_FORM\]/g, '').trim();
-    text += label + ": " + content + "\n\n";
-  }
-  text += "---\nPowered by bubbl.ooo";
+    // Escape HTML
+    content = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Basic formatting for bot messages
+    if (role === 'bot') {
+      content = content.replace(/\n/g, '<br>');
+    }
 
-  // Try native share API first (mobile), fallback to clipboard
-  if (navigator.share) {
-    navigator.share({
-      title: 'Conversation with ' + botName,
-      text: text,
-    }).catch(function() {
-      // User cancelled or share failed — fallback to clipboard
-      copyToClipboard(text);
-    });
-  } else {
-    copyToClipboard(text);
+    var roleClass = role === 'user' ? 'user' : 'bot';
+    var label = role === 'user' ? 'You' : botName;
+    messagesHtml += '<div class="msg ' + roleClass + '">' +
+      '<div class="msg-label">' + label + '</div>' +
+      '<div class="msg-content">' + content + '</div>' +
+      '</div>';
   }
+
+  return '<!DOCTYPE html><html lang="en"><head>' +
+    '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
+    '<title>Chat with ' + botName + '</title>' +
+    '<style>' +
+    '*{margin:0;padding:0;box-sizing:border-box}' +
+    'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
+    'background:linear-gradient(135deg,#fdf8f4 0%,#f0f4ff 50%,#f5f0ff 100%);min-height:100vh;padding:24px}' +
+    '.container{max-width:680px;margin:0 auto}' +
+    '.header{text-align:center;padding:28px;background:rgba(255,255,255,0.75);' +
+    'backdrop-filter:blur(20px);border-radius:20px;border:1px solid rgba(255,255,255,0.8);' +
+    'box-shadow:0 8px 32px rgba(0,0,0,0.06);margin-bottom:20px}' +
+    '.header .avatar{width:52px;height:52px;border-radius:50%;background:#E8722A;color:#fff;' +
+    'display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;margin-bottom:10px}' +
+    '.header h1{font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:4px}' +
+    '.header p{font-size:12px;color:#6b7280}' +
+    '.messages{display:flex;flex-direction:column;gap:10px}' +
+    '.msg{max-width:80%;padding:14px 18px;border-radius:16px;font-size:14px;line-height:1.6}' +
+    '.msg.bot{background:rgba(255,255,255,0.8);align-self:flex-start;border-bottom-left-radius:4px;' +
+    'box-shadow:0 2px 10px rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.04)}' +
+    '.msg.user{background:#1a1a1a;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;' +
+    'box-shadow:0 4px 16px rgba(0,0,0,0.1)}' +
+    '.msg-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;' +
+    'margin-bottom:4px;opacity:0.5}' +
+    '.msg.user .msg-label{color:rgba(255,255,255,0.6)}' +
+    '.msg-content{word-wrap:break-word}' +
+    '.footer{text-align:center;margin-top:28px;font-size:11px;color:#9ca3af}' +
+    '.footer a{color:#E8722A;text-decoration:none;font-weight:600}' +
+    '@media(max-width:600px){body{padding:12px}.msg{max-width:90%;font-size:13px;padding:10px 14px}}' +
+    '</style></head><body>' +
+    '<div class="container">' +
+    '<div class="header">' +
+    '<div class="avatar">' + botName.charAt(0).toUpperCase() + '</div>' +
+    '<h1>Chat with ' + botName + '</h1>' +
+    '<p>' + msgCount + ' messages &middot; ' + now + '</p>' +
+    '</div>' +
+    '<div class="messages">' + messagesHtml + '</div>' +
+    '<div class="footer">Exported from <a href="https://bubbl.ooo" target="_blank">bubbl.ooo</a></div>' +
+    '</div></body></html>';
 }
 
-function copyToClipboard(text) {
+function copyToClipboard(text, successMsg) {
+  successMsg = successMsg || "Copied to clipboard!";
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function() {
-      showShareToast("Conversation copied to clipboard!");
+      showShareToast(successMsg, "success");
     }).catch(function() {
-      fallbackCopy(text);
+      fallbackCopy(text, successMsg);
     });
   } else {
-    fallbackCopy(text);
+    fallbackCopy(text, successMsg);
   }
 }
 
-function fallbackCopy(text) {
+function fallbackCopy(text, successMsg) {
   var textarea = document.createElement('textarea');
   textarea.value = text;
   textarea.style.position = 'fixed';
@@ -1182,22 +1315,29 @@ function fallbackCopy(text) {
   textarea.select();
   try {
     document.execCommand('copy');
-    showShareToast("Conversation copied to clipboard!");
+    showShareToast(successMsg || "Copied!", "success");
   } catch (e) {
-    showShareToast("Could not copy. Please try again.");
+    showShareToast("Could not copy. Please try again.", "error");
   }
   document.body.removeChild(textarea);
 }
 
-function showShareToast(message) {
+function showShareToast(message, type) {
+  type = type || "success";
   // Remove existing toast
   var existing = document.getElementById('share-toast');
   if (existing) existing.remove();
 
+  var icons = {
+    success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    error: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    loading: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="share-toast-spin"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>'
+  };
+
   var toast = document.createElement('div');
   toast.id = 'share-toast';
-  toast.className = 'share-toast';
-  toast.innerText = message;
+  toast.className = 'share-toast share-toast--' + type;
+  toast.innerHTML = (icons[type] || '') + '<span>' + message + '</span>';
 
   var chatPopup = document.getElementById('chat-window-popup');
   if (chatPopup) {
@@ -1209,9 +1349,12 @@ function showShareToast(message) {
   // Animate in
   setTimeout(function() { toast.classList.add('share-toast--visible'); }, 10);
 
-  // Auto-remove after 2.5s
-  setTimeout(function() {
-    toast.classList.remove('share-toast--visible');
-    setTimeout(function() { toast.remove(); }, 300);
-  }, 2500);
+  // Auto-remove after 3s (don't auto-remove loading)
+  if (type !== 'loading') {
+    setTimeout(function() {
+      toast.classList.remove('share-toast--visible');
+      setTimeout(function() { toast.remove(); }, 300);
+    }, 3000);
+  }
 }
+

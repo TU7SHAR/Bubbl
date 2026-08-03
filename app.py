@@ -64,6 +64,7 @@ CORS(app, resources={
     r"/api/chat": {"origins": "*"},          # Embed widget on any domain
     r"/api/lead": {"origins": "*"},          # Lead capture from any domain
     r"/api/rate_message": {"origins": "*"},  # Bot response rating from embed
+    r"/api/share_conversation": {"origins": "*"},  # Share chat from embed widget
     r"/api/platform-feedback": {"origins": "*"},  # Public feedback
     r"/api/bot_avatar/*": {"origins": "*"},  # Avatar fetch from embed
     r"/api/waitlist": {"origins": "*"},      # Marketing site waitlist
@@ -129,6 +130,12 @@ def _run_auto_migrations():
         'CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)',
         'ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45)',
         'ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS rating SMALLINT',
+        """CREATE TABLE IF NOT EXISTS shared_conversation (
+            id SERIAL PRIMARY KEY, share_token VARCHAR(16) UNIQUE NOT NULL,
+            session_id VARCHAR(64) NOT NULL, bot_id INTEGER,
+            bot_name VARCHAR(100), messages_snapshot JSONB NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW(), expires_at TIMESTAMP)""",
+        'CREATE INDEX IF NOT EXISTS idx_shared_conv_token ON shared_conversation(share_token)',
     ]
     for s in sqls:
         try:
@@ -201,7 +208,7 @@ def csrf_protect():
         return
 
     # Exempt: Public embed endpoints (called from iframes on any site)
-    exempt_paths = ('/api/chat', '/api/lead', '/api/platform-feedback', '/api/waitlist')
+    exempt_paths = ('/api/chat', '/api/lead', '/api/platform-feedback', '/api/waitlist', '/api/share_conversation')
     if request.path in exempt_paths or request.path.startswith('/bot/') and '/widget/feedback' in request.path:
         return
 

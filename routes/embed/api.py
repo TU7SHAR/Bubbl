@@ -1,12 +1,14 @@
 import json
 import re
 import logging
+import secrets
 from flask import Blueprint, request, jsonify, session, current_app
 from bot.chat import get_response_from_gemini
-from models.models import Bot, Lead, ChatMessage, db
+from models.models import Bot, Lead, ChatMessage, SharedConversation, db
 from extensions import limiter, cache
 from utils.plan_limits import check_message_limit, increment_message_count
 import uuid
+from datetime import datetime, timedelta, timezone
 
 api_bp = Blueprint('api_bp', __name__)
 
@@ -532,3 +534,70 @@ def rate_message():
     db.session.commit()
 
     return jsonify({"success": True, "message_id": msg.id, "rating": rating})
+
+
+
+@api_bp.route('/api/share_conversation', methods=['POST'])
+@limiter.limit("10 per minute")
+def share_conversation():
+    """Generate a unique shareable link for a conversation session."""
+    data = request.json or {}
+    session_id = data.get('session_id')
+    bot_id = data.get('bot_id')
+    bot_name = data.get('bot_name', 'Bubbl')
+
+    if not session_id:
+        return jsonify({"error": "No conversation to share."}), 400
+
+    # Check if a share already exists for this session
+    existing = SharedConversation.query.filter_by(session_id=session_id).first()
+    if existing:
+        # Update the snapshot with latest messages
+        messages = ChatMessage.query.filter_by(session_id=session_id)\
+            .order_by(ChatMessage.created_at.asc()).all()
+        if messages:
+            existing.messages_snapshot = [
+                {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat() if m.created_at else None}
+                for m in messages
+            ]
+            db.session.commit()
+        host_url = current_app.config.get('HOST_URL') or request.host_url.rstrip('/')
+        return jsonify({
+            "success": True,
+            "share_url": f"{host_url}/shared/{existing.share_token}",
+            "share_token": existing.share_token
+        })
+
+    # Fetch all messages for this session
+    messages = ChatMessage.query.filter_by(session_id=session_id)\
+        .order_by(ChatMessage.created_at.asc()).all()
+
+    if not messages:
+        return jsonify({"error": "No messages found for this conversation."}), 404
+
+    # Generate a short unique token
+    share_token = secrets.token_urlsafe(8)[:12]  # 12-char URL-safe token
+
+    # Create snapshot
+    snapshot = [
+        {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat() if m.created_at else None}
+        for m in messages
+    ]
+
+    shared = SharedConversation(
+        share_token=share_token,
+        session_id=session_id,
+        bot_id=int(bot_id) if bot_id else None,
+        bot_name=bot_name,
+        messages_snapshot=snapshot,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+    )
+    db.session.add(shared)
+    db.session.commit()
+
+    host_url = current_app.config.get('HOST_URL') or request.host_url.rstrip('/')
+    return jsonify({
+        "success": True,
+        "share_url": f"{host_url}/shared/{share_token}",
+        "share_token": share_token
+    })

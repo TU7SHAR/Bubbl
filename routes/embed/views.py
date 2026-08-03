@@ -50,6 +50,24 @@ def refunds():
 def page_not_found(e):
     return render_template('404.html'), 404
 
+
+@views_bp.route('/shared/<share_token>')
+def view_shared_conversation(share_token):
+    """Public page to view a shared conversation."""
+    from models.models import SharedConversation
+    shared = SharedConversation.query.filter_by(share_token=share_token).first()
+    if not shared:
+        return render_template('404.html'), 404
+
+    # Check expiry
+    if shared.expires_at and shared.expires_at < datetime.now(timezone.utc):
+        return render_template('shared_expired.html'), 410
+
+    return render_template('shared_conversation.html',
+                           shared=shared,
+                           messages=shared.messages_snapshot,
+                           bot_name=shared.bot_name or 'Bubbl')
+
 @views_bp.route('/robots.txt')
 def robots():
     return send_from_directory('static', 'robots.txt')
