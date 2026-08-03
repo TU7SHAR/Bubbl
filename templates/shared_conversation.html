@@ -180,8 +180,8 @@
         <div class="shared-messages">
             {% for msg in messages %}
             <div class="shared-msg {{ msg.role }}">
-                <div class="msg-text" {% if msg.role == 'bot' %}data-render-md="1"{% endif %}>{{ msg.content | e }}</div>
-                {% if msg.created_at %}
+                <div class="msg-text" {% if msg.role == 'bot' %}data-render-md="1"{% endif %}>{{ (msg.content or '') | e }}</div>
+                {% if msg.created_at and msg.created_at is string %}
                 <div class="msg-time">{{ msg.created_at[:16] | replace('T', ' ') }}</div>
                 {% endif %}
             </div>
