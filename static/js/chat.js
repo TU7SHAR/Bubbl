@@ -1384,6 +1384,23 @@ function _renderMarkdownForExport(text) {
     return listHtml;
   });
 
+  // [[BUTTONS: ...]] → render as styled clickable pill links
+  html = html.replace(/\[\[BUTTONS:\s*(.*?)\]\]/gs, function(match, raw) {
+    var parts = raw.split(/,\s*(?=[a-z]+:)/);
+    var btnsHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">';
+    for (var i = 0; i < parts.length; i++) {
+      var m = parts[i].trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
+      if (m) {
+        var label = m[2].trim();
+        var url = m[3].trim();
+        var color = m[4] || '#E8722A';
+        btnsHtml += '<a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;padding:7px 14px;background:' + color + ';color:#fff;border-radius:50px;font-size:12px;font-weight:600;text-decoration:none;">' + label + ' &#8599;</a>';
+      }
+    }
+    btnsHtml += '</div>';
+    return btnsHtml;
+  });
+
   // Paragraphs — double newlines
   html = html.replace(/\n{2,}/g, '</p><p style="margin:8px 0;">');
   // Single newlines
@@ -1401,9 +1418,8 @@ function buildChatExportHTML(botName, history) {
     var entry = history[i];
     var role = entry.role;
     var content = entry.text || '';
-    // Strip internal tags
+    // Strip internal tags (but keep BUTTONS — rendered by _renderMarkdownForExport)
     content = content.replace(/\[\[LEAD:.*?\]\]/gs, '').trim();
-    content = content.replace(/\[\[BUTTONS:.*?\]\]/gs, '').trim();
     content = content.replace(/\[SHOW_FORM\]/g, '').trim();
 
     var roleClass = role === 'user' ? 'user' : 'bot';

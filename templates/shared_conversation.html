@@ -242,6 +242,23 @@
         items.forEach(function(item) { var t = item.replace(/^[\-]\s+/, '').trim(); if(t) listHtml += '<li style="margin-bottom:3px;">' + t + '</li>'; });
         return listHtml + '</ul>';
       });
+
+      // [[BUTTONS: ...]] → render as styled clickable links
+      html = html.replace(/\[\[BUTTONS:\s*(.*?)\]\]/gs, function(match, raw) {
+        var parts = raw.split(/,\s*(?=[a-z]+:)/);
+        var btnsHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">';
+        parts.forEach(function(part) {
+          var m = part.trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
+          if (m) {
+            var label = m[2].trim();
+            var url = m[3].trim();
+            btnsHtml += '<a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;padding:7px 14px;background:#E8722A;color:#fff;border-radius:50px;font-size:12px;font-weight:600;text-decoration:none;">' + label + ' &#8599;</a>';
+          }
+        });
+        btnsHtml += '</div>';
+        return btnsHtml;
+      });
+
       // Paragraphs
       html = html.replace(/\n{2,}/g, '</p><p style="margin:8px 0;">');
       html = html.replace(/\n/g, '<br>');
