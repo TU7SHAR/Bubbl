@@ -549,11 +549,27 @@ def share_conversation():
     if not session_id:
         return jsonify({"error": "No conversation to share."}), 400
 
-    # Check if a share already exists for this session
-    existing = SharedConversation.query.filter_by(session_id=session_id).first()
+    # Build filter: always by session_id, and by bot_id when provided
+    # This prevents mixing platform bot messages with user bot messages
+    msg_filter = {'session_id': session_id}
+    if bot_id:
+        try:
+            msg_filter['bot_id'] = int(bot_id)
+        except (ValueError, TypeError):
+            pass
+
+    # Check if a share already exists for this session + bot combo
+    share_filter = {'session_id': session_id}
+    if bot_id:
+        try:
+            share_filter['bot_id'] = int(bot_id)
+        except (ValueError, TypeError):
+            pass
+
+    existing = SharedConversation.query.filter_by(**share_filter).first()
     if existing:
         # Update the snapshot with latest messages
-        messages = ChatMessage.query.filter_by(session_id=session_id)\
+        messages = ChatMessage.query.filter_by(**msg_filter)\
             .order_by(ChatMessage.created_at.asc()).all()
         if messages:
             existing.messages_snapshot = [
@@ -568,8 +584,8 @@ def share_conversation():
             "share_token": existing.share_token
         })
 
-    # Fetch all messages for this session
-    messages = ChatMessage.query.filter_by(session_id=session_id)\
+    # Fetch all messages for this session (filtered by bot_id if provided)
+    messages = ChatMessage.query.filter_by(**msg_filter)\
         .order_by(ChatMessage.created_at.asc()).all()
 
     if not messages:
@@ -601,3 +617,33 @@ def share_conversation():
         "share_url": f"{host_url}/shared/{share_token}",
         "share_token": share_token
     })
+
+
+
+@api_bp.route('/api/conversation_history', methods=['POST'])
+def get_conversation_history():
+    """Fetch full conversation history from the database for download/export."""
+    data = request.json or {}
+    session_id = data.get('session_id')
+    bot_id = data.get('bot_id')
+
+    if not session_id:
+        return jsonify({"error": "No session.", "messages": []}), 400
+
+    # Build filter
+    msg_filter = {'session_id': session_id}
+    if bot_id:
+        try:
+            msg_filter['bot_id'] = int(bot_id)
+        except (ValueError, TypeError):
+            pass
+
+    messages = ChatMessage.query.filter_by(**msg_filter)\
+        .order_by(ChatMessage.created_at.asc()).all()
+
+    result = [
+        {"role": m.role, "content": m.content}
+        for m in messages
+    ]
+
+    return jsonify({"messages": result})
