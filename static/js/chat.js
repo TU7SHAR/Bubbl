@@ -1198,12 +1198,52 @@ function shareViaLink() {
   });
 }
 
+function _getVisibleChatHistory() {
+  /**
+   * Reads the actual visible messages from the chat DOM.
+   * This captures the FULL conversation as displayed, including messages
+   * that were removed from chatHistory[] due to editing.
+   * Returns an array of {role, text} matching the chatHistory format.
+   */
+  var display = document.getElementById('chat-display');
+  if (!display) return [];
+
+  var history = [];
+  var children = display.children;
+
+  for (var i = 0; i < children.length; i++) {
+    var el = children[i];
+
+    // User message (wrapped in .msg-user-wrapper)
+    if (el.classList && el.classList.contains('msg-user-wrapper')) {
+      var userDiv = el.querySelector('.msg.user');
+      if (userDiv) {
+        history.push({ role: 'user', text: userDiv.innerText.trim() });
+      }
+      continue;
+    }
+
+    // Bot message
+    if (el.classList && el.classList.contains('msg') && el.classList.contains('bot')) {
+      // Skip the initial greeting if it's the first bot message and matches default
+      history.push({ role: 'bot', text: el.innerText.trim() });
+      continue;
+    }
+  }
+
+  return history;
+}
+
 function downloadChat() {
   // Close the dropdown
   var menu = document.getElementById('share-dropdown');
   if (menu) menu.classList.remove('share-dropdown--open');
 
-  if (!chatHistory || chatHistory.length === 0) {
+  // Build history from the VISIBLE DOM messages (not chatHistory array,
+  // which gets truncated on edit). This captures exactly what the user sees.
+  var displayHistory = _getVisibleChatHistory();
+
+  if (!displayHistory || displayHistory.length === 0) {
     showShareToast("No messages to download yet.", "error");
     return;
   }
@@ -1213,7 +1253,7 @@ function downloadChat() {
     : 'Bubbl';
 
   // Build a print-optimized HTML with rendered markdown, then trigger print-to-PDF
-  var html = buildChatExportHTML(botName, chatHistory);
+  var html = buildChatExportHTML(botName, displayHistory);
 
   // Open in a new window and trigger print (Save as PDF)
   var printWindow = window.open('', '_blank');
