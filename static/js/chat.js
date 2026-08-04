@@ -1197,9 +1197,7 @@ function shareViaLink() {
 function _getVisibleChatHistory() {
   /**
    * Reads the actual visible messages from the chat DOM.
-   * This captures the FULL conversation as displayed, including messages
-   * that were removed from chatHistory[] due to editing.
-   * Returns an array of {role, text} matching the chatHistory format.
+   * Fallback when API is unavailable.
    */
   var display = document.getElementById('chat-display');
   if (!display) return [];
@@ -1210,7 +1208,6 @@ function _getVisibleChatHistory() {
   for (var i = 0; i < children.length; i++) {
     var el = children[i];
 
-    // User message (wrapped in .msg-user-wrapper)
     if (el.classList && el.classList.contains('msg-user-wrapper')) {
       var userDiv = el.querySelector('.msg.user');
       if (userDiv) {
@@ -1219,9 +1216,7 @@ function _getVisibleChatHistory() {
       continue;
     }
 
-    // Bot message
     if (el.classList && el.classList.contains('msg') && el.classList.contains('bot')) {
-      // Skip the initial greeting if it's the first bot message and matches default
       history.push({ role: 'bot', text: el.innerText.trim() });
       continue;
     }
@@ -1235,31 +1230,63 @@ function downloadChat() {
   var menu = document.getElementById('share-dropdown');
   if (menu) menu.classList.remove('share-dropdown--open');
 
-  // Build history from the VISIBLE DOM messages (not chatHistory array,
-  // which gets truncated on edit). This captures exactly what the user sees.
-  var displayHistory = _getVisibleChatHistory();
-
-  if (!displayHistory || displayHistory.length === 0) {
-    showShareToast("No messages to download yet.", "error");
-    return;
-  }
-
+  var sessionId = window._chatSessionId || localStorage.getItem('bubbl_ws_session') || '';
+  var botId = window.EMBEDDED_BOT_ID || '';
   var botName = document.querySelector('.chat-header-title')
     ? document.querySelector('.chat-header-title').innerText
     : 'Bubbl';
 
-  // Build a print-optimized HTML with rendered markdown, then trigger print-to-PDF
-  var html = buildChatExportHTML(botName, displayHistory);
+  // Try to fetch FULL history from database (includes pre-edit messages)
+  if (sessionId) {
+    showShareToast("Preparing PDF...", "loading");
+
+    fetch('/api/conversation_history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, bot_id: botId })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      var messages = data.messages || [];
+      if (messages.length > 0) {
+        // Convert API format {role, content} to export format {role, text}
+        var exportHistory = messages.map(function(m) {
+          return { role: m.role, text: m.content };
+        });
+        _triggerPdfDownload(botName, exportHistory);
+      } else {
+        // No DB messages — fall back to visible DOM
+        _downloadFromDom(botName);
+      }
+    })
+    .catch(function() {
+      // Network error — fall back to DOM
+      _downloadFromDom(botName);
+    });
+  } else {
+    // No session — use DOM
+    _downloadFromDom(botName);
+  }
+}
+
+function _downloadFromDom(botName) {
+  var domHistory = _getVisibleChatHistory();
+  if (!domHistory || domHistory.length === 0) {
+    showShareToast("No messages to download yet.", "error");
+    return;
+  }
+  _triggerPdfDownload(botName, domHistory);
+}
+
+function _triggerPdfDownload(botName, history) {
+  var html = buildChatExportHTML(botName, history);
 
   // Open in a new window and trigger print (Save as PDF)
   var printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();
-    // Give it a moment to render, then trigger print
-    setTimeout(function() {
-      printWindow.print();
-    }, 400);
+    setTimeout(function() { printWindow.print(); }, 400);
     showShareToast("PDF ready — use Save as PDF!", "success");
   } else {
     // Popup blocked — fallback to direct HTML download
