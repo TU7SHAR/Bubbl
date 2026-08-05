@@ -1364,6 +1364,12 @@ function _renderMarkdownForExport(text) {
   // Italic (*text*)
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
+  // Headers (### > ## > #)
+  html = html.replace(/^####\s+(.+)$/gm, '<h4 style="font-size:13px;font-weight:700;margin:12px 0 4px 0;">$1</h4>');
+  html = html.replace(/^###\s+(.+)$/gm, '<h3 style="font-size:14px;font-weight:700;margin:12px 0 4px 0;">$1</h3>');
+  html = html.replace(/^##\s+(.+)$/gm, '<h2 style="font-size:15px;font-weight:700;margin:14px 0 4px 0;">$1</h2>');
+  html = html.replace(/^#\s+(.+)$/gm, '<h1 style="font-size:16px;font-weight:700;margin:14px 0 4px 0;">$1</h1>');
+
   // Unordered lists (- item)
   html = html.replace(/((?:^|\n)[\-\*]\s.+)+/g, function(block) {
     var items = block.trim().split('\n');
@@ -1388,8 +1394,21 @@ function _renderMarkdownForExport(text) {
     return listHtml;
   });
 
-  // [[BUTTONS: ...]] → strip from inline (collected into References section at end of PDF)
-  html = html.replace(/\s*\[\[BUTTONS:\s*(.*?)\]\]\s*/gs, '');
+  // [[BUTTONS: ...]] → render inline as plain text links (Label: URL)
+  html = html.replace(/\s*\[\[BUTTONS:\s*(.*?)\]\]\s*/gs, function(match, raw) {
+    var parts = raw.split(/,\s*(?=[a-z]+:)/);
+    var linksHtml = '<div style="margin-top:8px;padding:8px 12px;background:#f9fafb;border-radius:8px;border:1px solid #f0f0f0;">';
+    for (var i = 0; i < parts.length; i++) {
+      var m = parts[i].trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
+      if (m) {
+        var label = m[2].trim();
+        var url = m[3].trim();
+        linksHtml += '<div style="font-size:12px;margin-bottom:4px;"><span style="font-weight:600;color:#1a1a1a;">' + label + '</span><span style="color:#6b7280;"> — </span><span style="color:#3b82f6;word-break:break-all;">' + url + '</span></div>';
+      }
+    }
+    linksHtml += '</div>';
+    return linksHtml;
+  });
 
   // Paragraphs — double newlines
   html = html.replace(/\n{2,}/g, '</p><p style="margin:8px 0;">');
