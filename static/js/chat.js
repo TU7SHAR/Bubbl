@@ -1474,21 +1474,19 @@ function buildChatExportHTML(botName, history) {
     '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
     '<title>Chat with ' + botName + '</title>' +
     '<style>' +
-    '@page{size:A4;margin:20mm 15mm;}' +
+    '@page{size:A4;margin:15mm 15mm;}' +
     '*{margin:0;padding:0;box-sizing:border-box}' +
     'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
-    'background:#f9fafb;min-height:100vh;padding:24px;color:#1a1a1a;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+    'background:#fff;padding:0;color:#1a1a1a;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
     '.container{max-width:680px;margin:0 auto}' +
-    '.header{text-align:center;padding:28px 20px;background:#fff;border-radius:16px;border:1px solid #f0f0f0;' +
-    'box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:24px}' +
-    '.avatar{width:48px;height:48px;border-radius:50%;background:#E8722A;color:#fff;' +
-    'display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;margin-bottom:10px}' +
-    'h1{font-size:18px;font-weight:800;color:#1a1a1a;margin-bottom:4px}' +
-    '.meta{font-size:12px;color:#6b7280}' +
+    '.header{text-align:center;padding:16px 20px 12px;margin-bottom:16px;border-bottom:1px solid #f0f0f0;}' +
+    '.avatar{width:36px;height:36px;border-radius:50%;background:#E8722A;color:#fff;' +
+    'display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;margin-bottom:6px}' +
+    'h1{font-size:16px;font-weight:800;color:#1a1a1a;margin-bottom:2px}' +
+    '.meta{font-size:11px;color:#6b7280}' +
     '.messages{display:flex;flex-direction:column;gap:4px}' +
     '.footer{text-align:center;margin-top:32px;font-size:11px;color:#9ca3af;padding:16px}' +
     '.footer a{color:#E8722A;text-decoration:none;font-weight:600}' +
-    '@media print{body{background:#fff;padding:0}.header{box-shadow:none;border:1px solid #eee}}' +
     '</style></head><body>' +
     '<div class="container">' +
     '<div class="header">' +
