@@ -1388,22 +1388,8 @@ function _renderMarkdownForExport(text) {
     return listHtml;
   });
 
-  // [[BUTTONS: ...]] → render as styled clickable pill links
-  html = html.replace(/\[\[BUTTONS:\s*(.*?)\]\]/gs, function(match, raw) {
-    var parts = raw.split(/,\s*(?=[a-z]+:)/);
-    var btnsHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">';
-    for (var i = 0; i < parts.length; i++) {
-      var m = parts[i].trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
-      if (m) {
-        var label = m[2].trim();
-        var url = m[3].trim();
-        var color = m[4] || '#E8722A';
-        btnsHtml += '<a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;padding:7px 14px;background:' + color + ';color:#fff;border-radius:50px;font-size:12px;font-weight:600;text-decoration:none;">' + label + ' &#8599;</a>';
-      }
-    }
-    btnsHtml += '</div>';
-    return btnsHtml;
-  });
+  // [[BUTTONS: ...]] → strip from inline (collected into References section at end of PDF)
+  html = html.replace(/\s*\[\[BUTTONS:\s*(.*?)\]\]\s*/gs, '');
 
   // Paragraphs — double newlines
   html = html.replace(/\n{2,}/g, '</p><p style="margin:8px 0;">');
@@ -1418,15 +1404,28 @@ function buildChatExportHTML(botName, history) {
   var msgCount = history.length;
 
   var messagesHtml = '';
+  var collectedLinks = [];  // Collect all button links for References section
+
   for (var i = 0; i < history.length; i++) {
     var entry = history[i];
     var role = entry.role;
     var content = entry.text || '';
-    // Strip internal tags (but keep BUTTONS — rendered by _renderMarkdownForExport)
+    // Strip internal tags
     content = content.replace(/\[\[LEAD:.*?\]\]/gs, '').trim();
     content = content.replace(/\[SHOW_FORM\]/g, '').trim();
 
-    var roleClass = role === 'user' ? 'user' : 'bot';
+    // Extract links from [[BUTTONS:...]] before rendering strips them
+    var btnMatch = content.match(/\[\[BUTTONS:\s*(.*?)\]\]/s);
+    if (btnMatch) {
+      var btnParts = btnMatch[1].split(/,\s*(?=[a-z]+:)/);
+      for (var b = 0; b < btnParts.length; b++) {
+        var lm = btnParts[b].trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
+        if (lm) {
+          collectedLinks.push({ label: lm[2].trim(), url: lm[3].trim() });
+        }
+      }
+    }
+
     var label = role === 'user' ? 'YOU' : botName.toUpperCase();
 
     // Render markdown for bot messages, simple escape for user messages
@@ -1479,6 +1478,16 @@ function buildChatExportHTML(botName, history) {
     '<p class="meta">' + msgCount + ' messages &middot; ' + now + '</p>' +
     '</div>' +
     '<div class="messages">' + messagesHtml + '</div>' +
+    (collectedLinks.length > 0
+      ? '<div style="margin-top:28px;padding:18px 20px;background:#fff;border:1px solid #f0f0f0;border-radius:12px;">' +
+        '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:10px;">References &amp; Links</div>' +
+        collectedLinks.map(function(link, idx) {
+          return '<div style="margin-bottom:6px;font-size:13px;line-height:1.5;">' +
+            '<span style="color:#1a1a1a;font-weight:500;">' + (idx + 1) + '. ' + link.label + '</span>' +
+            '<br><span style="color:#6b7280;font-size:11px;word-break:break-all;">' + link.url + '</span></div>';
+        }).join('') +
+        '</div>'
+      : '') +
     '<div class="footer">Exported from <a href="https://bubbl.ooo">bubbl.ooo</a></div>' +
     '</div></body></html>';
 }
