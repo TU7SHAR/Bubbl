@@ -135,8 +135,11 @@
   .feedback-overlay.active { transform: translateY(0); }
   
   .feedback-close-btn { position: absolute; top: 12px; right: 15px; background: none; border: none; font-size: 16px; color: #6b7280; cursor: pointer; }
-  .feedback-stars { display: flex; justify-content: center; gap: 8px; font-size: 28px; cursor: pointer; color: #cbd5e1; margin-bottom: 15px; }
-  .feedback-stars span:hover, .feedback-stars span.active { color: #f59e0b; }
+  .feedback-stars { display: flex; justify-content: center; gap: 6px; font-size: 30px; cursor: pointer; color: #cbd5e1; margin-bottom: 15px; user-select: none; }
+  .feedback-stars span { transition: color 0.15s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-block; }
+  .feedback-stars span:hover { transform: scale(1.3); }
+  .feedback-stars span.active { color: #f59e0b; }
+  .feedback-stars span.hover-fill { color: #fbbf24; }
   .feedback-text { 
     width: 100%; height: 65px; padding: 10px; border: 1px solid #e5e7eb; 
     border-radius: 8px; resize: none; font-size: 13px; font-family: inherit; 
@@ -280,12 +283,35 @@
 
   document.getElementById('overlay-stars').addEventListener('click', function(e) {
       if (e.target.tagName === 'SPAN') {
-          currentRating = e.target.getAttribute('data-val');
+          currentRating = parseInt(e.target.getAttribute('data-val'));
           let stars = this.children;
           for(let i=0; i<stars.length; i++) {
               if(i < currentRating) stars[i].classList.add('active');
               else stars[i].classList.remove('active');
           }
+          // Bounce animation on selected star
+          e.target.style.transform = 'scale(1.5)';
+          setTimeout(() => { e.target.style.transform = ''; }, 200);
+      }
+  });
+
+  // Hover: fill all stars up to the hovered one
+  document.getElementById('overlay-stars').addEventListener('mouseover', function(e) {
+      if (e.target.tagName === 'SPAN') {
+          let val = parseInt(e.target.getAttribute('data-val'));
+          let stars = this.children;
+          for (let i = 0; i < stars.length; i++) {
+              if (i < val) stars[i].classList.add('hover-fill');
+              else stars[i].classList.remove('hover-fill');
+          }
+      }
+  });
+
+  // Mouse leave: remove hover, keep only the selected rating
+  document.getElementById('overlay-stars').addEventListener('mouseleave', function() {
+      let stars = this.children;
+      for (let i = 0; i < stars.length; i++) {
+          stars[i].classList.remove('hover-fill');
       }
   });
 
