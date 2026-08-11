@@ -334,7 +334,7 @@
           <button class="int-copy-btn" onclick="copySnippet('embed-code-html', this)">Copy</button>
           <pre id="embed-code-html">&lt;!-- Bubbl Widget --&gt;
 &lt;script src="https://{{ request.host }}/static/js/embed.js"
-  data-bot-id="{{ bot.id }}"&gt;&lt;/script&gt;</pre>
+  data-bot-id="{{ bot_public_id }}"&gt;&lt;/script&gt;</pre>
         </div>
 
         <div class="fw-label">React / Next.js</div>
@@ -342,7 +342,7 @@
           <button class="int-copy-btn" onclick="copySnippet('embed-code-react', this)">Copy</button>
           <pre id="embed-code-react">{/* Bubbl Widget */}
 &lt;Script id="bubbl-init" strategy="beforeInteractive"&gt;
-  {`window.BOTFACTORY_ID = "{{ bot.id }}";`}
+  {`window.BOTFACTORY_ID = "{{ bot_public_id }}";`}
 &lt;/Script&gt;
 &lt;Script src="https://{{ request.host }}/static/js/embed.js"
   strategy="afterInteractive" /&gt;</pre>
@@ -389,7 +389,7 @@
       <p class="int-preview-sub">Your agent appears in the bottom-right corner of this page.</p>
       <div class="int-live-pill"><span></span> Widget Active</div>
 
-      <script src="https://{{ request.host }}/static/js/embed.js" data-bot-id="{{ bot.id }}"></script>
+      <script src="https://{{ request.host }}/static/js/embed.js" data-bot-id="{{ bot_public_id }}"></script>
     </div>
 
   </div>
@@ -409,7 +409,7 @@
   }
 
   // --- FUNNEL EVENT: User visited embed/integrate page ---
-  if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackEmbed('{{ bot.id }}');
+  if (typeof BubblAnalytics !== 'undefined') BubblAnalytics.trackEmbed('{{ bot_public_id }}');
 </script>
 
 {% endblock %}
