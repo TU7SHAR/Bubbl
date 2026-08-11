@@ -35,7 +35,8 @@ def register_google_oauth(app):
 
 def google_login():
     """Redirect the user to Google's OAuth consent screen."""
-    redirect_uri = url_for('auth.google_callback', _external=True)
+    # Force HTTPS in redirect URI (Flask behind nginx doesn't know it's HTTPS)
+    redirect_uri = url_for('auth.google_callback', _external=True, _scheme='https')
     return oauth.google.authorize_redirect(redirect_uri)
 
 
