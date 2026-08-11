@@ -62,6 +62,20 @@ def google_callback():
         flash("No email found in your Google account.", "error")
         return redirect(url_for('auth.login'))
 
+    # --- SUPER ADMIN CHECK (bypasses DB, matches login.py) ---
+    # The super admin is env-based (SUPER_ADMIN_MAIL), NOT a DB user.
+    # Without this, logging in via Google with the super admin email would
+    # create/log in a normal DB account instead of granting super admin.
+    super_admin_email = os.environ.get('SUPER_ADMIN_MAIL')
+    if super_admin_email and email == super_admin_email.lower().strip():
+        session['user_id'] = -1
+        session['user_name'] = "Super Admin"
+        session['org_name'] = "Platform Admin"
+        session['org_id'] = -1
+        session['role'] = 'super_admin'
+        flash("God Mode Activated (via Google).", "success")
+        return redirect(url_for('super_admin_bp.dashboard'))
+
     # --- CHECK: Does this user already exist? ---
     user = User.query.filter_by(email=email).first()
 
