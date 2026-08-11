@@ -42,7 +42,14 @@ def login():
         if not user:
             flash("No account found with that email address.", "warning")
             return redirect(url_for('auth.login'))
-            
+
+        # 3b. CATCH: Google-only account (no password set)
+        # These users have password_hash=None. Calling .encode() on None
+        # would crash, so guide them to the Google button instead.
+        if not user.password_hash:
+            flash("This account uses Google Sign-In. Please click 'Sign in with Google'.", "info")
+            return redirect(url_for('auth.login'))
+
         # 4. CATCH: Wrong Password
         if not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
             flash("Incorrect password. Please try again.", "error")
