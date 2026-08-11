@@ -58,3 +58,7 @@ class Config:
     GA4_MEASUREMENT_ID = os.getenv('GA4_MEASUREMENT_ID')       # e.g. G-XXXXXXXXXX
     META_PIXEL_ID = os.getenv('META_PIXEL_ID')                 # e.g. 1234567890
     CLARITY_ID = os.getenv('CLARITY_ID')                       # e.g. abcdef123
+
+    # --- GOOGLE OAUTH ---
+    GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+    GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')

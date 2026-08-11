@@ -34,11 +34,12 @@ class User(db.Model):
     org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)  # Nullable for Google OAuth users
     otp = db.Column(db.String(6), nullable=True)
     otp_created_at = db.Column(db.DateTime, nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
     role = db.Column(db.String(20), nullable=False, default='member')
+    auth_provider = db.Column(db.String(20), default='email')  # 'email' or 'google'
     is_suspended = db.Column(db.Boolean, default=False)  # Admin can suspend users
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 

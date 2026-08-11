@@ -94,6 +94,10 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(auth_bp)
 # app.register_blueprint(chat_bp)
 app.register_blueprint(profile_bp)
+
+# --- GOOGLE OAUTH: Initialize after app + blueprints are ready ---
+from routes.auth.google_auth import register_google_oauth
+register_google_oauth(app)
 app.register_blueprint(views_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(payments_bp)
@@ -131,6 +135,8 @@ def _run_auto_migrations():
         'CREATE INDEX IF NOT EXISTS idx_chat_message_session ON chat_message(session_id)',
         'ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS ip_address VARCHAR(45)',
         'ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS rating SMALLINT',
+        'ALTER TABLE "user" ALTER COLUMN password_hash DROP NOT NULL',
+        "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'email'",
         """CREATE TABLE IF NOT EXISTS shared_conversation (
             id SERIAL PRIMARY KEY, share_token VARCHAR(16) UNIQUE NOT NULL,
             session_id VARCHAR(64) NOT NULL, bot_id INTEGER,
