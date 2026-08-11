@@ -203,6 +203,31 @@
       display.appendChild(div);
     });
   }
+  // Canonicalize a URL for duplicate detection (matches backend normalize_url).
+  // 'adobe.com', 'https://adobe.com', 'https://adobe.com/', 'www.adobe.com',
+  // and the typo 'https:/adobe.com' all collapse to the same key.
+  function normalizeUrlForDedup(raw) {
+    if (!raw) return '';
+    let u = String(raw).trim();
+    u = u.replace(/^(https?):\/(?!\/)/i, '$1://'); // fix 'https:/x' typo
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    try {
+      const p = new URL(u);
+      let host = p.hostname.toLowerCase();
+      if (host.startsWith('www.')) host = host.slice(4);
+      const path = p.pathname.replace(/\/+$/, '');
+      return 'https://' + host + path + (p.search || '');
+    } catch (e) {
+      return u.toLowerCase().replace(/\/+$/, '');
+    }
+  }
+
+  // Returns true if `url` already exists in `list` (ignoring the entry at skipIndex).
+  function isDuplicateLink(url, list, skipIndex) {
+    const n = normalizeUrlForDedup(url);
+    return list.some((l, idx) => idx !== skipIndex && normalizeUrlForDedup(l.url) === n);
+  }
+
   function addLinkSnippet() {
     const urlEl = document.getElementById('scrape_url');
     const deepCrawlEl = document.getElementById('use_deep_crawl');
@@ -211,6 +236,13 @@
     let url = urlEl.value.trim();
     if (!url) { showModal('Please enter a valid URL.', 'error'); return; }
     if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; }
+
+    // --- DEDUP: block duplicate URLs in the Add Links list ---
+    // Also checks against links already committed via Quick Start (globalLinks).
+    if (isDuplicateLink(url, tempLinks, editingLinkIndex) || isDuplicateLink(url, globalLinks, -1)) {
+      showModal('This link has already been added.', 'error');
+      return;
+    }
 
     const isDeep = deepCrawlEl.checked;
     const maxPages = parseInt(maxUrlsEl.value) || 20;
@@ -435,8 +467,11 @@
     const quickUrl = document.getElementById('quick_url').value.trim();
     if (quickUrl) {
       const finalUrl = quickUrl.startsWith('http') ? quickUrl : 'https://' + quickUrl;
-      globalLinks.push({ url: finalUrl, addedAt: Date.now(), isNew: false, isDeep: false });
-      updateDashboardBadges();
+      // --- DEDUP: don't add if this URL is already in the list ---
+      if (!isDuplicateLink(finalUrl, globalLinks, -1)) {
+        globalLinks.push({ url: finalUrl, addedAt: Date.now(), isNew: false, isDeep: false });
+        updateDashboardBadges();
+      }
     }
     switchCbTab('tab-data');
   }
@@ -574,6 +609,20 @@
               });
           }
           addLogLine(`Bot successfully initialized in database (ID: ${createdBotId}).`, "#38bdf8");
+          // --- FINAL DEDUP: collapse any duplicate URLs before scraping ---
+          // Safety net in case duplicates slipped in from different entry points.
+          const _seenUrls = new Set();
+          const dedupedLinks = globalLinks.filter(link => {
+              const key = normalizeUrlForDedup(link.url);
+              if (_seenUrls.has(key)) return false;
+              _seenUrls.add(key);
+              return true;
+          });
+          if (dedupedLinks.length < globalLinks.length) {
+              addLogLine(`Removed ${globalLinks.length - dedupedLinks.length} duplicate link(s).`, "#f59e0b");
+          }
+          globalLinks = dedupedLinks;
+
           if (globalLinks.length > 0 && !abortProcess) {
               addLogLine(`Found ${globalLinks.length} root web source(s). Initiating Scrape Workers...`, "#f59e0b");
               for (let i = 0; i < globalLinks.length; i++) {

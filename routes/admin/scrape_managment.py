@@ -1,6 +1,8 @@
 import os
 import uuid
 import json
+import re
+from urllib.parse import urlparse, urlunparse
 from flask import request, jsonify, session
 
 from models.models import db, Bot, ScrapeJob, Organization
@@ -12,6 +14,33 @@ from . import admin_bp
 
 # Rough per-page cost: ~2s rate-limit sleep + ~2-3s scrape/index per URL
 SECONDS_PER_PAGE = 4
+
+
+def normalize_url(raw_url):
+    """
+    Canonicalize a URL for duplicate detection so that
+    'adobe.com', 'https://adobe.com', 'https://adobe.com/', 'www.adobe.com',
+    and the typo 'https:/adobe.com' all collapse to one key.
+    - unifies scheme to https
+    - lowercases host, strips leading 'www.'
+    - strips trailing slash and fragment (keeps query string)
+    """
+    if not raw_url:
+        return ''
+    u = raw_url.strip()
+    # Fix common single-slash typo: 'https:/x' -> 'https://x'
+    u = re.sub(r'^(https?):/(?!/)', r'\1://', u, flags=re.IGNORECASE)
+    if not u.lower().startswith(('http://', 'https://')):
+        u = 'https://' + u
+    try:
+        parsed = urlparse(u)
+        host = (parsed.netloc or '').lower()
+        if host.startswith('www.'):
+            host = host[4:]
+        path = parsed.path.rstrip('/')
+        return urlunparse(('https', host, path, '', parsed.query, ''))
+    except Exception:
+        return u.lower().rstrip('/')
 
 
 @admin_bp.route('/api/scrape/discover', methods=['POST'])
@@ -190,6 +219,20 @@ def start_scrape():
 
     org = Organization.query.get(session.get('org_id'))
     plan_name = (org.plan if org else 'free') or 'free'
+
+    # --- DEDUP: don't scrape the same URL twice for this bot ---
+    # Compares normalized URLs so adobe.com / https://adobe.com / https://adobe.com/
+    # are treated as the same. Skips if an active or completed job already exists.
+    norm_target = normalize_url(url)
+    existing_jobs = ScrapeJob.query.filter_by(bot_id=bot_id).all()
+    for j in existing_jobs:
+        if normalize_url(j.url) == norm_target and j.status in ('pending', 'running', 'completed'):
+            return jsonify({
+                "success": True,
+                "duplicate": True,
+                "job_id": None,
+                "message": f"'{url}' was already added for this bot — skipping duplicate.",
+            })
 
     new_job = ScrapeJob(bot_id=bot_id, url=url, status='pending', limit=max_urls)
     db.session.add(new_job)
