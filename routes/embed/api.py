@@ -7,6 +7,7 @@ from bot.chat import get_response_from_gemini
 from models.models import Bot, Lead, ChatMessage, SharedConversation, db
 from extensions import limiter, cache
 from utils.plan_limits import check_message_limit, increment_message_count
+from utils.bot_id_encoder import decode_bot_id
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -205,6 +206,12 @@ def chat():
     bot_id = data.get('bot_id') or session.get('active_bot_id')
     history = data.get('history', [])
     chat_session_id = data.get('session_id') or session.get('chat_session_id') or str(uuid.uuid4())
+
+    # Decode encoded bot_id (from embed widget) — supports both raw int and encoded string
+    if bot_id and not isinstance(bot_id, int):
+        decoded = decode_bot_id(str(bot_id))
+        if decoded is not None:
+            bot_id = decoded
 
     # Store session_id in Flask session for continuity
     if 'chat_session_id' not in session:

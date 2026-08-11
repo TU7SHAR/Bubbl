@@ -685,7 +685,14 @@ def unlock_bot(bot_id):
     return redirect(url_for('views_bp.dashboard'))
 
 @views_bp.route('/embed/<int:bot_id>')
-def embed_bot(bot_id):
+@views_bp.route('/embed/<bot_public_id>')
+def embed_bot(bot_id=None, bot_public_id=None):
+    """Serve the embed widget. Accepts both raw int ID (legacy) and encoded public ID."""
+    from utils.bot_id_encoder import decode_bot_id
+    if bot_id is None and bot_public_id is not None:
+        bot_id = decode_bot_id(bot_public_id)
+        if bot_id is None:
+            return "Bot not found", 404
     target_bot = Bot.query.get_or_404(bot_id)
     response = make_response(render_template('embed_chat.html', bot=target_bot))
     
@@ -732,11 +739,12 @@ def embed_bot(bot_id):
 def integrate_bot(bot_id):
     if not session.get('user_id'): 
         return redirect(url_for('auth.login'))
+    from utils.bot_id_encoder import encode_bot_id
     target_bot = Bot.query.get_or_404(bot_id)
     if target_bot.created_by != session.get('user_id') and session.get('role') != 'admin':
         flash("Access Denied.", "error")
         return redirect(url_for('views_bp.dashboard'))
-    return render_template('integrate.html', bot=target_bot)
+    return render_template('integrate.html', bot=target_bot, bot_public_id=encode_bot_id(target_bot.id))
 
 @views_bp.route('/bot/<int:bot_id>/update_security', methods=['POST'])
 def update_bot_security(bot_id):

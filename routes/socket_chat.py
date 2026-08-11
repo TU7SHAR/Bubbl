@@ -55,6 +55,13 @@ def register_socket_events(socketio):
         history = data.get('history', [])
         chat_session_id = data.get('session_id') or str(uuid.uuid4())
 
+        # Decode encoded bot_id (from embed widget)
+        if bot_id and not isinstance(bot_id, int):
+            from utils.bot_id_encoder import decode_bot_id
+            decoded = decode_bot_id(str(bot_id))
+            if decoded is not None:
+                bot_id = decoded
+
         # Join the room for this conversation (enables multi-tab sync)
         join_room(chat_session_id)
 
