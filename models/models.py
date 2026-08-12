@@ -152,6 +152,18 @@ class BotUI(db.Model):
     glass_opacity = db.Column(db.Integer, default=35)
     glass_blur = db.Column(db.Integer, default=25)
 
+    # --- EXTENDED CUSTOMIZATION ---
+    greeting_message = db.Column(db.Text, nullable=True)       # Custom welcome message
+    input_placeholder = db.Column(db.String(120), nullable=True)  # Input field placeholder
+    header_title = db.Column(db.String(60), nullable=True)     # Override header text (default: bot name)
+    bubble_radius = db.Column(db.Integer, default=16)          # Message bubble corner radius (px)
+    font_family = db.Column(db.String(40), default='Inter')    # Inter | Outfit | Roboto | System
+    font_size = db.Column(db.Integer, default=14)              # Base font size (px)
+    user_bubble_color = db.Column(db.String(20), nullable=True)  # User msg bg (NULL = use theme_color)
+    bot_bubble_color = db.Column(db.String(20), nullable=True)   # Bot msg bg (NULL = auto by theme)
+    widget_position = db.Column(db.String(20), default='bottom-right')  # bottom-right | bottom-left
+    show_branding = db.Column(db.Boolean, default=True)        # Show "Powered by bubbl.ooo"
+
 
 # ═══════════════════════════════════════════
 # DOCUMENT — Uploaded knowledge base files

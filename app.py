@@ -138,6 +138,17 @@ def _run_auto_migrations():
         'ALTER TABLE "user" ALTER COLUMN password_hash DROP NOT NULL',
         "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'email'",
         'ALTER TABLE bot ADD COLUMN IF NOT EXISTS message_limit INTEGER',
+        # --- BOT UI EXTENDED CUSTOMIZATION ---
+        'ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS greeting_message TEXT',
+        'ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS input_placeholder VARCHAR(120)',
+        'ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS header_title VARCHAR(60)',
+        'ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS bubble_radius INTEGER DEFAULT 16',
+        "ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS font_family VARCHAR(40) DEFAULT 'Inter'",
+        'ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS font_size INTEGER DEFAULT 14',
+        'ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS user_bubble_color VARCHAR(20)',
+        'ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS bot_bubble_color VARCHAR(20)',
+        "ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS widget_position VARCHAR(20) DEFAULT 'bottom-right'",
+        'ALTER TABLE bot_ui ADD COLUMN IF NOT EXISTS show_branding BOOLEAN DEFAULT TRUE',
         """CREATE TABLE IF NOT EXISTS shared_conversation (
             id SERIAL PRIMARY KEY, share_token VARCHAR(16) UNIQUE NOT NULL,
             session_id VARCHAR(64) NOT NULL, bot_id INTEGER,
