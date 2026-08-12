@@ -137,6 +137,7 @@ def _run_auto_migrations():
         'ALTER TABLE chat_message ADD COLUMN IF NOT EXISTS rating SMALLINT',
         'ALTER TABLE "user" ALTER COLUMN password_hash DROP NOT NULL',
         "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'email'",
+        'ALTER TABLE bot ADD COLUMN IF NOT EXISTS message_limit INTEGER',
         """CREATE TABLE IF NOT EXISTS shared_conversation (
             id SERIAL PRIMARY KEY, share_token VARCHAR(16) UNIQUE NOT NULL,
             session_id VARCHAR(64) NOT NULL, bot_id INTEGER,

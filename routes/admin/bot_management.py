@@ -217,7 +217,13 @@ def edit_bot(bot_id):
         return redirect(url_for('views_bp.dashboard'))
     ingested_docs = Document.query.filter_by(bot_id=bot_id).all()
     
-    return render_template('edit_bot.html', bot=target_bot, docs=ingested_docs)
+    # Pass org plan message limit for the "leave empty to use plan limit" hint
+    from utils.plan_limits import PLAN_LIMITS
+    org = Organization.query.get(session.get('org_id'))
+    plan_name = (org.plan if org else 'free') or 'free'
+    messages_limit = PLAN_LIMITS.get(plan_name, PLAN_LIMITS['free']).get('messages', 200)
+    
+    return render_template('edit_bot.html', bot=target_bot, docs=ingested_docs, messages_limit=messages_limit)
 
 @admin_bp.route('/delete_bot/<int:bot_id>', methods=['POST'])
 def delete_bot(bot_id):
@@ -275,6 +281,10 @@ def update_bot(bot_id):
     bot.access_key = request.form.get('access_key', bot.access_key)
     bot.lead_capture_timing = request.form.get('lead_capture_timing', bot.lead_capture_timing)
     bot.custom_form_fields = json.loads(request.form.get('custom_form_fields', '[]')) if isinstance(request.form.get('custom_form_fields'), str) else (request.form.get('custom_form_fields') or bot.custom_form_fields)
+
+    # Per-bot message limit (empty = use org plan limit)
+    msg_limit_raw = request.form.get('message_limit', '').strip()
+    bot.message_limit = int(msg_limit_raw) if msg_limit_raw else None
 
     if not bot.ui_settings:
         bot.ui_settings = BotUI(bot_id=bot.id)

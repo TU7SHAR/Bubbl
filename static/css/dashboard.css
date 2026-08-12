@@ -708,12 +708,23 @@
 
 .bot-card-usage {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
+  align-items: center;
+  padding: 10px 12px;
   background: rgba(0, 0, 0, 0.025);
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.bot-card-usage .usage-label {
+  margin-bottom: 5px;
+}
+
+.bot-card-usage .usage-track {
+  height: 5px;
+}
+
+.usage-fill--warn {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
 }
 
 .bot-card-usage-item {

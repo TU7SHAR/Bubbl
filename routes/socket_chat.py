@@ -97,7 +97,7 @@ def register_socket_events(socketio):
                 # Plan limit check
                 bot_record = Bot.query.get(bot_id)
                 if bot_record:
-                    allowed, remaining, limit = check_message_limit(bot_record.org_id)
+                    allowed, remaining, limit = check_message_limit(bot_record.org_id, bot=bot_record)
                     if not allowed:
                         emit('chat_complete', {
                             'response': "I'm currently unavailable as this bot's message limit has been reached for this month.",

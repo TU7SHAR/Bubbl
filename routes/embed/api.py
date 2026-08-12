@@ -236,9 +236,10 @@ def chat():
         from models.models import Bot as BotModel
         bot_record = BotModel.query.get(bot_id)
         if bot_record:
-            allowed, remaining, limit = check_message_limit(bot_record.org_id)
+            allowed, remaining, limit = check_message_limit(bot_record.org_id, bot=bot_record)
             if not allowed:
-                return jsonify({"response": "I'm currently unavailable as this bot's message limit has been reached for this month. Please try again later or contact the website owner for assistance.", "lead_id": None})
+                limit_msg = "I'm currently unavailable as this bot's message limit has been reached for this month. Please try again later or contact the website owner for assistance."
+                return jsonify({"response": limit_msg, "lead_id": None})
 
         ai_prompt = bot_cfg["system_prompt"] or "You are a helpful assistant."
         
