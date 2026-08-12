@@ -8,6 +8,27 @@
    directly so it stays hidden when there's no bot. #}
 {% set chat_display_name = active_bot_name if active_bot_name else 'Bubbl' %}
 
+{# ═══ EXTENDED UI CUSTOMIZATION (falls back to sensible defaults) ═══ #}
+{% set _ui = bot.ui_settings if (bot and bot.ui_settings) else None %}
+{% set ui_bubble_radius = _ui.bubble_radius if (_ui and _ui.bubble_radius is not none) else 16 %}
+{% set ui_font_size = _ui.font_size if (_ui and _ui.font_size) else 14 %}
+{% set ui_font_key = _ui.font_family if (_ui and _ui.font_family) else 'Inter' %}
+{% set _font_map = {
+     'Inter': "'Inter', -apple-system, sans-serif",
+     'Outfit': "'Outfit', -apple-system, sans-serif",
+     'Roboto': "'Roboto', -apple-system, sans-serif",
+     'Georgia': "Georgia, 'Times New Roman', serif",
+     'System': "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+   } %}
+{% set ui_font_stack = _font_map.get(ui_font_key, _font_map['Inter']) %}
+{% set ui_user_bubble = _ui.user_bubble_color if (_ui and _ui.user_bubble_color) else theme_color %}
+{% set ui_bot_bubble = _ui.bot_bubble_color if (_ui and _ui.bot_bubble_color) else None %}
+{% set ui_greeting = _ui.greeting_message if (_ui and _ui.greeting_message) else None %}
+{% set ui_placeholder = _ui.input_placeholder if (_ui and _ui.input_placeholder) else 'Type a message...' %}
+{% set ui_header_title = _ui.header_title if (_ui and _ui.header_title) else None %}
+{% set ui_position = _ui.widget_position if (_ui and _ui.widget_position) else 'bottom-right' %}
+{% set ui_show_branding = _ui.show_branding if (_ui and _ui.show_branding is not none) else True %}
+
 <style>
   /* 0. THEME COLOR CSS VARIABLE — used by button pills and form inputs */
   :root, #chat-widget-container {
@@ -31,10 +52,44 @@
   .chat-input-area { background: transparent !important; }
 
   /* 3. DYNAMIC BUBBLE & SEND BUTTON */
-  .msg.user, #send-btn-icon {
+  .msg.user {
+    background: {{ ui_user_bubble }} !important;
+    color: #ffffff !important;
+  }
+  #send-btn-icon {
     background: {{ theme_color }} !important;
     color: #ffffff !important;
   }
+
+  /* 3b. EXTENDED CUSTOMIZATION — font, size, bubble radius, bot bubble color */
+  #chat-window-popup,
+  #chat-window-popup input,
+  #chat-window-popup textarea,
+  #chat-window-popup button {
+    font-family: {{ ui_font_stack }};
+  }
+  .msg {
+    font-size: {{ ui_font_size }}px;
+  }
+  .msg.bot {
+    border-radius: {{ ui_bubble_radius }}px {{ ui_bubble_radius }}px {{ ui_bubble_radius }}px 4px;
+    {% if ui_bot_bubble %}background: {{ ui_bot_bubble }} !important;{% endif %}
+  }
+  .msg.user {
+    border-radius: {{ ui_bubble_radius }}px {{ ui_bubble_radius }}px 4px {{ ui_bubble_radius }}px;
+  }
+  #user-input { font-size: {{ ui_font_size }}px; }
+
+  /* 3c. WIDGET POSITION (left/right) */
+  {% if ui_position == 'bottom-left' %}
+  #chat-widget-container { left: 30px; right: auto; }
+  #sprite-ask-container { left: 20px; right: auto; }
+  #sprite-ask-container.chat-open { left: 20px; right: auto; }
+  {% endif %}
+
+  {% if not ui_show_branding %}
+  .powered-by-bubbl { display: none !important; }
+  {% endif %}
 
   /* 4. AVATAR INITIAL STYLING */
   .chat-header-avatar {
@@ -175,7 +230,7 @@
             {% endif %}
         </div>
         <div>
-            <span class="chat-header-title">{{ chat_display_name | upper }}</span>
+            <span class="chat-header-title">{{ (ui_header_title if ui_header_title else chat_display_name) | upper }}</span>
             <div class="chat-header-state" id="chat-state-indicator">Online</div>
         </div>
       </div>
@@ -212,13 +267,13 @@
 
     <div id="chat-display">
   <div class="msg bot">
-    Hi! I am <strong>{{ chat_display_name }}</strong>. How can I help you today?
+    {% if ui_greeting %}{{ ui_greeting }}{% else %}Hi! I am <strong>{{ chat_display_name }}</strong>. How can I help you today?{% endif %}
   </div>
 </div>
 
     <div class="chat-input-area">
       <div class="chat-input-wrapper">
-        <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" onkeypress="if (event.key === 'Enter') sendMessage();" />
+        <input type="text" id="user-input" placeholder="{{ ui_placeholder }}" autocomplete="off" onkeypress="if (event.key === 'Enter') sendMessage();" />
         <button id="send-btn-icon" onclick="sendMessage()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -330,10 +385,14 @@
   }
 
   function confirmClearChat() {
-      // Clear the chat display (keep only the greeting)
+      // Clear the chat display (restore the configured greeting)
       const display = document.getElementById('chat-display');
       const botName = '{{ chat_display_name }}';
+      {% if ui_greeting %}
+      display.innerHTML = '<div class="msg bot">{{ ui_greeting | e }}</div>';
+      {% else %}
       display.innerHTML = '<div class="msg bot">Hi! I am <strong>' + botName + '</strong>. How can I help you today?</div>';
+      {% endif %}
 
       // Reset JS state
       chatHistory = [];
