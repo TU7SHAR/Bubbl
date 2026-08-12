@@ -95,6 +95,7 @@ class Bot(db.Model):
     tokens_used = db.Column(db.Integer, default=0)
     total_latency = db.Column(db.Float, default=0.0)
     interaction_count = db.Column(db.Integer, default=0)
+    message_limit = db.Column(db.Integer, nullable=True)  # Per-bot cap (NULL = use org plan limit)
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 

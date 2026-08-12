@@ -198,11 +198,25 @@ def get_org_limits(org_id):
     return PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
 
 
-def check_message_limit(org_id):
+def check_message_limit(org_id, bot=None):
     """
     Check if org has messages remaining. Returns (allowed, remaining, limit).
     Also handles monthly reset automatically.
+    
+    If a bot with a per-bot message_limit is passed, checks THAT limit first
+    (uses bot.interaction_count against bot.message_limit).
+    Falls back to org-wide plan limit if bot has no specific limit set.
     """
+    # --- PER-BOT LIMIT CHECK (if bot has its own cap) ---
+    if bot and getattr(bot, 'message_limit', None):
+        bot_used = bot.interaction_count or 0
+        bot_cap = bot.message_limit
+        bot_remaining = bot_cap - bot_used
+        if bot_remaining <= 0:
+            return False, 0, bot_cap
+        # Bot still has room — but also check org-wide below
+        # (bot limit is stricter if lower than org remaining)
+
     org = Organization.query.get(org_id)
     if not org:
         return False, 0, 0
@@ -223,6 +237,15 @@ def check_message_limit(org_id):
 
     remaining = limits['messages'] - (org.messages_used or 0)
     allowed = remaining > 0
+
+    # If bot has a per-bot limit, use the stricter of the two
+    if bot and getattr(bot, 'message_limit', None):
+        bot_remaining = bot.message_limit - (bot.interaction_count or 0)
+        if bot_remaining <= 0:
+            return False, 0, bot.message_limit
+        # Return the tighter limit
+        if bot_remaining < remaining:
+            return True, bot_remaining, bot.message_limit
 
     return allowed, remaining, limits['messages']
 

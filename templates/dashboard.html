@@ -158,19 +158,29 @@
 
                 <div style="display: flex; flex-direction: column; gap: 16px; align-items: stretch; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.06); margin-top: auto;">
                     
-                    <!-- Per-bot usage stats -->
+                    <!-- Per-bot message usage bar -->
                     <div class="bot-card-usage">
-                      <div class="bot-card-usage-item">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        <span>{{ bot.interaction_count or 0 }} chats</span>
-                      </div>
-                      <div class="bot-card-usage-item">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span>{{ "%.1f" | format((bot.total_latency or 0) / 60) }}m</span>
-                      </div>
-                      <div class="bot-card-usage-item">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-                        <span>{{ bot.tokens_used or 0 }} tok</span>
+                      {% set bot_used = bot.interaction_count or 0 %}
+                      {% set bot_limit = bot.message_limit if bot.message_limit else messages_limit %}
+                      {% set pct = ((bot_used / bot_limit) * 100) | int if bot_limit > 0 else 0 %}
+                      {% set pct = [pct, 100] | min %}
+                      <div style="width: 100%;">
+                        <div class="usage-label">
+                          <span>Messages</span>
+                          <span class="usage-count">{{ bot_used }}/{{ bot_limit }}{% if bot.message_limit %} (bot limit){% endif %}</span>
+                        </div>
+                        <div class="usage-track">
+                          <div class="usage-fill {% if pct >= 100 %}usage-fill--full{% elif pct >= 80 %}usage-fill--warn{% endif %}" style="width: {{ pct }}%;"></div>
+                        </div>
+                        {% if bot_used > 0 and pct < 100 %}
+                        <div style="font-size: 10px; color: #9ca3af; margin-top: 4px;">
+                          ~{{ ((bot_limit - bot_used) / (bot_used / ([((messages_used or 1) / 30) | round(1), 0.1] | max))) | int }} days left at current pace
+                        </div>
+                        {% elif pct >= 100 %}
+                        <div style="font-size: 10px; color: #ef4444; font-weight: 600; margin-top: 4px;">
+                          Limit reached — bot will deny responses
+                        </div>
+                        {% endif %}
                       </div>
                     </div>
 
