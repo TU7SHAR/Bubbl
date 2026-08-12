@@ -894,6 +894,9 @@ function initWebSocket() {
     let streamQueue = [];
     let streamInterval = null;
 
+    // Accumulated raw stream text (used for live stripping of markdown syntax)
+    let streamRawText = '';
+
     function processStreamQueue() {
       if (streamQueue.length === 0) {
         clearInterval(streamInterval);
@@ -904,7 +907,18 @@ function initWebSocket() {
 
       // Render 2-3 characters at a time for natural typing speed
       const chars = streamQueue.splice(0, 2).join('');
-      streamingBotDiv.innerText += chars;
+      streamRawText += chars;
+
+      // Live-strip markdown syntax so users don't see ** and ### during streaming.
+      // The full renderMarkdown() runs on chat_complete for proper formatting.
+      let displayText = streamRawText
+        .replace(/\*\*(.+?)\*\*/g, '$1')     // **bold** → bold
+        .replace(/\*([^*]+)\*/g, '$1')        // *italic* → italic
+        .replace(/^#{1,4}\s+/gm, '')          // ### heading → heading
+        .replace(/\[\[BUTTONS:.*?\]\]/gs, '') // hide button tags during stream
+        .replace(/\[\[LEAD:.*?\]\]/gs, '');   // hide lead tags during stream
+
+      streamingBotDiv.innerText = displayText;
       const display = document.getElementById("chat-display");
       display.scrollTop = display.scrollHeight;
     }
@@ -918,6 +932,7 @@ function initWebSocket() {
         streamingBotDiv.className = "msg bot";
         streamingBotDiv.style.whiteSpace = "pre-wrap";  // Preserve spaces during streaming (plain text)
         streamingBotDiv.innerText = "";
+        streamRawText = '';  // Reset raw text accumulator
         display.appendChild(streamingBotDiv);
 
         if (window.SpriteBot) SpriteBot.setState("talking");
