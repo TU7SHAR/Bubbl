@@ -1,76 +1,416 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="{{ 'dark' if request.args.get('theme') == 'dark' else ('light' if request.args.get('theme') == 'light' else '') }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bubbl.ooo</title>
+  <meta name="robots" content="noindex, nofollow">
+  <title>Bubbl — AI chat for your site</title>
   <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
   <style>
+    /* ═══════════════════════════════════════════════════════════
+       WIDGET PROMO — shown inside the embed iframe whenever the
+       real chat widget can't load (domain lock, unknown bot, 429).
+
+       Two hard rules learned from the old version:
+       1. The iframe is 450x800 and transparent. NEVER paint the body
+          or the promo becomes a giant opaque slab over the host page.
+       2. The host site may be dark. A hardcoded cream card looks
+          broken on a dark page, so every colour is a themed token.
+       ═══════════════════════════════════════════════════════════ */
+
+    /* --- LIGHT (default) --- */
+    :root {
+      --surface: rgba(255, 255, 255, 0.86);
+      --surface-solid: #ffffff;
+      --border: rgba(17, 17, 17, 0.08);
+      --text: #18181b;
+      --muted: #71717a;
+      --bubble-bot: rgba(17, 17, 17, 0.05);
+      --bubble-bot-text: #27272a;
+      --shadow: 0 12px 32px rgba(17, 17, 17, 0.1), 0 2px 8px rgba(17, 17, 17, 0.06);
+      --glow: rgba(232, 114, 42, 0.18);
+      --dot: rgba(17, 17, 17, 0.25);
+      --accent: #E8722A;
+      --accent-text: #ffffff;
+    }
+
+    /* --- DARK: follows the visitor's OS when the host sends no hint --- */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --surface: rgba(24, 24, 27, 0.88);
+        --surface-solid: #18181b;
+        --border: rgba(255, 255, 255, 0.1);
+        --text: #fafafa;
+        --muted: #a1a1aa;
+        --bubble-bot: rgba(255, 255, 255, 0.07);
+        --bubble-bot-text: #e4e4e7;
+        --shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+        --glow: rgba(232, 114, 42, 0.28);
+        --dot: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    /* --- Explicit override from embed.js (?theme=) beats the OS setting.
+           The host page's real background is what matters, not the OS. --- */
+    html[data-theme="light"] {
+      --surface: rgba(255, 255, 255, 0.86);
+      --surface-solid: #ffffff;
+      --border: rgba(17, 17, 17, 0.08);
+      --text: #18181b;
+      --muted: #71717a;
+      --bubble-bot: rgba(17, 17, 17, 0.05);
+      --bubble-bot-text: #27272a;
+      --shadow: 0 12px 32px rgba(17, 17, 17, 0.1), 0 2px 8px rgba(17, 17, 17, 0.06);
+      --glow: rgba(232, 114, 42, 0.18);
+      --dot: rgba(17, 17, 17, 0.25);
+    }
+    html[data-theme="dark"] {
+      --surface: rgba(24, 24, 27, 0.88);
+      --surface-solid: #18181b;
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --bubble-bot: rgba(255, 255, 255, 0.07);
+      --bubble-bot-text: #e4e4e7;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+      --glow: rgba(232, 114, 42, 0.28);
+      --dot: rgba(255, 255, 255, 0.3);
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* CRITICAL: transparent, and anchored bottom-right like a real widget.
+       No min-height:100vh, no background — the host page shows through. */
+    html, body {
+      background: transparent !important;
+      height: 100%;
+      overflow: hidden;
+    }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                   'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── CARD ───────────────────────────────────────────── */
+    .promo {
+      position: relative;
+      width: 312px;
+      padding: 18px;
+      background: var(--surface);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    /* Warm accent bloom behind the card */
+    .promo::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 20px;
+      background: radial-gradient(120px 80px at 88% 0%, var(--glow), transparent 70%);
+      pointer-events: none;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(18px) scale(0.97); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ── DISMISS ────────────────────────────────────────── */
+    .promo-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent;
+      border: 0;
+      border-radius: 50%;
+      color: var(--muted);
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .promo-close:hover { opacity: 1; background: var(--bubble-bot); }
+    .promo-close svg { width: 13px; height: 13px; }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    .promo-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+    .promo-mark {
+      position: relative;
+      flex: 0 0 auto;
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--accent);
+      border-radius: 10px;
+      box-shadow: 0 4px 14px rgba(232, 114, 42, 0.35);
+    }
+    .promo-mark svg { width: 18px; height: 18px; }
+    /* Live "online" pip */
+    .promo-pip {
+      position: absolute;
+      bottom: -1px; right: -1px;
+      width: 10px; height: 10px;
+      background: #22c55e;
+      border: 2px solid var(--surface-solid);
+      border-radius: 50%;
+    }
+    .promo-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .promo-status {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    /* ── MINI CHAT MOCK — shows the product in one glance ── */
+    .promo-chat {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .msg {
+      max-width: 84%;
+      padding: 8px 11px;
+      font-size: 12px;
+      line-height: 1.45;
+      animation: pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: var(--accent-text);
+      border-radius: 13px 13px 4px 13px;
+      animation-delay: 0.25s;
+    }
+    .msg.bot {
+      align-self: flex-start;
+      background: var(--bubble-bot);
+      color: var(--bubble-bot-text);
+      border-radius: 13px 13px 13px 4px;
+      animation-delay: 0.45s;
+    }
+    /* Typing indicator instead of a third canned line */
+    .msg.typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 12px;
+      animation-delay: 0.75s;
+    }
+    .msg.typing i {
+      width: 5px; height: 5px;
+      background: var(--dot);
+      border-radius: 50%;
+      animation: blink 1.3s ease-in-out infinite;
+    }
+    .msg.typing i:nth-child(2) { animation-delay: 0.18s; }
+    .msg.typing i:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes pop {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes blink {
+      0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+      30%           { opacity: 1;   transform: translateY(-2px); }
+    }
+
+    /* ── PITCH ──────────────────────────────────────────── */
+    .promo-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      margin-bottom: 5px;
+    }
+    .promo-copy {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    /* ── CTA ────────────────────────────────────────────── */
+    .promo-cta {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 30px;
-      background: linear-gradient(135deg, #fff8f2 0%, #fef3eb 100%);
-    }
-    .promo-card {
-      text-align: center;
-      max-width: 300px;
-      padding: 40px 28px;
-      background: rgba(255,255,255,0.85);
-      backdrop-filter: blur(20px);
-      border-radius: 24px;
-      border: 1px solid rgba(232,114,42,0.15);
-      box-shadow: 0 16px 48px rgba(232,114,42,0.08);
-    }
-    .promo-icon {
-      width: 56px; height: 56px; margin: 0 auto 16px;
-      background: #E8722A; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 8px 24px rgba(232,114,42,0.25);
-    }
-    .promo-icon svg { width: 28px; height: 28px; }
-    h1 {
-      font-size: 18px; font-weight: 800; color: #1a1a1a;
-      margin-bottom: 8px; line-height: 1.3;
-    }
-    p {
-      font-size: 13px; color: #6b7280; line-height: 1.5;
-      margin-bottom: 20px;
-    }
-    .promo-cta {
-      display: inline-block; padding: 12px 24px;
-      background: #E8722A; color: #fff;
-      font-size: 13px; font-weight: 700;
-      border-radius: 50px; text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 16px rgba(232,114,42,0.3);
+      gap: 6px;
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 700;
+      text-decoration: none;
+      border-radius: 11px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(232, 114, 42, 0.32);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
     }
     .promo-cta:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(232,114,42,0.4);
+      transform: translateY(-1.5px);
+      box-shadow: 0 8px 22px rgba(232, 114, 42, 0.45);
     }
-    .promo-footer {
-      margin-top: 16px; font-size: 11px; color: #9ca3af;
+    .promo-cta:active { transform: translateY(0); }
+    .promo-cta svg {
+      width: 13px; height: 13px;
+      transition: transform 0.18s ease;
+    }
+    .promo-cta:hover svg { transform: translateX(2px); }
+    /* Shimmer sweep */
+    .promo-cta::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -60%;
+      width: 40%; height: 100%;
+      background: linear-gradient(100deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: skewX(-18deg);
+      animation: sweep 3.6s ease-in-out 1.4s infinite;
+    }
+    @keyframes sweep {
+      0%        { left: -60%; }
+      40%, 100% { left: 130%; }
+    }
+
+    /* ── TRUST ROW ──────────────────────────────────────── */
+    .promo-foot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 10px;
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+    .promo-foot b { color: var(--text); font-weight: 600; }
+    .promo-foot span { opacity: 0.4; }
+
+    /* ── RESPONSIVE: narrow mobile iframes ──────────────── */
+    @media (max-width: 360px) {
+      body { padding: 10px; }
+      .promo { width: 100%; padding: 15px; }
+    }
+
+    /* ── ACCESSIBILITY ──────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="promo-card">
-    <div class="promo-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+  <div class="promo" role="complementary" aria-label="Bubbl advertisement">
+    <button class="promo-close" type="button" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+        <path d="M18 6L6 18M6 6l12 12"></path>
       </svg>
+    </button>
+
+    <div class="promo-head">
+      <div class="promo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span class="promo-pip" aria-hidden="true"></span>
+      </div>
+      <div>
+        <div class="promo-name">Bubbl AI</div>
+        <div class="promo-status">Always online</div>
+      </div>
     </div>
-    <h1>Want an AI Chatbot?</h1>
-    <p>Create your own custom AI agent trained on your data. Embed it anywhere in minutes.</p>
-    <a href="https://bubbl.ooo?ref=widget-promo" target="_blank" class="promo-cta">
-      Get Your Bot on Bubbl.ooo
+
+    <div class="promo-chat" aria-hidden="true">
+      <div class="msg user">Do you ship internationally?</div>
+      <div class="msg bot">Yes — 40+ countries, 3–5 business days. Want me to check your region?</div>
+      <div class="msg bot typing">
+        <i></i><i></i><i></i>
+      </div>
+    </div>
+
+    <div class="promo-title">Add an AI agent to your site</div>
+    <p class="promo-copy">
+      Trained on your own content. Answers customers instantly, captures leads
+      while you sleep. Live in under 5 minutes.
+    </p>
+
+    <a class="promo-cta" href="https://bubbl.ooo?ref=widget-promo&amp;utm_source=widget&amp;utm_medium=promo" target="_blank" rel="noopener">
+      Create your bot — free
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 6l6 6-6 6"></path>
+      </svg>
     </a>
-    <div class="promo-footer">Powered by Bubbl</div>
+
+    <div class="promo-foot">
+      No credit card <span>•</span> Free plan <span>•</span> by <b>Bubbl.ooo</b>
+    </div>
   </div>
+
+  <script>
+    (function () {
+      var card = document.querySelector('.promo');
+
+      // The iframe is a fixed 450x800 and would swallow every click in that
+      // whole region of the host page. Tell embed.js how small we actually
+      // are so it can shrink the iframe to just this card.
+      function reportSize() {
+        var pad = parseFloat(getComputedStyle(document.body).paddingLeft) || 16;
+        // offsetWidth/offsetHeight report the LAYOUT size and ignore CSS
+        // transforms. getBoundingClientRect() would hand back the shrunken
+        // mid-animation box from `rise`'s scale(0.97) and the iframe would
+        // end up ~12px too small, clipping the card's edges.
+        try {
+          parent.postMessage({
+            type: 'bubbl:promo',
+            width: Math.ceil(card.offsetWidth + pad * 2),
+            height: Math.ceil(card.offsetHeight + pad * 2)
+          }, '*');
+        } catch (e) {}
+      }
+
+      if (document.readyState === 'complete') reportSize();
+      else window.addEventListener('load', reportSize);
+
+      // Re-measure once the entrance animation settles and whenever the card
+      // reflows (font swap, long translated copy, zoom).
+      card.addEventListener('animationend', reportSize);
+      if (window.ResizeObserver) {
+        new ResizeObserver(reportSize).observe(card);
+      } else {
+        setTimeout(reportSize, 700);
+      }
+
+      // Dismiss → ask the parent to remove the iframe entirely
+      document.querySelector('.promo-close').addEventListener('click', function () {
+        card.style.transition = 'opacity .2s, transform .2s';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(10px) scale(.97)';
+        setTimeout(function () {
+          try { parent.postMessage({ type: 'bubbl:promo-dismiss' }, '*'); } catch (e) {}
+        }, 200);
+      });
+    })();
+  </script>
 </body>
 </html>
