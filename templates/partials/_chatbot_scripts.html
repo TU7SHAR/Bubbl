@@ -238,10 +238,20 @@
     if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; }
 
     // --- DEDUP: block duplicate URLs in the Add Links list ---
-    // Also checks against links already committed via Quick Start (globalLinks).
-    if (isDuplicateLink(url, tempLinks, editingLinkIndex) || isDuplicateLink(url, globalLinks, -1)) {
-      showModal('This link has already been added.', 'error');
-      return;
+    // When editing an existing link (editingLinkIndex >= 0), only check for dupes
+    // against OTHER entries — don't block recrawling the same URL that's being edited.
+    if (editingLinkIndex >= 0) {
+      // Editing: only block if another DIFFERENT entry has this URL
+      if (isDuplicateLink(url, tempLinks, editingLinkIndex)) {
+        showModal('This link has already been added.', 'error');
+        return;
+      }
+    } else {
+      // New add: block if it exists anywhere (tempLinks or globalLinks)
+      if (isDuplicateLink(url, tempLinks, -1) || isDuplicateLink(url, globalLinks, -1)) {
+        showModal('This link has already been added.', 'error');
+        return;
+      }
     }
 
     const isDeep = deepCrawlEl.checked;
