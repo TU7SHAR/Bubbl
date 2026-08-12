@@ -692,31 +692,72 @@ def embed_bot(bot_id=None, bot_public_id=None):
     if bot_id is None and bot_public_id is not None:
         bot_id = decode_bot_id(bot_public_id)
         if bot_id is None:
-            return "Bot not found", 404
+            return render_template('embed_promo.html'), 200
     target_bot = Bot.query.get_or_404(bot_id)
+
+    # --- DOMAIN LOCK CHECK (server-side) ---
+    # If the bot has allowed_domains set, check the Referer/Origin header.
+    # If the embed is loaded from an unauthorized domain, show a Bubbl promo ad
+    # instead of the chat widget. This is more user-friendly than a blank iframe
+    # (which is what CSP frame-ancestors alone would show).
+    allowed = (target_bot.allowed_domains or '').strip()
+    if allowed and allowed != '*':
+        from urllib.parse import urlparse
+        # Get the requesting domain from Referer or Origin header
+        referer = request.headers.get('Referer', '') or request.headers.get('Origin', '')
+        requesting_host = ''
+        if referer:
+            try:
+                parsed_ref = urlparse(referer)
+                requesting_host = (parsed_ref.netloc or '').lower().lstrip('www.')
+            except Exception:
+                pass
+
+        # Build the set of allowed hosts
+        allowed_hosts = set()
+        for domain in allowed.replace(',', ' ').split():
+            domain = domain.strip()
+            if not domain:
+                continue
+            if domain == '*':
+                allowed_hosts = None  # wildcard = allow all
+                break
+            if not domain.startswith('http://') and not domain.startswith('https://'):
+                domain = 'https://' + domain
+            try:
+                parsed_d = urlparse(domain)
+                host = (parsed_d.netloc or '').lower().lstrip('www.')
+                if host:
+                    allowed_hosts.add(host)
+            except Exception:
+                pass
+
+        # If we have a requesting host and it's NOT in the allowed set → show promo
+        if allowed_hosts is not None and requesting_host and requesting_host not in allowed_hosts:
+            # Also allow the app's own domain (always permitted)
+            own_host = (request.host or '').lower().lstrip('www.')
+            if requesting_host != own_host:
+                response = make_response(render_template('embed_promo.html'))
+                response.headers.pop('X-Frame-Options', None)
+                response.headers['Content-Security-Policy'] = "frame-ancestors *"
+                return response
+
     response = make_response(render_template('embed_chat.html', bot=target_bot))
     
     # 1. Strip the legacy X-Frame-Options
     response.headers.pop('X-Frame-Options', None)
     
-    # 2. Enforce the Domain Lock via CSP frame-ancestors
-    allowed = (target_bot.allowed_domains or '').strip()
-    
+    # 2. Enforce the Domain Lock via CSP frame-ancestors (browser-level backup)
     if allowed:
-        # Parse allowed domains — normalize to proper origins for frame-ancestors
-        # Users might enter: "github.io/path", "https://example.com", "example.com" etc.
-        # frame-ancestors needs: "https://example.com" (scheme + host, no path)
         from urllib.parse import urlparse
         origins = []
         for domain in allowed.replace(',', ' ').split():
             domain = domain.strip()
             if not domain:
                 continue
-            # If it's just a wildcard, allow all
             if domain == '*':
                 origins = ['*']
                 break
-            # Add scheme if missing
             if not domain.startswith('http://') and not domain.startswith('https://'):
                 domain = 'https://' + domain
             parsed = urlparse(domain)
@@ -730,7 +771,6 @@ def embed_bot(bot_id=None, bot_public_id=None):
         else:
             response.headers['Content-Security-Policy'] = "frame-ancestors *"
     else:
-        # No domains specified = allow embedding anywhere (standard SaaS behavior)
         response.headers['Content-Security-Policy'] = "frame-ancestors *"
         
     return response
