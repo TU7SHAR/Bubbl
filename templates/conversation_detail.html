@@ -190,7 +190,7 @@
       {% endif %}
 
       <div class="conv-msg-role-label">{{ 'Visitor' if msg.role == 'user' else bot.bot_name }}</div>
-      {{ msg.content }}
+      <div class="conv-msg-text" {% if msg.role == 'bot' %}data-render-buttons{% endif %}>{{ msg.content | e }}</div>
       <div class="conv-msg-footer">
         <span class="conv-msg-time">{{ msg.created_at.strftime('%H:%M:%S') if msg.created_at else '' }}</span>
         {% if msg.tokens_used %}
@@ -215,5 +215,30 @@ function filterTranscript() {
     msg.style.display = (!query || text.indexOf(query) !== -1) ? '' : 'none';
   });
 }
+
+// Render [[BUTTONS:...]] as clickable pill links in bot messages
+document.querySelectorAll('[data-render-buttons]').forEach(function(el) {
+  var html = el.innerHTML;
+  // Strip [[LEAD:...]] tags (internal, shouldn't show)
+  html = html.replace(/\[\[LEAD:.*?\]\]/gs, '');
+  // Render [[BUTTONS:...]] as styled links
+  html = html.replace(/\[\[BUTTONS:\s*(.*?)\]\]/gs, function(match, raw) {
+    var parts = raw.split(/,\s*(?=[a-z]+:)/);
+    var btns = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">';
+    parts.forEach(function(part) {
+      var m = part.trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
+      if (m) {
+        var label = m[2].trim(), url = m[3].trim(), color = m[4] || '#E8722A';
+        btns += '<a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;padding:6px 14px;background:' + color + ';color:#fff;border-radius:50px;font-size:12px;font-weight:600;text-decoration:none;transition:filter 0.2s;" onmouseover="this.style.filter=\'brightness(1.1)\'" onmouseout="this.style.filter=\'\'">' + label + ' &#8599;</a>';
+      }
+    });
+    btns += '</div>';
+    return btns;
+  });
+  // Convert newlines to <br> for readability
+  html = html.replace(/\n/g, '<br>');
+  el.innerHTML = html;
+});
+</script>
 </script>
 {% endblock %}

@@ -81,7 +81,7 @@
                     {% if msg.rating == -1 %}border-color:var(--red); box-shadow:0 0 0 1px var(--red);{% endif %}
                   {% endif %}">
 
-        {{ msg.content }}
+        <span {% if msg.role == 'bot' %}data-render-buttons{% endif %}>{{ msg.content | e }}</span>
 
         <!-- Footer -->
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px; gap:8px; flex-wrap:wrap;">
@@ -127,5 +127,22 @@ function filterMsgs() {
     el.style.display = (matchText && matchRating) ? '' : 'none';
   });
 }
+
+// Render [[BUTTONS:...]] as clickable pill links in bot messages
+document.querySelectorAll('[data-render-buttons]').forEach(function(el) {
+  var html = el.innerHTML;
+  html = html.replace(/\[\[LEAD:.*?\]\]/gs, '');
+  html = html.replace(/\[\[BUTTONS:\s*(.*?)\]\]/gs, function(match, raw) {
+    var parts = raw.split(/,\s*(?=[a-z]+:)/);
+    var btns = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">';
+    parts.forEach(function(part) {
+      var m = part.trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
+      if (m) { btns += '<a href="' + m[3].trim() + '" target="_blank" rel="noopener" style="display:inline-block;padding:5px 12px;background:' + (m[4]||'#E8722A') + ';color:#fff;border-radius:50px;font-size:11px;font-weight:600;text-decoration:none;">' + m[2].trim() + ' &#8599;</a>'; }
+    });
+    return btns + '</div>';
+  });
+  html = html.replace(/\n/g, '<br>');
+  el.innerHTML = html;
+});
 </script>
 {% endblock %}
