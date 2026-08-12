@@ -509,9 +509,9 @@
 
               <div style="width: 100%;">
                   <label class="cb-label">Message Limit (per bot)</label>
-                  <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">Set a specific message cap for this bot. Leave empty to use your plan's shared limit ({{ messages_limit }} messages/month).</p>
+                  <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">Set a specific message cap for this bot. Leave empty to use your plan's shared limit ({{ messages_limit | default(200) }} messages/month).</p>
                   <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 30px;">
-                    <input type="number" name="message_limit" class="dash-input" style="width: 150px;" placeholder="Unlimited" value="{{ bot.message_limit or '' }}" min="1">
+                    <input type="number" name="message_limit" class="dash-input" style="width: 150px;" placeholder="Unlimited" value="{{ bot.message_limit | default('', true) }}" min="1">
                     <span style="font-size: 12px; color: #6b7280;">
                       {% if bot.message_limit %}
                         Used: {{ bot.interaction_count or 0 }}/{{ bot.message_limit }}

@@ -5,7 +5,7 @@ import base64
 from flask import request, redirect, url_for, flash, session, render_template, jsonify, current_app
 from werkzeug.utils import secure_filename 
 
-from models.models import db, Bot, Document, BotUI, ScrapeJob
+from models.models import db, Bot, Document, BotUI, ScrapeJob, Organization
 from bot.cloud import upload_to_gemini, delete_from_gemini, create_dynamic_store
 from routes.auth.decorators import admin_required
 from extensions import cache
