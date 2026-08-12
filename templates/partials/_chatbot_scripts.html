@@ -439,12 +439,31 @@
       selectedUrls: selected  // KEY: this gets passed to start_scrape later
     };
 
-    // Dedup check against existing entries
-    if (isDuplicateLink(newLink.url, tempLinks, -1) || isDuplicateLink(newLink.url, globalLinks, -1)) {
-      showModal('This link has already been added.', 'error'); return;
+    // If this URL already exists in the list, REPLACE it (user re-discovered and re-selected)
+    const normNew = normalizeUrlForDedup(newLink.url);
+    let replaced = false;
+    for (let i = 0; i < tempLinks.length; i++) {
+      if (normalizeUrlForDedup(tempLinks[i].url) === normNew) {
+        tempLinks[i] = newLink;
+        replaced = true;
+        break;
+      }
+    }
+    if (!replaced) {
+      // Also check globalLinks (from Quick Start)
+      let existsInGlobal = false;
+      for (let i = 0; i < globalLinks.length; i++) {
+        if (normalizeUrlForDedup(globalLinks[i].url) === normNew) {
+          globalLinks[i] = newLink;
+          existsInGlobal = true;
+          break;
+        }
+      }
+      if (!existsInGlobal) {
+        tempLinks.push(newLink);
+      }
     }
 
-    tempLinks.push(newLink);
     document.getElementById('scrape_url').value = '';
     document.getElementById('create-discover-results').style.display = 'none';
     sortTempLinks();
