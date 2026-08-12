@@ -145,6 +145,18 @@
   .ui-toggle-row { display: flex; align-items: center; gap: 8px; cursor: pointer; padding-top: 12px; }
   .ui-toggle-row input { width: 16px; height: 16px; accent-color: var(--orange); cursor: pointer; }
 
+  /* Custom styled select/dropdown */
+  .ui-select {
+    width: 100%; padding: 12px 16px; font-size: 14px; font-weight: 500;
+    border: 1.5px solid rgba(0,0,0,0.12); border-radius: 10px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center;
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    color: #111827; font-family: 'Outfit', sans-serif;
+    cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .ui-select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,114,42,0.1); outline: none; }
+  .ui-select:hover { border-color: rgba(0,0,0,0.2); }
+
   /* Preview widget footer (mock input + send) */
   .mock-chat-footer {
     display: flex; align-items: center; gap: 8px; padding: 10px 14px;
@@ -462,13 +474,7 @@
                     <div class="ui-section-title">Identity</div>
 
                     <label class="cb-label">Agent Name</label>
-                    <input type="text" name="bot_name" id="bot_name" class="dash-input" value="{{ bot.bot_name }}" oninput="updateLivePreview()" style="width: 100%; margin-bottom: 16px;" />
-
-                    <label class="cb-label">Header Title <span class="ui-hint">(blank = agent name)</span></label>
-                    <input type="text" name="header_title" id="header_title" class="dash-input" value="{{ ui.header_title if ui and ui.header_title else '' }}" placeholder="e.g. Support Chat" oninput="updateLivePreview()" style="width: 100%; margin-bottom: 16px;" />
-
-                    <label class="cb-label">Avatar</label>
-                    <input type="file" name="bot_avatar" id="bot_avatar" accept="image/*" onchange="previewAvatarUpload(event)" style="width: 100%; font-size: 13px; margin-bottom: 8px;" />
+                    <input type="text" name="bot_name" id="bot_name" class="dash-input" value="{{ bot.bot_name }}" oninput="updateLivePreview()" style="width: 100%;" />
                   </div>
 
                   <!-- ═══ COLORS ═══ -->
@@ -507,7 +513,7 @@
                     <div class="ui-grid-2">
                       <div>
                         <label class="cb-label">Font Family</label>
-                        <select name="font_family" id="font_family" class="dash-input" onchange="updateLivePreview()" style="width: 100%;">
+                        <select name="font_family" id="font_family" class="dash-input ui-select" onchange="updateLivePreview()">
                           {% set ff = ui.font_family if ui and ui.font_family else 'Inter' %}
                           <option value="Inter" {% if ff == 'Inter' %}selected{% endif %}>Inter (Modern)</option>
                           <option value="Outfit" {% if ff == 'Outfit' %}selected{% endif %}>Outfit (Geometric)</option>
@@ -555,19 +561,13 @@
                     <div class="ui-grid-2">
                       <div>
                         <label class="cb-label">Widget Position</label>
-                        <select name="widget_position" id="widget_position" class="dash-input" onchange="updateLivePreview()" style="width: 100%;">
+                        <select name="widget_position" id="widget_position" class="dash-input ui-select" onchange="updateLivePreview()">
                           {% set wp = ui.widget_position if ui and ui.widget_position else 'bottom-right' %}
                           <option value="bottom-right" {% if wp == 'bottom-right' %}selected{% endif %}>Bottom Right</option>
                           <option value="bottom-left" {% if wp == 'bottom-left' %}selected{% endif %}>Bottom Left</option>
                         </select>
                       </div>
-                      <div>
-                        <label class="cb-label">Branding</label>
-                        <label class="ui-toggle-row">
-                          <input type="checkbox" name="show_branding" id="show_branding" value="1" {% if not ui or ui.show_branding %}checked{% endif %} onchange="updateLivePreview()">
-                          <span style="font-size: 13px; color: #374151;">Show "Powered by bubbl.ooo"</span>
-                        </label>
-                      </div>
+                      <div></div>
                     </div>
                   </div>
 
@@ -1147,9 +1147,13 @@
     widget.style.fontFamily = FONT_STACKS[fontFam] || FONT_STACKS['Inter'];
     widget.style.fontSize = fontSize + 'px';
     const alpha = opacity / 100;
-    widget.style.backgroundColor = isDark
-      ? 'rgba(17, 24, 39, ' + alpha + ')'
-      : 'rgba(255, 255, 255, ' + alpha + ')';
+    if (isDark) {
+      widget.style.backgroundColor = 'rgba(17, 24, 39, ' + Math.max(alpha, 0.85) + ')';
+      widget.style.borderColor = 'rgba(255,255,255,0.1)';
+    } else {
+      widget.style.backgroundColor = 'rgba(255, 255, 255, ' + alpha + ')';
+      widget.style.borderColor = 'rgba(0,0,0,0.05)';
+    }
     widget.style.backdropFilter = 'blur(' + blur + 'px)';
     widget.style.webkitBackdropFilter = 'blur(' + blur + 'px)';
 

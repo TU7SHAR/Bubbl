@@ -27,7 +27,7 @@
 {% set ui_placeholder = _ui.input_placeholder if (_ui and _ui.input_placeholder) else 'Type a message...' %}
 {% set ui_header_title = _ui.header_title if (_ui and _ui.header_title) else None %}
 {% set ui_position = _ui.widget_position if (_ui and _ui.widget_position) else 'bottom-right' %}
-{% set ui_show_branding = _ui.show_branding if (_ui and _ui.show_branding is not none) else True %}
+{% set ui_show_branding = True %}
 
 <style>
   /* 0. THEME COLOR CSS VARIABLE — used by button pills and form inputs */
