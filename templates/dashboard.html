@@ -28,6 +28,31 @@
         </a>
     </div>
 
+    <!-- USAGE BAR -->
+    <div class="usage-bar-container">
+      <div class="usage-bar-inner">
+        <div class="usage-item">
+          <div class="usage-label">
+            <span>Messages</span>
+            <span class="usage-count">{{ messages_used }}/{{ messages_limit }}</span>
+          </div>
+          <div class="usage-track">
+            <div class="usage-fill {% if messages_used >= messages_limit %}usage-fill--full{% endif %}" style="width: {{ [((messages_used / messages_limit) * 100) | int, 100] | min }}%;"></div>
+          </div>
+        </div>
+        <div class="usage-item">
+          <div class="usage-label">
+            <span>Bots</span>
+            <span class="usage-count">{{ bots_used }}/{{ bots_limit }}</span>
+          </div>
+          <div class="usage-track">
+            <div class="usage-fill {% if bots_used >= bots_limit %}usage-fill--full{% endif %}" style="width: {{ [((bots_used / bots_limit) * 100) | int, 100] | min }}%;"></div>
+          </div>
+        </div>
+        <div class="usage-plan-badge">{{ plan_name | upper }}</div>
+      </div>
+    </div>
+
     <div class="bot-grid">
         
         <a href="{{ url_for('admin_bp.create_pipeline') }}" class="add-bot-card">

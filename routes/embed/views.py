@@ -575,11 +575,26 @@ def dashboard():
         elif bot.visibility == 'private' and session.get('role') == 'admin':
             org_bots.append(bot)
 
+    # --- USAGE DATA for the usage bar ---
+    from utils.plan_limits import PLAN_LIMITS
+    org = Organization.query.get(session.get('org_id'))
+    plan_name = (org.plan if org else 'free') or 'free'
+    limits = PLAN_LIMITS.get(plan_name, PLAN_LIMITS['free'])
+    messages_used = org.messages_used or 0 if org else 0
+    messages_limit = limits.get('messages', 200)
+    bots_used = Bot.query.filter_by(org_id=session.get('org_id')).count()
+    bots_limit = limits.get('bots', 1)
+
     return render_template('dashboard.html', 
                            my_bots=my_bots, 
                            org_bots=org_bots, 
                            member_count=member_count,
-                           platform_bot=platform_bot)
+                           platform_bot=platform_bot,
+                           plan_name=plan_name,
+                           messages_used=messages_used,
+                           messages_limit=messages_limit,
+                           bots_used=bots_used,
+                           bots_limit=bots_limit)
 
 @views_bp.route('/set_active_bot/<int:bot_id>')
 def set_active_bot(bot_id):
