@@ -551,81 +551,98 @@
   }
 
   function updateLivePreview() {
-    const nameEl = document.getElementById('bot_name');
-    const colorEl = document.getElementById('theme_color');
-    const opacityEl = document.getElementById('glass_opacity');
-    const blurEl = document.getElementById('glass_blur');
-    const themeEl = document.getElementById('theme_mode');
-
-    const name = (nameEl && nameEl.value) || "Y Combinator";
-    const color = (colorEl && colorEl.value) || "#E8722A";
-    const opacity = (opacityEl && opacityEl.value) || 85;
-    const blur = (blurEl && blurEl.value) || 25;
-    const theme = (themeEl && themeEl.value) || "light";
-
-    const previewName = document.getElementById('preview-name');
-    const hexDisplay = document.getElementById('hex-display');
-    const valOpacity = document.getElementById('val-opacity');
-    const valBlur = document.getElementById('val-blur');
-    const previewBubble = document.getElementById('preview-bubble');
-    const avatarPreview = document.getElementById('preview-avatar');
-    const avatarSetting = document.getElementById('preview-avatar-setting');
-
-    if (previewName) previewName.innerText = name;
-    if (hexDisplay) hexDisplay.innerText = color.toUpperCase();
-    if (valOpacity) valOpacity.innerText = opacity + "%";
-    if (valBlur) valBlur.innerText = blur + "px";
-    if (previewBubble) previewBubble.style.backgroundColor = color;
+    const _v = (id, fb) => { const el = document.getElementById(id); return el ? el.value : fb; };
     
-    if (avatarPreview && !avatarPreview.style.backgroundImage) {
-        avatarPreview.style.backgroundColor = color; 
-        avatarPreview.innerText = name.charAt(0).toUpperCase();
-    }
-    if (avatarSetting && !avatarSetting.style.backgroundImage) {
-        avatarSetting.style.backgroundColor = color;
-        avatarSetting.innerText = name.charAt(0).toUpperCase();
-    }
+    const name        = _v('bot_name', 'Your Agent') || 'Your Agent';
+    const accent      = _v('theme_color', '#E8722A');
+    const userColor   = _v('user_bubble_color', accent);
+    const botColor    = _v('bot_bubble_color', '#F0F0F0');
+    const theme       = _v('theme_mode', 'light');
+    const fontSize    = parseInt(_v('font_size', 14));
+    const radius      = parseInt(_v('bubble_radius', 16));
+    const opacity     = parseInt(_v('glass_opacity', 35));
+    const blur        = parseInt(_v('glass_blur', 25));
+    const greeting    = (_v('greeting_message', '') || '').trim() || 'Hi! How can I help you today?';
+    const placeholder = (_v('input_placeholder', '') || '').trim() || 'Type a message...';
+    const isDark      = (theme === 'dark');
+
+    // Slider labels
+    const setLbl = (id, t) => { const e = document.getElementById(id); if (e) e.innerText = t; };
+    setLbl('val-font-size', fontSize + 'px');
+    setLbl('val-radius', radius + 'px');
+    setLbl('val-opacity', opacity + '%');
+    setLbl('val-blur', blur + 'px');
 
     const widget = document.getElementById('mock-widget');
-    if (widget) {
-        const alpha = opacity / 100;
-        const bgColor = (theme === 'dark') ? `rgba(17, 24, 39, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
-        widget.style.backgroundColor = bgColor; 
-        widget.style.backdropFilter = `blur(${blur}px)`; 
-        widget.style.webkitBackdropFilter = `blur(${blur}px)`;
+    if (!widget) return;
+
+    // Widget background
+    const alpha = Math.max(opacity / 100, isDark ? 0.85 : 0);
+    widget.style.background = isDark ? `rgba(17,24,39,${alpha})` : `rgba(255,255,255,${alpha})`;
+    widget.style.backdropFilter = `blur(${blur}px)`;
+    widget.style.webkitBackdropFilter = `blur(${blur}px)`;
+    widget.style.borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+
+    // Header
+    const nameEl = document.getElementById('preview-name');
+    if (nameEl) { nameEl.innerText = name; nameEl.style.color = isDark ? '#f9fafb' : '#111827'; }
+    const header = document.getElementById('mock-header');
+    if (header) header.style.borderBottomColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+
+    // Avatar
+    const av = document.getElementById('preview-avatar');
+    if (av) { av.style.backgroundColor = accent; av.innerText = name[0].toUpperCase(); }
+
+    // Bot bubble (incoming)
+    const bIn = document.getElementById('mock-bubble-in');
+    if (bIn) {
+      bIn.innerText = greeting;
+      bIn.style.background = isDark ? 'rgba(255,255,255,0.1)' : botColor;
+      bIn.style.color = isDark ? '#f9fafb' : _contrast(botColor);
+      bIn.style.borderRadius = `${radius}px ${radius}px ${radius}px 4px`;
+      bIn.style.fontSize = fontSize + 'px';
     }
+
+    // User bubble (outgoing)
+    const bOut = document.getElementById('preview-bubble');
+    if (bOut) {
+      bOut.style.background = userColor;
+      bOut.style.color = _contrast(userColor);
+      bOut.style.borderRadius = `${radius}px ${radius}px 4px ${radius}px`;
+      bOut.style.fontSize = fontSize + 'px';
+    }
+
+    // Body
+    const body = document.getElementById('mock-body');
+    if (body) body.style.background = isDark ? 'rgba(31,41,55,0.6)' : 'transparent';
+
+    // Footer
+    const footer = document.getElementById('mock-footer');
+    if (footer) footer.style.borderTopColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+    const input = document.getElementById('mock-input-field');
+    if (input) { input.innerText = placeholder; input.style.background = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'; input.style.color = isDark ? 'rgba(255,255,255,0.4)' : '#9ca3af'; }
+    const send = document.getElementById('mock-send-btn');
+    if (send) send.style.background = accent;
   }
 
-  function previewAvatar(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const imgUrl = e.target.result;
-            const avatars = [document.getElementById('preview-avatar'), document.getElementById('preview-avatar-setting')];
-            avatars.forEach(av => { 
-                av.style.backgroundColor = 'transparent'; 
-                av.style.backgroundImage = `url(${imgUrl})`; 
-                av.style.backgroundSize = 'cover'; 
-                av.style.backgroundPosition = 'center'; 
-                av.innerText = ''; 
-            });
-        }
-        reader.readAsDataURL(file);
-    }
+  function _contrast(hex) {
+    if (!hex || hex[0] !== '#') return '#111827';
+    const c = hex.length === 4 ? hex.substr(1).split('').map(x => x+x).join('') : hex.substr(1);
+    const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+    return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#111827' : '#ffffff';
   }
 
   function setPreviewTheme(theme) {
     const lightBtn = document.getElementById('btn-theme-light'), darkBtn = document.getElementById('btn-theme-dark');
-    const widget = document.getElementById('mock-widget'), header = document.getElementById('mock-header'), body = document.getElementById('mock-body'), footer = document.getElementById('mock-footer'), bubbleIn = document.getElementById('mock-bubble-in'), inputField = document.getElementById('mock-input-field');
     document.getElementById('theme_mode').value = theme;
     if (theme === 'dark') {
-        lightBtn.style.background = 'transparent'; lightBtn.style.border = '1px solid transparent'; lightBtn.style.opacity = '0.6'; darkBtn.style.background = '#fff'; darkBtn.style.border = '1px solid rgba(0,0,0,0.1)'; darkBtn.style.opacity = '1';
-        widget.style.background = '#111827'; widget.style.borderColor = '#374151'; header.style.borderBottomColor = '#374151'; document.getElementById('preview-name').style.color = '#f9fafb'; body.style.background = '#1f2937'; footer.style.borderTopColor = '#374151'; bubbleIn.style.background = '#374151'; bubbleIn.style.color = '#f9fafb'; if(inputField) { inputField.style.background = '#374151'; inputField.style.color = '#9ca3af'; }
+        lightBtn.style.background = 'transparent'; lightBtn.style.border = '1px solid transparent'; lightBtn.style.opacity = '0.6';
+        darkBtn.style.background = '#fff'; darkBtn.style.border = '1px solid rgba(0,0,0,0.1)'; darkBtn.style.opacity = '1';
     } else {
-        darkBtn.style.background = 'transparent'; darkBtn.style.border = '1px solid transparent'; darkBtn.style.opacity = '0.6'; lightBtn.style.background = '#fff'; lightBtn.style.border = '1px solid rgba(0,0,0,0.1)'; lightBtn.style.opacity = '1';
-        widget.style.background = '#fff'; widget.style.borderColor = 'rgba(0,0,0,0.05)'; header.style.borderBottomColor = 'rgba(0,0,0,0.05)'; document.getElementById('preview-name').style.color = '#111827'; body.style.background = '#f9fafb'; footer.style.borderTopColor = 'rgba(0,0,0,0.05)'; bubbleIn.style.background = '#e5e7eb'; bubbleIn.style.color = '#111827'; if(inputField) { inputField.style.background = '#f3f4f6'; inputField.style.color = '#9ca3af'; }
+        darkBtn.style.background = 'transparent'; darkBtn.style.border = '1px solid transparent'; darkBtn.style.opacity = '0.6';
+        lightBtn.style.background = '#fff'; lightBtn.style.border = '1px solid rgba(0,0,0,0.1)'; lightBtn.style.opacity = '1';
     }
+    updateLivePreview();
   }
   
 

@@ -97,39 +97,128 @@
   
   <div style="display: flex; gap: 40px; flex-wrap: wrap;">
       <div class="ui-settings-col" style="flex: 1; min-width: 300px;">
-          <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Agent Name <span style="color: red;">*</span></label>
-          <input type="text" name="bot_name" id="bot_name" style="width: 100%; margin-bottom: 20px; border-radius: 8px; padding: 12px 16px; border: 1.5px solid rgba(0,0,0,0.15); background: #fff; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; transition: border-color 0.2s;" placeholder="e.g. Y Combinator" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.15)';" oninput="updateLivePreview()" />
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-              <div>
-                  <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Appearance</label>
-                  <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 12px; width: fit-content;">
-                      <button type="button" id="btn-theme-light" style="background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; font-size: 16px;" onclick="setPreviewTheme('light')">☀️</button>
-                      <button type="button" id="btn-theme-dark" style="background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 8px 16px; cursor: pointer; transition: 0.2s; font-size: 16px; opacity: 0.6;" onclick="setPreviewTheme('dark')">🌙</button>
-                  </div>
-              </div>
-              <div>
-                  <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Bubble Color</label>
-                  <div style="display: flex; gap: 8px; align-items: center;">
-                      <input type="color" name="theme_color" id="theme_color" value="#E8722A" style="width: 36px; height: 36px; border: none; border-radius: 8px; cursor: pointer;" oninput="updateLivePreview()" />
-                      <span id="hex-display" style="font-size: 11px; font-weight: 700;">#E8722A</span>
-                  </div>
-              </div>
+
+          <!-- IDENTITY -->
+          <div style="background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 20px; margin-bottom: 18px;">
+            <div style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05);">Identity</div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Agent Name <span style="color: red;">*</span></label>
+            <input type="text" name="bot_name" id="bot_name" style="width: 100%; border-radius: 8px; padding: 12px 16px; border: 1.5px solid rgba(0,0,0,0.15); background: #fff; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; transition: border-color 0.2s;" placeholder="e.g. Keydroid" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.15)';" oninput="updateLivePreview()" />
           </div>
+
+          <!-- COLORS -->
+          <div style="background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 20px; margin-bottom: 18px;">
+            <div style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05);">Colors</div>
+            
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Theme Mode</label>
+            <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 12px; width: fit-content; margin-bottom: 16px;">
+                <button type="button" id="btn-theme-light" style="background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 8px 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; font-size: 16px;" onclick="setPreviewTheme('light')">☀️</button>
+                <button type="button" id="btn-theme-dark" style="background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 8px 16px; cursor: pointer; transition: 0.2s; font-size: 16px; opacity: 0.6;" onclick="setPreviewTheme('dark')">🌙</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Accent</label>
+                <input type="color" name="theme_color" id="theme_color" value="#E8722A" oninput="updateLivePreview()" style="width: 100%; height: 38px; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; cursor: pointer; padding: 3px;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">User Bubble</label>
+                <input type="color" name="user_bubble_color" id="user_bubble_color" value="#E8722A" oninput="updateLivePreview()" style="width: 100%; height: 38px; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; cursor: pointer; padding: 3px;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Bot Bubble</label>
+                <input type="color" name="bot_bubble_color" id="bot_bubble_color" value="#F0F0F0" oninput="updateLivePreview()" style="width: 100%; height: 38px; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; cursor: pointer; padding: 3px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- TYPOGRAPHY -->
+          <div style="background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 20px; margin-bottom: 18px;">
+            <div style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05);">Typography</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Font Family</label>
+                <select name="font_family" id="font_family" onchange="updateLivePreview()" style="width: 100%; padding: 10px 14px; border: 1.5px solid rgba(0,0,0,0.12); border-radius: 10px; font-size: 13px; font-family: 'Outfit', sans-serif; appearance: none; background: #fff url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E&quot;) no-repeat right 12px center; cursor: pointer;">
+                  <option value="Inter">Inter (Modern)</option>
+                  <option value="Outfit">Outfit (Geometric)</option>
+                  <option value="Roboto">Roboto (Neutral)</option>
+                  <option value="Georgia">Georgia (Serif)</option>
+                  <option value="System">System Default</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Font Size <span id="val-font-size" style="font-weight: 500; color: #9ca3af;">14px</span></label>
+                <input type="range" name="font_size" id="font_size" min="12" max="18" value="14" oninput="updateLivePreview()" style="width: 100%; margin-top: 10px; accent-color: #E8722A;">
+              </div>
+            </div>
+          </div>
+
+          <!-- SHAPE & EFFECTS -->
+          <div style="background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 20px; margin-bottom: 18px;">
+            <div style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05);">Shape & Effects</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Bubble Radius <span id="val-radius" style="font-weight: 500; color: #9ca3af;">16px</span></label>
+                <input type="range" name="bubble_radius" id="bubble_radius" min="0" max="24" value="16" oninput="updateLivePreview()" style="width: 100%; margin-top: 8px; accent-color: #E8722A;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Glass Opacity <span id="val-opacity" style="font-weight: 500; color: #9ca3af;">35%</span></label>
+                <input type="range" name="glass_opacity" id="glass_opacity" min="10" max="100" value="35" oninput="updateLivePreview()" style="width: 100%; margin-top: 8px; accent-color: #E8722A;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Blur <span id="val-blur" style="font-weight: 500; color: #9ca3af;">25px</span></label>
+                <input type="range" name="glass_blur" id="glass_blur" min="0" max="40" value="25" oninput="updateLivePreview()" style="width: 100%; margin-top: 8px; accent-color: #E8722A;">
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTENT & PLACEMENT -->
+          <div style="background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 20px; margin-bottom: 18px;">
+            <div style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.05);">Content & Placement</div>
+
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Greeting Message</label>
+            <textarea name="greeting_message" id="greeting_message" rows="2" placeholder="Hi! How can I help you today?" oninput="updateLivePreview()" style="width: 100%; resize: vertical; margin-bottom: 14px; border-radius: 8px; padding: 10px 14px; border: 1.5px solid rgba(0,0,0,0.12); font-family: 'Outfit', sans-serif; font-size: 13px; outline: none;" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.12)';"></textarea>
+
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Input Placeholder</label>
+            <input type="text" name="input_placeholder" id="input_placeholder" value="" placeholder="Type a message..." oninput="updateLivePreview()" style="width: 100%; margin-bottom: 14px; border-radius: 8px; padding: 10px 14px; border: 1.5px solid rgba(0,0,0,0.12); font-family: 'Outfit', sans-serif; font-size: 13px; outline: none;" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.12)';">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Widget Position</label>
+                <select name="widget_position" id="widget_position" onchange="updateLivePreview()" style="width: 100%; padding: 10px 14px; border: 1.5px solid rgba(0,0,0,0.12); border-radius: 10px; font-size: 13px; font-family: 'Outfit', sans-serif; appearance: none; background: #fff url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E&quot;) no-repeat right 12px center; cursor: pointer;">
+                  <option value="bottom-right">Bottom Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 6px;">Message Limit</label>
+                <input type="number" name="message_limit" id="message_limit" placeholder="∞ (plan limit)" min="1" style="width: 100%; padding: 10px 14px; border: 1.5px solid rgba(0,0,0,0.12); border-radius: 10px; font-size: 13px; font-family: 'Outfit', sans-serif; outline: none;" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.12)';">
+              </div>
+            </div>
+          </div>
+
       </div>
-      <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; align-items: center; background-color: #fdfaf8; background-image: radial-gradient(circle at 10% 20%, rgba(232, 114, 42, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%); border: 1px dashed rgba(232, 114, 42, 0.3); border-radius: 20px; padding: 20px;">
-          <div id="mock-widget" style="width: 100%; max-width: 350px; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); transition: background 0.3s, border-color 0.3s; backdrop-filter: blur(25px); background: rgba(255,255,255,0.85);">
-              <div id="mock-header" style="padding: 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); transition: border-color 0.3s; background: transparent;">
-                  <div id="preview-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: #E8722A; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; font-family: 'Bricolage Grotesque', sans-serif; overflow: hidden;">Y</div>
-                  <strong id="preview-name" style="font-size: 14px; color: #111827;">Y Combinator</strong>
-              </div>
-              <div id="mock-body" style="padding: 20px; height: 250px; display: flex; flex-direction: column; gap: 12px; transition: background 0.3s; background: transparent;">
-                  <div id="mock-bubble-in" style="background: rgba(0,0,0,0.05); color: #111827; padding: 10px 14px; border-radius: 12px 12px 12px 2px; font-size: 13px; max-width: 80%; align-self: flex-start;">Hey, check out this glass effect!</div>
-                  <div id="preview-bubble" style="background: #E8722A; color: #fff; padding: 10px 14px; border-radius: 12px 12px 2px 12px; font-size: 13px; max-width: 80%; align-self: flex-end;">Looks premium.</div>
-              </div>
-              <div id="mock-footer" style="padding: 12px 16px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; background: transparent;">
-                  <div id="mock-input-field" style="width: 100%; background: rgba(0,0,0,0.05); border: none; padding: 10px 12px; border-radius: 50px; font-size: 13px; color: #9ca3af;">Type a message...</div>
-              </div>
+
+      <!-- LIVE PREVIEW -->
+      <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; align-items: center;">
+          <div style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">Live Preview</div>
+          <div style="background-color: #fdfaf8; background-image: radial-gradient(circle at 10% 20%, rgba(232, 114, 42, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%); border: 1px dashed rgba(232, 114, 42, 0.3); border-radius: 20px; padding: 20px; width: 100%; display: flex; justify-content: center;">
+            <div id="mock-widget" style="width: 100%; max-width: 350px; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); transition: all 0.3s; backdrop-filter: blur(25px); background: rgba(255,255,255,0.85);">
+                <div id="mock-header" style="padding: 14px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); transition: all 0.3s;">
+                    <div id="preview-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: #E8722A; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; font-family: 'Bricolage Grotesque', sans-serif;">B</div>
+                    <strong id="preview-name" style="font-size: 14px; color: #111827; transition: color 0.3s;">Your Agent</strong>
+                </div>
+                <div id="mock-body" style="padding: 20px; min-height: 200px; display: flex; flex-direction: column; gap: 12px; transition: all 0.3s;">
+                    <div id="mock-bubble-in" style="background: #F0F0F0; color: #111827; padding: 10px 14px; border-radius: 12px 12px 12px 4px; font-size: 13px; max-width: 80%; align-self: flex-start; transition: all 0.3s;">Hi! How can I help you today?</div>
+                    <div id="preview-bubble" style="background: #E8722A; color: #fff; padding: 10px 14px; border-radius: 12px 12px 4px 12px; font-size: 13px; max-width: 80%; align-self: flex-end; transition: all 0.3s;">Looks great!</div>
+                </div>
+                <div id="mock-footer" style="padding: 10px 14px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
+                    <div id="mock-input-field" style="flex: 1; background: rgba(0,0,0,0.05); padding: 9px 14px; border-radius: 50px; font-size: 12px; color: #9ca3af; transition: all 0.3s;">Type a message...</div>
+                    <div id="mock-send-btn" style="width: 30px; height: 30px; border-radius: 50%; background: #E8722A; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </div>
+                </div>
+                <div id="mock-branding" style="text-align: center; padding: 5px 0 7px; font-size: 9px; color: #9ca3af;">Powered by <strong>bubbl.ooo</strong></div>
+            </div>
           </div>
       </div>
   </div>
