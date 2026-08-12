@@ -710,6 +710,37 @@ def unlock_bot(bot_id):
     
     return redirect(url_for('views_bp.dashboard'))
 
+def _normalize_host(value):
+    """
+    Reduce a URL or bare domain to a comparable hostname.
+
+    Note: str.lstrip('www.') is NOT a prefix strip — it removes any leading
+    'w'/'.' characters, so hosts like 'wow.com' get mangled into 'ow.com'.
+    This does a real prefix removal and drops the port.
+    """
+    if not value:
+        return ''
+    from urllib.parse import urlparse
+    candidate = value.strip()
+    if '//' not in candidate:
+        candidate = 'https://' + candidate
+    try:
+        host = (urlparse(candidate).hostname or '').lower()
+    except Exception:
+        return ''
+    if host.startswith('www.'):
+        host = host[4:]
+    return host
+
+
+def _promo_response(status=200):
+    """Bubbl advert shown instead of an error whenever the widget can't load."""
+    response = make_response(render_template('embed_promo.html'), status)
+    response.headers.pop('X-Frame-Options', None)
+    response.headers['Content-Security-Policy'] = "frame-ancestors *"
+    return response
+
+
 @views_bp.route('/embed/<int:bot_id>')
 @views_bp.route('/embed/<bot_public_id>')
 def embed_bot(bot_id=None, bot_public_id=None):
@@ -718,8 +749,13 @@ def embed_bot(bot_id=None, bot_public_id=None):
     if bot_id is None and bot_public_id is not None:
         bot_id = decode_bot_id(bot_public_id)
         if bot_id is None:
-            return render_template('embed_promo.html'), 200
-    target_bot = Bot.query.get_or_404(bot_id)
+            return _promo_response()
+
+    # Unknown / deleted bot → advert, not a 404 error page.
+    # A broken widget on a customer's site should still sell Bubbl.
+    target_bot = Bot.query.get(bot_id)
+    if not target_bot:
+        return _promo_response()
 
     # --- DOMAIN LOCK CHECK (server-side) ---
     # If the bot has allowed_domains set, check the Referer/Origin header.
@@ -728,45 +764,29 @@ def embed_bot(bot_id=None, bot_public_id=None):
     # (which is what CSP frame-ancestors alone would show).
     allowed = (target_bot.allowed_domains or '').strip()
     if allowed and allowed != '*':
-        from urllib.parse import urlparse
         # Get the requesting domain from Referer or Origin header
         referer = request.headers.get('Referer', '') or request.headers.get('Origin', '')
-        requesting_host = ''
-        if referer:
-            try:
-                parsed_ref = urlparse(referer)
-                requesting_host = (parsed_ref.netloc or '').lower().lstrip('www.')
-            except Exception:
-                pass
+        requesting_host = _normalize_host(referer)
 
         # Build the set of allowed hosts
         allowed_hosts = set()
         for domain in allowed.replace(',', ' ').split():
-            domain = domain.strip()
-            if not domain:
-                continue
             if domain == '*':
                 allowed_hosts = None  # wildcard = allow all
                 break
-            if not domain.startswith('http://') and not domain.startswith('https://'):
-                domain = 'https://' + domain
-            try:
-                parsed_d = urlparse(domain)
-                host = (parsed_d.netloc or '').lower().lstrip('www.')
-                if host:
-                    allowed_hosts.add(host)
-            except Exception:
-                pass
+            host = _normalize_host(domain)
+            if host:
+                allowed_hosts.add(host)
 
         # If we have a requesting host and it's NOT in the allowed set → show promo
         if allowed_hosts is not None and requesting_host and requesting_host not in allowed_hosts:
             # Also allow the app's own domain (always permitted)
-            own_host = (request.host or '').lower().lstrip('www.')
-            if requesting_host != own_host:
-                response = make_response(render_template('embed_promo.html'))
-                response.headers.pop('X-Frame-Options', None)
-                response.headers['Content-Security-Policy'] = "frame-ancestors *"
-                return response
+            if requesting_host != _normalize_host(request.host):
+                logging.info(
+                    "[embed] Domain lock hit for bot %s: '%s' not in %s → serving promo",
+                    target_bot.id, requesting_host, sorted(allowed_hosts)
+                )
+                return _promo_response()
 
     response = make_response(render_template('embed_chat.html', bot=target_bot))
     

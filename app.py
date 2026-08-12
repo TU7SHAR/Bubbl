@@ -7,7 +7,8 @@ monkey.patch_all()
 import os
 import sys
 import logging
-from flask import Flask, request
+from flask import Flask, request, render_template, jsonify, make_response
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_socketio import SocketIO
 from models.models import db
 from config import Config
@@ -26,6 +27,14 @@ app = Flask(__name__)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True  # Required when SameSite is 'None'
 app.config.from_object(Config)
+
+# --- TRUST THE NGINX PROXY ---
+# We run behind nginx, which means request.remote_addr is 127.0.0.1 for every
+# single visitor unless we honour X-Forwarded-For. That broke rate limiting
+# (everyone shared one bucket) and made request logs / stored visitor IPs
+# useless. ProxyFix rewrites remote_addr, scheme and host from the
+# X-Forwarded-* headers nginx already sets.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
 # --- LOGGING: Ensure all output reaches journalctl immediately ---
 # Force unbuffered stdout (gevent can buffer greenlet output otherwise)
@@ -167,6 +176,53 @@ def _run_auto_migrations():
 with app.app_context():
     db.create_all()
     _run_auto_migrations()
+
+@app.errorhandler(429)
+def rate_limit_exceeded(e):
+    """
+    Friendly 429 responses.
+
+    The widget must NEVER show a raw "Too Many Requests" error to a visitor on
+    a customer's site — that looks like our product is broken. Inside the embed
+    iframe we serve the Bubbl promo card instead (same page the domain-lock
+    check uses), so a throttled widget still converts.
+    """
+    retry_after = getattr(e, 'retry_after', None) or 60
+    app.logger.warning('429 rate limited: %s %s (%s)', request.method, request.path, e.description)
+
+    # 1. Embed iframe → show the "Grab your bot" promo, never an error
+    if request.path.startswith('/embed/'):
+        response = make_response(render_template('embed_promo.html'), 429)
+        response.headers.pop('X-Frame-Options', None)
+        response.headers['Content-Security-Policy'] = "frame-ancestors *"
+        response.headers['Retry-After'] = str(retry_after)
+        return response
+
+    # 2. API callers → structured JSON the frontend can act on
+    if request.path.startswith('/api/') or request.path.startswith('/admin/api/'):
+        response = jsonify({
+            "error": "Too many requests. Please slow down and try again shortly.",
+            "retry_after": retry_after,
+        })
+        response.status_code = 429
+        response.headers['Retry-After'] = str(retry_after)
+        return response
+
+    # 3. Normal pages → plain, human-readable holding page
+    response = make_response(
+        '<html><head><title>Slow down — Bubbl</title></head>'
+        '<body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;'
+        'max-width:520px;margin:80px auto;padding:0 24px;text-align:center;">'
+        '<h2 style="color:#1a1a1a;">You are going a little too fast</h2>'
+        f'<p style="color:#6b7280;line-height:1.6;">Too many requests from your '
+        f'connection. Please wait about {retry_after} seconds and try again.</p>'
+        '<p><a href="/dashboard" style="color:#E8722A;font-weight:600;">Back to dashboard</a></p>'
+        '</body></html>',
+        429,
+    )
+    response.headers['Retry-After'] = str(retry_after)
+    return response
+
 
 @app.after_request
 def log_request(response):
