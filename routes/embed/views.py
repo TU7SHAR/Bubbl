@@ -514,6 +514,12 @@ def conversation_detail(bot_id, session_id):
     user_msg_count = sum(1 for m in messages if m.role == 'user')
     bot_msg_count = sum(1 for m in messages if m.role == 'bot')
 
+    # If per-message tokens are all 0 (HTTP fallback doesn't save them per-message),
+    # estimate from the bot's total tokens / total interactions
+    if total_tokens == 0 and bot.tokens_used and bot.interaction_count:
+        # Estimate this session's tokens proportionally
+        total_tokens = int((bot.tokens_used / bot.interaction_count) * bot_msg_count)
+
     # Lead info
     lead = None
     msg_with_lead = next((m for m in messages if m.lead_id), None)
@@ -529,6 +535,11 @@ def conversation_detail(bot_id, session_id):
                 response_times.append(rt)
 
     avg_response_sec = round(sum(response_times) / len(response_times), 1) if response_times else 0
+
+    # If calculated response time is 0 (HTTP fallback saves user+bot at same timestamp),
+    # estimate from the bot's total_latency / interaction_count
+    if avg_response_sec == 0 and bot.total_latency and bot.interaction_count:
+        avg_response_sec = round(bot.total_latency / bot.interaction_count, 1)
 
     return render_template('conversation_detail.html',
         bot=bot,
