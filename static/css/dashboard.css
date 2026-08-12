@@ -704,39 +704,46 @@
 
 
 
-/* ── PER-BOT USAGE STATS (on each card) ── */
+/* ── COMPACT MESSAGE USAGE (beside bot name) ── */
 
-.bot-card-usage {
+.bot-name-usage {
   display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.025);
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 70px;
+  padding-top: 4px;
 }
 
-.bot-card-usage .usage-label {
-  margin-bottom: 5px;
+.bot-name-usage-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  white-space: nowrap;
 }
 
-.bot-card-usage .usage-track {
+.bot-name-usage-count.is-warn { color: #f59e0b; }
+.bot-name-usage-count.is-full { color: #ef4444; }
+
+.bot-name-usage-track {
+  width: 64px;
   height: 5px;
+  background: rgba(0, 0, 0, 0.07);
+  border-radius: 50px;
+  overflow: hidden;
 }
+
+.bot-name-usage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 50px;
+  transition: width 0.5s ease;
+}
+
+.bot-name-usage-fill.is-warn { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.bot-name-usage-fill.is-full { background: linear-gradient(90deg, #ef4444, #f87171); }
 
 .usage-fill--warn {
   background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
-}
-
-.bot-card-usage-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-.bot-card-usage-item svg {
-  color: #9ca3af;
-  flex-shrink: 0;
 }
