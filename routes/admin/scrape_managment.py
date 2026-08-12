@@ -223,16 +223,19 @@ def start_scrape():
     # --- DEDUP: don't scrape the same URL twice for this bot ---
     # Compares normalized URLs so adobe.com / https://adobe.com / https://adobe.com/
     # are treated as the same. Skips if an active or completed job already exists.
-    norm_target = normalize_url(url)
-    existing_jobs = ScrapeJob.query.filter_by(bot_id=bot_id).all()
-    for j in existing_jobs:
-        if normalize_url(j.url) == norm_target and j.status in ('pending', 'running', 'completed'):
-            return jsonify({
-                "success": True,
-                "duplicate": True,
-                "job_id": None,
-                "message": f"'{url}' was already added for this bot — skipping duplicate.",
-            })
+    # EXCEPT when recrawl=true (user intentionally wants to re-scrape for updated content).
+    is_recrawl = data.get('recrawl', False)
+    if not is_recrawl:
+        norm_target = normalize_url(url)
+        existing_jobs = ScrapeJob.query.filter_by(bot_id=bot_id).all()
+        for j in existing_jobs:
+            if normalize_url(j.url) == norm_target and j.status in ('pending', 'running', 'completed'):
+                return jsonify({
+                    "success": True,
+                    "duplicate": True,
+                    "job_id": None,
+                    "message": f"'{url}' was already added for this bot — skipping duplicate.",
+                })
 
     new_job = ScrapeJob(bot_id=bot_id, url=url, status='pending', limit=max_urls)
     db.session.add(new_job)
