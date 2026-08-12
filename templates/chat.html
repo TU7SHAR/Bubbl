@@ -276,9 +276,30 @@
   });
 
   let currentRating = 0;
+  let feedbackAutoCloseTimer = null;
 
   function toggleFeedbackOverlay() {
+      // If auto-close timer is pending and user manually closes, cancel it
+      if (feedbackAutoCloseTimer) {
+          clearTimeout(feedbackAutoCloseTimer);
+          feedbackAutoCloseTimer = null;
+          // User closed manually — reset the form immediately
+          resetFeedbackForm();
+      }
       document.getElementById('feedback-overlay').classList.toggle('active');
+  }
+
+  function resetFeedbackForm() {
+      const btn = document.getElementById('submit-feedback-btn');
+      document.getElementById('feedback-form-content').style.display = 'flex';
+      document.getElementById('feedback-success-content').style.display = 'none';
+      if (btn) { btn.innerText = "Send Feedback"; btn.disabled = false; }
+      currentRating = 0;
+      document.getElementById('feedback-comment').value = '';
+      Array.from(document.getElementById('overlay-stars').children).forEach(s => {
+          s.classList.remove('active');
+          s.classList.remove('hover-fill');
+      });
   }
 
   document.getElementById('overlay-stars').addEventListener('click', function(e) {
@@ -359,18 +380,13 @@
           document.getElementById('feedback-form-content').style.display = 'none';
           document.getElementById('feedback-success-content').style.display = 'flex';
           
-          setTimeout(() => {
-              toggleFeedbackOverlay();
+          // Auto-close after 2.5s — but cancellable if user clicks ✕ first
+          feedbackAutoCloseTimer = setTimeout(() => {
+              feedbackAutoCloseTimer = null;
+              // Explicitly CLOSE (not toggle) — prevents re-opening if already closed
+              document.getElementById('feedback-overlay').classList.remove('active');
               
-              setTimeout(() => {
-                  document.getElementById('feedback-form-content').style.display = 'flex';
-                  document.getElementById('feedback-success-content').style.display = 'none';
-                  btn.innerText = "Send Feedback";
-                  btn.disabled = false;
-                  currentRating = 0;
-                  document.getElementById('feedback-comment').value = '';
-                  Array.from(document.getElementById('overlay-stars').children).forEach(s => s.classList.remove('active'));
-              }, 500);
+              setTimeout(() => { resetFeedbackForm(); }, 500);
           }, 2500);
       })
       .catch(err => {
