@@ -296,6 +296,34 @@ def update_bot(bot_id):
     bot.ui_settings.glass_opacity = request.form.get('glass_opacity', bot.ui_settings.glass_opacity, type=int)
     bot.ui_settings.glass_blur = request.form.get('glass_blur', bot.ui_settings.glass_blur, type=int)
 
+    # --- EXTENDED UI CUSTOMIZATION ---
+    # Text fields: store None when blank so the widget falls back to defaults
+    def _opt(field):
+        val = (request.form.get(field) or '').strip()
+        return val if val else None
+
+    if 'greeting_message' in request.form:
+        bot.ui_settings.greeting_message = _opt('greeting_message')
+    if 'input_placeholder' in request.form:
+        bot.ui_settings.input_placeholder = _opt('input_placeholder')
+    if 'header_title' in request.form:
+        bot.ui_settings.header_title = _opt('header_title')
+    if 'user_bubble_color' in request.form:
+        bot.ui_settings.user_bubble_color = _opt('user_bubble_color')
+    if 'bot_bubble_color' in request.form:
+        bot.ui_settings.bot_bubble_color = _opt('bot_bubble_color')
+    if 'font_family' in request.form:
+        bot.ui_settings.font_family = request.form.get('font_family') or 'Inter'
+    if 'widget_position' in request.form:
+        bot.ui_settings.widget_position = request.form.get('widget_position') or 'bottom-right'
+    if 'bubble_radius' in request.form:
+        bot.ui_settings.bubble_radius = request.form.get('bubble_radius', 16, type=int)
+    if 'font_size' in request.form:
+        bot.ui_settings.font_size = request.form.get('font_size', 14, type=int)
+    # Checkbox: only present in POST when checked
+    if request.form.get('_ui_form') or 'font_family' in request.form:
+        bot.ui_settings.show_branding = bool(request.form.get('show_branding'))
+
     avatar_file = request.files.get('bot_avatar')
     if avatar_file and avatar_file.filename != '':
         img_bytes = avatar_file.read()
