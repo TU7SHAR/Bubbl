@@ -661,7 +661,8 @@
    SHARE CONVERSATION — Dropdown + Toast
    ========================================= */
 
-.share-chat-btn {
+.share-chat-btn,
+.chat-header-icon-btn {
   background: none;
   border: none;
   padding: 6px;
@@ -672,6 +673,16 @@
   justify-content: center;
   border-radius: 8px;
   transition: color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.chat-header-icon-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  transform: scale(1.05);
+}
+
+.chat-header-icon-btn:active {
+  transform: scale(0.95);
 }
 
 .share-chat-btn:hover {
