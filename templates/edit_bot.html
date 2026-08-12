@@ -688,9 +688,12 @@
   function switchCbTab(tabId) {
     document.querySelectorAll('.cb-tab').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.cb-pane').forEach(pane => pane.classList.remove('active'));
-    const targetBtn = Array.from(document.querySelectorAll('.cb-tab')).find(btn => btn.getAttribute('onclick').includes(tabId));
+    // Guard against tabs without an onclick (e.g. the Chat History <a> link),
+    // where getAttribute('onclick') is null and .includes() would throw.
+    const targetBtn = Array.from(document.querySelectorAll('.cb-tab')).find(btn => (btn.getAttribute('onclick') || '').includes(tabId));
     if(targetBtn) targetBtn.classList.add('active');
-    document.getElementById(tabId).classList.add('active');
+    const pane = document.getElementById(tabId);
+    if (pane) pane.classList.add('active');
   }
 
   // --- DOCUMENT SEARCH + PAGINATION ---
