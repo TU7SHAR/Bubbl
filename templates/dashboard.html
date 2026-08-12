@@ -28,7 +28,7 @@
         </a>
     </div>
 
-    <!-- USAGE BAR -->
+    <!-- PLAN USAGE BAR (org-wide) -->
     <div class="usage-bar-container">
       <div class="usage-bar-inner">
         <div class="usage-item">
@@ -40,16 +40,7 @@
             <div class="usage-fill {% if messages_used >= messages_limit %}usage-fill--full{% endif %}" style="width: {{ [((messages_used / messages_limit) * 100) | int, 100] | min }}%;"></div>
           </div>
         </div>
-        <div class="usage-item">
-          <div class="usage-label">
-            <span>Bots</span>
-            <span class="usage-count">{{ bots_used }}/{{ bots_limit }}</span>
-          </div>
-          <div class="usage-track">
-            <div class="usage-fill {% if bots_used >= bots_limit %}usage-fill--full{% endif %}" style="width: {{ [((bots_used / bots_limit) * 100) | int, 100] | min }}%;"></div>
-          </div>
-        </div>
-        <div class="usage-plan-badge">{{ plan_name | upper }}</div>
+        <div class="usage-plan-badge">{{ plan_name | upper }} · {{ bots_used }}/{{ bots_limit }} bots</div>
       </div>
     </div>
 
@@ -167,6 +158,22 @@
 
                 <div style="display: flex; flex-direction: column; gap: 16px; align-items: stretch; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.06); margin-top: auto;">
                     
+                    <!-- Per-bot usage stats -->
+                    <div class="bot-card-usage">
+                      <div class="bot-card-usage-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span>{{ bot.interaction_count or 0 }} chats</span>
+                      </div>
+                      <div class="bot-card-usage-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span>{{ "%.1f" | format((bot.total_latency or 0) / 60) }}m</span>
+                      </div>
+                      <div class="bot-card-usage-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                        <span>{{ bot.tokens_used or 0 }} tok</span>
+                      </div>
+                    </div>
+
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">Agent Status</span>
                         {% if bot.id == session.get('active_bot_id') %}
