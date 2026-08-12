@@ -625,7 +625,7 @@
                     <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; margin-top: 4px;">Tokens</div>
                   </div>
                   <div style="background: #f9fafb; border-radius: 12px; padding: 16px; text-align: center;">
-                    <div style="font-size: 22px; font-weight: 800; color: #111827;">{{ "%.1f" | format((bot.total_latency or 0) / max(bot.interaction_count or 1, 1)) }}s</div>
+                    <div style="font-size: 22px; font-weight: 800; color: #111827;">{{ "%.1f" | format((bot.total_latency or 0) / ([bot.interaction_count or 1, 1] | max)) }}s</div>
                     <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; margin-top: 4px;">Avg Response</div>
                   </div>
                 </div>
