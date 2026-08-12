@@ -219,6 +219,10 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
             Chat History
         </a>
+        <button type="button" class="cb-tab" onclick="switchCbTab('tab-limits')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg>
+            Limits & Usage
+        </button>
       </div>
 
       <div class="cb-content">
@@ -508,21 +512,6 @@
               </div>
 
               <div style="width: 100%;">
-                  <label class="cb-label">Message Limit (per bot)</label>
-                  <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">Set a specific message cap for this bot. Leave empty to use your plan's shared limit ({{ messages_limit | default(200) }} messages/month).</p>
-                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 30px;">
-                    <input type="number" name="message_limit" class="dash-input" style="width: 150px;" placeholder="Unlimited" value="{{ bot.message_limit | default('', true) }}" min="1">
-                    <span style="font-size: 12px; color: #6b7280;">
-                      {% if bot.message_limit %}
-                        Used: {{ bot.interaction_count or 0 }}/{{ bot.message_limit }}
-                      {% else %}
-                        Using shared org limit
-                      {% endif %}
-                    </span>
-                  </div>
-              </div>
-
-              <div style="width: 100%;">
                   <label class="cb-label">Base Prompt (System Instructions)</label>
                   <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">This defines the core behavior of your agent. Be explicitly clear about its goals and constraints.</p>
                   <textarea name="system_prompt" class="dash-input" rows="12" style="width: 100%; resize: vertical; padding: 20px; line-height: 1.6; font-family: 'Inter', sans-serif;">{{ bot.system_prompt }}</textarea>
@@ -575,6 +564,83 @@
 
               <div class="cb-bottom-bar">
                 <button type="button" class="btn-premium" onclick="saveLinks()">Save Links</button>
+              </div>
+            </div>
+
+            <!-- LIMITS & USAGE TAB -->
+            <div id="tab-limits" class="cb-pane">
+              <h2 class="cb-content-title bricolage">Limits & Usage</h2>
+              <p class="cb-content-subtitle">Monitor this bot's resource consumption and set message caps.</p>
+
+              {% set bot_used = bot.interaction_count or 0 %}
+              {% set bot_cap = bot.message_limit %}
+              {% set effective_limit = bot_cap if bot_cap else messages_limit | default(200) %}
+              {% set pct = ((bot_used / effective_limit) * 100) | int if effective_limit > 0 else 0 %}
+              {% set pct = [pct, 100] | min %}
+
+              <!-- Message Cap Setting -->
+              <div style="background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+                <label class="cb-label" style="margin-bottom: 4px;">Message Cap</label>
+                <p style="font-size: 12px; color: #6b7280; margin-bottom: 16px;">Set a per-bot limit. Leave empty to use your plan's shared limit ({{ messages_limit | default(200) }}/month).</p>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px; background: #f9fafb; border: 1.5px solid rgba(0,0,0,0.1); border-radius: 10px; padding: 4px 4px 4px 16px;">
+                    <input type="number" name="message_limit" class="dash-input" style="width: 100px; border: none; background: transparent; padding: 8px 0; font-size: 16px; font-weight: 700;" placeholder="∞" value="{{ bot.message_limit | default('', true) }}" min="1">
+                    <span style="font-size: 12px; color: #9ca3af; padding-right: 12px;">/month</span>
+                  </div>
+                  <span style="font-size: 13px; color: {% if pct >= 100 %}#ef4444{% elif pct >= 80 %}#f59e0b{% else %}#10b981{% endif %}; font-weight: 600;">
+                    {% if bot_cap %}
+                      {{ bot_used }}/{{ bot_cap }} used
+                    {% else %}
+                      {{ bot_used }}/{{ effective_limit }} (shared)
+                    {% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Usage Progress -->
+              <div style="background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+                <label class="cb-label" style="margin-bottom: 16px;">This Month's Usage</label>
+                
+                <div style="margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 13px; font-weight: 600; color: #374151;">Messages</span>
+                    <span style="font-size: 13px; font-weight: 700; color: {% if pct >= 100 %}#ef4444{% elif pct >= 80 %}#f59e0b{% else %}#111827{% endif %};">{{ bot_used }} / {{ effective_limit }}</span>
+                  </div>
+                  <div style="height: 8px; background: rgba(0,0,0,0.06); border-radius: 50px; overflow: hidden;">
+                    <div style="height: 100%; width: {{ pct }}%; border-radius: 50px; background: {% if pct >= 100 %}linear-gradient(90deg, #ef4444, #f87171){% elif pct >= 80 %}linear-gradient(90deg, #f59e0b, #fbbf24){% else %}linear-gradient(90deg, #10b981, #34d399){% endif %}; transition: width 0.5s ease;"></div>
+                  </div>
+                  {% if pct >= 100 %}
+                  <p style="font-size: 11px; color: #ef4444; font-weight: 600; margin-top: 6px;">Limit reached — bot is denying responses.</p>
+                  {% endif %}
+                </div>
+
+                <!-- Stats Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                  <div style="background: #f9fafb; border-radius: 12px; padding: 16px; text-align: center;">
+                    <div style="font-size: 22px; font-weight: 800; color: #111827;">{{ bot.interaction_count or 0 }}</div>
+                    <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; margin-top: 4px;">Interactions</div>
+                  </div>
+                  <div style="background: #f9fafb; border-radius: 12px; padding: 16px; text-align: center;">
+                    <div style="font-size: 22px; font-weight: 800; color: #111827;">{{ "{:,}".format(bot.tokens_used or 0) }}</div>
+                    <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; margin-top: 4px;">Tokens</div>
+                  </div>
+                  <div style="background: #f9fafb; border-radius: 12px; padding: 16px; text-align: center;">
+                    <div style="font-size: 22px; font-weight: 800; color: #111827;">{{ "%.1f" | format((bot.total_latency or 0) / max(bot.interaction_count or 1, 1)) }}s</div>
+                    <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; margin-top: 4px;">Avg Response</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Info Box -->
+              <div style="background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.15); border-radius: 12px; padding: 16px; font-size: 12px; color: #1e40af; line-height: 1.6;">
+                <strong>How limits work:</strong><br>
+                - If a per-bot cap is set, this bot stops responding when it hits the cap.<br>
+                - The org-wide plan limit ({{ messages_limit | default(200) }}/month) still applies on top — whichever is hit first blocks.<br>
+                - Counters reset monthly. Bot interactions count is cumulative (lifetime).
+              </div>
+
+              <div class="cb-bottom-bar">
+                <button type="submit" class="btn-premium">Save Limit</button>
               </div>
             </div>
 
