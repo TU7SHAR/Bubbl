@@ -98,7 +98,7 @@
           <div class="cb-box-content" style="padding: 0;">
             <div style="padding: 20px;">
               <input type="url" id="scrape_url" style="width: 100%; margin-bottom: 20px; border-radius: 8px; padding: 12px 16px; border: 1.5px solid rgba(0,0,0,0.15); background: #fff; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; transition: border-color 0.2s; box-sizing: border-box;" placeholder="https://www.example.com" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.15)';" />
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                   <div style="display: flex; align-items: center; gap: 10px; background: #f9fafb; padding: 12px 16px; border-radius: 8px; border: 1.5px solid rgba(0,0,0,0.15);">
                     <input type="checkbox" id="use_deep_crawl" style="width: 16px; height: 16px; cursor: pointer; accent-color: #E8722A;" />
                     <label for="use_deep_crawl" style="font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; margin: 0;">Deep Crawl</label>
@@ -108,12 +108,45 @@
                     <input type="number" id="max_urls" value="20" style="width: 60px; padding: 6px 8px; border-radius: 6px; border: 1.5px solid rgba(0,0,0,0.15); background: #fff; font-family: 'Outfit', sans-serif; font-size: 14px; color: #111827; outline: none; text-align: center; transition: border-color 0.2s;" onfocus="this.style.borderColor='#E8722A';" onblur="this.style.borderColor='rgba(0,0,0,0.15)';" />
                   </div>
               </div>
+              <div style="display: flex; align-items: center; gap: 10px; background: #f9fafb; padding: 12px 16px; border-radius: 8px; border: 1.5px solid rgba(0,0,0,0.15); margin-bottom: 15px;">
+                <input type="checkbox" id="create_find_max_links" style="width: 16px; height: 16px; cursor: pointer; accent-color: #E8722A;" />
+                <label for="create_find_max_links" style="font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; margin: 0;">Find Max Links</label>
+                <span style="font-size: 11px; color: #6b7280; margin-left: auto;">Discover all pages up to plan limit</span>
+              </div>
             </div>
-            <div style="padding: 15px; text-align: right; background: #f9fafb; border-top: 1px solid #e5e7eb;">
-              <button type="button" id="btn-add-link" class="btn-modal-action" style="background: #111827;" onclick="addLinkSnippet()">Add Links</button>
+            <div style="padding: 15px; display: flex; gap: 10px; justify-content: flex-end; background: #f9fafb; border-top: 1px solid #e5e7eb;">
+              <button type="button" id="btn-discover-links" class="btn-modal-action" style="background: #3b82f6;" onclick="discoverLinksForCreate()">Discover Links</button>
+              <button type="button" id="btn-add-link" class="btn-modal-action" style="background: #111827;" onclick="addLinkSnippet()">Add Directly</button>
             </div>
           </div>
         </div>
+
+        <!-- Discovery loading animation (reuses same pattern as edit_bot) -->
+        <div id="create-discover-loading" style="display:none; margin-top:16px; background:#f0f4ff; border:1.5px solid rgba(59,130,246,0.2); border-radius:14px; padding:20px; text-align:center;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="animation:spin 1.2s linear infinite; margin-bottom:10px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <div style="font-size:14px; font-weight:700; color:#1e40af; margin-bottom:4px;">Discovering links...</div>
+          <div id="create-discover-count" style="font-size:22px; font-weight:800; color:#3b82f6; margin:6px 0;">0</div>
+          <div style="font-size:12px; color:#6b7280;">links found so far</div>
+        </div>
+
+        <!-- Discovery results panel -->
+        <div id="create-discover-results" style="display:none; margin-top:16px; background:#f9fafb; border:1.5px solid rgba(0,0,0,0.08); border-radius:14px; padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4 style="margin:0; font-size:15px; font-weight:700; color:#111827;">Links Discovered</h4>
+            <span id="create-discover-method" style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(59,130,246,0.1); color:#3b82f6; font-weight:600;"></span>
+          </div>
+          <div id="create-discover-stats" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px;"></div>
+          <div id="create-discover-cap-warning" style="display:none; margin-bottom:10px; padding:9px 12px; background:rgba(232,114,42,0.07); border:1px solid rgba(232,114,42,0.3); border-radius:8px; font-size:12px; color:#92400e;"></div>
+          <div id="create-discover-urls" style="max-height:260px; overflow-y:auto; background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:10px; padding:10px; font-size:12px; font-family:monospace;"></div>
+          <div id="create-discover-estimate" style="margin-top:12px; padding:9px 12px; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:8px; font-size:12px; color:#065f46; display:none;">
+            <strong id="create-est-selected">0</strong> pages selected · Est. scrape time: ~<strong id="create-est-time">1</strong> min
+          </div>
+          <div style="display:flex; gap:10px; margin-top:14px;">
+            <button type="button" class="btn-modal-action active" style="flex:1;" onclick="confirmDiscoveredLinks()">Add Selected (<span id="create-confirm-count">0</span> pages)</button>
+            <button type="button" class="btn-modal-action" style="background:transparent; color:#6b7280; border:1px solid #e5e7eb;" onclick="document.getElementById('create-discover-results').style.display='none'">Cancel</button>
+          </div>
+        </div>
+
         <div style="margin-top: 40px; display: none;" id="link-sources-container">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="font-size: 16px; font-weight: 600; color: #111827; margin: 0;">Web sources</h3>
