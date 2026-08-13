@@ -489,78 +489,9 @@ def save_bot_links(bot_id):
 
 
 # ═══════════════════════════════════════════
-# CHAT HISTORY — View all conversations for a bot
+# CHAT HISTORY
 # ═══════════════════════════════════════════
-
-@admin_bp.route('/bot/<int:bot_id>/chats')
-@admin_required
-def bot_chats(bot_id):
-    """View all chat conversations for a bot."""
-    from models.models import ChatMessage
-    from sqlalchemy import func, or_
-
-    bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
-    if not bot:
-        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
-    if not bot:
-        flash("Bot not found.", "error")
-        return redirect(url_for('views_bp.dashboard'))
-
-    # Platform bot: include bot_id=NULL messages (legacy anonymous path)
-    if bot.bot_type == 'platform':
-        bot_filter = or_(ChatMessage.bot_id == bot.id, ChatMessage.bot_id.is_(None))
-    else:
-        bot_filter = (ChatMessage.bot_id == bot.id)
-
-    # Get all unique sessions with their message counts and last activity
-    sessions_query = db.session.query(
-        ChatMessage.session_id,
-        func.count(ChatMessage.id).label('message_count'),
-        func.min(ChatMessage.created_at).label('started_at'),
-        func.max(ChatMessage.created_at).label('last_message_at'),
-    ).filter(bot_filter).group_by(
-        ChatMessage.session_id
-    ).order_by(func.max(ChatMessage.created_at).desc()).all()
-
-    conversations = []
-    for sess in sessions_query:
-        # Get first user message as preview
-        first_msg = ChatMessage.query.filter(
-            bot_filter, ChatMessage.session_id == sess.session_id, ChatMessage.role == 'user'
-        ).order_by(ChatMessage.created_at.asc()).first()
-
-        conversations.append({
-            'session_id': sess.session_id,
-            'message_count': sess.message_count,
-            'started_at': sess.started_at,
-            'last_message_at': sess.last_message_at,
-            'preview': (first_msg.content[:80] + '...') if first_msg and len(first_msg.content) > 80 else (first_msg.content if first_msg else 'No messages'),
-        })
-
-    return render_template('bot_chats.html', bot=bot, conversations=conversations)
-
-
-@admin_bp.route('/bot/<int:bot_id>/chats/<session_id>')
-@admin_required
-def bot_chat_detail(bot_id, session_id):
-    """View a single conversation."""
-    from models.models import ChatMessage
-    from sqlalchemy import or_
-
-    bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
-    if not bot:
-        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
-    if not bot:
-        flash("Bot not found.", "error")
-        return redirect(url_for('views_bp.dashboard'))
-
-    if bot.bot_type == 'platform':
-        msg_filter = or_(ChatMessage.bot_id == bot.id, ChatMessage.bot_id.is_(None))
-    else:
-        msg_filter = (ChatMessage.bot_id == bot.id)
-
-    messages = ChatMessage.query.filter(
-        msg_filter, ChatMessage.session_id == session_id
-    ).order_by(ChatMessage.created_at.asc()).all()
-
-    return render_template('bot_chat_detail.html', bot=bot, messages=messages, session_id=session_id)
+# The bot_chats / bot_chat_detail pair used to live here and was a narrower
+# duplicate of views_bp.conversations_list / conversation_detail — same
+# aggregation query, same transcript read, fewer features. The "Chat History"
+# tab on the Edit Bot page now links to those views with ref=edit.

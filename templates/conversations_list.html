@@ -2,6 +2,8 @@
 {% block title %}Conversations | {{ bot.bot_name }}{% endblock %}
 
 {% block content %}
+{# Where the user came from, so the back-links point somewhere sensible. #}
+{% set ref = request.args.get('ref') %}
 <style>
   .conv-list { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
 
@@ -69,8 +71,15 @@
   <div class="conv-list-header">
     <div class="conv-list-header-left">
       <h1 class="bricolage">{{ bot.bot_name }}</h1>
+      {# ref=edit means we were opened from the bot's Edit page (the "Chat
+         History" tab), so the trail leads back there rather than to the
+         global Conversations hub. Same page either way. #}
       <div class="breadcrumb">
-        <a href="{{ url_for('views_bp.conversations_hub') }}">Conversations</a> / {{ bot.bot_name }}
+        {% if ref == 'edit' %}
+          <a href="{{ url_for('admin_bp.edit_bot', bot_id=bot.id) }}">&larr; Back to Edit Bot</a> / Chat History
+        {% else %}
+          <a href="{{ url_for('views_bp.conversations_hub') }}">Conversations</a> / {{ bot.bot_name }}
+        {% endif %}
       </div>
     </div>
     <div class="conv-list-header-right">
@@ -113,7 +122,7 @@
   </div>
   <div class="conv-sessions" id="conv-sessions-list">
     {% for conv in conversations %}
-    <a href="{{ url_for('views_bp.conversation_detail', bot_id=bot.id, session_id=conv.session_id) }}" class="conv-session-card">
+    <a href="{{ url_for('views_bp.conversation_detail', bot_id=bot.id, session_id=conv.session_id, ref=ref) }}" class="conv-session-card">
       <div class="conv-sess-indicator {{ 'has-lead' if conv.lead else 'no-lead' }}"></div>
 
       <div class="conv-sess-body">

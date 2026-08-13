@@ -62,6 +62,16 @@
     border-bottom-left-radius: 4px; border: 1px solid #f0e8e0;
   }
 
+  /* Rated bot replies are outlined so feedback is visible while reading. */
+  .conv-msg-bot.liked    { border-color: #10b981; box-shadow: 0 0 0 1.5px #10b981; }
+  .conv-msg-bot.disliked { border-color: #ef4444; box-shadow: 0 0 0 1.5px #ef4444; }
+
+  .conv-rating-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+  }
+  .conv-rating-badge.liked    { background: rgba(16,185,129,0.15); color: #10b981; }
+  .conv-rating-badge.disliked { background: rgba(239,68,68,0.15);  color: #ef4444; }
+
   .conv-msg-footer {
     display: flex; align-items: center; justify-content: space-between;
     margin-top: 6px; gap: 8px;
@@ -90,14 +100,26 @@
     .conv-msg { max-width: 92%; }
     .conv-detail-meta { grid-template-columns: repeat(2, 1fr); }
   }
+
+{# Styles for the message bodies produced by BubblTranscript (shared with the
+   share-link / print transcript page). #}
+{% include 'partials/_transcript_body_styles.html' %}
 </style>
 
 <div class="conv-detail">
   <div class="conv-detail-header">
     <h1 class="bricolage">Chat Transcript</h1>
+    {# ref=edit means we were opened from the bot's Edit page, so the trail
+       leads back there instead of to the global Conversations hub. #}
+    {% set ref = request.args.get('ref') %}
     <div class="conv-detail-breadcrumb">
-      <a href="{{ url_for('views_bp.conversations_hub') }}">Conversations</a> /
-      <a href="{{ url_for('views_bp.conversations_list', bot_id=bot.id) }}">{{ bot.bot_name }}</a> /
+      {% if ref == 'edit' %}
+        <a href="{{ url_for('admin_bp.edit_bot', bot_id=bot.id) }}">Edit Bot</a> /
+        <a href="{{ url_for('views_bp.conversations_list', bot_id=bot.id, ref='edit') }}">Chat History</a> /
+      {% else %}
+        <a href="{{ url_for('views_bp.conversations_hub') }}">Conversations</a> /
+        <a href="{{ url_for('views_bp.conversations_list', bot_id=bot.id) }}">{{ bot.bot_name }}</a> /
+      {% endif %}
       Transcript
     </div>
   </div>
@@ -139,6 +161,10 @@
       <div class="conv-meta-val">{{ disliked_count }}</div>
       <div class="conv-meta-label">👎 Disliked</div>
     </div>
+    <div class="conv-meta-item">
+      <div class="conv-meta-val">{{ ((liked_count / (liked_count + disliked_count)) * 100) | int }}%</div>
+      <div class="conv-meta-label">Satisfaction</div>
+    </div>
     {% endif %}
   </div>
 
@@ -178,7 +204,8 @@
   <!-- Chat Transcript -->
   <div class="conv-transcript" id="conv-transcript">
     {% for msg in messages %}
-    <div class="conv-msg {{ 'conv-msg-user' if msg.role == 'user' else 'conv-msg-bot' }}">
+    <div class="conv-msg {{ 'conv-msg-user' if msg.role == 'user' else 'conv-msg-bot' }}
+                {{ 'liked' if msg.rating == 1 else ('disliked' if msg.rating == -1 else '') }}">
       {% if msg.role == 'bot' and loop.index > 1 %}
         {% set prev_msg = messages[loop.index0 - 1] %}
         {% if prev_msg.role == 'user' and prev_msg.created_at and msg.created_at %}
@@ -190,9 +217,16 @@
       {% endif %}
 
       <div class="conv-msg-role-label">{{ 'Visitor' if msg.role == 'user' else bot.bot_name }}</div>
-      <div class="conv-msg-text" {% if msg.role == 'bot' %}data-render-buttons{% endif %}>{{ msg.content | e }}</div>
+      {# Raw text goes in as escaped textContent; transcript_render.js turns it
+         into markdown/[[BUTTONS:]] HTML and strips internal [[LEAD:]] tags. #}
+      <div class="conv-msg-text" data-transcript-md>{{ msg.content | e }}</div>
       <div class="conv-msg-footer">
         <span class="conv-msg-time">{{ msg.created_at.strftime('%H:%M:%S') if msg.created_at else '' }}</span>
+        {% if msg.rating == 1 %}
+        <span class="conv-rating-badge liked">👍 Liked</span>
+        {% elif msg.rating == -1 %}
+        <span class="conv-rating-badge disliked">👎 Disliked</span>
+        {% endif %}
         {% if msg.tokens_used %}
         <span class="conv-msg-tokens">{{ msg.tokens_used }} tokens</span>
         {% endif %}
@@ -206,6 +240,7 @@
   </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/transcript_render.js') }}"></script>
 <script>
 function filterTranscript() {
   var query = document.getElementById('transcript-search').value.toLowerCase().trim();
@@ -216,29 +251,8 @@ function filterTranscript() {
   });
 }
 
-// Render [[BUTTONS:...]] as clickable pill links in bot messages
-document.querySelectorAll('[data-render-buttons]').forEach(function(el) {
-  var html = el.innerHTML;
-  // Strip [[LEAD:...]] tags (internal, shouldn't show)
-  html = html.replace(/\[\[LEAD:.*?\]\]/gs, '');
-  // Render [[BUTTONS:...]] as styled links
-  html = html.replace(/\[\[BUTTONS:\s*(.*?)\]\]/gs, function(match, raw) {
-    var parts = raw.split(/,\s*(?=[a-z]+:)/);
-    var btns = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">';
-    parts.forEach(function(part) {
-      var m = part.trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
-      if (m) {
-        var label = m[2].trim(), url = m[3].trim(), color = m[4] || '#E8722A';
-        btns += '<a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;padding:6px 14px;background:' + color + ';color:#fff;border-radius:50px;font-size:12px;font-weight:600;text-decoration:none;transition:filter 0.2s;" onmouseover="this.style.filter=\'brightness(1.1)\'" onmouseout="this.style.filter=\'\'">' + label + ' &#8599;</a>';
-      }
-    });
-    btns += '</div>';
-    return btns;
-  });
-  // Convert newlines to <br> for readability
-  html = html.replace(/\n/g, '<br>');
-  el.innerHTML = html;
-});
-</script>
+// Render every message body through the shared renderer. This used to be a
+// hand-rolled copy of the [[BUTTONS:]] regex that had no markdown support.
+BubblTranscript.hydrate();
 </script>
 {% endblock %}
