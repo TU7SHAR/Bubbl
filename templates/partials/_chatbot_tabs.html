@@ -261,30 +261,6 @@
           <button type="button" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; font-size: 12px; font-weight: 600; font-family: 'Outfit', sans-serif; background-color: #ffffff; color: #111827; border: 1.5px dashed rgba(0, 0, 0, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.borderColor='#E8722A'; this.style.color='#E8722A'; this.style.backgroundColor='rgba(232, 114, 42, 0.05)';" onmouseout="this.style.borderColor='rgba(0, 0, 0, 0.3)'; this.style.color='#111827'; this.style.backgroundColor='#ffffff';" onclick="addCustomField()">+ Add Field</button>
       </div>
       
-      <!-- BUILT-IN FIELDS — always collected, shown read-only for clarity.
-           Not part of customFieldsState, so never saved into custom_form_fields. -->
-      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-        {% for base in [
-            {'label': 'Full Name',    'type': 'Text',  'required': True},
-            {'label': 'Email',        'type': 'Email', 'required': True},
-            {'label': 'Phone Number', 'type': 'Text',  'required': False}
-        ] %}
-        <div style="display: flex; gap: 10px; align-items: center; background: rgba(232,114,42,0.04); padding: 10px; border: 1px dashed rgba(232,114,42,0.25); border-radius: 8px;">
-            <div style="flex: 2; display: flex; align-items: center; gap: 7px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8722A" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                <span style="font-size: 13px; font-weight: 600; color: #374151;">{{ base.label }}</span>
-            </div>
-            <div style="flex: 1; font-size: 12px; color: #6b7280;">{{ base.type }}</div>
-            <div style="display: flex; align-items: center; gap: 6px; padding: 0 10px;">
-                <span style="font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; {% if base.required %}background: rgba(232,114,42,0.12); color: #E8722A;{% else %}background: rgba(0,0,0,0.05); color: #6b7280;{% endif %}">
-                    {{ 'Required' if base.required else 'Optional' }}
-                </span>
-            </div>
-            <div style="width: 26px;"></div>
-        </div>
-        {% endfor %}
-      </div>
-
       <div id="custom-fields-container" style="display: flex; flex-direction: column; gap: 10px;">
           </div>
 
