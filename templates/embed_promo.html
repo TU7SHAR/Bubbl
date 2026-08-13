@@ -20,69 +20,80 @@
        The visitor thinks: "Wait, that bot is slick — I want one."
        ═══════════════════════════════════════════════════════════ */
 
-    /* BRAND — identical on every host site, light or dark. The Bubbl orange is
-       the one constant so the ad is recognisably ours anywhere; only the
-       surface/text tokens below adapt to the page it's sitting on. */
+    /* ── PALETTE ──────────────────────────────────────────────
+       Bubbl orange is the ONLY brand colour; every surface/text token is a
+       NEUTRAL grey.
+
+       The previous palette used warm tokens (#1a1714, #2a2520, #c8b8a8,
+       #5a4a35...) which read as muddy BROWN and clashed on most host sites.
+       This widget sits on somebody else's page, so the neutral greys below
+       sit quietly on any design while the orange still says "Bubbl".
+       ───────────────────────────────────────────────────────── */
     :root {
+      /* Brand — constant everywhere */
       --accent: #E8722A;
       --accent-hover: #d4621f;
       --accent-text: #ffffff;
+      --cta-glow: rgba(232, 114, 42, 0.4);
+      --online: #22c55e;
 
+      /* Light surfaces — neutral grey, no warm tint */
       --bg: #ffffff;
-      --bg-chat: #f8f5f2;
-      --header: #1c1004;
-      --text: #1c1004;
-      --text-soft: #5a4a35;
-      --muted: #9a8a7a;
-      --border: rgba(28, 16, 4, 0.08);
+      --bg-chat: #f4f4f5;
+      --header: #18181b;
+      --text: #18181b;
+      --text-soft: #52525b;
+      --muted: #a1a1aa;
+      --border: rgba(0, 0, 0, 0.08);
       --user-bubble: var(--accent);
       --user-text: #ffffff;
       --bot-bubble: #ffffff;
-      --bot-text: #1c1004;
-      --bot-border: rgba(28, 16, 4, 0.1);
-      --shadow: 0 25px 80px rgba(28, 16, 4, 0.18), 0 8px 24px rgba(28, 16, 4, 0.08);
+      --bot-text: #27272a;
+      --bot-border: rgba(0, 0, 0, 0.08);
+      --shadow: 0 25px 80px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.06);
       --input-bg: #ffffff;
-      --input-border: rgba(28, 16, 4, 0.12);
-      --cta-glow: rgba(232, 114, 42, 0.4);
-      --overlay: rgba(255, 255, 255, 0.92);
+      --input-border: rgba(0, 0, 0, 0.12);
+      --overlay: rgba(255, 255, 255, 0.94);
     }
 
+    /* Dark surfaces — neutral zinc, no brown */
     @media (prefers-color-scheme: dark) { :root {
-      --bg: #1a1714;
-      --bg-chat: #211e1a;
-      --header: #faf6f2;
-      --text: #faf6f2;
-      --text-soft: #c8b8a8;
-      --muted: #7a6e62;
-      --border: rgba(255, 255, 255, 0.07);
-      --user-bubble: var(--accent);
-      --user-text: #ffffff;
-      --bot-bubble: #2a2520;
-      --bot-text: #f0ebe6;
+      --bg: #18181b;
+      --bg-chat: #1f1f23;
+      --header: #fafafa;
+      --text: #fafafa;
+      --text-soft: #d4d4d8;
+      --muted: #8b8b93;
+      --border: rgba(255, 255, 255, 0.08);
+      --bot-bubble: #27272a;
+      --bot-text: #f4f4f5;
       --bot-border: rgba(255, 255, 255, 0.08);
       --shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.3);
-      --input-bg: #2a2520;
-      --input-border: rgba(255, 255, 255, 0.1);
+      --input-bg: #27272a;
+      --input-border: rgba(255, 255, 255, 0.12);
       --cta-glow: rgba(232, 114, 42, 0.5);
-      --overlay: rgba(26, 23, 20, 0.94);
+      --overlay: rgba(24, 24, 27, 0.94);
     }}
+
+    /* Explicit override from embed.js (?theme=) beats the OS preference —
+       the host page's real background is what matters, not the visitor's OS. */
     html[data-theme="light"] {
-      --bg: #ffffff; --bg-chat: #f8f5f2; --header: #1c1004;
-      --text: #1c1004; --text-soft: #5a4a35; --muted: #9a8a7a;
-      --border: rgba(28, 16, 4, 0.08); --bot-bubble: #ffffff;
-      --bot-text: #1c1004; --bot-border: rgba(28, 16, 4, 0.1);
-      --shadow: 0 25px 80px rgba(28, 16, 4, 0.18), 0 8px 24px rgba(28, 16, 4, 0.08);
-      --input-bg: #ffffff; --input-border: rgba(28, 16, 4, 0.12);
-      --overlay: rgba(255, 255, 255, 0.92);
+      --bg: #ffffff; --bg-chat: #f4f4f5; --header: #18181b;
+      --text: #18181b; --text-soft: #52525b; --muted: #a1a1aa;
+      --border: rgba(0, 0, 0, 0.08); --bot-bubble: #ffffff;
+      --bot-text: #27272a; --bot-border: rgba(0, 0, 0, 0.08);
+      --shadow: 0 25px 80px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.06);
+      --input-bg: #ffffff; --input-border: rgba(0, 0, 0, 0.12);
+      --overlay: rgba(255, 255, 255, 0.94);
     }
     html[data-theme="dark"] {
-      --bg: #1a1714; --bg-chat: #211e1a; --header: #faf6f2;
-      --text: #faf6f2; --text-soft: #c8b8a8; --muted: #7a6e62;
-      --border: rgba(255, 255, 255, 0.07); --bot-bubble: #2a2520;
-      --bot-text: #f0ebe6; --bot-border: rgba(255, 255, 255, 0.08);
+      --bg: #18181b; --bg-chat: #1f1f23; --header: #fafafa;
+      --text: #fafafa; --text-soft: #d4d4d8; --muted: #8b8b93;
+      --border: rgba(255, 255, 255, 0.08); --bot-bubble: #27272a;
+      --bot-text: #f4f4f5; --bot-border: rgba(255, 255, 255, 0.08);
       --shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.3);
-      --input-bg: #2a2520; --input-border: rgba(255, 255, 255, 0.1);
-      --overlay: rgba(26, 23, 20, 0.94);
+      --input-bg: #27272a; --input-border: rgba(255, 255, 255, 0.12);
+      --overlay: rgba(24, 24, 27, 0.94);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -147,14 +158,14 @@
     }
     .w-status {
       font-size: 11px;
-      color: #22c55e;
+      color: var(--online);
       font-weight: 500;
       display: flex; align-items: center; gap: 4px;
     }
     .w-status::before {
       content: '';
       width: 6px; height: 6px;
-      background: #22c55e;
+      background: var(--online);
       border-radius: 50%;
       animation: pulse 2s ease-in-out infinite;
     }
