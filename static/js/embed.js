@@ -108,9 +108,17 @@
 
   // 6. SAFELY inject the iframe (Wait for the body to exist)
   const injectWidget = () => {
-    // Theme is detected here, not earlier — <body> must exist to be sampled
+    // Theme is detected here, not earlier — <body> must exist to be sampled.
+    // `mobile` reports the HOST viewport: the iframe gets resized to fit its
+    // content, so content inside it must never infer "mobile" from its own
+    // width or a collapsed state would look like a phone and stay collapsed.
+    const isMobileHost = window.innerWidth < 480;
     iframe.src =
-      hostUrl + "/embed/" + encodeURIComponent(botId) + "?theme=" + detectHostTheme();
+      hostUrl +
+      "/embed/" +
+      encodeURIComponent(botId) +
+      "?theme=" + detectHostTheme() +
+      "&mobile=" + (isMobileHost ? "1" : "0");
     document.body.appendChild(iframe);
   };
 
