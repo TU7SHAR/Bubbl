@@ -206,11 +206,20 @@
 <script>
   window.LEAD_TIMING = "{{ bot.lead_capture_timing if bot else session.get('lead_capture_timing', 'disabled') }}";
   window.EMBEDDED_BOT_ID = "{{ bot.id if bot else session.get('active_bot_id', '') }}";
-  // Emitted as real JSON, not a quoted Python repr. custom_form_fields is a
-  // JSONB column so `{{ bot.custom_form_fields }}` would render
-  // [{'name': 'x', 'required': True}] — invalid JSON, which made JSON.parse
-  // throw and silently dropped every custom field from the lead form.
-  window.CUSTOM_FIELDS = {{ (bot.custom_form_fields or []) | tojson if bot else (session.get('custom_form_fields') or '[]') | tojson }};
+  {# Emit real JSON via tojson, not a Python repr. custom_form_fields is a
+     JSONB column, so plain interpolation renders single quotes and True,
+     which is invalid JSON and made JSON.parse throw -- silently dropping
+     every custom field from the lead form.
+
+     Two footguns already hit here, do not repeat them:
+     1. Only a Jinja comment is a comment to Jinja. A JS or HTML comment is
+        not, so a Jinja expression inside one is still evaluated -- that is
+        what caused the 'bot is undefined' 500 on every page.
+     2. Never write Jinja delimiter characters inside a Jinja comment. The
+        first closing sequence ends the comment early and the remainder is
+        parsed as template code.
+     Describe the syntax in words here, never by example. #}
+  window.CUSTOM_FIELDS = {{ (bot.custom_form_fields or []) | tojson if bot is defined and bot else (session.get('custom_form_fields') or '[]') | tojson }};
 </script>
 
 <div id="chat-widget-container">
