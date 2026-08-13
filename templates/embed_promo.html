@@ -1,317 +1,291 @@
 <!doctype html>
-<html lang="en" data-theme="{{ 'dark' if request.args.get('theme') == 'dark' else ('light' if request.args.get('theme') == 'light' else '') }}">
+<html lang="en" data-theme="{{ request.args.get('theme', '') }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Bubbl — AI chat for your site</title>
+  <title>Bubbl — AI Chatbots</title>
   <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ═══════════════════════════════════════════════════════════
-       WIDGET PROMO — shown inside the embed iframe whenever the
-       real chat widget can't load (domain lock, unknown bot, 429).
+    /* ═══════════════════════════════════════════════════════
+       WIDGET PROMO v3 — Matches the Bubbl brand identity.
+       
+       Goals:
+       - Medium-sized card (not tiny, not a full page slab)
+       - FUN, playful — uses the Bubbl mascot + brand colours
+       - Copy that makes you want to build a bot
+       - Outfit font, pill buttons, warm orange energy
+       - Transparent body, self-sizing iframe
+       ═══════════════════════════════════════════════════════ */
 
-       Two hard rules learned from the old version:
-       1. The iframe is 450x800 and transparent. NEVER paint the body
-          or the promo becomes a giant opaque slab over the host page.
-       2. The host site may be dark. A hardcoded cream card looks
-          broken on a dark page, so every colour is a themed token.
-       ═══════════════════════════════════════════════════════════ */
-
-    /* --- LIGHT (default) --- */
     :root {
-      --surface: rgba(255, 255, 255, 0.86);
-      --surface-solid: #ffffff;
-      --border: rgba(17, 17, 17, 0.08);
-      --text: #18181b;
-      --muted: #71717a;
-      --bubble-bot: rgba(17, 17, 17, 0.05);
-      --bubble-bot-text: #27272a;
-      --shadow: 0 12px 32px rgba(17, 17, 17, 0.1), 0 2px 8px rgba(17, 17, 17, 0.06);
-      --glow: rgba(232, 114, 42, 0.18);
-      --dot: rgba(17, 17, 17, 0.25);
       --accent: #E8722A;
-      --accent-text: #ffffff;
+      --accent-glow: rgba(232, 114, 42, 0.25);
+      --accent-hover: #d4621f;
+      --surface: rgba(255, 255, 255, 0.92);
+      --surface-solid: #ffffff;
+      --border: rgba(17, 17, 17, 0.07);
+      --text: #1c1004;
+      --text-mid: #5a4a35;
+      --muted: #8a7a66;
+      --chat-bg: rgba(245, 240, 235, 0.7);
+      --shadow: 0 20px 60px rgba(28, 16, 4, 0.12), 0 4px 12px rgba(28, 16, 4, 0.06);
     }
 
-    /* --- DARK: follows the visitor's OS when the host sends no hint --- */
     @media (prefers-color-scheme: dark) {
       :root {
-        --surface: rgba(24, 24, 27, 0.88);
-        --surface-solid: #18181b;
-        --border: rgba(255, 255, 255, 0.1);
-        --text: #fafafa;
-        --muted: #a1a1aa;
-        --bubble-bot: rgba(255, 255, 255, 0.07);
-        --bubble-bot-text: #e4e4e7;
-        --shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
-        --glow: rgba(232, 114, 42, 0.28);
-        --dot: rgba(255, 255, 255, 0.3);
+        --surface: rgba(28, 24, 20, 0.94);
+        --surface-solid: #1c1814;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #faf6f2;
+        --text-mid: #c8b8a8;
+        --muted: #9a8a7a;
+        --chat-bg: rgba(40, 34, 28, 0.7);
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
       }
     }
-
-    /* --- Explicit override from embed.js (?theme=) beats the OS setting.
-           The host page's real background is what matters, not the OS. --- */
     html[data-theme="light"] {
-      --surface: rgba(255, 255, 255, 0.86);
+      --surface: rgba(255, 255, 255, 0.92);
       --surface-solid: #ffffff;
-      --border: rgba(17, 17, 17, 0.08);
-      --text: #18181b;
-      --muted: #71717a;
-      --bubble-bot: rgba(17, 17, 17, 0.05);
-      --bubble-bot-text: #27272a;
-      --shadow: 0 12px 32px rgba(17, 17, 17, 0.1), 0 2px 8px rgba(17, 17, 17, 0.06);
-      --glow: rgba(232, 114, 42, 0.18);
-      --dot: rgba(17, 17, 17, 0.25);
+      --border: rgba(17, 17, 17, 0.07);
+      --text: #1c1004;
+      --text-mid: #5a4a35;
+      --muted: #8a7a66;
+      --chat-bg: rgba(245, 240, 235, 0.7);
+      --shadow: 0 20px 60px rgba(28, 16, 4, 0.12), 0 4px 12px rgba(28, 16, 4, 0.06);
     }
     html[data-theme="dark"] {
-      --surface: rgba(24, 24, 27, 0.88);
-      --surface-solid: #18181b;
-      --border: rgba(255, 255, 255, 0.1);
-      --text: #fafafa;
-      --muted: #a1a1aa;
-      --bubble-bot: rgba(255, 255, 255, 0.07);
-      --bubble-bot-text: #e4e4e7;
-      --shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
-      --glow: rgba(232, 114, 42, 0.28);
-      --dot: rgba(255, 255, 255, 0.3);
+      --surface: rgba(28, 24, 20, 0.94);
+      --surface-solid: #1c1814;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #faf6f2;
+      --text-mid: #c8b8a8;
+      --muted: #9a8a7a;
+      --chat-bg: rgba(40, 34, 28, 0.7);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* CRITICAL: transparent, and anchored bottom-right like a real widget.
-       No min-height:100vh, no background — the host page shows through. */
     html, body {
       background: transparent !important;
       height: 100%;
       overflow: hidden;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                   'Helvetica Neue', Arial, sans-serif;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
       align-items: flex-end;
       justify-content: flex-end;
-      padding: 16px;
+      padding: 14px;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── CARD ───────────────────────────────────────────── */
+    /* ── CARD ────────────────────────────────── */
     .promo {
       position: relative;
-      width: 312px;
-      padding: 18px;
+      width: 370px;
       background: var(--surface);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      backdrop-filter: blur(28px) saturate(180%);
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: 24px;
       box-shadow: var(--shadow);
-      animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-    /* Warm accent bloom behind the card */
-    .promo::before {
-      content: '';
-      position: absolute;
-      inset: -1px;
-      border-radius: 20px;
-      background: radial-gradient(120px 80px at 88% 0%, var(--glow), transparent 70%);
-      pointer-events: none;
+      overflow: hidden;
+      animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     @keyframes rise {
-      from { opacity: 0; transform: translateY(18px) scale(0.97); }
+      from { opacity: 0; transform: translateY(24px) scale(0.96); }
       to   { opacity: 1; transform: none; }
     }
 
-    /* ── DISMISS ────────────────────────────────────────── */
-    .promo-close {
+    /* ── CLOSE ───────────────────────────────── */
+    .close {
       position: absolute;
-      top: 10px; right: 10px;
-      width: 24px; height: 24px;
+      top: 12px; right: 12px;
+      width: 28px; height: 28px;
       display: flex; align-items: center; justify-content: center;
       background: transparent;
       border: 0;
       border-radius: 50%;
       color: var(--muted);
       cursor: pointer;
-      opacity: 0.6;
+      opacity: 0.5;
       transition: opacity 0.15s, background 0.15s;
+      z-index: 10;
     }
-    .promo-close:hover { opacity: 1; background: var(--bubble-bot); }
-    .promo-close svg { width: 13px; height: 13px; }
+    .close:hover { opacity: 1; background: var(--chat-bg); }
+    .close svg { width: 14px; height: 14px; }
 
-    /* ── HEADER ─────────────────────────────────────────── */
-    .promo-head {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      margin-bottom: 14px;
-    }
-    .promo-mark {
-      position: relative;
-      flex: 0 0 auto;
-      width: 34px; height: 34px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--accent);
-      border-radius: 10px;
-      box-shadow: 0 4px 14px rgba(232, 114, 42, 0.35);
-    }
-    .promo-mark svg { width: 18px; height: 18px; }
-    /* Live "online" pip */
-    .promo-pip {
-      position: absolute;
-      bottom: -1px; right: -1px;
-      width: 10px; height: 10px;
-      background: #22c55e;
-      border: 2px solid var(--surface-solid);
-      border-radius: 50%;
-    }
-    .promo-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: -0.01em;
-      line-height: 1.2;
-    }
-    .promo-status {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 1px;
-    }
-
-    /* ── MINI CHAT MOCK — shows the product in one glance ── */
-    .promo-chat {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 14px;
-    }
-    .msg {
-      max-width: 84%;
-      padding: 8px 11px;
-      font-size: 12px;
-      line-height: 1.45;
-      animation: pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-    .msg.user {
-      align-self: flex-end;
-      background: var(--accent);
-      color: var(--accent-text);
-      border-radius: 13px 13px 4px 13px;
-      animation-delay: 0.25s;
-    }
-    .msg.bot {
-      align-self: flex-start;
-      background: var(--bubble-bot);
-      color: var(--bubble-bot-text);
-      border-radius: 13px 13px 13px 4px;
-      animation-delay: 0.45s;
-    }
-    /* Typing indicator instead of a third canned line */
-    .msg.typing {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 10px 12px;
-      animation-delay: 0.75s;
-    }
-    .msg.typing i {
-      width: 5px; height: 5px;
-      background: var(--dot);
-      border-radius: 50%;
-      animation: blink 1.3s ease-in-out infinite;
-    }
-    .msg.typing i:nth-child(2) { animation-delay: 0.18s; }
-    .msg.typing i:nth-child(3) { animation-delay: 0.36s; }
-    @keyframes pop {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: none; }
-    }
-    @keyframes blink {
-      0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-      30%           { opacity: 1;   transform: translateY(-2px); }
-    }
-
-    /* ── PITCH ──────────────────────────────────────────── */
-    .promo-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--text);
-      line-height: 1.3;
-      letter-spacing: -0.02em;
-      margin-bottom: 5px;
-    }
-    .promo-copy {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-      margin-bottom: 12px;
-    }
-
-    /* ── CTA ────────────────────────────────────────────── */
-    .promo-cta {
+    /* ── MASCOT AREA ─────────────────────────── */
+    .mascot-area {
       position: relative;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
-      gap: 6px;
-      width: 100%;
-      padding: 11px 16px;
-      background: var(--accent);
-      color: #fff;
-      font-size: 12.5px;
-      font-weight: 700;
-      text-decoration: none;
-      border-radius: 11px;
-      overflow: hidden;
-      box-shadow: 0 4px 14px rgba(232, 114, 42, 0.32);
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      padding: 20px 20px 0;
+      min-height: 130px;
     }
-    .promo-cta:hover {
-      transform: translateY(-1.5px);
-      box-shadow: 0 8px 22px rgba(232, 114, 42, 0.45);
-    }
-    .promo-cta:active { transform: translateY(0); }
-    .promo-cta svg {
-      width: 13px; height: 13px;
-      transition: transform 0.18s ease;
-    }
-    .promo-cta:hover svg { transform: translateX(2px); }
-    /* Shimmer sweep */
-    .promo-cta::after {
+    .mascot-area::before {
       content: '';
       position: absolute;
-      top: 0; left: -60%;
-      width: 40%; height: 100%;
-      background: linear-gradient(100deg, transparent, rgba(255,255,255,0.3), transparent);
-      transform: skewX(-18deg);
-      animation: sweep 3.6s ease-in-out 1.4s infinite;
+      inset: 0;
+      background: radial-gradient(ellipse 260px 120px at 50% 90%, var(--accent-glow), transparent);
+      pointer-events: none;
     }
-    @keyframes sweep {
-      0%        { left: -60%; }
-      40%, 100% { left: 130%; }
+    .mascot {
+      width: 160px;
+      height: 100px;
+      background: url('/static/images/sprite-mobile.webp') center bottom / contain no-repeat;
+      animation: bounce 2.5s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    /* Speech bubble from the mascot */
+    .speech {
+      position: absolute;
+      top: 14px; right: 24px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 12px 12px 4px 12px;
+      box-shadow: 0 4px 14px rgba(232, 114, 42, 0.3);
+      animation: pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+      white-space: nowrap;
+    }
+    .speech::after {
+      content: '';
+      position: absolute;
+      bottom: -5px; left: 14px;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      clip-path: polygon(0 0, 100% 0, 0 100%);
+    }
+    @keyframes pop {
+      from { opacity: 0; transform: scale(0.8) translateY(6px); }
+      to   { opacity: 1; transform: none; }
     }
 
-    /* ── TRUST ROW ──────────────────────────────────────── */
-    .promo-foot {
+    /* ── CONTENT ──────────────────────────────── */
+    .content {
+      padding: 20px 24px 22px;
+    }
+    .headline {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .headline span {
+      color: var(--accent);
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-mid);
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+
+    /* ── FEATURE PILLS ────────────────────────── */
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: var(--chat-bg);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-mid);
+    }
+    .pill svg {
+      width: 13px; height: 13px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ── CTA ──────────────────────────────────── */
+    .cta {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      margin-top: 10px;
-      font-size: 10.5px;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 24px;
+      background: var(--accent);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      border-radius: 100px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(232, 114, 42, 0.35);
+      transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+    }
+    .cta:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(232, 114, 42, 0.45);
+    }
+    .cta:active { transform: translateY(0); }
+    .cta svg {
+      width: 16px; height: 16px;
+      transition: transform 0.18s;
+    }
+    .cta:hover svg { transform: translateX(3px); }
+    /* Shimmer */
+    .cta::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -70%;
+      width: 50%; height: 100%;
+      background: linear-gradient(105deg, transparent, rgba(255,255,255,0.25), transparent);
+      transform: skewX(-20deg);
+      animation: shimmer 4s ease-in-out 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0%        { left: -70%; }
+      35%, 100% { left: 130%; }
+    }
+
+    /* ── FOOTER ───────────────────────────────── */
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 0 0;
+      font-size: 11px;
       color: var(--muted);
     }
-    .promo-foot b { color: var(--text); font-weight: 600; }
-    .promo-foot span { opacity: 0.4; }
+    .footer b { color: var(--text-mid); font-weight: 700; }
+    .footer .dot { opacity: 0.35; }
 
-    /* ── RESPONSIVE: narrow mobile iframes ──────────────── */
-    @media (max-width: 360px) {
+    /* ── RESPONSIVE ───────────────────────────── */
+    @media (max-width: 400px) {
       body { padding: 10px; }
-      .promo { width: 100%; padding: 15px; }
+      .promo { width: 100%; }
+      .headline { font-size: 19px; }
     }
 
-    /* ── ACCESSIBILITY ──────────────────────────────────── */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation: none !important;
@@ -322,48 +296,48 @@
 </head>
 <body>
   <div class="promo" role="complementary" aria-label="Bubbl advertisement">
-    <button class="promo-close" type="button" aria-label="Dismiss">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+    <button class="close" type="button" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
         <path d="M18 6L6 18M6 6l12 12"></path>
       </svg>
     </button>
 
-    <div class="promo-head">
-      <div class="promo-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    <div class="mascot-area">
+      <div class="mascot" aria-hidden="true"></div>
+      <div class="speech">Hey! Need a chatbot? 👋</div>
+    </div>
+
+    <div class="content">
+      <h1 class="headline">Your own <span>AI agent</span>,<br>live in 5 minutes</h1>
+      <p class="subtitle">
+        Train it on your website, docs, or any text. It answers your customers 24/7, captures leads, and sounds exactly like you.
+      </p>
+
+      <div class="features">
+        <span class="pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Instant setup
+        </span>
+        <span class="pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Free plan
+        </span>
+        <span class="pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+          No code needed
+        </span>
+      </div>
+
+      <a class="cta" href="https://bubbl.ooo?ref=widget-promo&utm_source=widget&utm_medium=promo" target="_blank" rel="noopener">
+        Build your bot — it's free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"></path>
         </svg>
-        <span class="promo-pip" aria-hidden="true"></span>
+      </a>
+
+      <div class="footer">
+        Powered by <b>Bubbl.ooo</b> <span class="dot">•</span> No credit card
       </div>
-      <div>
-        <div class="promo-name">Bubbl AI</div>
-        <div class="promo-status">Always online</div>
-      </div>
-    </div>
-
-    <div class="promo-chat" aria-hidden="true">
-      <div class="msg user">Do you ship internationally?</div>
-      <div class="msg bot">Yes — 40+ countries, 3–5 business days. Want me to check your region?</div>
-      <div class="msg bot typing">
-        <i></i><i></i><i></i>
-      </div>
-    </div>
-
-    <div class="promo-title">Add an AI agent to your site</div>
-    <p class="promo-copy">
-      Trained on your own content. Answers customers instantly, captures leads
-      while you sleep. Live in under 5 minutes.
-    </p>
-
-    <a class="promo-cta" href="https://bubbl.ooo?ref=widget-promo&amp;utm_source=widget&amp;utm_medium=promo" target="_blank" rel="noopener">
-      Create your bot — free
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M13 6l6 6-6 6"></path>
-      </svg>
-    </a>
-
-    <div class="promo-foot">
-      No credit card <span>•</span> Free plan <span>•</span> by <b>Bubbl.ooo</b>
     </div>
   </div>
 
@@ -371,15 +345,8 @@
     (function () {
       var card = document.querySelector('.promo');
 
-      // The iframe is a fixed 450x800 and would swallow every click in that
-      // whole region of the host page. Tell embed.js how small we actually
-      // are so it can shrink the iframe to just this card.
       function reportSize() {
-        var pad = parseFloat(getComputedStyle(document.body).paddingLeft) || 16;
-        // offsetWidth/offsetHeight report the LAYOUT size and ignore CSS
-        // transforms. getBoundingClientRect() would hand back the shrunken
-        // mid-animation box from `rise`'s scale(0.97) and the iframe would
-        // end up ~12px too small, clipping the card's edges.
+        var pad = parseFloat(getComputedStyle(document.body).paddingLeft) || 14;
         try {
           parent.postMessage({
             type: 'bubbl:promo',
@@ -391,9 +358,6 @@
 
       if (document.readyState === 'complete') reportSize();
       else window.addEventListener('load', reportSize);
-
-      // Re-measure once the entrance animation settles and whenever the card
-      // reflows (font swap, long translated copy, zoom).
       card.addEventListener('animationend', reportSize);
       if (window.ResizeObserver) {
         new ResizeObserver(reportSize).observe(card);
@@ -401,14 +365,13 @@
         setTimeout(reportSize, 700);
       }
 
-      // Dismiss → ask the parent to remove the iframe entirely
-      document.querySelector('.promo-close').addEventListener('click', function () {
-        card.style.transition = 'opacity .2s, transform .2s';
+      document.querySelector('.close').addEventListener('click', function () {
+        card.style.transition = 'opacity .25s, transform .25s';
         card.style.opacity = '0';
-        card.style.transform = 'translateY(10px) scale(.97)';
+        card.style.transform = 'translateY(12px) scale(.96)';
         setTimeout(function () {
           try { parent.postMessage({ type: 'bubbl:promo-dismiss' }, '*'); } catch (e) {}
-        }, 200);
+        }, 250);
       });
     })();
   </script>
