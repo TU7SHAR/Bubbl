@@ -568,33 +568,26 @@ def share_conversation():
     if not session_id:
         return jsonify({"error": "No conversation to share."}), 400
 
-    # Build filter: always by session_id, and by bot_id when provided
-    # This prevents mixing platform bot messages with user bot messages
-    msg_filter = {'session_id': session_id}
-    if bot_id:
-        try:
-            msg_filter['bot_id'] = int(bot_id)
-        except (ValueError, TypeError):
-            pass
+    # One transcript reader for every consumer — this used to be a hand-built
+    # filter dict duplicated verbatim in get_conversation_history().
+    from utils.transcript import get_transcript, snapshot_payload
 
-    # Check if a share already exists for this session + bot combo
+    try:
+        bot_id_int = int(bot_id) if bot_id else None
+    except (ValueError, TypeError):
+        bot_id_int = None
+
+    messages = get_transcript(session_id, bot_id=bot_id_int)
+
+    # Reuse an existing share for this session + bot, refreshing its snapshot
     share_filter = {'session_id': session_id}
-    if bot_id:
-        try:
-            share_filter['bot_id'] = int(bot_id)
-        except (ValueError, TypeError):
-            pass
+    if bot_id_int is not None:
+        share_filter['bot_id'] = bot_id_int
 
     existing = SharedConversation.query.filter_by(**share_filter).first()
     if existing:
-        # Update the snapshot with latest messages
-        messages = ChatMessage.query.filter_by(**msg_filter)\
-            .order_by(ChatMessage.created_at.asc()).all()
         if messages:
-            existing.messages_snapshot = [
-                {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat() if m.created_at else None}
-                for m in messages
-            ]
+            existing.messages_snapshot = snapshot_payload(messages)
             db.session.commit()
         host_url = current_app.config.get('HOST_URL') or request.host_url.rstrip('/')
         return jsonify({
@@ -603,21 +596,12 @@ def share_conversation():
             "share_token": existing.share_token
         })
 
-    # Fetch all messages for this session (filtered by bot_id if provided)
-    messages = ChatMessage.query.filter_by(**msg_filter)\
-        .order_by(ChatMessage.created_at.asc()).all()
-
     if not messages:
         return jsonify({"error": "No messages found for this conversation."}), 404
 
     # Generate a short unique token
     share_token = secrets.token_urlsafe(8)[:12]  # 12-char URL-safe token
-
-    # Create snapshot
-    snapshot = [
-        {"role": m.role, "content": m.content, "created_at": m.created_at.isoformat() if m.created_at else None}
-        for m in messages
-    ]
+    snapshot = snapshot_payload(messages)
 
     shared = SharedConversation(
         share_token=share_token,
@@ -639,30 +623,10 @@ def share_conversation():
 
 
 
-@api_bp.route('/api/conversation_history', methods=['POST'])
-def get_conversation_history():
-    """Fetch full conversation history from the database for download/export."""
-    data = request.json or {}
-    session_id = data.get('session_id')
-    bot_id = data.get('bot_id')
-
-    if not session_id:
-        return jsonify({"error": "No session.", "messages": []}), 400
-
-    # Build filter
-    msg_filter = {'session_id': session_id}
-    if bot_id:
-        try:
-            msg_filter['bot_id'] = int(bot_id)
-        except (ValueError, TypeError):
-            pass
-
-    messages = ChatMessage.query.filter_by(**msg_filter)\
-        .order_by(ChatMessage.created_at.asc()).all()
-
-    result = [
-        {"role": m.role, "content": m.content}
-        for m in messages
-    ]
-
-    return jsonify({"messages": result})
+# POST /api/conversation_history was removed.
+#
+# It was a verbatim copy of the query block above, and existed only to feed
+# buildChatExportHTML() in chat.js, which rebuilt the transcript layout as a
+# JS string. The printable page is now server-rendered from the same template
+# as the share page (GET /transcript/<session_id>/print), so the widget just
+# opens a URL and calls window.print(). See utils/transcript.py.

@@ -52,53 +52,121 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 
+def _transcript_response(mode, bot_name, messages, status=200):
+    """
+    Render the ONE transcript template and mark it never-index.
+
+    Both the public share view and the printable view come from here, so the
+    layout, the message renderer and the noindex policy exist in one place.
+    The old code had a separate Jinja page for sharing and a ~125-line JS
+    string builder for the PDF, which had already drifted apart.
+    """
+    html = render_template(
+        'transcript.html',
+        mode=mode,
+        bot_name=bot_name or 'Bubbl',
+        messages=messages,
+        generated_at=datetime.now(timezone.utc).strftime('%d %b %Y, %H:%M UTC'),
+    )
+    resp = make_response(html, status)
+    # Defence in depth alongside the meta tag and robots.txt: a header cannot
+    # be missed by a crawler that ignores meta tags.
+    resp.headers['X-Robots-Tag'] = 'noindex, nofollow'
+    return resp
+
+
+def _load_shared(share_token):
+    """
+    Look up a share token.
+    Returns (messages, bot_name, error_response). Exactly one of
+    messages/error_response is meaningful.
+    """
+    from models.models import SharedConversation
+    from utils.transcript import normalize_messages
+
+    shared = SharedConversation.query.filter_by(share_token=share_token).first()
+    if not shared:
+        return None, None, (
+            '<h1>404 — Conversation not found</h1>'
+            '<p>This shared link does not exist or has been removed.</p>', 404
+        )
+
+    # Expiry — DB may hand back naive or aware datetimes
+    if shared.expires_at:
+        expires = shared.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires < datetime.now(timezone.utc):
+            return None, None, (render_template('shared_expired.html'), 410)
+
+    return normalize_messages(shared.messages_snapshot), (shared.bot_name or 'Bubbl'), None
+
+
 @views_bp.route('/shared/<share_token>')
 def view_shared_conversation(share_token):
-    """Public page to view a shared conversation."""
+    """Public page for a shared conversation (frozen snapshot)."""
     try:
-        from models.models import SharedConversation
-        shared = SharedConversation.query.filter_by(share_token=share_token).first()
-        if not shared:
-            return '<h1>404 — Conversation not found</h1><p>This shared link does not exist or has been removed.</p>', 404
-
-        # Check expiry (handle both naive and aware datetimes from DB)
-        if shared.expires_at:
-            expires = shared.expires_at
-            if expires.tzinfo is None:
-                expires = expires.replace(tzinfo=timezone.utc)
-            if expires < datetime.now(timezone.utc):
-                return render_template('shared_expired.html'), 410
-
-        # Ensure messages is a list (handle JSON string edge case)
-        messages = shared.messages_snapshot
-        if isinstance(messages, str):
-            import json as _json
-            messages = _json.loads(messages)
-
-        # Safety: ensure each message dict has required keys (prevent template crash)
-        safe_messages = []
-        for m in (messages or []):
-            safe_messages.append({
-                'role': m.get('role', 'bot') if isinstance(m, dict) else 'bot',
-                'content': m.get('content', '') if isinstance(m, dict) else str(m),
-                'created_at': m.get('created_at') if isinstance(m, dict) else None,
-            })
-
-        return render_template('shared_conversation.html',
-                               shared=shared,
-                               messages=safe_messages,
-                               bot_name=shared.bot_name or 'Bubbl')
+        messages, bot_name, err = _load_shared(share_token)
+        if err:
+            return err
+        return _transcript_response('share', bot_name, messages)
     except Exception as e:
-        logging.error(f"[shared_conversation] Error rendering /shared/{share_token}: {e}", exc_info=True)
-        # Return plain HTML error (avoid render_template which might also crash)
+        logging.error(f"[transcript] /shared/{share_token} failed: {e}", exc_info=True)
         return (
-            f'<html><body style="font-family:sans-serif;padding:40px;max-width:600px;margin:auto;">'
-            f'<h2>Something went wrong</h2>'
-            f'<p style="color:#666;">Error loading shared conversation.</p>'
-            f'<pre style="background:#f5f5f5;padding:12px;border-radius:8px;font-size:12px;overflow:auto;">{str(e)}</pre>'
-            f'<p><a href="https://bubbl.ooo" style="color:#E8722A;">Back to Bubbl</a></p>'
-            f'</body></html>'
+            '<html><body style="font-family:sans-serif;padding:40px;max-width:600px;margin:auto;">'
+            '<h2>Something went wrong</h2>'
+            '<p style="color:#666;">This conversation could not be loaded.</p>'
+            '<p><a href="https://bubbl.ooo" style="color:#E8722A;">Back to Bubbl</a></p>'
+            '</body></html>'
         ), 500
+
+
+@views_bp.route('/shared/<share_token>/print')
+def print_shared_conversation(share_token):
+    """Printable view of a shared snapshot — same template, print mode."""
+    try:
+        messages, bot_name, err = _load_shared(share_token)
+        if err:
+            return err
+        return _transcript_response('print', bot_name, messages)
+    except Exception as e:
+        logging.error(f"[transcript] /shared/{share_token}/print failed: {e}", exc_info=True)
+        return 'Could not load this conversation.', 500
+
+
+@views_bp.route('/transcript/<session_id>/print')
+def print_live_transcript(session_id):
+    """
+    Printable view of a LIVE conversation, read straight from the DB.
+
+    This is what the widget's "Download PDF" opens. It replaces
+    POST /api/conversation_history plus the buildChatExportHTML() JS string
+    builder: the server now renders the same template the share page uses, so
+    the browser only has to call window.print().
+
+    Access: keyed on the session id, same as the endpoint it replaces — session
+    ids are random and unguessable, and the response is noindex. It is not
+    widened by this change.
+    """
+    try:
+        from utils.transcript import get_transcript
+
+        bot_id = request.args.get('bot_id')
+        bot = None
+        if bot_id:
+            try:
+                bot = Bot.query.get(int(bot_id))
+            except (ValueError, TypeError):
+                bot = None
+
+        messages = get_transcript(session_id, bot=bot)
+        bot_name = (bot.bot_name if bot else None) or request.args.get('bot_name') or 'Bubbl'
+        if not messages:
+            return _transcript_response('print', bot_name, [], status=404)
+        return _transcript_response('print', bot_name, messages)
+    except Exception as e:
+        logging.error(f"[transcript] /transcript/{session_id}/print failed: {e}", exc_info=True)
+        return 'Could not load this conversation.', 500
 
 @views_bp.route('/robots.txt')
 def robots():

@@ -4,4 +4,8 @@ Disallow: /dashboard/
 Disallow: /login
 Disallow: /register
 Disallow: /profile
+# Conversation transcripts. Both also send a noindex meta tag and an
+# X-Robots-Tag header; this is the third layer.
+Disallow: /shared/
+Disallow: /transcript/
 Sitemap: https://bubbl.ooo/sitemap.xml

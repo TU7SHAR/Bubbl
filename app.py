@@ -74,7 +74,8 @@ CORS(app, resources={
     r"/api/lead": {"origins": "*"},          # Lead capture from any domain
     r"/api/rate_message": {"origins": "*"},  # Bot response rating from embed
     r"/api/share_conversation": {"origins": "*"},  # Share chat from embed widget
-    r"/api/conversation_history": {"origins": "*"},  # Download chat history from embed
+    # /api/conversation_history removed — the printable transcript is now a
+    # server-rendered page (GET /transcript/<session_id>/print), not an API call.
     r"/api/platform-feedback": {"origins": "*"},  # Public feedback
     r"/api/bot_avatar/*": {"origins": "*"},  # Avatar fetch from embed
     r"/api/waitlist": {"origins": "*"},      # Marketing site waitlist
@@ -287,7 +288,7 @@ def csrf_protect():
         return
 
     # Exempt: Public embed endpoints (called from iframes on any site)
-    exempt_paths = ('/api/chat', '/api/lead', '/api/platform-feedback', '/api/waitlist', '/api/share_conversation', '/api/conversation_history')
+    exempt_paths = ('/api/chat', '/api/lead', '/api/platform-feedback', '/api/waitlist', '/api/share_conversation')
     if request.path in exempt_paths or request.path.startswith('/bot/') and '/widget/feedback' in request.path:
         return
 
