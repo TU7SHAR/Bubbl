@@ -1221,37 +1221,6 @@ function shareViaLink() {
   });
 }
 
-function _getVisibleChatHistory() {
-  /**
-   * Reads the actual visible messages from the chat DOM.
-   * Fallback when API is unavailable.
-   */
-  var display = document.getElementById('chat-display');
-  if (!display) return [];
-
-  var history = [];
-  var children = display.children;
-
-  for (var i = 0; i < children.length; i++) {
-    var el = children[i];
-
-    if (el.classList && el.classList.contains('msg-user-wrapper')) {
-      var userDiv = el.querySelector('.msg.user');
-      if (userDiv) {
-        history.push({ role: 'user', text: userDiv.innerText.trim() });
-      }
-      continue;
-    }
-
-    if (el.classList && el.classList.contains('msg') && el.classList.contains('bot')) {
-      history.push({ role: 'bot', text: el.innerText.trim() });
-      continue;
-    }
-  }
-
-  return history;
-}
-
 function downloadChat() {
   // Close the dropdown
   var menu = document.getElementById('share-dropdown');
@@ -1263,273 +1232,30 @@ function downloadChat() {
     ? document.querySelector('.chat-header-title').innerText
     : 'Bubbl';
 
-  // Try to fetch FULL history from database (includes pre-edit messages)
-  if (sessionId) {
-    showShareToast("Preparing PDF...", "loading");
-
-    fetch('/api/conversation_history', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, bot_id: botId })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      var messages = data.messages || [];
-      if (messages.length > 0) {
-        // Convert API format {role, content} to export format {role, text}
-        var exportHistory = messages.map(function(m) {
-          return { role: m.role, text: m.content };
-        });
-        _triggerPdfDownload(botName, exportHistory);
-      } else {
-        // No DB messages — fall back to visible DOM
-        _downloadFromDom(botName);
-      }
-    })
-    .catch(function() {
-      // Network error — fall back to DOM
-      _downloadFromDom(botName);
-    });
-  } else {
-    // No session — use DOM
-    _downloadFromDom(botName);
-  }
-}
-
-function _downloadFromDom(botName) {
-  var domHistory = _getVisibleChatHistory();
-  if (!domHistory || domHistory.length === 0) {
-    showShareToast("No messages to download yet.", "error");
+  if (!sessionId) {
+    showShareToast("Start a conversation first.", "error");
     return;
   }
-  _triggerPdfDownload(botName, domHistory);
-}
 
-function _triggerPdfDownload(botName, history) {
-  var html = buildChatExportHTML(botName, history);
+  // The printable transcript is SERVER-RENDERED from the same template as the
+  // public share page, so there is nothing to build here. This replaced:
+  //   - POST /api/conversation_history  (duplicate of the share query)
+  //   - buildChatExportHTML()           (~95 lines rebuilding the layout)
+  //   - _renderMarkdownForExport()      (~110 lines, a drifted copy of the
+  //                                      share page's inline renderer)
+  //   - _getVisibleChatHistory() / _downloadFromDom()  (DOM-scraping fallback
+  //                                      that silently lost pre-edit messages)
+  var url = '/transcript/' + encodeURIComponent(sessionId) + '/print'
+          + '?bot_id=' + encodeURIComponent(botId)
+          + '&bot_name=' + encodeURIComponent(botName);
 
-  // Open in a new window and trigger print (Save as PDF)
-  var printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setTimeout(function() { printWindow.print(); }, 400);
+  var win = window.open(url, '_blank');
+  if (win) {
+    // The page calls window.print() itself once it has laid out.
     showShareToast("PDF ready — use Save as PDF!", "success");
   } else {
-    // Popup blocked — fallback to direct HTML download
-    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'chat-with-' + botName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showShareToast("Chat downloaded!", "success");
+    showShareToast("Please allow pop-ups to download the chat.", "error");
   }
-}
-
-function _renderMarkdownForExport(text) {
-  /**
-   * Renders markdown in bot messages for PDF export.
-   * Handles: tables, bold, italic, lists, code blocks, inline code, links.
-   */
-  // Escape HTML first
-  var html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-  // Code blocks (``` ... ```)
-  html = html.replace(/```([\s\S]*?)```/g, function(m, code) {
-    return '<pre style="background:#f3f4f6;padding:10px 14px;border-radius:8px;font-size:12px;overflow-x:auto;margin:8px 0;font-family:monospace;">' + code.trim() + '</pre>';
-  });
-
-  // Inline code
-  html = html.replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:2px 5px;border-radius:4px;font-size:12px;font-family:monospace;">$1</code>');
-
-  // Tables — detect lines with | separators
-  html = html.replace(/((?:^|\n)\|.+\|(?:\n\|.+\|)+)/g, function(tableBlock) {
-    var rows = tableBlock.trim().split('\n').filter(function(r) { return r.trim(); });
-    if (rows.length < 2) return tableBlock;
-
-    var tableHtml = '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:13px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">';
-    var headerDone = false;
-
-    for (var i = 0; i < rows.length; i++) {
-      var row = rows[i].trim();
-      // Skip separator rows (|---|---|)
-      if (/^\|[\s\-:]+\|$/.test(row) || /^\|(\s*[-:]+\s*\|)+$/.test(row)) {
-        headerDone = true;
-        continue;
-      }
-      var cells = row.split('|').filter(function(c, idx, arr) { return idx > 0 && idx < arr.length - 1; });
-      var tag = (!headerDone && i === 0) ? 'th' : 'td';
-      var bgStyle = tag === 'th' ? 'background:#f8f9fa;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.3px;' : '';
-      tableHtml += '<tr>';
-      for (var j = 0; j < cells.length; j++) {
-        var cellContent = cells[j].trim();
-        // Render bold inside cells
-        cellContent = cellContent.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-        tableHtml += '<' + tag + ' style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:left;' + bgStyle + '">' + cellContent + '</' + tag + '>';
-      }
-      tableHtml += '</tr>';
-      if (tag === 'th') headerDone = true;
-    }
-    tableHtml += '</table>';
-    return tableHtml;
-  });
-
-  // Bold (**text**)
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-  // Italic (*text*)
-  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-  // Headers (### > ## > #)
-  html = html.replace(/^####\s+(.+)$/gm, '<h4 style="font-size:13px;font-weight:700;margin:12px 0 4px 0;">$1</h4>');
-  html = html.replace(/^###\s+(.+)$/gm, '<h3 style="font-size:14px;font-weight:700;margin:12px 0 4px 0;">$1</h3>');
-  html = html.replace(/^##\s+(.+)$/gm, '<h2 style="font-size:15px;font-weight:700;margin:14px 0 4px 0;">$1</h2>');
-  html = html.replace(/^#\s+(.+)$/gm, '<h1 style="font-size:16px;font-weight:700;margin:14px 0 4px 0;">$1</h1>');
-
-  // Unordered lists (- item)
-  html = html.replace(/((?:^|\n)[\-\*]\s.+)+/g, function(block) {
-    var items = block.trim().split('\n');
-    var listHtml = '<ul style="margin:6px 0;padding-left:20px;">';
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i].replace(/^[\-\*]\s+/, '').trim();
-      if (item) listHtml += '<li style="margin-bottom:3px;">' + item + '</li>';
-    }
-    listHtml += '</ul>';
-    return listHtml;
-  });
-
-  // Ordered lists (1. item)
-  html = html.replace(/((?:^|\n)\d+\.\s.+)+/g, function(block) {
-    var items = block.trim().split('\n');
-    var listHtml = '<ol style="margin:6px 0;padding-left:20px;">';
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i].replace(/^\d+\.\s+/, '').trim();
-      if (item) listHtml += '<li style="margin-bottom:3px;">' + item + '</li>';
-    }
-    listHtml += '</ol>';
-    return listHtml;
-  });
-
-  // [[BUTTONS: ...]] → render inline as plain text links (Label: URL)
-  html = html.replace(/\s*\[\[BUTTONS:\s*(.*?)\]\]\s*/gs, function(match, raw) {
-    var parts = raw.split(/,\s*(?=[a-z]+:)/);
-    var linksHtml = '<div style="margin-top:8px;padding:8px 12px;background:#f9fafb;border-radius:8px;border:1px solid #f0f0f0;">';
-    for (var i = 0; i < parts.length; i++) {
-      var m = parts[i].trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
-      if (m) {
-        var label = m[2].trim();
-        var url = m[3].trim();
-        linksHtml += '<div style="font-size:12px;margin-bottom:4px;"><span style="font-weight:600;color:#1a1a1a;">' + label + '</span><span style="color:#6b7280;"> — </span><span style="color:#3b82f6;word-break:break-all;">' + url + '</span></div>';
-      }
-    }
-    linksHtml += '</div>';
-    return linksHtml;
-  });
-
-  // Paragraphs — double newlines
-  html = html.replace(/\n{2,}/g, '</p><p style="margin:8px 0;">');
-  // Single newlines
-  html = html.replace(/\n/g, '<br>');
-
-  return html;
-}
-
-function buildChatExportHTML(botName, history) {
-  var now = new Date().toLocaleString();
-  var msgCount = history.length;
-
-  var messagesHtml = '';
-  var collectedLinks = [];  // Collect all button links for References section
-
-  for (var i = 0; i < history.length; i++) {
-    var entry = history[i];
-    var role = entry.role;
-    var content = entry.text || '';
-    // Strip internal tags
-    content = content.replace(/\[\[LEAD:.*?\]\]/gs, '').trim();
-    content = content.replace(/\[SHOW_FORM\]/g, '').trim();
-
-    // Extract links from [[BUTTONS:...]] before rendering strips them
-    var btnMatch = content.match(/\[\[BUTTONS:\s*(.*?)\]\]/s);
-    if (btnMatch) {
-      var btnParts = btnMatch[1].split(/,\s*(?=[a-z]+:)/);
-      for (var b = 0; b < btnParts.length; b++) {
-        var lm = btnParts[b].trim().match(/^(\w+):(.+?)\|([^|]+?)(?:\|(#[0-9a-fA-F]{3,8}))?$/);
-        if (lm) {
-          collectedLinks.push({ label: lm[2].trim(), url: lm[3].trim() });
-        }
-      }
-    }
-
-    var label = role === 'user' ? 'YOU' : botName.toUpperCase();
-
-    // Render markdown for bot messages, simple escape for user messages
-    var renderedContent;
-    if (role === 'bot') {
-      renderedContent = _renderMarkdownForExport(content);
-    } else {
-      renderedContent = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    if (role === 'user') {
-      messagesHtml += '<div style="display:flex;justify-content:flex-end;margin:6px 0;">' +
-        '<div style="max-width:75%;padding:12px 16px;background:#1a1a1a;color:#fff;border-radius:16px 16px 4px 16px;font-size:14px;line-height:1.5;">' +
-        '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:rgba(255,255,255,0.5);margin-bottom:4px;">' + label + '</div>' +
-        renderedContent +
-        '</div></div>';
-    } else {
-      messagesHtml += '<div style="display:flex;justify-content:flex-start;margin:6px 0;">' +
-        '<div style="max-width:80%;padding:14px 18px;background:#ffffff;border:1px solid #f0f0f0;border-radius:16px 16px 16px 4px;font-size:14px;line-height:1.6;color:#1a1a1a;box-shadow:0 1px 4px rgba(0,0,0,0.04);">' +
-        '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:6px;">' + label + '</div>' +
-        renderedContent +
-        '</div></div>';
-    }
-  }
-
-  return '<!DOCTYPE html><html lang="en"><head>' +
-    '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-    '<title>Chat with ' + botName + '</title>' +
-    '<style>' +
-    '@page{size:A4;margin:15mm 15mm;}' +
-    '*{margin:0;padding:0;box-sizing:border-box}' +
-    'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
-    'background:#fff;padding:0;color:#1a1a1a;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
-    '.container{max-width:680px;margin:0 auto}' +
-    '.header{text-align:center;padding:16px 20px 12px;margin-bottom:16px;border-bottom:1px solid #f0f0f0;}' +
-    '.avatar{width:36px;height:36px;border-radius:50%;background:#E8722A;color:#fff;' +
-    'display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;margin-bottom:6px}' +
-    'h1{font-size:16px;font-weight:800;color:#1a1a1a;margin-bottom:2px}' +
-    '.meta{font-size:11px;color:#6b7280}' +
-    '.messages{display:flex;flex-direction:column;gap:4px}' +
-    '.footer{text-align:center;margin-top:32px;font-size:11px;color:#9ca3af;padding:16px}' +
-    '.footer a{color:#E8722A;text-decoration:none;font-weight:600}' +
-    '</style></head><body>' +
-    '<div class="container">' +
-    '<div class="header">' +
-    '<div class="avatar">' + botName.charAt(0).toUpperCase() + '</div>' +
-    '<h1>Chat with ' + botName + '</h1>' +
-    '<p class="meta">' + msgCount + ' messages &middot; ' + now + '</p>' +
-    '</div>' +
-    '<div class="messages">' + messagesHtml + '</div>' +
-    (collectedLinks.length > 0
-      ? '<div style="margin-top:28px;padding:18px 20px;background:#fff;border:1px solid #f0f0f0;border-radius:12px;">' +
-        '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:10px;">References &amp; Links</div>' +
-        collectedLinks.map(function(link, idx) {
-          return '<div style="margin-bottom:6px;font-size:13px;line-height:1.5;">' +
-            '<span style="color:#1a1a1a;font-weight:500;">' + (idx + 1) + '. ' + link.label + '</span>' +
-            '<br><span style="color:#6b7280;font-size:11px;word-break:break-all;">' + link.url + '</span></div>';
-        }).join('') +
-        '</div>'
-      : '') +
-    '<div class="footer">Exported from <a href="https://bubbl.ooo">bubbl.ooo</a></div>' +
-    '</div></body></html>';
 }
 
 function copyToClipboard(text, successMsg) {
