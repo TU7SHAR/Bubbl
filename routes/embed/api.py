@@ -356,38 +356,49 @@ def chat():
                 extracted_phone = parts[2] if len(parts) > 2 else ""
                 extracted_custom_raw = parts[3] if len(parts) > 3 else "{}"
 
-                custom_data_dict = {}
-                try:
-                    custom_data_dict = json.loads(extracted_custom_raw)
-                except Exception:
-                    custom_data_dict = {"Extracted Data": extracted_custom_raw}
-
-                # Sanitize: normalise keys, coerce numbers, drop empties
-                custom_data_dict = sanitize_custom_data(custom_data_dict, custom_fields)
-
-                existing_lead = Lead.query.filter_by(bot_id=bot_id, email=extracted_email).first()
-
-                if existing_lead:
-                    existing_lead.name = extracted_name
-                    existing_lead.phone = extracted_phone
-                    merged_custom = existing_lead.custom_data or {}
-                    merged_custom.update(custom_data_dict)
-                    existing_lead.custom_data = merged_custom
-                    db.session.commit()
-                    lead_id = existing_lead.id # Capture existing ID
+                # --- VALIDATION: reject placeholder/garbage data from AI ---
+                # The AI sometimes outputs [[LEAD:...]] before collecting real
+                # data, using placeholder text like "Email", "Phone", etc.
+                from routes.socket_chat import _is_valid_lead_email
+                if not _is_valid_lead_email(extracted_email):
+                    logging.warning(f"[lead/http] Rejected lead for bot {bot_id}: invalid email '{extracted_email}'")
+                    reply = re.sub(r'\s*\[\[LEAD:.*?\]\]\s*', '', reply).strip()
+                elif extracted_name.lower() in ('unknown', 'name', 'not provided', 'n/a', 'user'):
+                    logging.warning(f"[lead/http] Rejected lead for bot {bot_id}: invalid name '{extracted_name}'")
+                    reply = re.sub(r'\s*\[\[LEAD:.*?\]\]\s*', '', reply).strip()
                 else:
-                    new_lead = Lead(
-                        bot_id=bot_id, 
-                        name=extracted_name, 
-                        email=extracted_email, 
-                        phone=extracted_phone,
-                        custom_data=custom_data_dict
-                    )
-                    db.session.add(new_lead)
-                    db.session.commit()
-                    lead_id = new_lead.id # Capture new ID
+                    custom_data_dict = {}
+                    try:
+                        custom_data_dict = json.loads(extracted_custom_raw)
+                    except Exception:
+                        custom_data_dict = {"Extracted Data": extracted_custom_raw}
 
-                reply = re.sub(r'\s*\[\[LEAD:.*?\]\]\s*', '', reply).strip()
+                    # Sanitize: normalise keys, coerce numbers, drop empties
+                    custom_data_dict = sanitize_custom_data(custom_data_dict, custom_fields)
+
+                    existing_lead = Lead.query.filter_by(bot_id=bot_id, email=extracted_email).first()
+
+                    if existing_lead:
+                        existing_lead.name = extracted_name
+                        existing_lead.phone = extracted_phone
+                        merged_custom = existing_lead.custom_data or {}
+                        merged_custom.update(custom_data_dict)
+                        existing_lead.custom_data = merged_custom
+                        db.session.commit()
+                        lead_id = existing_lead.id # Capture existing ID
+                    else:
+                        new_lead = Lead(
+                            bot_id=bot_id, 
+                            name=extracted_name, 
+                            email=extracted_email, 
+                            phone=extracted_phone,
+                            custom_data=custom_data_dict
+                        )
+                        db.session.add(new_lead)
+                        db.session.commit()
+                        lead_id = new_lead.id # Capture new ID
+
+                    reply = re.sub(r'\s*\[\[LEAD:.*?\]\]\s*', '', reply).strip()
 
         # Return lead_id so frontend can store it
         # Increment message count for the org
