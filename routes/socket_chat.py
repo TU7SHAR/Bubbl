@@ -289,6 +289,16 @@ def _extract_and_save_lead(lead_match, bot_id, custom_fields_json=""):
     phone = parts[2] if len(parts) > 2 else ""
     custom_raw = parts[3] if len(parts) > 3 else "{}"
 
+    # --- VALIDATION: reject garbage/placeholder data from AI hallucination ---
+    # The AI sometimes outputs [[LEAD:...]] before it has real data, using
+    # placeholder text like "Email", "Phone", "Not provided", etc.
+    if not _is_valid_lead_email(email):
+        logging.warning(f"[lead] Rejected lead for bot {bot_id}: invalid email '{email}' (AI likely hallucinated placeholder data)")
+        return None
+    if not name or name.lower() in ('unknown', 'name', 'not provided', 'n/a', 'user'):
+        logging.warning(f"[lead] Rejected lead for bot {bot_id}: invalid name '{name}'")
+        return None
+
     custom_data = {}
     try:
         custom_data = json.loads(custom_raw)
@@ -318,6 +328,30 @@ def _extract_and_save_lead(lead_match, bot_id, custom_fields_json=""):
         db.session.add(new_lead)
         db.session.commit()
         return new_lead.id
+
+
+def _is_valid_lead_email(email):
+    """
+    Basic validation: is this a real email, not AI placeholder text?
+    
+    Rejects: 'Email', 'Unknown', 'Not provided', 'N/A', empty, anything
+    without an @ sign and a dot in the domain part.
+    """
+    if not email or len(email) < 5:
+        return False
+    # Reject common placeholder values the AI outputs before having real data
+    placeholders = {'email', 'unknown', 'not provided', 'n/a', 'none', 'na',
+                    'phone', 'email address', 'your email', 'user email',
+                    'pending', 'tbd', 'not yet', 'will provide'}
+    if email.lower().strip() in placeholders:
+        return False
+    # Must have @ and a dot after it (basic email shape)
+    if '@' not in email:
+        return False
+    local, _, domain = email.partition('@')
+    if not local or not domain or '.' not in domain:
+        return False
+    return True
 
 
 def _build_lead_capture_prompt(ai_prompt, timing, custom_fields):
