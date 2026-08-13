@@ -8,6 +8,7 @@ from flask import request, jsonify
 from flask import Blueprint, app, render_template, request, session, redirect, url_for, flash, make_response, jsonify
 from models.models import db, Bot, User, Document, Lead, ScrapeJob, BotUI, Feedback, Organization, Payment
 from utils.mail_helper import is_valid_email, send_contact_email, send_auto_reply
+from utils.transcript import bot_message_filter
 from extensions import cache
 import csv
 from datetime import datetime, timedelta, timezone
@@ -348,13 +349,18 @@ def conversations_hub():
 
     bots_with_stats = []
     for bot in org_bots:
+        # Same scope as the drill-down page, so the counts on this card match
+        # the session list it links to (matters for the platform bot, which
+        # also owns legacy bot_id IS NULL rows).
+        bot_filter = bot_message_filter(bot=bot)
+
         # Count unique sessions
         total_sessions = db.session.query(
             func.count(func.distinct(ChatMessage.session_id))
-        ).filter_by(bot_id=bot.id).scalar() or 0
+        ).filter(bot_filter).scalar() or 0
 
         # Count total messages
-        total_messages = ChatMessage.query.filter_by(bot_id=bot.id).count()
+        total_messages = ChatMessage.query.filter(bot_filter).count()
 
         # Count leads captured
         total_leads = Lead.query.filter_by(bot_id=bot.id).count()
@@ -362,7 +368,7 @@ def conversations_hub():
         # Last conversation time
         last_activity = db.session.query(
             func.max(ChatMessage.created_at)
-        ).filter_by(bot_id=bot.id).scalar()
+        ).filter(bot_filter).scalar()
 
         # Average session duration — simple Python approach (no complex SQL)
         avg_duration_mins = 0
@@ -370,7 +376,7 @@ def conversations_hub():
             sessions_data = db.session.query(
                 func.min(ChatMessage.created_at).label('first_msg'),
                 func.max(ChatMessage.created_at).label('last_msg'),
-            ).filter_by(bot_id=bot.id).group_by(ChatMessage.session_id).all()
+            ).filter(bot_filter).group_by(ChatMessage.session_id).all()
 
             total_secs = 0
             for s in sessions_data:
@@ -405,11 +411,7 @@ def conversations_list(bot_id):
         flash("Bot not found.", "error")
         return redirect(url_for('views_bp.conversations_hub'))
 
-    from sqlalchemy import or_
-    if bot.bot_type == 'platform':
-        bot_filter = or_(ChatMessage.bot_id == bot.id, ChatMessage.bot_id.is_(None))
-    else:
-        bot_filter = (ChatMessage.bot_id == bot.id)
+    bot_filter = bot_message_filter(bot=bot)
 
     # Get all sessions with aggregated stats
     sessions_query = db.session.query(
@@ -468,7 +470,7 @@ def conversations_list(bot_id):
 
         # Visitor IP — first recorded IP in this session
         ip_row = ChatMessage.query.filter(
-            ChatMessage.bot_id == bot_id,
+            bot_filter,
             ChatMessage.session_id == sess.session_id,
             ChatMessage.ip_address.isnot(None)
         ).first()
@@ -520,11 +522,7 @@ def export_conversations(bot_id):
         flash("Bot not found.", "error")
         return redirect(url_for('views_bp.conversations_hub'))
 
-    from sqlalchemy import or_
-    if bot.bot_type == 'platform':
-        bot_filter = or_(ChatMessage.bot_id == bot.id, ChatMessage.bot_id.is_(None))
-    else:
-        bot_filter = (ChatMessage.bot_id == bot.id)
+    bot_filter = bot_message_filter(bot=bot)
 
     messages = ChatMessage.query.filter(bot_filter).order_by(
         ChatMessage.session_id, ChatMessage.created_at.asc()
@@ -561,11 +559,16 @@ def conversation_detail(bot_id, session_id):
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
     if not bot:
+        # The platform bot lives outside the caller's org, same as the list page.
+        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+    if not bot:
         flash("Bot not found.", "error")
         return redirect(url_for('views_bp.conversations_hub'))
 
-    messages = ChatMessage.query.filter_by(
-        bot_id=bot_id, session_id=session_id
+    # bot_message_filter widens to bot_id IS NULL for the platform bot, so its
+    # legacy anonymous rows are part of the transcript here too.
+    messages = ChatMessage.query.filter(
+        bot_message_filter(bot=bot), ChatMessage.session_id == session_id
     ).order_by(ChatMessage.created_at.asc()).all()
 
     if not messages:

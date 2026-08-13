@@ -1,0 +1,65 @@
+{# ── SHARED MESSAGE-BODY STYLES ──────────────────────────────────────────────
+   The class names emitted by static/js/transcript_render.js (BubblTranscript).
+
+   Every page that renders a message body through that renderer includes this
+   partial, so the renderer's output has exactly one stylesheet:
+     - transcript.html          (share link + print/PDF)
+     - conversation_detail.html (Chat History / Conversations transcript)
+
+   It is an include rather than a static .css file on purpose: transcript.html
+   is also used to generate PDFs, where an external stylesheet may not be
+   fetched, so these rules have to land inline in the document.
+
+   Include it INSIDE an existing <style> block.
+   Bubble-specific styling (colours, alignment) stays with each page; only the
+   message-body rules live here.
+─────────────────────────────────────────────────────────────────────────────#}
+.t-msg p, .t-p { margin: 0 0 8px 0; }
+.t-msg p:last-child { margin-bottom: 0; }
+.t-h { font-weight: 700; margin: 12px 0 4px; }
+h1.t-h { font-size: 16px; } h2.t-h { font-size: 15px; }
+h3.t-h { font-size: 14px; } h4.t-h { font-size: 13px; }
+.t-ul, .t-ol { margin: 6px 0; padding-left: 20px; }
+.t-ul li, .t-ol li { margin-bottom: 3px; }
+.t-pre {
+  background: #f3f4f6; padding: 10px 14px; border-radius: 8px;
+  font-size: 12px; overflow-x: auto; margin: 8px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap; word-break: break-word;
+}
+.t-code {
+  background: #f3f4f6; padding: 2px 5px; border-radius: 4px; font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+/* Dark (visitor) bubbles: a light code background would be unreadable.
+   .t-msg.user is transcript.html's bubble, .conv-msg-user is the app's. */
+.t-msg.user .t-pre, .t-msg.user .t-code,
+.conv-msg-user .t-pre, .conv-msg-user .t-code {
+  background: rgba(255,255,255,0.15); color: inherit;
+}
+.t-table {
+  width: 100%; border-collapse: collapse; margin: 10px 0;
+  font-size: 13px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;
+}
+.t-table th, .t-table td {
+  padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: left;
+}
+.t-table th {
+  background: #f8f9fa; font-weight: 700; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .3px;
+}
+/* clickable pills (share mode) */
+.t-btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.t-btn {
+  display: inline-block; padding: 7px 14px; background: #E8722A; color: #fff;
+  border-radius: 50px; font-size: 12px; font-weight: 600; text-decoration: none;
+}
+/* link list (print mode) */
+.t-links {
+  margin-top: 8px; padding: 8px 12px; background: #f9fafb;
+  border-radius: 8px; border: 1px solid #f0f0f0;
+}
+.t-link-row { font-size: 12px; margin-bottom: 4px; }
+.t-link-label { font-weight: 600; color: #1a1a1a; }
+.t-link-dash { color: #6b7280; }
+.t-link-url { color: #3b82f6; word-break: break-all; }
