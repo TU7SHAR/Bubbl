@@ -20,7 +20,8 @@ logger = get_task_logger(__name__)
 # time_limit: hard kill a few seconds later if soft handling doesn't return.
 @celery.task(bind=True, max_retries=3, default_retry_delay=60,
              soft_time_limit=1500, time_limit=1560)
-def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_links=True, selected_urls=None):
+def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_links=True,
+                      selected_urls=None, recrawl=False):
     """
     Background scrape task — replaces the old threading.Thread approach.
 
@@ -35,7 +36,7 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_link
     with app.app_context():
         from models.models import db, Bot, ScrapeJob, Document
         from utils.scraper import scrape_single_url, extract_sitemap_urls, crawl_website_links, is_safe_url
-        from bot.cloud import upload_to_gemini
+        from bot.cloud import upload_to_gemini, delete_from_gemini
 
         job = ScrapeJob.query.get(job_id)
         target_bot = Bot.query.get(bot_id)
@@ -142,6 +143,76 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_link
         error_logs = []
         scrape_dir = app.config['UPLOAD_FOLDER']
 
+        # ═══════════════════════════════════════════════════════════════
+        # PAGE-LEVEL DEDUP — the single choke point.
+        #
+        # Every scrape entry point (Edit Bot confirm, Create Bot wizard,
+        # create_pipeline, super-admin public bot, retry, stuck-job recovery)
+        # ends up here, so deduping in this task covers all of them at once.
+        # Deduping only in start_scrape missed most of those paths.
+        #
+        # Two passes:
+        #   1. collapse duplicates WITHIN this batch (a sitemap or a hand-picked
+        #      selection can easily contain /a and /a/)
+        #   2. drop pages already ingested for this bot, unless the caller
+        #      explicitly asked to recrawl
+        # ═══════════════════════════════════════════════════════════════
+        from utils.url_tools import normalize_url, dedupe_urls
+
+        urls_to_scrape, dupes_in_batch = dedupe_urls(urls_to_scrape)
+        if dupes_in_batch:
+            add_log(f"[dedup] Removed {dupes_in_batch} duplicate URL(s) from this batch.")
+
+        # Map normalized URL -> existing Document for this bot
+        already = {}
+        for doc in Document.query.filter(
+            Document.bot_id == target_bot.id,
+            Document.source_url.isnot(None)
+        ).all():
+            already[doc.source_url] = doc
+
+        if recrawl:
+            # Intentional refresh: replace the old copy instead of stacking a
+            # second one. Previously a recrawl just appended, so every refresh
+            # permanently doubled the knowledge base.
+            replaced = 0
+            for target_url in urls_to_scrape:
+                old = already.get(normalize_url(target_url))
+                if not old:
+                    continue
+                try:
+                    delete_from_gemini(old.filename, store_id=target_bot.store_id)
+                except Exception as e:
+                    add_log(f"[recrawl] Could not remove old vector for {old.filename}: {e}")
+                try:
+                    os.remove(os.path.join(scrape_dir, old.filename))
+                except Exception:
+                    pass
+                db.session.delete(old)
+                replaced += 1
+            if replaced:
+                db.session.commit()
+                add_log(f"[recrawl] Replacing {replaced} previously scraped page(s).")
+            already = {}
+        else:
+            before = len(urls_to_scrape)
+            urls_to_scrape = [
+                u for u in urls_to_scrape if normalize_url(u) not in already
+            ]
+            skipped = before - len(urls_to_scrape)
+            if skipped:
+                add_log(
+                    f"[dedup] Skipping {skipped} page(s) already in this bot's "
+                    f"knowledge base. Tick 'Refresh existing pages' to re-scrape them."
+                )
+
+        if not urls_to_scrape:
+            add_log("Nothing new to scrape — every selected page is already indexed.")
+            job.status = 'completed'
+            job.logs = "\n".join(logs)
+            db.session.commit()
+            return {"status": "completed", "scraped": 0, "skipped": True}
+
         add_log(f"--- Starting Batch Scrape ({len(urls_to_scrape)} URLs) ---")
 
         for i, target_url in enumerate(urls_to_scrape):
@@ -174,7 +245,13 @@ def async_scrape_task(self, job_id, url, bot_id, use_spider=False, find_max_link
                 with open(filepath, 'w', encoding='utf-8') as f:
                     f.write(result['content'])
 
-                new_doc = Document(bot_id=target_bot.id, filename=safe_filename)
+                # Record the normalized source URL so this page can be
+                # recognised as already-ingested on the next scrape.
+                new_doc = Document(
+                    bot_id=target_bot.id,
+                    filename=safe_filename,
+                    source_url=normalize_url(target_url),
+                )
                 db.session.add(new_doc)
                 db.session.commit()
 

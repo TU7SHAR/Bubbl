@@ -5,7 +5,7 @@ import re
 from urllib.parse import urlparse, urlunparse
 from flask import request, jsonify, session
 
-from models.models import db, Bot, ScrapeJob, Organization
+from models.models import db, Bot, ScrapeJob, Organization, Document
 from tasks.scrape_tasks import async_scrape_task, async_discover_task
 from utils.scraper import is_safe_url
 from utils.plan_limits import check_scrape_limit, check_discover_limit
@@ -16,31 +16,10 @@ from . import admin_bp
 SECONDS_PER_PAGE = 4
 
 
-def normalize_url(raw_url):
-    """
-    Canonicalize a URL for duplicate detection so that
-    'adobe.com', 'https://adobe.com', 'https://adobe.com/', 'www.adobe.com',
-    and the typo 'https:/adobe.com' all collapse to one key.
-    - unifies scheme to https
-    - lowercases host, strips leading 'www.'
-    - strips trailing slash and fragment (keeps query string)
-    """
-    if not raw_url:
-        return ''
-    u = raw_url.strip()
-    # Fix common single-slash typo: 'https:/x' -> 'https://x'
-    u = re.sub(r'^(https?):/(?!/)', r'\1://', u, flags=re.IGNORECASE)
-    if not u.lower().startswith(('http://', 'https://')):
-        u = 'https://' + u
-    try:
-        parsed = urlparse(u)
-        host = (parsed.netloc or '').lower()
-        if host.startswith('www.'):
-            host = host[4:]
-        path = parsed.path.rstrip('/')
-        return urlunparse(('https', host, path, '', parsed.query, ''))
-    except Exception:
-        return u.lower().rstrip('/')
+# normalize_url / dedupe_urls now live in utils/url_tools.py so that EVERY
+# entry point can share one canonicalizer. Keeping it private to this module
+# was why most scrape paths had no dedup at all.
+from utils.url_tools import normalize_url, dedupe_urls
 
 
 @admin_bp.route('/api/scrape/discover', methods=['POST'])
@@ -220,22 +199,62 @@ def start_scrape():
     org = Organization.query.get(session.get('org_id'))
     plan_name = (org.plan if org else 'free') or 'free'
 
-    # --- DEDUP: don't scrape the same URL twice for this bot ---
-    # Compares normalized URLs so adobe.com / https://adobe.com / https://adobe.com/
-    # are treated as the same. Skips if an active or completed job already exists.
-    # EXCEPT when recrawl=true (user intentionally wants to re-scrape for updated content).
-    is_recrawl = data.get('recrawl', False)
+    # ═══════════════════════════════════════════════════════════════
+    # DEDUP — early feedback so the user isn't told "scraping 40 pages"
+    # when all 40 are already indexed. The authoritative, per-page dedup
+    # runs in async_scrape_task (every entry point funnels through it).
+    #
+    # recrawl=true is an explicit user opt-in ("Refresh existing pages"),
+    # NOT a default. The Edit Bot page used to hardcode recrawl:true, which
+    # silently disabled dedup on the main scrape path entirely.
+    # ═══════════════════════════════════════════════════════════════
+    is_recrawl = bool(data.get('recrawl', False))
+
     if not is_recrawl:
-        norm_target = normalize_url(url)
-        existing_jobs = ScrapeJob.query.filter_by(bot_id=bot_id).all()
-        for j in existing_jobs:
-            if normalize_url(j.url) == norm_target and j.status in ('pending', 'running', 'completed'):
+        # Which pages of this bot are already in the knowledge base?
+        already = {
+            d.source_url for d in Document.query.filter(
+                Document.bot_id == bot_id,
+                Document.source_url.isnot(None)
+            ).all()
+        }
+
+        if selected_urls:
+            # Dedup the ACTUAL pages to be fetched, not just the seed URL.
+            # The old check only looked at the seed, so two different seeds
+            # with overlapping page selections both scraped everything.
+            selected_urls, dupes_in_batch = dedupe_urls(selected_urls)
+            fresh = [u for u in selected_urls if normalize_url(u) not in already]
+            if not fresh:
                 return jsonify({
                     "success": True,
                     "duplicate": True,
                     "job_id": None,
-                    "message": f"'{url}' was already added for this bot — skipping duplicate.",
+                    "message": (
+                        f"All {len(selected_urls)} selected page(s) are already in this "
+                        f"bot's knowledge base. Tick 'Refresh existing pages' to re-scrape."
+                    ),
                 })
+            skipped = len(selected_urls) - len(fresh)
+            selected_urls = fresh
+            max_urls = min(max_urls, len(fresh)) or len(fresh)
+        else:
+            # No explicit selection — fall back to comparing the seed URL
+            # against previous jobs for this bot.
+            norm_target = normalize_url(url)
+            skipped = 0
+            for j in ScrapeJob.query.filter_by(bot_id=bot_id).all():
+                if normalize_url(j.url) == norm_target and j.status in ('pending', 'running', 'completed'):
+                    return jsonify({
+                        "success": True,
+                        "duplicate": True,
+                        "job_id": None,
+                        "message": f"'{url}' was already added for this bot — skipping duplicate.",
+                    })
+    else:
+        skipped = 0
+        if selected_urls:
+            selected_urls, _ = dedupe_urls(selected_urls)
 
     new_job = ScrapeJob(bot_id=bot_id, url=url, status='pending', limit=max_urls)
     db.session.add(new_job)
@@ -243,7 +262,8 @@ def start_scrape():
 
     # Queue the scrape in Celery (runs in separate worker process)
     # Pass selected_urls so Celery only scrapes those specific pages
-    async_scrape_task.delay(new_job.id, url, bot_id, use_spider, find_max_links, selected_urls)
+    async_scrape_task.delay(new_job.id, url, bot_id, use_spider, find_max_links,
+                            selected_urls, is_recrawl)
 
     # Time estimate based on the number of pages that will actually be scraped
     est_seconds = max_urls * SECONDS_PER_PAGE
@@ -255,7 +275,11 @@ def start_scrape():
         "plan": plan_name,
         "plan_limit": plan_scrape_limit,
         "estimated_seconds": est_seconds,
-        "message": f"Scraping started ({max_urls} pages selected).",
+        "skipped_duplicates": skipped,
+        "message": (
+            f"Scraping started ({max_urls} pages)."
+            + (f" Skipped {skipped} already-indexed page(s)." if skipped else "")
+        ),
     })
 
 @admin_bp.route('/api/scrape/status/<int:job_id>', methods=['GET'])

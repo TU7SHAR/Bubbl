@@ -172,6 +172,11 @@ class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
+    # Normalized source URL for scraped pages (NULL for manual uploads / text
+    # snippets). Without this there is no way to tell that a page has already
+    # been ingested — the filename carries a random uuid suffix, so it can't be
+    # used as an identity. This is what makes page-level scrape dedup possible.
+    source_url = db.Column(db.String(2048), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 

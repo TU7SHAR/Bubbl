@@ -136,6 +136,10 @@ def _run_auto_migrations():
         'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
         'ALTER TABLE payment ADD COLUMN IF NOT EXISTS user_id INTEGER',
         'ALTER TABLE document ADD COLUMN IF NOT EXISTS created_at TIMESTAMP',
+        # Normalized source URL of a scraped page — enables page-level scrape
+        # dedup. NULL for manually uploaded docs and text snippets.
+        'ALTER TABLE document ADD COLUMN IF NOT EXISTS source_url VARCHAR(2048)',
+        'CREATE INDEX IF NOT EXISTS idx_document_bot_source ON document(bot_id, source_url)',
         """CREATE TABLE IF NOT EXISTS chat_message (
             id SERIAL PRIMARY KEY, bot_id INTEGER, lead_id INTEGER,
             session_id VARCHAR(64) NOT NULL, role VARCHAR(10) NOT NULL,

@@ -1557,7 +1557,14 @@
                         + '<input type="checkbox" id="select-all-urls" ' + selectAllChecked + ' onchange="toggleAllUrls(this)" style="accent-color:#E8722A; width:14px; height:14px;"> Select All'
                         + '</label>'
                         + '<span id="selected-count" style="font-size:11px; color:#6b7280;"></span>'
-                        + '</div>';
+                        + '</div>'
+                        // Recrawl is now an explicit opt-in. This request used to
+                        // hardcode recrawl:true, which disabled duplicate detection
+                        // on every scrape started from this page.
+                        + '<label style="display:flex; align-items:flex-start; gap:6px; cursor:pointer; font-size:11.5px; color:#6b7280; margin-bottom:10px; padding:8px 10px; background:rgba(232,114,42,0.05); border:1px dashed rgba(232,114,42,0.25); border-radius:8px;">'
+                        + '<input type="checkbox" id="recrawl-existing" style="accent-color:#E8722A; width:14px; height:14px; margin-top:1px; flex-shrink:0;">'
+                        + '<span><b style="color:#374151;">Refresh existing pages</b><br>Off by default: pages already in this bot\'s knowledge base are skipped. Tick this to re-scrape them and <b>replace</b> the old copy.</span>'
+                        + '</label>';
 
                       disc.urls.forEach(function(u, idx) {
                         var isChecked = idx < disc.scrape_count ? 'checked' : '';
@@ -1598,20 +1605,42 @@
                                   bot_id: currentBotId,
                                   find_max_links: findMaxLinks,
                                   selected_urls: selectedUrls,
-                                  recrawl: true
+                                  // Explicit user choice. Was hardcoded `true`,
+                                  // which silently disabled dedup on this page.
+                                  recrawl: !!(document.getElementById('recrawl-existing')
+                                              && document.getElementById('recrawl-existing').checked)
                               })
                           });
                           const data = await res.json();
                           if (data.error) { logText.innerText = '> Error: ' + data.error; return; }
 
                           const notice = document.getElementById('scrape-notice');
+
+                          // Everything selected was already indexed — the server
+                          // returns duplicate:true with job_id:null, so there is
+                          // nothing to poll. Tell the user instead of hanging.
+                          if (data.duplicate) {
+                              if (notice) {
+                                  notice.style.display = 'block';
+                                  notice.style.background = 'rgba(232,114,42,0.08)';
+                                  notice.style.border = '1px solid rgba(232,114,42,0.3)';
+                                  notice.style.color = '#b45309';
+                                  notice.innerHTML = 'ℹ️ ' + (data.message || 'Already scraped — nothing new to add.');
+                              }
+                              logText.innerText = '> ' + (data.message || 'Duplicate — skipped.');
+                              return;
+                          }
+
                           if (notice) {
                               const estMin = Math.max(1, Math.round((data.estimated_seconds || 0) / 60));
                               notice.style.display = 'block';
                               notice.style.background = 'rgba(16,185,129,0.08)';
                               notice.style.border = '1px solid rgba(16,185,129,0.25)';
                               notice.style.color = '#047857';
-                              notice.innerHTML = '🕐 Scraping ' + data.pages + ' page(s) (~' + estMin + ' min)';
+                              notice.innerHTML = '🕐 Scraping ' + data.pages + ' page(s) (~' + estMin + ' min)'
+                                  + (data.skipped_duplicates
+                                      ? '<br><span style="font-size:11px; opacity:.85;">Skipped ' + data.skipped_duplicates + ' already-indexed page(s).</span>'
+                                      : '');
                           }
 
                           if (data.job_id) {
