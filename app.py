@@ -100,6 +100,12 @@ if SCRAPE_FOLDER and not os.path.exists(SCRAPE_FOLDER):
 
 db.init_app(app)
 
+# Reserved lead-field names, exposed to every template so the browser-side
+# warning in static/js/lead_fields.js reads the same list the server
+# enforces in utils/lead_fields.py. Sorted for a stable rendered value.
+from utils.lead_fields import RESERVED_FIELD_NAMES
+app.jinja_env.globals['reserved_lead_field_names'] = sorted(RESERVED_FIELD_NAMES)
+
 app.register_blueprint(admin_bp)
 app.register_blueprint(auth_bp)
 # app.register_blueprint(chat_bp)

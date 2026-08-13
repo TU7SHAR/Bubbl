@@ -285,6 +285,11 @@
         {% endfor %}
       </div>
 
+      <!-- Reserved names come from RESERVED_FIELD_NAMES in
+           utils/lead_fields.py, which is what enforces them on save. -->
+      <script>window.BUBBL_RESERVED_FIELD_NAMES = {{ (reserved_lead_field_names | default([], true)) | tojson }};</script>
+      <script src="{{ url_for('static', filename='js/lead_fields.js') }}"></script>
+
       <div id="custom-fields-container" style="display: flex; flex-direction: column; gap: 10px;">
           </div>
 

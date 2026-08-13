@@ -695,6 +695,12 @@
                        not valid JSON. Single-quoted attribute because tojson escapes
                        ' but not ". -->
                   <input type="hidden" name="custom_form_fields" id="custom_form_fields_json" value='{{ (bot.custom_form_fields or []) | tojson }}'>
+
+                  <!-- Reserved names come from RESERVED_FIELD_NAMES in
+                       utils/lead_fields.py, which is what actually enforces
+                       them on save. The browser only warns. -->
+                  <script>window.BUBBL_RESERVED_FIELD_NAMES = {{ (reserved_lead_field_names | default([], true)) | tojson }};</script>
+                  <script src="{{ url_for('static', filename='js/lead_fields.js') }}"></script>
               </div>
 
               <div style="width: 100%;">
@@ -987,12 +993,16 @@
       }
 
       customFieldsState.forEach((field, index) => {
+          // Column wrapper: the control line, plus a warning slot beneath it
+          // that BubblLeadFields fills when the name will not be saved.
           const row = document.createElement('div');
-          row.style.cssText = "display: flex; gap: 12px; align-items: center; background: #f9fafb; padding: 12px; border: 1px solid rgba(0,0,0,0.06); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);";
+          row.setAttribute('data-field-row', index);
+          row.style.cssText = "display: flex; flex-direction: column; gap: 6px; background: #f9fafb; padding: 12px; border: 1px solid rgba(0,0,0,0.06); border-radius: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);";
           
           row.innerHTML = `
+            <div style="display: flex; gap: 12px; align-items: center;">
               <div style="flex: 2;">
-                  <input type="text" style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" placeholder="Field Name (e.g. Company)" value="${escapeAttr(field.name)}" onchange="updateCustomField(${index}, 'name', this.value)">
+                  <input type="text" data-field-name-input style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" placeholder="Field Name (e.g. Company)" value="${escapeAttr(field.name)}" onchange="updateCustomField(${index}, 'name', this.value)">
               </div>
               <div style="flex: 1;">
                   <select style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;" onchange="updateCustomField(${index}, 'type', this.value)">
@@ -1008,9 +1018,15 @@
               <button type="button" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.background='#fef2f2';" onmouseout="this.style.background='transparent';" onclick="removeCustomField(${index})" title="Delete Field">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
+            </div>
+            <div data-field-warning style="display: none; font-size: 11.5px; font-weight: 600; color: #ef4444; padding-left: 2px;"></div>
           `;
           container.appendChild(row);
       });
+
+      if (window.BubblLeadFields) {
+          window.BubblLeadFields.applyAllWarnings(container, customFieldsState);
+      }
   }
 
   function addCustomField() {
@@ -1021,6 +1037,14 @@
   function updateCustomField(index, key, value) {
       customFieldsState[index][key] = value;
       document.getElementById('custom_form_fields_json').value = JSON.stringify(customFieldsState);
+
+      // Renaming can make a later row a duplicate, or clear one, so
+      // re-check every row rather than just this one.
+      if (key === 'name' && window.BubblLeadFields) {
+          window.BubblLeadFields.applyAllWarnings(
+              document.getElementById('custom-fields-container'), customFieldsState
+          );
+      }
   }
 
   function removeCustomField(index) {
