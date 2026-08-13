@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="{{ request.args.get('theme', '') }}">
+<html lang="en" data-theme="{{ request.args.get('theme', '') }}" data-mobile="{{ '1' if request.args.get('mobile') == '1' else '0' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +20,14 @@
        The visitor thinks: "Wait, that bot is slick — I want one."
        ═══════════════════════════════════════════════════════════ */
 
+    /* BRAND — identical on every host site, light or dark. The Bubbl orange is
+       the one constant so the ad is recognisably ours anywhere; only the
+       surface/text tokens below adapt to the page it's sitting on. */
     :root {
+      --accent: #E8722A;
+      --accent-hover: #d4621f;
+      --accent-text: #ffffff;
+
       --bg: #ffffff;
       --bg-chat: #f8f5f2;
       --header: #1c1004;
@@ -28,7 +35,7 @@
       --text-soft: #5a4a35;
       --muted: #9a8a7a;
       --border: rgba(28, 16, 4, 0.08);
-      --user-bubble: #E8722A;
+      --user-bubble: var(--accent);
       --user-text: #ffffff;
       --bot-bubble: #ffffff;
       --bot-text: #1c1004;
@@ -48,7 +55,7 @@
       --text-soft: #c8b8a8;
       --muted: #7a6e62;
       --border: rgba(255, 255, 255, 0.07);
-      --user-bubble: #E8722A;
+      --user-bubble: var(--accent);
       --user-text: #ffffff;
       --bot-bubble: #2a2520;
       --bot-text: #f0ebe6;
@@ -97,6 +104,10 @@
     .widget {
       width: 380px;
       height: 520px;
+      /* Never let the iframe box shrink us: offsetWidth/Height are what we
+         report back for iframe sizing, so a shrunken element would lock the
+         iframe small permanently (it could collapse but never re-expand). */
+      flex: 0 0 auto;
       display: flex;
       flex-direction: column;
       background: var(--bg);
@@ -123,7 +134,7 @@
     .w-avatar {
       width: 36px; height: 36px;
       border-radius: 10px;
-      background: #E8722A;
+      background: var(--accent);
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 3px 10px rgba(232, 114, 42, 0.3);
       flex-shrink: 0;
@@ -292,7 +303,7 @@
       letter-spacing: -0.03em;
       margin-bottom: 8px;
     }
-    .cta-headline span { color: #E8722A; }
+    .cta-headline span { color: var(--accent); }
     .cta-sub {
       font-size: 14px;
       color: var(--text-soft);
@@ -305,7 +316,7 @@
       align-items: center;
       gap: 8px;
       padding: 15px 32px;
-      background: #E8722A;
+      background: var(--accent);
       color: #fff;
       font-family: 'Outfit', sans-serif;
       font-size: 15px;
@@ -363,12 +374,70 @@
     .close-btn:hover { opacity: 1; }
     .close-btn svg { width: 13px; height: 13px; }
 
-    /* ── RESPONSIVE ───────────────────────────── */
-    @media (max-width: 420px) {
-      body { padding: 8px; }
-      .widget { width: 100%; height: 480px; }
-      .cta-headline { font-size: 20px; }
+    /* ── MASCOT LAUNCHER ──────────────────────────
+       Closing the promo collapses to the mascot, exactly like the real
+       widget does — it never fully disappears, so the visitor can bring
+       it back. Clicking the mascot re-opens the demo. */
+    .launcher {
+      display: none;
+      flex: 0 0 auto;
+      flex-direction: column;
+      align-items: flex-end;
+      cursor: pointer;
+      background: none;
+      border: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
+    .launcher.show {
+      display: flex;
+      animation: launcherIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes launcherIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.9); }
+      to   { opacity: 1; transform: none; }
+    }
+    /* Little "psst, come back" bubble above the mascot */
+    .launcher-tip {
+      align-self: center;
+      margin-bottom: 2px;
+      padding: 7px 13px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      border-radius: 14px 14px 14px 4px;
+      box-shadow: 0 4px 16px rgba(232, 114, 42, 0.35);
+      animation: tipFloat 3s ease-in-out infinite;
+    }
+    @keyframes tipFloat {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-4px); }
+    }
+    .launcher-mascot {
+      width: 190px;
+      height: 108px;
+      background: url('/static/images/sprite-mobile.webp') center bottom / contain no-repeat;
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .launcher:hover .launcher-mascot { transform: scale(1.06) translateY(-3px); }
+    .launcher:active .launcher-mascot { transform: scale(0.98); }
+
+    /* ── RESPONSIVE ─────────────────────────────
+       Driven by data-mobile from embed.js (the HOST page's viewport), NOT by
+       a @media query on our own width.
+
+       Why: the iframe is resized to fit whatever we report. When collapsed to
+       the mascot the iframe becomes ~166px wide, so a `max-width: 420px` media
+       query would match and set `.widget { width: 100% }` — reporting the
+       collapsed width as the widget's width and locking the iframe small
+       forever. The iframe width decided the media query, and the media query
+       decided the reported width. Keying off the host viewport breaks the loop. */
+    html[data-mobile="1"] body { padding: 8px; }
+    html[data-mobile="1"] .widget { width: 100%; height: 480px; }
+    html[data-mobile="1"] .cta-headline { font-size: 20px; }
+    html[data-mobile="1"] .launcher-mascot { width: 150px; height: 88px; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -428,6 +497,12 @@
     </div>
   </div>
 
+  <!-- Collapsed state: the mascot, same as the real widget's launcher -->
+  <button class="launcher" type="button" aria-label="Open Bubbl">
+    <span class="launcher-tip">Get your own bot</span>
+    <span class="launcher-mascot" aria-hidden="true"></span>
+  </button>
+
   <script>
   (function () {
     var chat = document.getElementById('chat');
@@ -439,9 +514,9 @@
     // The "conversation" that plays out
     var script = [
       { role: 'bot', text: "Hey there! 👋 I'm an AI assistant. How can I help you today?" },
-      { delay: 1800, role: 'user', text: "What can you do?" },
+      { delay: 900, role: 'user', text: "What can you do?" },
       { role: 'bot', text: "I can answer questions about your business, book meetings, capture leads, and help customers 24/7 — all trained on your own data." },
-      { delay: 1400, role: 'user', text: "That's cool. How fast to set up?" },
+      { delay: 800, role: 'user', text: "That's cool. How fast to set up?" },
       { role: 'bot', text: "Under 5 minutes! Just paste your website URL, customize the look, and embed one line of code. Done. 🚀" }
     ];
 
@@ -474,30 +549,30 @@
         setTimeout(function () {
           cta.classList.add('show');
           closeBtn.classList.add('show');
-        }, 800);
+        }, 600);
         return;
       }
 
       var item = script[msgIndex];
-      var delay = item.delay || 600;
+      var delay = item.delay || 400;
       msgIndex++;
 
       if (item.role === 'user') {
         setTimeout(function () {
           addMessage('user', item.text);
-          setTimeout(playNext, 500);
+          setTimeout(playNext, 400);
         }, delay);
       } else {
         // Bot: show typing first, then message
         setTimeout(function () {
           showTyping();
           chat.scrollTop = chat.scrollHeight;
-          var typeTime = Math.min(1200, item.text.length * 20);
+          var typeTime = Math.min(900, item.text.length * 16);
           setTimeout(function () {
             hideTyping();
             setTimeout(function () {
               addMessage('bot', item.text);
-              setTimeout(playNext, 400);
+              setTimeout(playNext, 300);
             }, 150);
           }, typeTime);
         }, delay);
@@ -505,37 +580,74 @@
     }
 
     // Start the conversation after a brief pause
-    setTimeout(playNext, 800);
+    setTimeout(playNext, 600);
 
-    // Size reporting for embed.js
+    // ── SIZE REPORTING ──────────────────────────────────────────
+    // The iframe is a fixed 450x800 and would swallow clicks across that whole
+    // corner of the host page, so we tell embed.js the size of whichever
+    // element is currently visible (the demo widget, or the mascot launcher).
+    var launcher = document.querySelector('.launcher');
+
+    function activeElement() {
+      return launcher.classList.contains('show') ? launcher : widget;
+    }
+
     function reportSize() {
+      var el = activeElement();
       var pad = parseFloat(getComputedStyle(document.body).paddingLeft) || 12;
       try {
         parent.postMessage({
           type: 'bubbl:promo',
-          width: Math.ceil(widget.offsetWidth + pad * 2),
-          height: Math.ceil(widget.offsetHeight + pad * 2)
+          // offsetWidth/Height are layout sizes and ignore CSS transforms, so
+          // an in-flight entrance animation can't report a too-small box.
+          width: Math.ceil(el.offsetWidth + pad * 2),
+          height: Math.ceil(el.offsetHeight + pad * 2)
         }, '*');
       } catch (e) {}
     }
+
     if (document.readyState === 'complete') reportSize();
     else window.addEventListener('load', reportSize);
     widget.addEventListener('animationend', reportSize);
+    launcher.addEventListener('animationend', reportSize);
     if (window.ResizeObserver) {
-      new ResizeObserver(reportSize).observe(widget);
+      var ro = new ResizeObserver(reportSize);
+      ro.observe(widget);
+      ro.observe(launcher);
     } else {
       setTimeout(reportSize, 700);
     }
 
-    // Dismiss
-    closeBtn.addEventListener('click', function () {
-      widget.style.transition = 'opacity .3s, transform .3s';
+    // ── COLLAPSE / REOPEN ───────────────────────────────────────
+    // Closing does NOT remove the widget — it collapses to the mascot, the
+    // same affordance the real chat widget uses. The ad stays available
+    // instead of being gone for good after one stray click.
+    function collapse() {
+      widget.style.transition = 'opacity .25s, transform .25s';
       widget.style.opacity = '0';
-      widget.style.transform = 'translateY(16px) scale(.95)';
+      widget.style.transform = 'translateY(14px) scale(.95)';
       setTimeout(function () {
-        try { parent.postMessage({ type: 'bubbl:promo-dismiss' }, '*'); } catch (e) {}
-      }, 300);
-    });
+        widget.style.display = 'none';
+        launcher.classList.add('show');
+        reportSize();
+      }, 250);
+    }
+
+    function expand() {
+      launcher.classList.remove('show');
+      widget.style.display = 'flex';
+      widget.style.opacity = '';
+      widget.style.transform = '';
+      widget.style.transition = '';
+      // Replay the entrance animation
+      widget.style.animation = 'none';
+      void widget.offsetWidth;
+      widget.style.animation = '';
+      reportSize();
+    }
+
+    closeBtn.addEventListener('click', collapse);
+    launcher.addEventListener('click', expand);
   })();
   </script>
 </body>
