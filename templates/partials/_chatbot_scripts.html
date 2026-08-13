@@ -10,21 +10,50 @@
   let isPromptManuallyEdited = false;
   let customFieldsState = [];
 
+  /**
+   * Parse the stored custom-field config into a clean array.
+   *
+   * Only a real JSON array is accepted; anything else yields []. The previous
+   * comma-splitting fallback turned unparseable values into one bogus field
+   * per fragment, and renderCustomFields() wrote that back to the hidden
+   * input — corrupting the saved config.
+   */
+  function parseCustomFields(raw) {
+      if (raw === null || raw === undefined) return [];
+      let parsed = raw;
+      if (typeof raw === 'string') {
+          const trimmed = raw.trim();
+          if (!trimmed || trimmed === '[]') return [];
+          try {
+              parsed = JSON.parse(trimmed);
+          } catch (e) {
+              console.warn('[custom-fields] Could not parse config, starting empty:', trimmed);
+              return [];
+          }
+      }
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+          .filter(f => f && typeof f === 'object' && typeof f.name === 'string')
+          .map(f => ({
+              name: f.name,
+              type: ['text', 'email', 'number'].includes(f.type) ? f.type : 'text',
+              required: !!f.required
+          }));
+  }
+
+  /** Escape a value for safe use inside a double-quoted HTML attribute. */
+  function escapeAttr(value) {
+      return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+  }
+
   document.addEventListener("DOMContentLoaded", function() {
       const hiddenInput = document.getElementById('custom_form_fields_json');
       if(hiddenInput && hiddenInput.value) {
-          try {
-              // Try parsing existing JSON data
-              customFieldsState = JSON.parse(hiddenInput.value);
-              if(!Array.isArray(customFieldsState)) customFieldsState = [];
-          } catch(e) {
-              // Backward compatibility: If it was the old comma-separated string, convert it to JSON
-              if (typeof hiddenInput.value === 'string' && hiddenInput.value.trim() !== '') {
-                  customFieldsState = hiddenInput.value.split(',').map(f => ({
-                      name: f.trim(), type: 'text', required: false
-                  })).filter(f => f.name);
-              }
-          }
+          customFieldsState = parseCustomFields(hiddenInput.value);
       }
       renderCustomFields();
   });
@@ -48,7 +77,7 @@
           
           row.innerHTML = `
               <div style="flex: 2;">
-                  <input type="text" style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none;" placeholder="Field Name (e.g. Company)" value="${field.name}" onchange="updateCustomField(${index}, 'name', this.value)">
+                  <input type="text" style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none;" placeholder="Field Name (e.g. Company)" value="${escapeAttr(field.name)}" onchange="updateCustomField(${index}, 'name', this.value)">
               </div>
               <div style="flex: 1;">
                   <select style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none; background: #fff;" onchange="updateCustomField(${index}, 'type', this.value)">
