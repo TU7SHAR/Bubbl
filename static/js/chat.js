@@ -115,10 +115,18 @@ function getCustomFieldsHTML(prefix) {
     return "";
 
   try {
-    const fields = JSON.parse(window.CUSTOM_FIELDS);
+    // CUSTOM_FIELDS may arrive as a real array (templates now emit `| tojson`)
+    // or as a JSON string (session-stored value). Accept both — previously this
+    // assumed a string, and a JSON.parse failure silently dropped every field.
+    let fields = window.CUSTOM_FIELDS;
+    if (typeof fields === "string") {
+      fields = JSON.parse(fields);
+    }
+    if (!Array.isArray(fields)) return "";
+
     return fields
       .map((f) => {
-        if (!f.name.trim()) return "";
+        if (!f || typeof f.name !== "string" || !f.name.trim()) return "";
         const isReq = f.required ? "required" : "";
         const star = f.required ? "* " : "";
         const safeId = f.name.replace(/[^a-zA-Z0-9]/g, ""); // Removes spaces/symbols for HTML IDs

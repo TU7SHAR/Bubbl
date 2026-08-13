@@ -654,7 +654,7 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                             Custom Lead Fields
                         </label>
-                        <p style="font-size: 12px; color: #6b7280; margin: 6px 0 0 0;">Name and Email are inherently required. Add specialized fields below.</p>
+                        <p style="font-size: 12px; color: #6b7280; margin: 6px 0 0 0;">Name, Email and Phone are built in. Add specialized fields below.</p>
                       </div>
                       <button type="button" style="background: #f9fafb; border: 1px solid rgba(0,0,0,0.1); padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #374151; transition: 0.2s;" onmouseover="this.style.borderColor='var(--orange)'; this.style.color='var(--orange)';" onmouseout="this.style.borderColor='rgba(0,0,0,0.1)'; this.style.color='#374151';" onclick="addCustomField()">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -662,9 +662,39 @@
                       </button>
                   </div>
                   
+                  <!-- BUILT-IN FIELDS — always collected, shown read-only so the
+                       admin can see the full picture. Not part of customFieldsState,
+                       so they are never written into custom_form_fields. -->
+                  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                    {% for base in [
+                        {'label': 'Full Name',    'type': 'Text Input',    'required': True},
+                        {'label': 'Email',        'type': 'Email Address', 'required': True},
+                        {'label': 'Phone Number', 'type': 'Text Input',    'required': False}
+                    ] %}
+                    <div style="display: flex; gap: 12px; align-items: center; background: rgba(232,114,42,0.04); padding: 12px; border: 1px dashed rgba(232,114,42,0.25); border-radius: 12px;">
+                        <div style="flex: 2; display: flex; align-items: center; gap: 8px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span style="font-size: 13px; font-weight: 600; color: #374151;">{{ base.label }}</span>
+                        </div>
+                        <div style="flex: 1; font-size: 12px; color: #6b7280;">{{ base.type }}</div>
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px;">
+                            <span style="font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 100px; {% if base.required %}background: rgba(232,114,42,0.12); color: var(--orange);{% else %}background: rgba(0,0,0,0.05); color: #6b7280;{% endif %}">
+                                {{ 'Required' if base.required else 'Optional' }}
+                            </span>
+                        </div>
+                        <div style="width: 32px;"></div>
+                    </div>
+                    {% endfor %}
+                  </div>
+
                   <div id="custom-fields-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
-                  
-                  <input type="hidden" name="custom_form_fields" id="custom_form_fields_json" value="{{ bot.custom_form_fields or '[]' }}">
+
+                  <!-- tojson (not str()) — custom_form_fields is a JSONB column, so
+                       SQLAlchemy hands Jinja a Python list. Plain interpolation would
+                       emit a Python repr ([{'name': 'x', 'required': True}]) which is
+                       not valid JSON. Single-quoted attribute because tojson escapes
+                       ' but not ". -->
+                  <input type="hidden" name="custom_form_fields" id="custom_form_fields_json" value='{{ (bot.custom_form_fields or []) | tojson }}'>
               </div>
 
               <div style="width: 100%;">
@@ -888,22 +918,56 @@
   // --- CUSTOM FORM BUILDER LOGIC ---
   let customFieldsState = [];
 
+  /**
+   * Parse the stored custom-field config into a clean array.
+   *
+   * Only accepts a real JSON array of field objects. Anything else yields []
+   * rather than being salvaged, because the old comma-splitting "legacy"
+   * fallback shredded valid-but-unparseable values (e.g. a Python repr) into
+   * one bogus field per fragment — and renderCustomFields() then wrote that
+   * garbage straight back into the hidden input, corrupting the bot's real
+   * config on the next save.
+   */
+  function parseCustomFields(raw) {
+      if (raw === null || raw === undefined) return [];
+      let parsed = raw;
+      if (typeof raw === 'string') {
+          const trimmed = raw.trim();
+          if (!trimmed || trimmed === '[]') return [];
+          try {
+              parsed = JSON.parse(trimmed);
+          } catch (e) {
+              console.warn('[custom-fields] Could not parse config, starting empty:', trimmed);
+              return [];
+          }
+      }
+      if (!Array.isArray(parsed)) return [];
+      // Keep only well-shaped entries so one bad row can't poison the rest
+      return parsed
+          .filter(f => f && typeof f === 'object' && typeof f.name === 'string')
+          .map(f => ({
+              name: f.name,
+              type: ['text', 'email', 'number'].includes(f.type) ? f.type : 'text',
+              required: !!f.required
+          }));
+  }
+
   document.addEventListener("DOMContentLoaded", function() {
       const hiddenInput = document.getElementById('custom_form_fields_json');
       if(hiddenInput && hiddenInput.value) {
-          try {
-              customFieldsState = JSON.parse(hiddenInput.value);
-              if(!Array.isArray(customFieldsState)) customFieldsState = [];
-          } catch(e) {
-              if (typeof hiddenInput.value === 'string' && hiddenInput.value.trim() !== '') {
-                  customFieldsState = hiddenInput.value.split(',').map(f => ({
-                      name: f.trim(), type: 'text', required: false
-                  })).filter(f => f.name);
-              }
-          }
+          customFieldsState = parseCustomFields(hiddenInput.value);
       }
       renderCustomFields();
   });
+
+  /** Escape a value for safe use inside a double-quoted HTML attribute. */
+  function escapeAttr(value) {
+      return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+  }
 
   function renderCustomFields() {
       const container = document.getElementById('custom-fields-container');
@@ -928,7 +992,7 @@
           
           row.innerHTML = `
               <div style="flex: 2;">
-                  <input type="text" style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" placeholder="Field Name (e.g. Company)" value="${field.name}" onchange="updateCustomField(${index}, 'name', this.value)">
+                  <input type="text" style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" placeholder="Field Name (e.g. Company)" value="${escapeAttr(field.name)}" onchange="updateCustomField(${index}, 'name', this.value)">
               </div>
               <div style="flex: 1;">
                   <select style="width: 100%; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;" onchange="updateCustomField(${index}, 'type', this.value)">

@@ -206,7 +206,11 @@
 <script>
   window.LEAD_TIMING = "{{ bot.lead_capture_timing if bot else session.get('lead_capture_timing', 'disabled') }}";
   window.EMBEDDED_BOT_ID = "{{ bot.id if bot else session.get('active_bot_id', '') }}";
-  window.CUSTOM_FIELDS = "{{ bot.custom_form_fields if bot else session.get('custom_form_fields', '') }}";
+  // Emitted as real JSON, not a quoted Python repr. custom_form_fields is a
+  // JSONB column so `{{ bot.custom_form_fields }}` would render
+  // [{'name': 'x', 'required': True}] — invalid JSON, which made JSON.parse
+  // throw and silently dropped every custom field from the lead form.
+  window.CUSTOM_FIELDS = {{ (bot.custom_form_fields or []) | tojson if bot else (session.get('custom_form_fields') or '[]') | tojson }};
 </script>
 
 <div id="chat-widget-container">
