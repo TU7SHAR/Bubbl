@@ -111,7 +111,10 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── WIDGET SHELL ────────────────────────── */
+    /* ── WIDGET SHELL ──────────────────────────
+       Hidden until the visitor clicks the mascot. The ad must behave like a
+       normal chat widget on someone else's site: mascot only, nothing takes
+       over the page until they choose to engage. */
     .widget {
       width: 380px;
       height: 520px;
@@ -119,13 +122,16 @@
          report back for iframe sizing, so a shrunken element would lock the
          iframe small permanently (it could collapse but never re-expand). */
       flex: 0 0 auto;
-      display: flex;
+      display: none;
       flex-direction: column;
       background: var(--bg);
       border-radius: 20px;
       box-shadow: var(--shadow);
       overflow: hidden;
       border: 1px solid var(--border);
+    }
+    .widget.open {
+      display: flex;
       animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     @keyframes slideUp {
@@ -508,9 +514,10 @@
     </div>
   </div>
 
-  <!-- Collapsed state: the mascot, same as the real widget's launcher -->
-  <button class="launcher" type="button" aria-label="Open Bubbl">
-    <span class="launcher-tip">Get your own bot</span>
+  <!-- DEFAULT state: just the mascot, exactly like a real chat widget.
+       Clicking it opens the demo conversation. -->
+  <button class="launcher show" type="button" aria-label="Chat with Bubbl">
+    <span class="launcher-tip">Ask me anything</span>
     <span class="launcher-mascot" aria-hidden="true"></span>
   </button>
 
@@ -532,6 +539,20 @@
     ];
 
     var msgIndex = 0;
+
+    // Every setTimeout in the conversation is tracked so collapsing mid-play
+    // can cancel the whole chain. Without this, messages keep appending to a
+    // hidden widget and the CTA fires while the mascot is showing.
+    var timers = [];
+    function later(fn, ms) {
+      var id = setTimeout(fn, ms);
+      timers.push(id);
+      return id;
+    }
+    function clearTimers() {
+      timers.forEach(clearTimeout);
+      timers = [];
+    }
 
     function showTyping() {
       typing.classList.remove('hide');
@@ -555,9 +576,9 @@
 
     function playNext() {
       if (msgIndex >= script.length) {
-        // Conversation done — show CTA
+        // Conversation done — reveal the blurred CTA
         hideTyping();
-        setTimeout(function () {
+        later(function () {
           cta.classList.add('show');
           closeBtn.classList.add('show');
         }, 600);
@@ -569,29 +590,45 @@
       msgIndex++;
 
       if (item.role === 'user') {
-        setTimeout(function () {
+        later(function () {
           addMessage('user', item.text);
-          setTimeout(playNext, 400);
+          later(playNext, 400);
         }, delay);
       } else {
         // Bot: show typing first, then message
-        setTimeout(function () {
+        later(function () {
           showTyping();
           chat.scrollTop = chat.scrollHeight;
           var typeTime = Math.min(900, item.text.length * 16);
-          setTimeout(function () {
+          later(function () {
             hideTyping();
-            setTimeout(function () {
+            later(function () {
               addMessage('bot', item.text);
-              setTimeout(playNext, 300);
+              later(playNext, 300);
             }, 150);
           }, typeTime);
         }, delay);
       }
     }
 
-    // Start the conversation after a brief pause
-    setTimeout(playNext, 600);
+    /**
+     * Reset to a clean slate and play the conversation from the top.
+     * Called on every open, so reopening always replays the full demo
+     * instead of showing a stale finished transcript.
+     */
+    function startConversation() {
+      clearTimers();
+      msgIndex = 0;
+      // Remove previously rendered bubbles, keep the typing indicator node
+      Array.prototype.slice.call(chat.querySelectorAll('.msg')).forEach(function (el) {
+        el.parentNode.removeChild(el);
+      });
+      hideTyping();
+      typing.classList.remove('hide');
+      cta.classList.remove('show');
+      closeBtn.classList.remove('show');
+      later(playNext, 600);
+    }
 
     // ── SIZE REPORTING ──────────────────────────────────────────
     // The iframe is a fixed 450x800 and would swallow clicks across that whole
@@ -600,7 +637,7 @@
     var launcher = document.querySelector('.launcher');
 
     function activeElement() {
-      return launcher.classList.contains('show') ? launcher : widget;
+      return widget.classList.contains('open') ? widget : launcher;
     }
 
     function reportSize() {
@@ -629,32 +666,30 @@
       setTimeout(reportSize, 700);
     }
 
-    // ── COLLAPSE / REOPEN ───────────────────────────────────────
-    // Closing does NOT remove the widget — it collapses to the mascot, the
-    // same affordance the real chat widget uses. The ad stays available
-    // instead of being gone for good after one stray click.
+    // ── OPEN / CLOSE ────────────────────────────────────────────
+    // The mascot is the resting state. Nothing expands until the visitor
+    // clicks it, so the ad never takes over a host page uninvited. Closing
+    // returns to the mascot rather than removing the widget, so it stays
+    // available after a stray click.
+    function expand() {
+      launcher.classList.remove('show');
+      widget.style.cssText = 'position:relative;';   // clear any collapse styles
+      widget.classList.add('open');
+      startConversation();
+      reportSize();
+    }
+
     function collapse() {
+      clearTimers();                                  // stop the demo mid-play
       widget.style.transition = 'opacity .25s, transform .25s';
       widget.style.opacity = '0';
       widget.style.transform = 'translateY(14px) scale(.95)';
-      setTimeout(function () {
-        widget.style.display = 'none';
+      later(function () {
+        widget.classList.remove('open');
+        widget.style.cssText = 'position:relative;';
         launcher.classList.add('show');
         reportSize();
       }, 250);
-    }
-
-    function expand() {
-      launcher.classList.remove('show');
-      widget.style.display = 'flex';
-      widget.style.opacity = '';
-      widget.style.transform = '';
-      widget.style.transition = '';
-      // Replay the entrance animation
-      widget.style.animation = 'none';
-      void widget.offsetWidth;
-      widget.style.animation = '';
-      reportSize();
     }
 
     closeBtn.addEventListener('click', collapse);
