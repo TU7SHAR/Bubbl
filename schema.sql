@@ -98,8 +98,13 @@ CREATE TABLE document (
     id SERIAL PRIMARY KEY,
     bot_id INTEGER NOT NULL REFERENCES bot(id) ON DELETE CASCADE,
     filename VARCHAR(255) NOT NULL,
+    -- Normalized source URL for scraped pages (NULL for manual uploads and
+    -- text snippets). This is the identity used for scrape dedup — the
+    -- filename carries a random uuid suffix so it can't serve that purpose.
+    source_url VARCHAR(2048),
     created_at TIMESTAMP DEFAULT NOW()
 );
+CREATE INDEX idx_document_bot_source ON document(bot_id, source_url);
 
 -- ═══ SCRAPE_JOB (Website scraping tasks) ═══
 CREATE TABLE scrape_job (
