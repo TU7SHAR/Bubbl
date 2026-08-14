@@ -165,17 +165,22 @@ def register_socket_events(socketio):
                 config=config
             )
 
+            last_chunk = None
             for chunk in stream:
                 if chunk.text:
                     full_response += chunk.text
                     emit('chat_chunk', {'text': chunk.text})
+                last_chunk = chunk
 
             duration = time.time() - start_ts
 
             # --- TOKEN TRACKING ---
+            # usage_metadata lives on the final chunk of the stream, not on the
+            # iterator object itself. Capturing it from `last_chunk` is the only
+            # reliable way to get token counts from generate_content_stream().
             token_count = 0
-            if hasattr(stream, 'usage_metadata') and stream.usage_metadata:
-                token_count = getattr(stream.usage_metadata, 'total_token_count', 0) or 0
+            if last_chunk and hasattr(last_chunk, 'usage_metadata') and last_chunk.usage_metadata:
+                token_count = getattr(last_chunk.usage_metadata, 'total_token_count', 0) or 0
 
             if bot_id:
                 try:
