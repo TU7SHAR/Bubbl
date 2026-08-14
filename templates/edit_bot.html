@@ -9,6 +9,45 @@
 <style>
   /* --- LAYOUT & CONTAINERS --- */
   .cb-container { max-width: 1200px; margin: 0 auto; padding-top: 40px; position: relative; z-index: 1; }
+
+  /* --- COLOUR SWATCH (managed links) --- */
+  /* Legend row swatches */
+  .cat-legend-swatch {
+    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    padding: 3px 8px 3px 4px; border-radius: 6px; transition: background 0.15s;
+  }
+  .cat-legend-swatch:hover { background: rgba(0,0,0,0.05); }
+  .cat-legend-swatch input[type="color"] { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
+  .swatch-dot {
+    width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+    box-shadow: 0 0 0 1.5px rgba(0,0,0,0.12), inset 0 1px 2px rgba(0,0,0,0.08);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .cat-legend-swatch:hover .swatch-dot { transform: scale(1.2); box-shadow: 0 0 0 2px rgba(232,114,42,0.4); }
+
+  /* Per-link row swatch */
+  .link-color-swatch {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: var(--swatch-color, #6b7280);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,0.1);
+    cursor: pointer; position: relative; transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .link-color-swatch:hover {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(232,114,42,0.5);
+  }
+  .link-color-swatch::after {
+    content: '';
+    position: absolute; inset: 0; border-radius: 50%;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/%3E%3C/svg%3E") no-repeat center center;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .link-color-swatch:hover::after { opacity: 0.9; }
+  .link-color-swatch input[type="color"] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: none;
+  }
   .cb-header { font-size: 36px; color: #111827; margin-bottom: 8px; letter-spacing: -0.02em; }
   .cb-layout { display: flex; gap: 40px; align-items: flex-start; }
 
@@ -694,16 +733,16 @@
             <!-- MANAGED LINKS TAB -->
             <div id="tab-links" class="cb-pane">
               <h2 class="cb-content-title bricolage">Managed Links</h2>
-              <p class="cb-content-subtitle">These links appear as clickable buttons in your bot's chat responses. Each category has a default colour, but you can <strong>click the colour circle</strong> next to any link to set a custom button colour. Auto-populated from scrapes, editable here.</p>
+              <p class="cb-content-subtitle">These links appear as clickable buttons in your bot's chat responses. Each category has a default colour, but you can <strong>click the colour dot</strong> next to any link to pick a custom button colour. Auto-populated from scrapes, editable here.</p>
 
               <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
-                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Pricing links"><input type="color" value="#E8722A" oninput="setCategoryColor('pricing',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Pricing</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Action links"><input type="color" value="#10b981" oninput="setCategoryColor('action',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Action</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Info links"><input type="color" value="#3b82f6" oninput="setCategoryColor('info',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Info</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Support links"><input type="color" value="#8b5cf6" oninput="setCategoryColor('support',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Support</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Email links"><input type="color" value="#0d9488" oninput="setCategoryColor('email',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Email</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL Phone links"><input type="color" value="#4f46e5" oninput="setCategoryColor('phone',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> Phone</span>
-                <span style="display:inline-flex; align-items:center; gap:5px;" title="Click the dot to change ALL General links"><input type="color" value="#6b7280" oninput="setCategoryColor('link',this.value)" style="width:14px;height:14px;border:none;border-radius:50%;cursor:pointer;padding:0;"> General</span>
+                <span class="cat-legend-swatch" title="Click to change ALL Pricing links" onclick="this.querySelector('input').click()"><span class="swatch-dot" style="background:#E8722A;"></span><input type="color" value="#E8722A" oninput="setCategoryColor('pricing',this.value)" tabindex="-1"> Pricing</span>
+                <span class="cat-legend-swatch" title="Click to change ALL Action links" onclick="this.querySelector('input').click()"><span class="swatch-dot" style="background:#10b981;"></span><input type="color" value="#10b981" oninput="setCategoryColor('action',this.value)" tabindex="-1"> Action</span>
+                <span class="cat-legend-swatch" title="Click to change ALL Info links" onclick="this.querySelector('input').click()"><span class="swatch-dot" style="background:#3b82f6;"></span><input type="color" value="#3b82f6" oninput="setCategoryColor('info',this.value)" tabindex="-1"> Info</span>
+                <span class="cat-legend-swatch" title="Click to change ALL Support links" onclick="this.querySelector('input').click()"><span class="swatch-dot" style="background:#8b5cf6;"></span><input type="color" value="#8b5cf6" oninput="setCategoryColor('support',this.value)" tabindex="-1"> Support</span>
+                <span class="cat-legend-swatch" title="Click to change ALL Email links" onclick="this.querySelector('input').click()"><span class="swatch-dot" style="background:#0d9488;"></span><input type="color" value="#0d9488" oninput="setCategoryColor('email',this.value)" tabindex="-1"> Email</span>
+                <span class="cat-legend-swatch" title="Click to change ALL Phone links" onclick="this.querySelector('input').click()"><span class="swatch-dot" style="background:#4f46e5;"></span><input type="color" value="#4f46e5" oninput="setCategoryColor('phone',this.value)" tabindex="-1"> Phone</span>
+                <span class="cat-legend-swatch" title="Click to change ALL General links" onclick="this.querySelector('input').click()"><span class="swatch-dot" style="background:#6b7280;"></span><input type="color" value="#6b7280" oninput="setCategoryColor('link',this.value)" tabindex="-1"> General</span>
               </div>
 
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
@@ -1725,7 +1764,7 @@ function renderLinks() {
     var urlBorder = link.url ? 'rgba(0,0,0,0.15)' : '#f87171';
     var cat = link.category || 'link';
     var color = link.color || catColor(cat);
-    row.innerHTML = '<input type="color" class="cat-color-picker" id="cat-color-'+i+'" value="'+color+'" title="Click to set a custom button colour for this link" style="width:26px; height:26px; padding:0; border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 1px rgba(0,0,0,0.15); background:none; cursor:pointer; flex-shrink:0;" oninput="currentLinks['+i+'].color=this.value; var sel=document.getElementById(\'cat-sel-'+i+'\'); if(sel) sel.style.borderLeftColor=this.value;">' +
+    row.innerHTML = '<label class="link-color-swatch" title="Click to pick button colour" style="--swatch-color:'+color+';"><input type="color" class="cat-color-picker" id="cat-color-'+i+'" value="'+color+'" oninput="currentLinks['+i+'].color=this.value; this.parentElement.style.setProperty(\'--swatch-color\',this.value); var sel=document.getElementById(\'cat-sel-'+i+'\'); if(sel) sel.style.borderLeftColor=this.value;" tabindex="-1"></label>' +
       '<input class="dash-input" title="Required" style="flex:2; min-width:110px; padding:9px 12px; font-size:13px; border:1.5px solid ' + labelBorder + ';" placeholder="Label *" value="' + (link.label||'') + '" oninput="currentLinks['+i+'].label=this.value; this.style.borderColor=this.value?\'rgba(0,0,0,0.15)\':\'#f87171\';">' +
       '<input class="dash-input" title="Required" style="flex:3; min-width:160px; padding:9px 12px; font-size:13px; border:1.5px solid ' + urlBorder + ';" placeholder="https://... *" value="' + (link.url||'') + '" oninput="currentLinks['+i+'].url=this.value; this.style.borderColor=this.value?\'rgba(0,0,0,0.15)\':\'#f87171\';">' +
       '<select id="cat-sel-'+i+'" class="dash-input" style="flex:1; min-width:110px; padding:9px 8px; font-size:12px; appearance:none; -webkit-appearance:none; border-left:4px solid '+color+'; background-image:url(\'data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;12&quot; height=&quot;12&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;%23666&quot; stroke-width=&quot;2&quot;><polyline points=&quot;6 9 12 15 18 9&quot;/></svg>\'); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; cursor:pointer;" onchange="currentLinks['+i+'].category=this.value; var col=catColor(this.value); currentLinks['+i+'].color=col; var cp=document.getElementById(\'cat-color-'+i+'\'); if(cp) cp.value=col; this.style.borderLeftColor=col;">' +
@@ -1771,6 +1810,12 @@ function setCategoryColor(cat, color) {
     if ((currentLinks[i].category || 'link') === cat) {
       currentLinks[i].color = color;
     }
+  }
+  // Update the legend dot's visual colour
+  var legendInput = event && event.target;
+  if (legendInput) {
+    var dot = legendInput.parentElement.querySelector('.swatch-dot');
+    if (dot) dot.style.background = color;
   }
   renderLinks();
 }
