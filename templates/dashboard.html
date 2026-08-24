@@ -89,7 +89,7 @@
         {% endif %}
 
         {% for bot in my_bots %}
-        <div class="bot-card {% if bot.id == session.get('active_bot_id') %}active{% endif %}" onclick="window.location.href='/set_active_bot/{{ bot.id }}'">
+        <div class="bot-card {% if bot.id == session.get('active_bot_id') %}active{% endif %}" onclick="window.location.href='{{ url_for('admin_bp.edit_bot', bot_id=bot.id) }}'">
             
             {% set b_color = bot.ui_settings.theme_color if bot.ui_settings else '#E8722A' %}
             
@@ -157,9 +157,9 @@
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">Agent Status</span>
                         {% if bot.id == session.get('active_bot_id') %}
-                            <span class="pill-status active" style="margin: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #fde68a;">● Active</span>
+                            <a href="/set_active_bot/{{ bot.id }}" class="pill-status active" style="margin: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #fde68a; text-decoration: none; cursor: default;" onclick="event.stopPropagation();" title="This bot is currently active">● Active</a>
                         {% else %}
-                            <span class="pill-status" style="margin: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #e5e7eb;">○ Standby</span>
+                            <a href="/set_active_bot/{{ bot.id }}" class="pill-status" style="margin: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #e5e7eb; text-decoration: none; cursor: pointer; transition: box-shadow 0.2s, background 0.2s;" onclick="event.stopPropagation();" title="Click to set as active bot" onmouseover="this.style.boxShadow='0 0 0 2px #fff, 0 0 0 3px #E8722A'; this.style.background='rgba(232,114,42,0.08)';" onmouseout="this.style.boxShadow='0 0 0 2px #fff, 0 0 0 3px #e5e7eb'; this.style.background='';">○ Set Active</a>
                         {% endif %}
                     </div>
 
