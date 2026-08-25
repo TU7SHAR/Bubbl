@@ -9,6 +9,7 @@ from models.models import db, User, Organization
 from utils.mail_helper import send_otp_email, generate_otp
 from extensions import limiter
 from . import auth_bp  
+import logging
 
 
 def password_strength(form, field):
@@ -100,57 +101,69 @@ def register():
 
 @auth_bp.route('/verify_otp', methods=['GET', 'POST'])
 def verify_otp():
-    email = session.get('verify_email')
+    try:
+        email = session.get('verify_email')
     
-    if not email:
-        flash("Session expired. Please log in to request a new code.", "error")
-        return redirect(url_for('auth.login'))
+        if not email:
+            flash("Session expired. Please log in to request a new code.", "error")
+            return redirect(url_for('auth.login'))
 
-    if request.method == 'POST':
-        user_otp = request.form.get('otp')
-        user = User.query.filter_by(email=email).first()
+        if request.method == 'POST':
+            user_otp = request.form.get('otp')
+            user = User.query.filter_by(email=email).first()
 
-        if user and user.is_otp_valid(user_otp):
-            user.is_verified = True
-            user.clear_otp()
-            db.session.commit()
+            if user and user.is_otp_valid(user_otp):
+                user.is_verified = True
+                user.clear_otp()
+                db.session.commit()
 
-            session['user_id'] = user.id
-            session['user_name'] = user.name
-            session['org_name'] = user.organization.name
-            session['org_id'] = user.org_id
-            session['role'] = user.role
-            session['just_registered'] = True
-            session.pop('verify_email', None)
+                session['user_id'] = user.id
+                session['user_name'] = user.name
+                session['org_name'] = user.organization.name
+                session['org_id'] = user.org_id
+                session['role'] = user.role
+                session['just_registered'] = True
+                session.pop('verify_email', None)
 
-            flash(f"Account verified successfully! Welcome to {current_app.config.get('COMPANY_NAME_FIRST', 'Bubbl')}.{current_app.config.get('COMPANY_LAST_NAME', 'ooo')}", "success")
-            return redirect(url_for('views_bp.dashboard'))
-        else:
-            flash("Invalid or expired verification code. Codes expire after 10 minutes.", "error")
+                flash(f"Account verified successfully! Welcome to {current_app.config.get('COMPANY_NAME_FIRST', 'Bubbl')}.{current_app.config.get('COMPANY_LAST_NAME', 'ooo')}", "success")
+                return redirect(url_for('views_bp.dashboard'))
+            else:
+                flash("Invalid or expired verification code. Codes expire after 10 minutes.", "error")
 
-    return render_template('verify_otp.html', email=email)
+        return render_template('verify_otp.html', email=email)
+    except Exception as e:
+        logging.error(f"[verify_otp] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
+        return redirect(url_for('views_bp.dashboard'))
 
 @auth_bp.route('/resend_otp')
 @limiter.limit("3 per minute")  # Prevents OTP email flood
 def resend_otp():
-    email = session.get('verify_email')
+    try:
+        email = session.get('verify_email')
     
-    if not email:
-        flash("Session expired. Please log in to request a new code.", "error")
-        return redirect(url_for('auth.login'))
+        if not email:
+            flash("Session expired. Please log in to request a new code.", "error")
+            return redirect(url_for('auth.login'))
 
-    user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(email=email).first()
     
-    if user and not user.is_verified:
-        otp_code = generate_otp()
-        user.set_otp(otp_code)
-        db.session.commit()
+        if user and not user.is_verified:
+            otp_code = generate_otp()
+            user.set_otp(otp_code)
+            db.session.commit()
         
-        email_sent = send_otp_email(user.email, otp_code)
+            email_sent = send_otp_email(user.email, otp_code)
         
-        if email_sent:
-            flash("A fresh verification code has been sent to your email.", "info")
-        else:
-            flash("Failed to send email. Please try a valid email address.", "error")
+            if email_sent:
+                flash("A fresh verification code has been sent to your email.", "info")
+            else:
+                flash("Failed to send email. Please try a valid email address.", "error")
     
-    return redirect(url_for('auth.verify_otp'))
+        return redirect(url_for('auth.verify_otp'))
+    except Exception as e:
+        logging.error(f"[resend_otp] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
+        return redirect(url_for('views_bp.dashboard'))

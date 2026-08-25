@@ -3,20 +3,27 @@ from flask import render_template, request, jsonify
 from models.models import db, ScrapeJob
 from . import super_admin_bp
 from .decorators import super_admin_required
+import logging
 
 
 @super_admin_bp.route('/scrapes')
 @super_admin_required
 def scrapes_page():
     """List all non-completed scrape jobs (failed + pending)."""
-    status_filter = request.args.get('status', 'failed')
-    if status_filter == 'all':
-        scrapes = ScrapeJob.query.order_by(ScrapeJob.created_at.desc()).all()
-    elif status_filter == 'pending':
-        scrapes = ScrapeJob.query.filter_by(status='pending').order_by(ScrapeJob.created_at.desc()).all()
-    else:
-        scrapes = ScrapeJob.query.filter_by(status='failed').order_by(ScrapeJob.created_at.desc()).all()
-    return render_template('super_admin/scrapes.html', scrapes=scrapes, status_filter=status_filter)
+    try:
+        status_filter = request.args.get('status', 'failed')
+        if status_filter == 'all':
+            scrapes = ScrapeJob.query.order_by(ScrapeJob.created_at.desc()).all()
+        elif status_filter == 'pending':
+            scrapes = ScrapeJob.query.filter_by(status='pending').order_by(ScrapeJob.created_at.desc()).all()
+        else:
+            scrapes = ScrapeJob.query.filter_by(status='failed').order_by(ScrapeJob.created_at.desc()).all()
+        return render_template('super_admin/scrapes.html', scrapes=scrapes, status_filter=status_filter)
+    except Exception as e:
+        logging.error(f"[scrapes_page] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
+        return redirect(url_for('views_bp.dashboard'))
 
 
 @super_admin_bp.route('/scrapes/retry', methods=['POST'])
@@ -58,3 +65,4 @@ def delete_scrape():
     db.session.commit()
 
     return jsonify({"success": True})
+

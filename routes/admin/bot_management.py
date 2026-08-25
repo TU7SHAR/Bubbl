@@ -187,180 +187,204 @@ def create_pipeline():
 
 @admin_bp.route('/rename_bot/<int:bot_id>', methods=['POST'])
 def rename_bot(bot_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
+    try:
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login'))
 
-    new_name = request.form.get('new_bot_name')
-    if not new_name or new_name.strip() == '':
-        flash("Error: Bot name cannot be empty.", "error")
-        return redirect(url_for('admin_bp.admin_dashboard'))
+        new_name = request.form.get('new_bot_name')
+        if not new_name or new_name.strip() == '':
+            flash("Error: Bot name cannot be empty.", "error")
+            return redirect(url_for('admin_bp.admin_dashboard'))
 
-    target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
-    if target_bot:
-        target_bot.bot_name = new_name.strip()
-        db.session.commit()
-        invalidate_bot_cache(bot_id)
+        target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+        if target_bot:
+            target_bot.bot_name = new_name.strip()
+            db.session.commit()
+            invalidate_bot_cache(bot_id)
 
-        if session.get('active_bot_id') == bot_id:
-            session['active_bot_name'] = target_bot.bot_name
+            if session.get('active_bot_id') == bot_id:
+                session['active_bot_name'] = target_bot.bot_name
 
-        flash(f"Bot renamed to '{target_bot.bot_name}'", "success")
-    else:
-        flash("Security Error: Bot not found.", "error")
+            flash(f"Bot renamed to '{target_bot.bot_name}'", "success")
+        else:
+            flash("Security Error: Bot not found.", "error")
 
-    return redirect(request.referrer or url_for('views_bp.admin_dashboard'))
+        return redirect(request.referrer or url_for('views_bp.admin_dashboard'))
+    except Exception as e:
+        logging.error(f"[rename_bot] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
+        return redirect(url_for('views_bp.dashboard'))
 
 @admin_bp.route('/edit_bot/<int:bot_id>', methods=['GET'])
 @admin_required
 def edit_bot(bot_id):
-    target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
-    # Also allow editing the platform bot (belongs to a different org but accessible to all logged-in users)
-    if not target_bot:
-        target_bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
-    if not target_bot:
-        flash("Bot not found.", "error")
+    try:
+        target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+        # Also allow editing the platform bot (belongs to a different org but accessible to all logged-in users)
+        if not target_bot:
+            target_bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+        if not target_bot:
+            flash("Bot not found.", "error")
+            return redirect(url_for('views_bp.dashboard'))
+        ingested_docs = Document.query.filter_by(bot_id=bot_id).all()
+    
+        # Pass org plan message limit for the "leave empty to use plan limit" hint
+        from utils.plan_limits import PLAN_LIMITS
+        org = Organization.query.get(session.get('org_id'))
+        plan_name = (org.plan if org else 'free') or 'free'
+        messages_limit = PLAN_LIMITS.get(plan_name, PLAN_LIMITS['free']).get('messages', 200)
+    
+        return render_template('edit_bot.html', bot=target_bot, docs=ingested_docs, messages_limit=messages_limit)
+    except Exception as e:
+        logging.error(f"[edit_bot] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
         return redirect(url_for('views_bp.dashboard'))
-    ingested_docs = Document.query.filter_by(bot_id=bot_id).all()
-    
-    # Pass org plan message limit for the "leave empty to use plan limit" hint
-    from utils.plan_limits import PLAN_LIMITS
-    org = Organization.query.get(session.get('org_id'))
-    plan_name = (org.plan if org else 'free') or 'free'
-    messages_limit = PLAN_LIMITS.get(plan_name, PLAN_LIMITS['free']).get('messages', 200)
-    
-    return render_template('edit_bot.html', bot=target_bot, docs=ingested_docs, messages_limit=messages_limit)
 
 @admin_bp.route('/delete_bot/<int:bot_id>', methods=['POST'])
 def delete_bot(bot_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
+    try:
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login'))
 
-    target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
-    if target_bot:
-        docs = Document.query.filter_by(bot_id=target_bot.id).all()
-        for doc in docs:
-            delete_from_gemini(doc.filename, store_id=target_bot.store_id)
+        target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+        if target_bot:
+            docs = Document.query.filter_by(bot_id=target_bot.id).all()
+            for doc in docs:
+                delete_from_gemini(doc.filename, store_id=target_bot.store_id)
 
-        db.session.delete(target_bot)
-        db.session.commit()
-        invalidate_bot_cache(bot_id)
+            db.session.delete(target_bot)
+            db.session.commit()
+            invalidate_bot_cache(bot_id)
        
-        fallback = Bot.query.filter_by(org_id=session.get('org_id')).first()
-        if fallback:
-            session['active_bot_id'] = fallback.id
-            session['active_bot_name'] = fallback.bot_name
+            fallback = Bot.query.filter_by(org_id=session.get('org_id')).first()
+            if fallback:
+                session['active_bot_id'] = fallback.id
+                session['active_bot_name'] = fallback.bot_name
             
-            if fallback.ui_settings:
-                session['theme_color'] = fallback.ui_settings.theme_color
-                session['header_color'] = fallback.ui_settings.header_color
-                session['theme_mode'] = fallback.ui_settings.theme_mode
+                if fallback.ui_settings:
+                    session['theme_color'] = fallback.ui_settings.theme_color
+                    session['header_color'] = fallback.ui_settings.header_color
+                    session['theme_mode'] = fallback.ui_settings.theme_mode
+            else:
+                session.pop('active_bot_id', None)
+                session.pop('active_bot_name', None)
+                session.pop('theme_color', None)
+                session.pop('header_color', None)
+                session.pop('theme_mode', None)
+
+            flash(f"Bot: '{target_bot.bot_name}' permanently deleted.", "success")
         else:
-            session.pop('active_bot_id', None)
-            session.pop('active_bot_name', None)
-            session.pop('theme_color', None)
-            session.pop('header_color', None)
-            session.pop('theme_mode', None)
+            flash("Security Error: Bot not found.", "error")
 
-        flash(f"Bot: '{target_bot.bot_name}' permanently deleted.", "success")
-    else:
-        flash("Security Error: Bot not found.", "error")
-
-    return redirect(request.referrer or url_for('admin_bp.admin_dashboard'))
+        return redirect(request.referrer or url_for('admin_bp.admin_dashboard'))
+    except Exception as e:
+        logging.error(f"[delete_bot] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
+        return redirect(url_for('views_bp.dashboard'))
 
 @admin_bp.route('/update_bot/<int:bot_id>', methods=['POST'])
 def update_bot(bot_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
+    try:
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login'))
 
-    bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
-    if not bot:
-        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
-    if not bot:
-        flash("Error: Bot not found.", "error")
+        bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+        if not bot:
+            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+        if not bot:
+            flash("Error: Bot not found.", "error")
+            return redirect(url_for('views_bp.dashboard'))
+
+        bot.bot_name = request.form.get('bot_name', bot.bot_name)
+        bot.bot_type = request.form.get('bot_type', bot.bot_type)
+        bot.visibility = request.form.get('visibility', bot.visibility)
+        bot.system_prompt = request.form.get('system_prompt', bot.system_prompt)
+        bot.access_key = request.form.get('access_key', bot.access_key)
+        bot.lead_capture_timing = request.form.get('lead_capture_timing', bot.lead_capture_timing)
+        # Only touch the field list when the form actually submitted one, so a
+        # post that does not include the Lead Conventions tab leaves it alone.
+        # normalize_custom_fields drops reserved/duplicate names and, if the
+        # value is unparseable, returns the current list rather than wiping it.
+        submitted_fields = request.form.get('custom_form_fields')
+        if submitted_fields is not None:
+            bot.custom_form_fields, rejected_fields = normalize_custom_fields(
+                submitted_fields, fallback=bot.custom_form_fields
+            )
+            rejection = rejection_message(rejected_fields)
+            if rejection:
+                flash(rejection, "error")
+
+        # Per-bot message limit (empty = use org plan limit)
+        msg_limit_raw = request.form.get('message_limit', '').strip()
+        bot.message_limit = int(msg_limit_raw) if msg_limit_raw else None
+
+        if not bot.ui_settings:
+            bot.ui_settings = BotUI(bot_id=bot.id)
+
+        bot.ui_settings.theme_color = request.form.get('theme_color', bot.ui_settings.theme_color)
+        bot.ui_settings.header_color = request.form.get('header_color', bot.ui_settings.header_color)
+        bot.ui_settings.theme_mode = request.form.get('theme_mode', bot.ui_settings.theme_mode)
+    
+        bot.ui_settings.glass_opacity = request.form.get('glass_opacity', bot.ui_settings.glass_opacity, type=int)
+        bot.ui_settings.glass_blur = request.form.get('glass_blur', bot.ui_settings.glass_blur, type=int)
+
+        # --- EXTENDED UI CUSTOMIZATION ---
+        # Text fields: store None when blank so the widget falls back to defaults
+        def _opt(field):
+            val = (request.form.get(field) or '').strip()
+            return val if val else None
+
+        if 'greeting_message' in request.form:
+            bot.ui_settings.greeting_message = _opt('greeting_message')
+        if 'input_placeholder' in request.form:
+            bot.ui_settings.input_placeholder = _opt('input_placeholder')
+        if 'header_title' in request.form:
+            bot.ui_settings.header_title = _opt('header_title')
+        if 'user_bubble_color' in request.form:
+            bot.ui_settings.user_bubble_color = _opt('user_bubble_color')
+        if 'bot_bubble_color' in request.form:
+            bot.ui_settings.bot_bubble_color = _opt('bot_bubble_color')
+        if 'font_family' in request.form:
+            bot.ui_settings.font_family = request.form.get('font_family') or 'Inter'
+        if 'widget_position' in request.form:
+            bot.ui_settings.widget_position = request.form.get('widget_position') or 'bottom-right'
+        if 'bubble_radius' in request.form:
+            bot.ui_settings.bubble_radius = request.form.get('bubble_radius', 16, type=int)
+        if 'font_size' in request.form:
+            bot.ui_settings.font_size = request.form.get('font_size', 14, type=int)
+        # Checkbox: only present in POST when checked
+        if request.form.get('_ui_form') or 'font_family' in request.form:
+            bot.ui_settings.show_branding = bool(request.form.get('show_branding'))
+
+        avatar_file = request.files.get('bot_avatar')
+        if avatar_file and avatar_file.filename != '':
+            img_bytes = avatar_file.read()
+            b64_encoded = base64.b64encode(img_bytes).decode('utf-8')
+            bot.ui_settings.avatar_base64 = f"data:{avatar_file.mimetype};base64,{b64_encoded}"
+
+        db.session.commit()
+        invalidate_bot_cache(bot_id)
+    
+        if session.get('active_bot_id') == bot.id:
+            session['active_bot_name'] = bot.bot_name
+            session['lead_capture_timing'] = bot.lead_capture_timing
+            session['theme_color'] = bot.ui_settings.theme_color
+            session['header_color'] = bot.ui_settings.header_color
+            session['theme_mode'] = bot.ui_settings.theme_mode
+            session['glass_opacity'] = bot.ui_settings.glass_opacity
+            session['glass_blur'] = bot.ui_settings.glass_blur
+            session['custom_form_fields'] = json.dumps(bot.custom_form_fields) if isinstance(bot.custom_form_fields, list) else (bot.custom_form_fields or '[]')
+
+        flash("Bot configurations updated successfully!", "success")
+        return redirect(url_for('admin_bp.edit_bot', bot_id=bot.id))
+    except Exception as e:
+        logging.error(f"[update_bot] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
         return redirect(url_for('views_bp.dashboard'))
-
-    bot.bot_name = request.form.get('bot_name', bot.bot_name)
-    bot.bot_type = request.form.get('bot_type', bot.bot_type)
-    bot.visibility = request.form.get('visibility', bot.visibility)
-    bot.system_prompt = request.form.get('system_prompt', bot.system_prompt)
-    bot.access_key = request.form.get('access_key', bot.access_key)
-    bot.lead_capture_timing = request.form.get('lead_capture_timing', bot.lead_capture_timing)
-    # Only touch the field list when the form actually submitted one, so a
-    # post that does not include the Lead Conventions tab leaves it alone.
-    # normalize_custom_fields drops reserved/duplicate names and, if the
-    # value is unparseable, returns the current list rather than wiping it.
-    submitted_fields = request.form.get('custom_form_fields')
-    if submitted_fields is not None:
-        bot.custom_form_fields, rejected_fields = normalize_custom_fields(
-            submitted_fields, fallback=bot.custom_form_fields
-        )
-        rejection = rejection_message(rejected_fields)
-        if rejection:
-            flash(rejection, "error")
-
-    # Per-bot message limit (empty = use org plan limit)
-    msg_limit_raw = request.form.get('message_limit', '').strip()
-    bot.message_limit = int(msg_limit_raw) if msg_limit_raw else None
-
-    if not bot.ui_settings:
-        bot.ui_settings = BotUI(bot_id=bot.id)
-
-    bot.ui_settings.theme_color = request.form.get('theme_color', bot.ui_settings.theme_color)
-    bot.ui_settings.header_color = request.form.get('header_color', bot.ui_settings.header_color)
-    bot.ui_settings.theme_mode = request.form.get('theme_mode', bot.ui_settings.theme_mode)
-    
-    bot.ui_settings.glass_opacity = request.form.get('glass_opacity', bot.ui_settings.glass_opacity, type=int)
-    bot.ui_settings.glass_blur = request.form.get('glass_blur', bot.ui_settings.glass_blur, type=int)
-
-    # --- EXTENDED UI CUSTOMIZATION ---
-    # Text fields: store None when blank so the widget falls back to defaults
-    def _opt(field):
-        val = (request.form.get(field) or '').strip()
-        return val if val else None
-
-    if 'greeting_message' in request.form:
-        bot.ui_settings.greeting_message = _opt('greeting_message')
-    if 'input_placeholder' in request.form:
-        bot.ui_settings.input_placeholder = _opt('input_placeholder')
-    if 'header_title' in request.form:
-        bot.ui_settings.header_title = _opt('header_title')
-    if 'user_bubble_color' in request.form:
-        bot.ui_settings.user_bubble_color = _opt('user_bubble_color')
-    if 'bot_bubble_color' in request.form:
-        bot.ui_settings.bot_bubble_color = _opt('bot_bubble_color')
-    if 'font_family' in request.form:
-        bot.ui_settings.font_family = request.form.get('font_family') or 'Inter'
-    if 'widget_position' in request.form:
-        bot.ui_settings.widget_position = request.form.get('widget_position') or 'bottom-right'
-    if 'bubble_radius' in request.form:
-        bot.ui_settings.bubble_radius = request.form.get('bubble_radius', 16, type=int)
-    if 'font_size' in request.form:
-        bot.ui_settings.font_size = request.form.get('font_size', 14, type=int)
-    # Checkbox: only present in POST when checked
-    if request.form.get('_ui_form') or 'font_family' in request.form:
-        bot.ui_settings.show_branding = bool(request.form.get('show_branding'))
-
-    avatar_file = request.files.get('bot_avatar')
-    if avatar_file and avatar_file.filename != '':
-        img_bytes = avatar_file.read()
-        b64_encoded = base64.b64encode(img_bytes).decode('utf-8')
-        bot.ui_settings.avatar_base64 = f"data:{avatar_file.mimetype};base64,{b64_encoded}"
-
-    db.session.commit()
-    invalidate_bot_cache(bot_id)
-    
-    if session.get('active_bot_id') == bot.id:
-        session['active_bot_name'] = bot.bot_name
-        session['lead_capture_timing'] = bot.lead_capture_timing
-        session['theme_color'] = bot.ui_settings.theme_color
-        session['header_color'] = bot.ui_settings.header_color
-        session['theme_mode'] = bot.ui_settings.theme_mode
-        session['glass_opacity'] = bot.ui_settings.glass_opacity
-        session['glass_blur'] = bot.ui_settings.glass_blur
-        session['custom_form_fields'] = json.dumps(bot.custom_form_fields) if isinstance(bot.custom_form_fields, list) else (bot.custom_form_fields or '[]')
-
-    flash("Bot configurations updated successfully!", "success")
-    return redirect(url_for('admin_bp.edit_bot', bot_id=bot.id))
 
 @admin_bp.route('/add_knowledge/<int:bot_id>', methods=['POST'])
 def add_knowledge(bot_id):
@@ -428,17 +452,22 @@ def delete_doc(doc_id):
 @admin_bp.route('/bot/<int:bot_id>/links', methods=['GET'])
 def get_bot_links(bot_id):
     """Get managed links for a bot."""
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        if 'user_id' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
-    if not bot:
-        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
-    if not bot:
-        return jsonify({"error": "Bot not found"}), 404
+        bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+        if not bot:
+            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+        if not bot:
+            return jsonify({"error": "Bot not found"}), 404
 
-    links = bot.managed_links or []
-    return jsonify({"success": True, "links": links})
+        links = bot.managed_links or []
+        return jsonify({"success": True, "links": links})
+    except Exception as e:
+        logging.error(f"[get_bot_links] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 @admin_bp.route('/api/bot_link_colors/<int:bot_id>', methods=['GET'])
@@ -447,60 +476,70 @@ def get_bot_link_colors(bot_id):
     Public endpoint — returns managed link colors for a bot (used by the chat widget).
     Maps URL → color so renderButtons can apply custom colors without relying on the AI.
     """
-    bot = Bot.query.get(bot_id)
-    if not bot:
-        return jsonify({}), 404
+    try:
+        bot = Bot.query.get(bot_id)
+        if not bot:
+            return jsonify({}), 404
 
-    links = bot.managed_links or []
-    # Build a URL → {color, category} map
-    color_map = {}
-    for link in links:
-        url = link.get('url', '').strip()
-        color = link.get('color', '')
-        category = link.get('category', 'link')
-        if url:
-            color_map[url] = {"color": color, "category": category}
+        links = bot.managed_links or []
+        # Build a URL → {color, category} map
+        color_map = {}
+        for link in links:
+            url = link.get('url', '').strip()
+            color = link.get('color', '')
+            category = link.get('category', 'link')
+            if url:
+                color_map[url] = {"color": color, "category": category}
 
-    return jsonify(color_map)
+        return jsonify(color_map)
+    except Exception as e:
+        logging.error(f"[get_bot_link_colors] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 @admin_bp.route('/bot/<int:bot_id>/links', methods=['POST'])
 def save_bot_links(bot_id):
     """Save managed links for a bot (replaces all)."""
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        if 'user_id' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
 
-    bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
-    if not bot:
-        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
-    if not bot:
-        return jsonify({"error": "Bot not found"}), 404
+        bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
+        if not bot:
+            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+        if not bot:
+            return jsonify({"error": "Bot not found"}), 404
 
-    data = request.get_json(silent=True) or {}
-    links = data.get('links', [])
+        data = request.get_json(silent=True) or {}
+        links = data.get('links', [])
 
-    valid_categories = ['pricing', 'action', 'info', 'support', 'link', 'email', 'phone']
-    import re as _re
-    cleaned = []
-    for link in links:
-        label = (link.get('label') or '').strip()
-        url = (link.get('url') or '').strip()
-        category = (link.get('category') or 'link').strip().lower()
-        color = (link.get('color') or '').strip()
-        if label and url:
-            if category not in valid_categories:
-                category = 'link'
-            entry = {"label": label, "url": url, "category": category}
-            # Store a custom button colour only if it's a valid hex value
-            if _re.match(r'^#[0-9a-fA-F]{3,8}$', color):
-                entry["color"] = color
-            cleaned.append(entry)
+        valid_categories = ['pricing', 'action', 'info', 'support', 'link', 'email', 'phone']
+        import re as _re
+        cleaned = []
+        for link in links:
+            label = (link.get('label') or '').strip()
+            url = (link.get('url') or '').strip()
+            category = (link.get('category') or 'link').strip().lower()
+            color = (link.get('color') or '').strip()
+            if label and url:
+                if category not in valid_categories:
+                    category = 'link'
+                entry = {"label": label, "url": url, "category": category}
+                # Store a custom button colour only if it's a valid hex value
+                if _re.match(r'^#[0-9a-fA-F]{3,8}$', color):
+                    entry["color"] = color
+                cleaned.append(entry)
 
-    bot.managed_links = cleaned
-    db.session.commit()
-    invalidate_bot_cache(bot_id)
+        bot.managed_links = cleaned
+        db.session.commit()
+        invalidate_bot_cache(bot_id)
 
-    return jsonify({"success": True, "count": len(cleaned)})
+        return jsonify({"success": True, "count": len(cleaned)})
+    except Exception as e:
+        logging.error(f"[save_bot_links] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 
@@ -511,3 +550,4 @@ def save_bot_links(bot_id):
 # duplicate of views_bp.conversations_list / conversation_detail — same
 # aggregation query, same transcript read, fewer features. The "Chat History"
 # tab on the Edit Bot page now links to those views with ref=edit.
+

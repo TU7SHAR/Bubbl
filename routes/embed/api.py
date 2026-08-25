@@ -532,27 +532,32 @@ def capture_lead():
 @api_bp.route('/api/rate_message', methods=['POST'])
 def rate_message():
     """Rate a bot response (thumbs up/down). Called from the chat widget."""
-    data = request.json or {}
-    session_id = data.get('session_id')
-    message_index = data.get('message_index')  # which bot message (0-indexed) in the session
-    rating = data.get('rating')  # 1 or -1
+    try:
+        data = request.json or {}
+        session_id = data.get('session_id')
+        message_index = data.get('message_index')  # which bot message (0-indexed) in the session
+        rating = data.get('rating')  # 1 or -1
 
-    if not session_id or message_index is None or rating not in (1, -1):
-        return jsonify({"error": "Invalid request."}), 400
+        if not session_id or message_index is None or rating not in (1, -1):
+            return jsonify({"error": "Invalid request."}), 400
 
-    # Find the Nth bot message in this session
-    bot_messages = ChatMessage.query.filter_by(
-        session_id=session_id, role='bot'
-    ).order_by(ChatMessage.created_at.asc()).all()
+        # Find the Nth bot message in this session
+        bot_messages = ChatMessage.query.filter_by(
+            session_id=session_id, role='bot'
+        ).order_by(ChatMessage.created_at.asc()).all()
 
-    if message_index >= len(bot_messages) or message_index < 0:
-        return jsonify({"error": "Message not found."}), 404
+        if message_index >= len(bot_messages) or message_index < 0:
+            return jsonify({"error": "Message not found."}), 404
 
-    msg = bot_messages[message_index]
-    msg.rating = rating
-    db.session.commit()
+        msg = bot_messages[message_index]
+        msg.rating = rating
+        db.session.commit()
 
-    return jsonify({"success": True, "message_id": msg.id, "rating": rating})
+        return jsonify({"success": True, "message_id": msg.id, "rating": rating})
+    except Exception as e:
+        logging.error(f"[rate_message] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 
@@ -620,3 +625,4 @@ def share_conversation():
         "share_url": f"{host_url}/shared/{share_token}",
         "share_token": share_token
     })
+

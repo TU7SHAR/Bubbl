@@ -18,6 +18,7 @@ SECONDS_PER_PAGE = 4
 # entry point can share one canonicalizer. Keeping it private to this module
 # was why most scrape paths had no dedup at all.
 from utils.url_tools import normalize_url, dedupe_urls
+import logging
 
 
 @admin_bp.route('/api/scrape/discover', methods=['POST'])
@@ -283,22 +284,27 @@ def start_scrape():
 @admin_bp.route('/api/scrape/status/<int:job_id>', methods=['GET'])
 @limiter.exempt
 def check_scrape_status(job_id):
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+    try:
+        if 'user_id' not in session:
+            return jsonify({"error": "Unauthorized"}), 401
     
-    job = ScrapeJob.query.get_or_404(job_id)
+        job = ScrapeJob.query.get_or_404(job_id)
     
-    # Verify the job belongs to the user's organization (or is the platform bot)
-    bot = Bot.query.get(job.bot_id)
-    if not bot or (bot.org_id != session.get('org_id') and bot.bot_type != 'platform'):
-        return jsonify({"error": "Not found"}), 404
+        # Verify the job belongs to the user's organization (or is the platform bot)
+        bot = Bot.query.get(job.bot_id)
+        if not bot or (bot.org_id != session.get('org_id') and bot.bot_type != 'platform'):
+            return jsonify({"error": "Not found"}), 404
     
-    return jsonify({
-        "job_id": job.id,
-        "status": job.status,
-        "error": job.error_message,
-        "logs": job.logs or ""
-    })
+        return jsonify({
+            "job_id": job.id,
+            "status": job.status,
+            "error": job.error_message,
+            "logs": job.logs or ""
+        })
+    except Exception as e:
+        logging.error(f"[check_scrape_status] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 @admin_bp.route('/api/scrape/discover/async', methods=['POST'])
