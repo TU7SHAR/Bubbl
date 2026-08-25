@@ -199,6 +199,71 @@ def _run_auto_migrations():
 
         # user: super_admin dashboard sorts by created_at.
         'CREATE INDEX IF NOT EXISTS idx_user_created_at ON "user"(created_at)',
+
+        # --- TIMESTAMPTZ PROMOTION ---
+        # Lossless: PostgreSQL interprets existing values as UTC (server tz)
+        # and stores them unchanged with an explicit +00 marker. No rewrite.
+        'ALTER TABLE organization ALTER COLUMN messages_reset_at TYPE TIMESTAMPTZ USING messages_reset_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE organization ALTER COLUMN subscription_started_at TYPE TIMESTAMPTZ USING subscription_started_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE organization ALTER COLUMN subscription_ends_at TYPE TIMESTAMPTZ USING subscription_ends_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE organization ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE "user" ALTER COLUMN otp_created_at TYPE TIMESTAMPTZ USING otp_created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE "user" ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE bot ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE payment ALTER COLUMN refunded_at TYPE TIMESTAMPTZ USING refunded_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE payment ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE document ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE scrape_job ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE scrape_job ALTER COLUMN completed_at TYPE TIMESTAMPTZ USING completed_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE lead ALTER COLUMN captured_at TYPE TIMESTAMPTZ USING captured_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE feedback ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE chat_message ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE shared_conversation ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE \'UTC\'',
+        'ALTER TABLE shared_conversation ALTER COLUMN expires_at TYPE TIMESTAMPTZ USING expires_at AT TIME ZONE \'UTC\'',
+
+        # --- CHECK CONSTRAINTS (enum enforcement) ---
+        # Each uses DO $$ ... EXCEPTION so re-running on a DB that already
+        # has the constraint does not error.
+        """DO $$ BEGIN
+            ALTER TABLE organization ADD CONSTRAINT ck_org_plan
+                CHECK (plan IN ('free', 'starter', 'growth', 'pro'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE organization ADD CONSTRAINT ck_org_sub_status
+                CHECK (subscription_status IN ('free', 'active', 'canceled'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE "user" ADD CONSTRAINT ck_user_role
+                CHECK (role IN ('member', 'admin', 'super_admin'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE "user" ADD CONSTRAINT ck_user_auth_provider
+                CHECK (auth_provider IN ('email', 'google'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE bot ADD CONSTRAINT ck_bot_visibility
+                CHECK (visibility IN ('public', 'private'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE bot ADD CONSTRAINT ck_bot_type
+                CHECK (bot_type IN ('general', 'platform'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE bot ADD CONSTRAINT ck_bot_lead_timing
+                CHECK (lead_capture_timing IN ('disabled', 'gatekeeper', 'conv_start', 'conv_middle', 'conv_end'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE payment ADD CONSTRAINT ck_payment_status
+                CHECK (status IN ('completed', 'refunded', 'partially_refunded'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE scrape_job ADD CONSTRAINT ck_scrape_status
+                CHECK (status IN ('pending', 'running', 'completed', 'failed'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
+        """DO $$ BEGIN
+            ALTER TABLE chat_message ADD CONSTRAINT ck_chatmsg_role
+                CHECK (role IN ('user', 'bot'));
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$""",
     ]
     for s in sqls:
         try:

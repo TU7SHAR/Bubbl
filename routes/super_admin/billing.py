@@ -6,6 +6,7 @@ from models.models import db, Payment, Organization
 from . import super_admin_bp
 from .decorators import super_admin_required
 import logging
+from utils.enums import PaymentStatus
 
 
 @super_admin_bp.route('/billing')
@@ -24,7 +25,7 @@ def billing_page():
         mrr = sum(plan_counts.get(p, 0) * price for p, price in plan_price.items())
         arr = mrr * 12
 
-        all_payments = Payment.query.filter_by(status='completed').order_by(Payment.created_at.desc()).all()
+        all_payments = Payment.query.filter_by(status=PaymentStatus.COMPLETED).order_by(Payment.created_at.desc()).all()
         total_revenue = sum(p.amount or 0 for p in all_payments)
         total_tax = sum(getattr(p, 'tax_amount', 0) or 0 for p in all_payments)
         total_revenue_after_tax = total_revenue - total_tax

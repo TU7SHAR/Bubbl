@@ -16,6 +16,7 @@
 from datetime import datetime, timezone, timedelta
 from celery.utils.log import get_task_logger
 from celery_app import celery
+from utils.enums import PaymentStatus, Plan
 
 logger = get_task_logger(__name__)
 
@@ -91,7 +92,7 @@ def check_subscription_expiry_reminders(self):
             # Check if they have a real Paddle payment history (meaning they WERE a paying customer)
             last_paid_plan = None
             last_payment = Payment.query.filter_by(
-                org_id=org.id, status='completed'
+                org_id=org.id, status=PaymentStatus.COMPLETED
             ).order_by(Payment.created_at.desc()).first()
 
             if last_payment and last_payment.plan and last_payment.plan != org.plan:

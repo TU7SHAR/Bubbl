@@ -14,6 +14,7 @@ import logging
 from flask import redirect, url_for, session, flash
 from authlib.integrations.flask_client import OAuth
 from models.models import db, User, Organization
+from utils.enums import AuthProvider
 
 # OAuth instance (registered in register_google_oauth)
 oauth = OAuth()
@@ -87,7 +88,7 @@ def google_callback():
 
         # Update auth_provider if they previously used email-only
         if user.auth_provider == 'email':
-            user.auth_provider = 'google'
+            user.auth_provider = AuthProvider.GOOGLE
             db.session.commit()
 
         # Mark as verified (Google already verified the email)
@@ -113,7 +114,7 @@ def google_callback():
                 password_hash=None,  # No password for Google users
                 role='admin',        # First user of org is admin
                 is_verified=True,    # Google already verified email
-                auth_provider='google',
+                auth_provider=AuthProvider.GOOGLE,
             )
             db.session.add(new_user)
             db.session.commit()

@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from models.models import db, Organization, Bot, Document, ScrapeJob
+from utils.enums import PaymentStatus, Plan, SubscriptionStatus
 
 # =========================================
 # PLAN LIMITS — BUBBL.OOO
@@ -119,15 +120,15 @@ def enforce_subscription_expiry(org):
 
     if org.subscription_status == 'canceled':
         # Case 1: User canceled — always downgrade after expiry
-        org.plan = 'free'
-        org.subscription_status = 'free'
+        org.plan = Plan.FREE
+        org.subscription_status = SubscriptionStatus.FREE
         org.paddle_subscription_id = None
         db.session.commit()
     elif org.subscription_status == 'active' and not has_paddle_sub:
         # Case 2: Gifted/admin-granted plan (no Paddle sub backing it)
         # These have a fixed 30-day window set by super admin upgrade
-        org.plan = 'free'
-        org.subscription_status = 'free'
+        org.plan = Plan.FREE
+        org.subscription_status = SubscriptionStatus.FREE
         db.session.commit()
 
 
@@ -406,7 +407,7 @@ def get_usage_summary(org_id):
 
     # Fetch latest payment method for display
     from models.models import Payment as PaymentModel
-    latest_pm = PaymentModel.query.filter_by(org_id=org_id, status='completed')\
+    latest_pm = PaymentModel.query.filter_by(org_id=org_id, status=PaymentStatus.COMPLETED)\
         .order_by(PaymentModel.created_at.desc()).first()
     if latest_pm:
         result['payment_method'] = latest_pm.payment_method

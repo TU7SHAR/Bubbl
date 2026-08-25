@@ -12,6 +12,7 @@ from utils.plan_limits import PLAN_LIMITS
 from . import super_admin_bp
 from .decorators import super_admin_required
 import logging
+from utils.enums import BotType, SubscriptionStatus, Visibility
 
 
 @super_admin_bp.route('/users')
@@ -79,11 +80,11 @@ def upgrade_user():
     now = datetime.now(timezone.utc)
     org.plan = new_plan
     if new_plan == 'free':
-        org.subscription_status = 'free'
+        org.subscription_status = SubscriptionStatus.FREE
         org.subscription_started_at = None
         org.subscription_ends_at = None
     else:
-        org.subscription_status = 'active'
+        org.subscription_status = SubscriptionStatus.ACTIVE
         org.subscription_started_at = now
         org.subscription_ends_at = now + timedelta(days=30)
     org.messages_used = 0
@@ -455,8 +456,8 @@ def create_bot_for_user(user_id):
         created_by=user.id,
         bot_name=bot_name,
         store_id=store_id,
-        visibility='private',
-        bot_type='general',
+        visibility=Visibility.PRIVATE,
+        bot_type=BotType.GENERAL,
     )
     db.session.add(new_bot)
     db.session.flush()  # get the bot.id before committing

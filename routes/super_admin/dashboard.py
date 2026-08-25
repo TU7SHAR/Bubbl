@@ -6,6 +6,7 @@ from sqlalchemy import func
 from . import super_admin_bp
 from .decorators import super_admin_required
 import logging
+from utils.enums import PaymentStatus, ScrapeStatus
 
 try:
     import psutil
@@ -240,14 +241,14 @@ def dashboard():
     # ═══════════════════════════════════════════
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
     recent_leads = Lead.query.order_by(Lead.captured_at.desc()).limit(5).all()
-    recent_payments = Payment.query.filter_by(status='completed').order_by(Payment.created_at.desc()).limit(5).all()
+    recent_payments = Payment.query.filter_by(status=PaymentStatus.COMPLETED).order_by(Payment.created_at.desc()).limit(5).all()
 
     # ═══════════════════════════════════════════
     # SCRAPE HEALTH
     # ═══════════════════════════════════════════
-    scrapes_pending = ScrapeJob.query.filter_by(status='pending').count()
-    scrapes_failed = ScrapeJob.query.filter_by(status='failed').count()
-    scrapes_completed = ScrapeJob.query.filter_by(status='completed').count()
+    scrapes_pending = ScrapeJob.query.filter_by(status=ScrapeStatus.PENDING).count()
+    scrapes_failed = ScrapeJob.query.filter_by(status=ScrapeStatus.FAILED).count()
+    scrapes_completed = ScrapeJob.query.filter_by(status=ScrapeStatus.COMPLETED).count()
 
     return render_template('super_admin/overview.html',
         # Core

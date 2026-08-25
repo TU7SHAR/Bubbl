@@ -19,6 +19,7 @@ SECONDS_PER_PAGE = 4
 # was why most scrape paths had no dedup at all.
 from utils.url_tools import normalize_url, dedupe_urls
 import logging
+from utils.enums import ScrapeStatus
 
 
 @admin_bp.route('/api/scrape/discover', methods=['POST'])
@@ -255,7 +256,7 @@ def start_scrape():
         if selected_urls:
             selected_urls, _ = dedupe_urls(selected_urls)
 
-    new_job = ScrapeJob(bot_id=bot_id, url=url, status='pending', limit=max_urls)
+    new_job = ScrapeJob(bot_id=bot_id, url=url, status=ScrapeStatus.PENDING, limit=max_urls)
     db.session.add(new_job)
     db.session.commit()
 
