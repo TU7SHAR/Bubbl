@@ -1237,14 +1237,7 @@ function downloadChat() {
     return;
   }
 
-  // The printable transcript is SERVER-RENDERED from the same template as the
-  // public share page, so there is nothing to build here. This replaced:
-  //   - POST /api/conversation_history  (duplicate of the share query)
-  //   - buildChatExportHTML()           (~95 lines rebuilding the layout)
-  //   - _renderMarkdownForExport()      (~110 lines, a drifted copy of the
-  //                                      share page's inline renderer)
-  //   - _getVisibleChatHistory() / _downloadFromDom()  (DOM-scraping fallback
-  //                                      that silently lost pre-edit messages)
+  // Server-rendered transcript page — just open it and let it call window.print().
   var url = '/transcript/' + encodeURIComponent(sessionId) + '/print'
           + '?bot_id=' + encodeURIComponent(botId)
           + '&bot_name=' + encodeURIComponent(botName);

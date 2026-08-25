@@ -1,8 +1,6 @@
-import os
 import uuid
 import json
-import re
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
 from flask import request, jsonify, session
 
 from models.models import db, Bot, ScrapeJob, Organization, Document

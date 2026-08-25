@@ -11,7 +11,7 @@ Flow:
 
 import os
 import logging
-from flask import redirect, url_for, session, flash, request, current_app
+from flask import redirect, url_for, session, flash
 from authlib.integrations.flask_client import OAuth
 from models.models import db, User, Organization
 

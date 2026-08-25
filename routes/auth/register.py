@@ -1,5 +1,5 @@
 import bcrypt
-from flask import config, render_template, request, redirect, url_for, session, flash, current_app
+from flask import render_template, request, redirect, url_for, session, flash, current_app
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms.validators import DataRequired, Email, Length, ValidationError

@@ -4,18 +4,15 @@ import logging
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import request, jsonify
-from flask import Blueprint, app, render_template, request, session, redirect, url_for, flash, make_response, jsonify
-from models.models import db, Bot, User, Document, Lead, ScrapeJob, BotUI, Feedback, Organization, Payment
-from utils.mail_helper import is_valid_email, send_contact_email, send_auto_reply
+from flask import Blueprint, render_template, request, session, redirect, url_for, flash, make_response, jsonify
+from models.models import db, Bot, User, Document, Lead, Feedback, Organization
 from utils.transcript import bot_message_filter
 from extensions import cache
 import csv
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import io
 from sqlalchemy import func
-import psutil
-from flask import send_from_directory, current_app
+from flask import send_from_directory
 views_bp = Blueprint('views_bp', __name__)
 
 # =========================================
@@ -242,7 +239,7 @@ Source Page: {source_url}
         return jsonify({"success": True})
 
     except Exception as e:
-        print(f"SMTP Error: {e}")
+        logging.error(f"SMTP Error: {e}")
         return jsonify({"success": False, "error": "Failed to send email."}), 500
     
 @views_bp.route('/')

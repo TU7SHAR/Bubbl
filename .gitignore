@@ -1,3 +1,25 @@
+# Environment
 .env
 .venv
 spare.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (user data, not code)
+uploads/
+scraped_docs/
+
+# IDE
+.idea/
+*.swp
+*.swo

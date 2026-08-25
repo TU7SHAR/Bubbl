@@ -20,7 +20,6 @@ class Config:
     SCRAPE_FOLDER = os.path.join(basedir, 'scraped_docs') 
   
   
-    # HOST_URL = os.getenv('HOST_URL', 'http://168.144.123.62:8080/')
     HOST_URL = os.getenv('HOST_URL')
   
     COMPANY_NAME_FIRST = os.getenv('COMPANY_NAME_FRONT')
