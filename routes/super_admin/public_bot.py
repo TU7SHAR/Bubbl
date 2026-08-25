@@ -2,7 +2,7 @@
 import uuid
 from flask import render_template, request, jsonify
 from models.models import db, Bot, Document, ScrapeJob, ChatMessage
-from bot.cloud import create_dynamic_store, upload_to_gemini, delete_from_gemini
+from bot.cloud import create_dynamic_store, delete_from_gemini
 from tasks.scrape_tasks import async_scrape_task
 from utils.scraper import is_safe_url
 from . import super_admin_bp

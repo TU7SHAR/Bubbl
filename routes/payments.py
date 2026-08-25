@@ -4,6 +4,7 @@ from utils.mail_helper import send_payment_receipt, send_sale_notification
 import hmac
 import hashlib
 import os
+import logging
 import requests as http_requests
 from datetime import datetime, timezone, timedelta
 
@@ -68,7 +69,7 @@ def verify_paddle_signature(raw_body, paddle_signature_header, secret):
         computed = hmac.HMAC(secret.encode('utf-8'), signed_payload.encode('utf-8'), hashlib.sha256).hexdigest()
         return hmac.compare_digest(computed, h1)
     except Exception as e:
-        print(f"[paddle_webhook] signature verification error: {e}")
+        logging.error(f"[paddle_webhook] signature verification error: {e}")
         return False
 
 
@@ -120,7 +121,7 @@ def _extract_payment_method(payload):
             pmd = payload.get('payment_method_details') or {}
             method_type = pmd.get('type')
     except Exception as e:
-        print(f"[paddle_webhook] payment method extract error: {e}")
+        logging.warning(f"[paddle_webhook] payment method extract error: {e}")
     return method_type, card_brand, card_last4
 
 
@@ -136,14 +137,14 @@ def paddle_webhook():
     # --- SECURITY: Reject invalid signatures in production ---
     if PADDLE_WEBHOOK_SECRET:
         if not verify_paddle_signature(raw_body, signature, PADDLE_WEBHOOK_SECRET):
-            print(f"[paddle_webhook] SIGNATURE FAILED. Header: {signature[:80]}")
+            logging.error(f"[paddle_webhook] SIGNATURE FAILED. Header: {signature[:80]}")
             return jsonify({"error": "Invalid signature"}), 403
 
     data = request.json or {}
     event_type = data.get('event_type', '')
     payload = data.get('data', {})
     price_plan_map = get_price_plan_map()
-    print(f"[paddle_webhook] event_type={event_type}, payload_id={payload.get('id','?')}")
+    logging.info(f"[paddle_webhook] event_type={event_type}, payload_id={payload.get('id','?')}")
 
     if event_type in ('subscription.created', 'subscription.updated', 'subscription.activated'):
         status = payload.get('status', '')
@@ -167,7 +168,7 @@ def paddle_webhook():
             if ends:
                 org.subscription_ends_at = ends
             db.session.commit()
-            print(f"[paddle_webhook] org {org.id} upgraded to plan={plan}")
+            logging.info(f"[paddle_webhook] org {org.id} upgraded to plan={plan}")
 
     elif event_type in ('subscription.canceled', 'subscription.paused'):
         org = _resolve_org(payload)
@@ -177,7 +178,7 @@ def paddle_webhook():
             org.paddle_subscription_id = None
             org.subscription_ends_at = datetime.now(timezone.utc)
             db.session.commit()
-            print(f"[paddle_webhook] org {org.id} downgraded to free")
+            logging.info(f"[paddle_webhook] org {org.id} downgraded to free")
 
     elif event_type == 'subscription.resumed':
         # Reactivation — restore the plan from the subscription items
@@ -197,7 +198,7 @@ def paddle_webhook():
             if ends:
                 org.subscription_ends_at = ends
             db.session.commit()
-            print(f"[paddle_webhook] org {org.id} reactivated to plan={plan}")
+            logging.info(f"[paddle_webhook] org {org.id} reactivated to plan={plan}")
 
     elif event_type == 'transaction.completed':
         transaction_id = payload.get('id', '')
@@ -264,7 +265,7 @@ def paddle_webhook():
                 send_payment_receipt(customer_email, plan, amount, currency, transaction_id)
             send_sale_notification(plan, amount, currency, org_name=org.name if org else None, customer_email=customer_email, transaction_id=transaction_id)
         except Exception as e:
-            print(f"[paddle_webhook] email send failed: {e}")
+            logging.error(f"[paddle_webhook] email send failed: {e}")
 
     elif event_type in ('adjustment.created', 'adjustment.updated'):
         # A refund (or credit) was issued via Paddle — mark the payment refunded.
@@ -283,7 +284,7 @@ def paddle_webhook():
                 pm.refunded_at = datetime.now(timezone.utc)
                 pm.status = 'refunded' if refunded >= (pm.amount or 0) else 'partially_refunded'
                 db.session.commit()
-                print(f"[paddle_webhook] payment {pm.id} marked refunded ({refunded})")
+                logging.info(f"[paddle_webhook] payment {pm.id} marked refunded ({refunded})")
 
     return jsonify({"received": True}), 200
 
@@ -427,7 +428,7 @@ def upgrade_callback():
                             plan = detected_plan
                             limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
         except Exception as e:
-            print(f"[upgrade_callback] Paddle API fetch failed (non-critical): {e}")
+            logging.warning(f"[upgrade_callback] Paddle API fetch failed: {e}")
 
     return render_template('payment_success.html',
         plan_name=plan.capitalize(),
@@ -453,7 +454,6 @@ def manage_plan():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     from utils.plan_limits import PLAN_LIMITS, get_usage_summary
-    from models.models import Bot
 
     org = Organization.query.get(session.get('org_id'))
     plan = (org.plan if org else 'free') or 'free'
@@ -635,11 +635,11 @@ def cancel_plan():
                 }
                 resp = http_requests.post(url, headers=_paddle_headers(), json=body)
                 if resp.status_code in (200, 201):
-                    print(f"[cancel_plan] Paddle refund created for {payment.paddle_transaction_id}")
+                    logging.info(f"[cancel_plan] Paddle refund created for {payment.paddle_transaction_id}")
                 else:
-                    print(f"[cancel_plan] Paddle refund error: {resp.status_code} {resp.text[:200]}")
+                    logging.error(f"[cancel_plan] Paddle refund error: {resp.status_code} {resp.text[:200]}")
             except Exception as e:
-                print(f"[cancel_plan] Paddle refund exception: {e}")
+                logging.error(f"[cancel_plan] Paddle refund exception: {e}")
 
         # Record the refund locally (source of truth for our reporting)
         if calc['eligible']:
@@ -673,7 +673,7 @@ def cancel_plan():
             effective = "immediately" if (calc and calc['eligible']) else "next_billing_period"
             http_requests.post(url, headers=_paddle_headers(), json={"effective_from": effective})
         except Exception as e:
-            print(f"[cancel_plan] Paddle sub cancel exception: {e}")
+            logging.error(f"[cancel_plan] Paddle sub cancel exception: {e}")
 
     # Mark canceled + set the access end date
     org.subscription_status = 'canceled'
@@ -742,10 +742,10 @@ def customer_portal():
                 return jsonify({"error": "Portal URL not returned by Paddle. Try again later."}), 400
         else:
             error_msg = resp.json().get('error', {}).get('detail', resp.text[:200])
-            print(f"[customer_portal] Paddle API error: {resp.status_code} {error_msg}")
+            logging.error(f"[customer_portal] Paddle API error: {resp.status_code} {error_msg}")
             return jsonify({"error": "Payment method is managed by Paddle. This feature requires production Paddle keys. In sandbox mode, use Paddle's test dashboard to manage payment methods."}), 400
     except Exception as e:
-        print(f"[customer_portal] exception: {e}")
+        logging.error(f"[customer_portal] exception: {e}")
         return jsonify({"error": "Could not connect to Paddle. Please try again later."}), 400
 
 
@@ -885,10 +885,10 @@ def upgrade_plan():
                 }), 200
             else:
                 error_detail = resp.json().get('error', {}).get('detail', resp.text[:300])
-                print(f"[upgrade_plan] Paddle API error: {resp.status_code} {error_detail}")
+                logging.error(f"[upgrade_plan] Paddle API error: {resp.status_code} {error_detail}")
                 return jsonify({"error": f"Paddle error: {error_detail}"}), 500
         except Exception as e:
-            print(f"[upgrade_plan] exception: {e}")
+            logging.error(f"[upgrade_plan] exception: {e}")
             return jsonify({"error": "Failed to reach Paddle. Please try again."}), 500
     else:
         # No existing subscription — frontend should initiate a new checkout
@@ -958,7 +958,7 @@ def reactivate_plan():
                     # Fully expired on Paddle side — just reactivate locally, user needs new checkout for next cycle
                     pass
         except Exception as e:
-            print(f"[reactivate_plan] Paddle API error (falling back to local): {e}")
+            logging.warning(f"[reactivate_plan] Paddle API error (falling back to local): {e}")
 
     # Local reactivation: restore the plan regardless of Paddle API result
     # (The user already paid for this period — let them use it)
@@ -1023,7 +1023,7 @@ def subscription_status():
                 result['next_billing'] = sub_data.get('next_billed_at', None)
                 result['scheduled_change'] = sub_data.get('scheduled_change', None)
         except Exception as e:
-            print(f"[subscription_status] Paddle API error: {e}")
+            logging.warning(f"[subscription_status] Paddle API error: {e}")
 
     return jsonify(result), 200
 

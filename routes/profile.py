@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, request
 from models.models import User, Bot, Organization, db
-from utils.plan_limits import PLAN_LIMITS, check_message_limit, get_usage_summary
+from utils.plan_limits import PLAN_LIMITS, get_usage_summary
 
 profile_bp = Blueprint('profile_bp', __name__)
 

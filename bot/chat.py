@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -222,5 +223,5 @@ def get_response_from_gemini(user_query, target_store_id=None, custom_prompt=Non
         return response.text
 
     except Exception as e:
-        print(f"Gemini API Error: {e}") 
+        logging.error(f"Gemini API Error: {e}") 
         return f"SYSTEM ALERT: The AI server is currently overloaded or unavailable. ({str(e)}). Please try again in 60 seconds."

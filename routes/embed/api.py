@@ -620,13 +620,3 @@ def share_conversation():
         "share_url": f"{host_url}/shared/{share_token}",
         "share_token": share_token
     })
-
-
-
-# POST /api/conversation_history was removed.
-#
-# It was a verbatim copy of the query block above, and existed only to feed
-# buildChatExportHTML() in chat.js, which rebuilt the transcript layout as a
-# JS string. The printable page is now server-rendered from the same template
-# as the share page (GET /transcript/<session_id>/print), so the widget just
-# opens a URL and calls window.print(). See utils/transcript.py.

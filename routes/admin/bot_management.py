@@ -1,6 +1,7 @@
 import os
 import uuid
 import json
+import logging
 import base64
 from flask import request, redirect, url_for, flash, session, render_template, jsonify, current_app
 from werkzeug.utils import secure_filename 
@@ -408,7 +409,7 @@ def delete_doc(doc_id):
         try:
             delete_from_gemini(doc.filename, store_id=bot.store_id)
         except Exception as e:
-            print(f"Gemini Delete Error: {e}")
+            logging.error(f"Gemini Delete Error: {e}")
             
         db.session.delete(doc)
         db.session.commit()

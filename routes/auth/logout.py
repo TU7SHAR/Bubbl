@@ -1,4 +1,4 @@
-from flask import redirect, url_for, session, flash, make_response
+from flask import redirect, url_for, session
 from . import auth_bp  
 
 @auth_bp.route('/logout')

@@ -14,7 +14,6 @@ from models.models import db
 from config import Config
 from routes.admin import admin_bp
 from routes.auth import auth_bp
-# from routes.chat_routes import chat_bp
 from routes.profile import profile_bp
 from routes.embed.views import views_bp
 from routes.embed.api import api_bp
@@ -74,8 +73,6 @@ CORS(app, resources={
     r"/api/lead": {"origins": "*"},          # Lead capture from any domain
     r"/api/rate_message": {"origins": "*"},  # Bot response rating from embed
     r"/api/share_conversation": {"origins": "*"},  # Share chat from embed widget
-    # /api/conversation_history removed — the printable transcript is now a
-    # server-rendered page (GET /transcript/<session_id>/print), not an API call.
     r"/api/platform-feedback": {"origins": "*"},  # Public feedback
     r"/api/bot_avatar/*": {"origins": "*"},  # Avatar fetch from embed
     r"/api/waitlist": {"origins": "*"},      # Marketing site waitlist
@@ -108,7 +105,6 @@ app.jinja_env.globals['reserved_lead_field_names'] = sorted(RESERVED_FIELD_NAMES
 
 app.register_blueprint(admin_bp)
 app.register_blueprint(auth_bp)
-# app.register_blueprint(chat_bp)
 app.register_blueprint(profile_bp)
 
 # --- GOOGLE OAUTH: Initialize after app + blueprints are ready ---
