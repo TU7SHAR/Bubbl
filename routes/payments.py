@@ -295,22 +295,27 @@ def paddle_webhook():
 
 @payments_bp.route('/checkout-session', methods=['POST'])
 def create_checkout_session():
-    if 'user_id' not in session:
-        return jsonify({"error": "Not logged in"}), 401
-    org_id = session.get('org_id')
-    org = Organization.query.get(org_id)
-    if not org:
-        return jsonify({"error": "Organization not found"}), 404
-    if not org.paddle_customer_id:
-        org.paddle_customer_id = f"org_{org.id}"
-        db.session.commit()
-    user = User.query.get(session['user_id'])
-    user_email = user.email if user else ''
-    # Store the plan being purchased in session for the success page
-    plan_being_bought = request.json.get('plan', '') if request.json else ''
-    if plan_being_bought:
-        session['checkout_plan'] = plan_being_bought
-    return jsonify({"customer_id": org.paddle_customer_id, "org_id": org.id, "current_plan": org.plan, "email": user_email}), 200
+    try:
+        if 'user_id' not in session:
+            return jsonify({"error": "Not logged in"}), 401
+        org_id = session.get('org_id')
+        org = Organization.query.get(org_id)
+        if not org:
+            return jsonify({"error": "Organization not found"}), 404
+        if not org.paddle_customer_id:
+            org.paddle_customer_id = f"org_{org.id}"
+            db.session.commit()
+        user = User.query.get(session['user_id'])
+        user_email = user.email if user else ''
+        # Store the plan being purchased in session for the success page
+        plan_being_bought = request.json.get('plan', '') if request.json else ''
+        if plan_being_bought:
+            session['checkout_plan'] = plan_being_bought
+        return jsonify({"customer_id": org.paddle_customer_id, "org_id": org.id, "current_plan": org.plan, "email": user_email}), 200
+    except Exception as e:
+        logging.error(f"[create_checkout_session] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 @payments_bp.route('/upgrade-callback')
@@ -451,70 +456,76 @@ def upgrade_callback():
 @payments_bp.route('/manage')
 def manage_plan():
     """Comprehensive subscription management page."""
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    from utils.plan_limits import PLAN_LIMITS, get_usage_summary
+    try:
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login'))
+        from utils.plan_limits import PLAN_LIMITS, get_usage_summary
 
-    org = Organization.query.get(session.get('org_id'))
-    plan = (org.plan if org else 'free') or 'free'
-    limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
+        org = Organization.query.get(session.get('org_id'))
+        plan = (org.plan if org else 'free') or 'free'
+        limits = PLAN_LIMITS.get(plan, PLAN_LIMITS['free'])
     
-    # Usage metrics
-    usage = get_usage_summary(session.get('org_id'))
+        # Usage metrics
+        usage = get_usage_summary(session.get('org_id'))
     
-    messages_used = usage['messages_used'] if usage else 0
-    messages_limit = usage['messages_limit'] if usage else 200
-    bots_used = usage['bots_used'] if usage else 0
-    bots_limit = usage['bots_limit'] if usage else 1
-    members_used = usage['members_used'] if usage else 1
-    members_limit = usage['members_limit'] if usage else 1
-    usage_percent = usage['messages_percent'] if usage else 0
-    reset_date = usage['reset_date'] if usage else 'Next billing cycle'
+        messages_used = usage['messages_used'] if usage else 0
+        messages_limit = usage['messages_limit'] if usage else 200
+        bots_used = usage['bots_used'] if usage else 0
+        bots_limit = usage['bots_limit'] if usage else 1
+        members_used = usage['members_used'] if usage else 1
+        members_limit = usage['members_limit'] if usage else 1
+        usage_percent = usage['messages_percent'] if usage else 0
+        reset_date = usage['reset_date'] if usage else 'Next billing cycle'
     
-    # Payment history
-    payments = Payment.query.filter_by(org_id=org.id if org else 0).order_by(Payment.created_at.desc()).all()
-    total_spent = sum((p.amount or 0) - (p.refund_amount or 0) for p in payments if p.status in ('completed', 'partially_refunded'))
+        # Payment history
+        payments = Payment.query.filter_by(org_id=org.id if org else 0).order_by(Payment.created_at.desc()).all()
+        total_spent = sum((p.amount or 0) - (p.refund_amount or 0) for p in payments if p.status in ('completed', 'partially_refunded'))
 
-    # Subscription status
-    has_active_subscription = bool(org and org.paddle_subscription_id)
-    is_paddle_customer = bool(org and org.paddle_customer_id and org.paddle_customer_id.startswith('ctm_'))
+        # Subscription status
+        has_active_subscription = bool(org and org.paddle_subscription_id)
+        is_paddle_customer = bool(org and org.paddle_customer_id and org.paddle_customer_id.startswith('ctm_'))
 
-    # Subscription lifecycle for display
-    sub_status = (org.subscription_status if org and org.subscription_status else ('active' if plan != 'free' else 'free'))
-    sub_started = org.subscription_started_at if org else None
-    sub_ends = org.subscription_ends_at if org else None
+        # Subscription lifecycle for display
+        sub_status = (org.subscription_status if org and org.subscription_status else ('active' if plan != 'free' else 'free'))
+        sub_started = org.subscription_started_at if org else None
+        sub_ends = org.subscription_ends_at if org else None
 
-    # Human-friendly payment method label
-    payment_method_label = 'Not on file'
-    if org:
-        # Read from latest completed payment (normalized — not stored on org)
-        latest_pm = Payment.query.filter_by(org_id=org.id, status='completed')\
-            .order_by(Payment.created_at.desc()).first()
-        if latest_pm and latest_pm.payment_method:
-            if latest_pm.card_brand and latest_pm.card_last4:
-                payment_method_label = f"{latest_pm.card_brand.title()} ···· {latest_pm.card_last4}"
-            else:
-                payment_method_label = latest_pm.payment_method.replace('_', ' ').title()
+        # Human-friendly payment method label
+        payment_method_label = 'Not on file'
+        if org:
+            # Read from latest completed payment (normalized — not stored on org)
+            latest_pm = Payment.query.filter_by(org_id=org.id, status='completed')\
+                .order_by(Payment.created_at.desc()).first()
+            if latest_pm and latest_pm.payment_method:
+                if latest_pm.card_brand and latest_pm.card_last4:
+                    payment_method_label = f"{latest_pm.card_brand.title()} ···· {latest_pm.card_last4}"
+                else:
+                    payment_method_label = latest_pm.payment_method.replace('_', ' ').title()
 
-    return render_template('manage_plan.html',
-        plan=plan, plan_name=plan.capitalize(),
-        messages_used=messages_used, messages_limit=messages_limit,
-        bots_used=bots_used, bots_limit=bots_limit,
-        members_used=members_used, members_limit=members_limit,
-        usage_percent=usage_percent, reset_date=reset_date,
-        subscription_id=org.paddle_subscription_id if org else None,
-        customer_id=org.paddle_customer_id if org else None,
-        has_active_subscription=has_active_subscription,
-        is_paddle_customer=is_paddle_customer,
-        total_spent=total_spent, payments=payments,
-        all_plans=PLAN_LIMITS,
-        usage=usage,
-        sub_status=sub_status,
-        sub_started=sub_started,
-        sub_ends=sub_ends,
-        payment_method_label=payment_method_label,
-        card_brand=None,
-        card_last4=None)
+        return render_template('manage_plan.html',
+            plan=plan, plan_name=plan.capitalize(),
+            messages_used=messages_used, messages_limit=messages_limit,
+            bots_used=bots_used, bots_limit=bots_limit,
+            members_used=members_used, members_limit=members_limit,
+            usage_percent=usage_percent, reset_date=reset_date,
+            subscription_id=org.paddle_subscription_id if org else None,
+            customer_id=org.paddle_customer_id if org else None,
+            has_active_subscription=has_active_subscription,
+            is_paddle_customer=is_paddle_customer,
+            total_spent=total_spent, payments=payments,
+            all_plans=PLAN_LIMITS,
+            usage=usage,
+            sub_status=sub_status,
+            sub_started=sub_started,
+            sub_ends=sub_ends,
+            payment_method_label=payment_method_label,
+            card_brand=None,
+            card_last4=None)
+    except Exception as e:
+        logging.error(f"[manage_plan] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
+        return redirect(url_for('views_bp.dashboard'))
 
 
 # ═══════════════════════════════════════════
@@ -537,60 +548,65 @@ def refund_preview():
     Return the proportionate refund calculation for the org's latest payment,
     so the UI can show the exact maths BEFORE the user confirms cancellation.
     """
-    if 'user_id' not in session:
-        return jsonify({"error": "Not logged in"}), 401
+    try:
+        if 'user_id' not in session:
+            return jsonify({"error": "Not logged in"}), 401
 
-    from utils.plan_limits import calculate_proportionate_refund, PLAN_PRICE_INR
+        from utils.plan_limits import calculate_proportionate_refund, PLAN_PRICE_INR
 
-    org = Organization.query.get(session.get('org_id'))
-    if not org:
-        return jsonify({"error": "Organization not found"}), 404
-    if not org.plan or org.plan == 'free':
-        return jsonify({"error": "You are on the free plan — nothing to cancel."}), 400
+        org = Organization.query.get(session.get('org_id'))
+        if not org:
+            return jsonify({"error": "Organization not found"}), 404
+        if not org.plan or org.plan == 'free':
+            return jsonify({"error": "You are on the free plan — nothing to cancel."}), 400
 
-    payment = _latest_completed_payment(org)
-    if not payment:
-        # No recorded payment — cancel with no refund (period-end)
+        payment = _latest_completed_payment(org)
+        if not payment:
+            # No recorded payment — cancel with no refund (period-end)
+            return jsonify({
+                "success": True,
+                "has_payment": False,
+                "message": "No recent payment found. Cancelling will stop future billing; access continues until the period ends.",
+            }), 200
+
+        calc = calculate_proportionate_refund(payment, plan_price=PLAN_PRICE_INR.get(payment.plan, 0))
+
+        # Determine when access ends:
+        # - Within 14-day window: access till 23:59 today (refund day)
+        # - After 14 days: access till original billing period end (subscription_ends_at)
+        if calc['eligible']:
+            access_until_str = calc['access_until'].strftime('%b %d, %Y, 11:59 PM')
+        else:
+            # Use original subscription end date, or fallback to messages_reset_at, or 30 days from purchase
+            from utils.plan_limits import _aware
+            original_end = _aware(org.subscription_ends_at) if org.subscription_ends_at else None
+            if not original_end and org.messages_reset_at:
+                original_end = _aware(org.messages_reset_at)
+            if not original_end:
+                original_end = calc['purchase_date'] + timedelta(days=30)
+            access_until_str = original_end.strftime('%b %d, %Y, 11:59 PM')
+
         return jsonify({
             "success": True,
-            "has_payment": False,
-            "message": "No recent payment found. Cancelling will stop future billing; access continues until the period ends.",
+            "has_payment": True,
+            "currency": calc['currency'],
+            "plan": (payment.plan or '').capitalize(),
+            "plan_price": calc['plan_price'],
+            "daily_rate": calc['daily_rate'],
+            "billing_days": calc['billing_days'],
+            "days_used": calc['days_used'],
+            "amount_consumed": calc['amount_consumed'],
+            "refund_amount": calc['refund_amount'],
+            "eligible": calc['eligible'],
+            "within_window": calc['within_window'],
+            "refund_window_days": calc['refund_window_days'],
+            "purchase_date": calc['purchase_date'].strftime('%b %d, %Y'),
+            "access_until": access_until_str,
         }), 200
-
-    calc = calculate_proportionate_refund(payment, plan_price=PLAN_PRICE_INR.get(payment.plan, 0))
-
-    # Determine when access ends:
-    # - Within 14-day window: access till 23:59 today (refund day)
-    # - After 14 days: access till original billing period end (subscription_ends_at)
-    if calc['eligible']:
-        access_until_str = calc['access_until'].strftime('%b %d, %Y, 11:59 PM')
-    else:
-        # Use original subscription end date, or fallback to messages_reset_at, or 30 days from purchase
-        from utils.plan_limits import _aware
-        original_end = _aware(org.subscription_ends_at) if org.subscription_ends_at else None
-        if not original_end and org.messages_reset_at:
-            original_end = _aware(org.messages_reset_at)
-        if not original_end:
-            original_end = calc['purchase_date'] + timedelta(days=30)
-        access_until_str = original_end.strftime('%b %d, %Y, 11:59 PM')
-
-    return jsonify({
-        "success": True,
-        "has_payment": True,
-        "currency": calc['currency'],
-        "plan": (payment.plan or '').capitalize(),
-        "plan_price": calc['plan_price'],
-        "daily_rate": calc['daily_rate'],
-        "billing_days": calc['billing_days'],
-        "days_used": calc['days_used'],
-        "amount_consumed": calc['amount_consumed'],
-        "refund_amount": calc['refund_amount'],
-        "eligible": calc['eligible'],
-        "within_window": calc['within_window'],
-        "refund_window_days": calc['refund_window_days'],
-        "purchase_date": calc['purchase_date'].strftime('%b %d, %Y'),
-        "access_until": access_until_str,
-    }), 200
+    except Exception as e:
+        logging.error(f"[refund_preview] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 @payments_bp.route('/cancel-plan', methods=['POST'])
@@ -762,74 +778,79 @@ def upgrade_preview():
     Formula: upgrade_cost = new_plan_price - credit_remaining
     Where: credit_remaining = current_plan_price - (daily_rate × days_used)
     """
-    if 'user_id' not in session:
-        return jsonify({"error": "Not logged in"}), 401
+    try:
+        if 'user_id' not in session:
+            return jsonify({"error": "Not logged in"}), 401
 
-    from utils.plan_limits import PLAN_PRICE_INR, BILLING_DAYS, _aware
+        from utils.plan_limits import PLAN_PRICE_INR, BILLING_DAYS, _aware
 
-    org = Organization.query.get(session.get('org_id'))
-    if not org:
-        return jsonify({"error": "Organization not found"}), 404
+        org = Organization.query.get(session.get('org_id'))
+        if not org:
+            return jsonify({"error": "Organization not found"}), 404
 
-    data = request.json or {}
-    target_plan = data.get('plan', '').lower()
+        data = request.json or {}
+        target_plan = data.get('plan', '').lower()
 
-    if target_plan not in ('starter', 'growth', 'pro'):
-        return jsonify({"error": "Invalid target plan."}), 400
+        if target_plan not in ('starter', 'growth', 'pro'):
+            return jsonify({"error": "Invalid target plan."}), 400
 
-    current_plan = org.plan or 'free'
-    current_price = PLAN_PRICE_INR.get(current_plan, 0)
-    target_price = PLAN_PRICE_INR.get(target_plan, 0)
+        current_plan = org.plan or 'free'
+        current_price = PLAN_PRICE_INR.get(current_plan, 0)
+        target_price = PLAN_PRICE_INR.get(target_plan, 0)
 
-    if target_price <= current_price:
-        return jsonify({"error": "You can only upgrade to a higher plan."}), 400
+        if target_price <= current_price:
+            return jsonify({"error": "You can only upgrade to a higher plan."}), 400
 
-    # Calculate days used on current plan
-    now = datetime.now(timezone.utc)
-    payment = _latest_completed_payment(org)
+        # Calculate days used on current plan
+        now = datetime.now(timezone.utc)
+        payment = _latest_completed_payment(org)
     
-    if payment and payment.created_at:
-        purchase_date = _aware(payment.created_at)
-        days_elapsed = (now.date() - purchase_date.date()).days
-        days_used = days_elapsed + 1
-    elif org.subscription_started_at:
-        started = _aware(org.subscription_started_at)
-        days_elapsed = (now.date() - started.date()).days
-        days_used = days_elapsed + 1
-    else:
-        days_used = 1
+        if payment and payment.created_at:
+            purchase_date = _aware(payment.created_at)
+            days_elapsed = (now.date() - purchase_date.date()).days
+            days_used = days_elapsed + 1
+        elif org.subscription_started_at:
+            started = _aware(org.subscription_started_at)
+            days_elapsed = (now.date() - started.date()).days
+            days_used = days_elapsed + 1
+        else:
+            days_used = 1
 
-    if days_used < 1:
-        days_used = 1
-    if days_used > BILLING_DAYS:
-        days_used = BILLING_DAYS
+        if days_used < 1:
+            days_used = 1
+        if days_used > BILLING_DAYS:
+            days_used = BILLING_DAYS
 
-    # Calculate credit remaining from current plan
-    daily_rate_current = round(current_price / BILLING_DAYS, 2)
-    amount_consumed = round(daily_rate_current * days_used, 2)
-    credit_remaining = round(current_price - amount_consumed, 2)
-    if credit_remaining < 0:
-        credit_remaining = 0
+        # Calculate credit remaining from current plan
+        daily_rate_current = round(current_price / BILLING_DAYS, 2)
+        amount_consumed = round(daily_rate_current * days_used, 2)
+        credit_remaining = round(current_price - amount_consumed, 2)
+        if credit_remaining < 0:
+            credit_remaining = 0
 
-    # Calculate what user pays for upgrade
-    upgrade_cost = round(target_price - credit_remaining, 2)
-    if upgrade_cost < 0:
-        upgrade_cost = 0
+        # Calculate what user pays for upgrade
+        upgrade_cost = round(target_price - credit_remaining, 2)
+        if upgrade_cost < 0:
+            upgrade_cost = 0
 
-    return jsonify({
-        "success": True,
-        "current_plan": current_plan.capitalize(),
-        "current_price": current_price,
-        "target_plan": target_plan.capitalize(),
-        "target_price": target_price,
-        "days_used": days_used,
-        "billing_days": BILLING_DAYS,
-        "daily_rate_current": daily_rate_current,
-        "amount_consumed": amount_consumed,
-        "credit_remaining": credit_remaining,
-        "upgrade_cost": upgrade_cost,
-        "currency": "INR",
-    }), 200
+        return jsonify({
+            "success": True,
+            "current_plan": current_plan.capitalize(),
+            "current_price": current_price,
+            "target_plan": target_plan.capitalize(),
+            "target_price": target_price,
+            "days_used": days_used,
+            "billing_days": BILLING_DAYS,
+            "daily_rate_current": daily_rate_current,
+            "amount_consumed": amount_consumed,
+            "credit_remaining": credit_remaining,
+            "upgrade_cost": upgrade_cost,
+            "currency": "INR",
+        }), 200
+    except Exception as e:
+        logging.error(f"[upgrade_preview] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 @payments_bp.route('/upgrade-plan', methods=['POST'])
@@ -1035,50 +1056,57 @@ def invoice(payment_id):
     The user can print-to-PDF from the browser (Ctrl+P / Save as PDF).
     Access is restricted to the payment's own organization.
     """
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
+    try:
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login'))
 
-    payment = Payment.query.get_or_404(payment_id)
+        payment = Payment.query.get_or_404(payment_id)
 
-    # Ownership check — a user can only see their own org's invoices
-    if payment.org_id != session.get('org_id'):
-        flash("You are not authorized to view this invoice.", "error")
-        return redirect(url_for('payments_bp.manage_plan'))
+        # Ownership check — a user can only see their own org's invoices
+        if payment.org_id != session.get('org_id'):
+            flash("You are not authorized to view this invoice.", "error")
+            return redirect(url_for('payments_bp.manage_plan'))
 
-    org = Organization.query.get(payment.org_id)
-    user = User.query.get(session['user_id'])
+        org = Organization.query.get(payment.org_id)
+        user = User.query.get(session['user_id'])
 
-    company_first = current_app.config.get('COMPANY_NAME_FIRST', 'Bubbl')
-    company_last = current_app.config.get('COMPANY_LAST_NAME', 'ooo')
-    support_email = current_app.config.get('SUPPORT_EMAIL', 'support@bubbl.ooo')
+        company_first = current_app.config.get('COMPANY_NAME_FIRST', 'Bubbl')
+        company_last = current_app.config.get('COMPANY_LAST_NAME', 'ooo')
+        support_email = current_app.config.get('SUPPORT_EMAIL', 'support@bubbl.ooo')
 
-    # Amount breakdown (Paddle prices are tax-inclusive; show a simple summary)
-    gross = payment.amount or 0.0
-    is_refunded = payment.status in ('refunded', 'partially_refunded')
+        # Amount breakdown (Paddle prices are tax-inclusive; show a simple summary)
+        gross = payment.amount or 0.0
+        is_refunded = payment.status in ('refunded', 'partially_refunded')
 
-    # Build a card/method label
-    method_label = 'Managed via Paddle'
-    if payment.payment_method:
-        if payment.card_brand and payment.card_last4:
-            method_label = f"{payment.card_brand.title()} ···· {payment.card_last4}"
-        else:
-            method_label = payment.payment_method.replace('_', ' ').title()
+        # Build a card/method label
+        method_label = 'Managed via Paddle'
+        if payment.payment_method:
+            if payment.card_brand and payment.card_last4:
+                method_label = f"{payment.card_brand.title()} ···· {payment.card_last4}"
+            else:
+                method_label = payment.payment_method.replace('_', ' ').title()
 
-    invoice_number = f"BUBBL-{payment.created_at.strftime('%Y%m%d')}-{payment.id:05d}" if payment.created_at else f"BUBBL-{payment.id:05d}"
+        invoice_number = f"BUBBL-{payment.created_at.strftime('%Y%m%d')}-{payment.id:05d}" if payment.created_at else f"BUBBL-{payment.id:05d}"
 
-    return render_template('invoice.html',
-        payment=payment,
-        org=org,
-        user=user,
-        company_name=f"{company_first}.{company_last}",
-        support_email=support_email,
-        gross=gross,
-        is_refunded=is_refunded,
-        method_label=method_label,
-        invoice_number=invoice_number,
-    )
+        return render_template('invoice.html',
+            payment=payment,
+            org=org,
+            user=user,
+            company_name=f"{company_first}.{company_last}",
+            support_email=support_email,
+            gross=gross,
+            is_refunded=is_refunded,
+            method_label=method_label,
+            invoice_number=invoice_number,
+        )
+    except Exception as e:
+        logging.error(f"[invoice] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
+        return redirect(url_for('views_bp.dashboard'))
 
 
 @payments_bp.route('/test-webhook', methods=['GET'])
 def test_webhook_reachable():
     return jsonify({"status": "ok", "message": "Paddle webhook endpoint is reachable"}), 200
+

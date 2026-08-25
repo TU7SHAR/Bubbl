@@ -5,6 +5,7 @@ from models.models import db, User, Bot, Document, Lead, ScrapeJob, Organization
 from sqlalchemy import func
 from . import super_admin_bp
 from .decorators import super_admin_required
+import logging
 
 try:
     import psutil

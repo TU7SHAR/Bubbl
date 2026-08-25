@@ -171,6 +171,34 @@ def _run_auto_migrations():
             bot_name VARCHAR(100), messages_snapshot JSONB NOT NULL,
             created_at TIMESTAMP DEFAULT NOW(), expires_at TIMESTAMP)""",
         'CREATE INDEX IF NOT EXISTS idx_shared_conv_token ON shared_conversation(share_token)',
+
+        # --- PERFORMANCE INDEXES ---
+        # chat_message: most queried table. bot_id+session_id is the primary
+        # access pattern (every conversation detail page, transcript reads,
+        # lead lookups per session). created_at for time-range filters on the
+        # super_admin dashboard.
+        'CREATE INDEX IF NOT EXISTS idx_chat_message_bot ON chat_message(bot_id)',
+        'CREATE INDEX IF NOT EXISTS idx_chat_message_bot_session ON chat_message(bot_id, session_id)',
+        'CREATE INDEX IF NOT EXISTS idx_chat_message_created ON chat_message(created_at)',
+
+        # lead: filtered by bot_id (already indexed), but ORDER BY captured_at
+        # is on every listing page. Composite covers the most common query.
+        'CREATE INDEX IF NOT EXISTS idx_lead_captured_at ON lead(captured_at)',
+        'CREATE INDEX IF NOT EXISTS idx_lead_bot_captured ON lead(bot_id, captured_at)',
+
+        # bot: dashboard filters by created_by; platform bot lookup by bot_type.
+        'CREATE INDEX IF NOT EXISTS idx_bot_created_by ON bot(created_by)',
+        'CREATE INDEX IF NOT EXISTS idx_bot_type ON bot(bot_type)',
+
+        # scrape_job: listed per bot and filtered by status.
+        'CREATE INDEX IF NOT EXISTS idx_scrape_job_bot ON scrape_job(bot_id)',
+        'CREATE INDEX IF NOT EXISTS idx_scrape_job_status ON scrape_job(status)',
+
+        # payment: billing page filters by status and sorts by created_at.
+        'CREATE INDEX IF NOT EXISTS idx_payment_status_created ON payment(status, created_at)',
+
+        # user: super_admin dashboard sorts by created_at.
+        'CREATE INDEX IF NOT EXISTS idx_user_created_at ON "user"(created_at)',
     ]
     for s in sqls:
         try:

@@ -7,6 +7,7 @@ from tasks.scrape_tasks import async_scrape_task
 from utils.scraper import is_safe_url
 from . import super_admin_bp
 from .decorators import super_admin_required
+import logging
 
 
 def _get_or_create_platform_bot():
@@ -70,54 +71,65 @@ def _get_or_create_platform_bot():
 @super_admin_required
 def public_bot_page():
     """Public bot management dashboard."""
-    bot = _get_or_create_platform_bot()
-    docs = Document.query.filter_by(bot_id=bot.id).order_by(Document.created_at.desc()).all()
-    scrape_jobs = ScrapeJob.query.filter_by(bot_id=bot.id).order_by(ScrapeJob.created_at.desc()).limit(10).all()
+    try:
+        bot = _get_or_create_platform_bot()
+        docs = Document.query.filter_by(bot_id=bot.id).order_by(Document.created_at.desc()).all()
+        scrape_jobs = ScrapeJob.query.filter_by(bot_id=bot.id).order_by(ScrapeJob.created_at.desc()).limit(10).all()
 
-    # Stats
-    total_conversations = ChatMessage.query.filter_by(bot_id=None).distinct(ChatMessage.session_id).count()
-    total_messages = ChatMessage.query.filter_by(bot_id=None).count()
+        # Stats
+        total_conversations = ChatMessage.query.filter_by(bot_id=None).distinct(ChatMessage.session_id).count()
+        total_messages = ChatMessage.query.filter_by(bot_id=None).count()
 
-    return render_template('super_admin/public_bot.html',
-        bot=bot,
-        docs=docs,
-        scrape_jobs=scrape_jobs,
-        total_conversations=total_conversations,
-        total_messages=total_messages,
-    )
+        return render_template('super_admin/public_bot.html',
+            bot=bot,
+            docs=docs,
+            scrape_jobs=scrape_jobs,
+            total_conversations=total_conversations,
+            total_messages=total_messages,
+        )
+    except Exception as e:
+        logging.error(f"[public_bot_page] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        flash("Something went wrong. Please try again.", "error")
+        return redirect(url_for('views_bp.dashboard'))
 
 
 @super_admin_bp.route('/public_bot/scrape', methods=['POST'])
 @super_admin_required
 def public_bot_scrape():
     """Start a scrape job for the platform bot."""
-    data = request.get_json(silent=True) or {}
-    url = (data.get('url') or '').strip()
-    use_spider = data.get('use_spider', False)
-    max_urls = int(data.get('max_urls', 50))
+    try:
+        data = request.get_json(silent=True) or {}
+        url = (data.get('url') or '').strip()
+        use_spider = data.get('use_spider', False)
+        max_urls = int(data.get('max_urls', 50))
 
-    if not url:
-        return jsonify({"error": "URL is required."}), 400
+        if not url:
+            return jsonify({"error": "URL is required."}), 400
 
-    # SSRF protection
-    safe, error_msg = is_safe_url(url)
-    if not safe:
-        return jsonify({"error": f"Invalid URL: {error_msg}"}), 400
+        # SSRF protection
+        safe, error_msg = is_safe_url(url)
+        if not safe:
+            return jsonify({"error": f"Invalid URL: {error_msg}"}), 400
 
-    bot = _get_or_create_platform_bot()
+        bot = _get_or_create_platform_bot()
 
-    # Cap at 100 pages for platform bot (generous limit)
-    if max_urls > 100:
-        max_urls = 100
+        # Cap at 100 pages for platform bot (generous limit)
+        if max_urls > 100:
+            max_urls = 100
 
-    new_job = ScrapeJob(bot_id=bot.id, url=url, status='pending', limit=max_urls)
-    db.session.add(new_job)
-    db.session.commit()
+        new_job = ScrapeJob(bot_id=bot.id, url=url, status='pending', limit=max_urls)
+        db.session.add(new_job)
+        db.session.commit()
 
-    # Queue in Celery
-    async_scrape_task.delay(new_job.id, url, bot.id, use_spider)
+        # Queue in Celery
+        async_scrape_task.delay(new_job.id, url, bot.id, use_spider)
 
-    return jsonify({"success": True, "job_id": new_job.id, "message": f"Scraping started (max {max_urls} pages)."})
+        return jsonify({"success": True, "job_id": new_job.id, "message": f"Scraping started (max {max_urls} pages)."})
+    except Exception as e:
+        logging.error(f"[public_bot_scrape] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 @super_admin_bp.route('/public_bot/delete_doc/<int:doc_id>', methods=['POST'])
@@ -162,30 +174,40 @@ def public_bot_clear_all():
 @super_admin_required
 def public_bot_update_personality():
     """Update the platform bot's custom personality/system prompt override."""
-    data = request.get_json(silent=True) or {}
-    personality = (data.get('personality') or '').strip()
+    try:
+        data = request.get_json(silent=True) or {}
+        personality = (data.get('personality') or '').strip()
 
-    bot = _get_or_create_platform_bot()
-    bot.system_prompt = personality
-    db.session.commit()
+        bot = _get_or_create_platform_bot()
+        bot.system_prompt = personality
+        db.session.commit()
 
-    return jsonify({"success": True, "message": "Personality updated."})
+        return jsonify({"success": True, "message": "Personality updated."})
+    except Exception as e:
+        logging.error(f"[public_bot_update_personality] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 @super_admin_bp.route('/public_bot/scrape_status/<int:job_id>', methods=['GET'])
 @super_admin_required
 def public_bot_scrape_status(job_id):
     """Check status of a scrape job."""
-    job = ScrapeJob.query.get(job_id)
-    if not job:
-        return jsonify({"error": "Job not found."}), 404
+    try:
+        job = ScrapeJob.query.get(job_id)
+        if not job:
+            return jsonify({"error": "Job not found."}), 404
 
-    return jsonify({
-        "job_id": job.id,
-        "status": job.status,
-        "error": job.error_message,
-        "logs": job.logs or "",
-    })
+        return jsonify({
+            "job_id": job.id,
+            "status": job.status,
+            "error": job.error_message,
+            "logs": job.logs or "",
+        })
+    except Exception as e:
+        logging.error(f"[public_bot_scrape_status] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 
@@ -333,24 +355,30 @@ def public_bot_extract_links():
 @super_admin_required
 def public_bot_save_links():
     """Save the managed links for the platform bot (replaces all)."""
-    import json
-    data = request.get_json(silent=True) or {}
-    links = data.get('links', [])
+    try:
+        import json
+        data = request.get_json(silent=True) or {}
+        links = data.get('links', [])
 
-    # Validate: each link must have label, url, category
-    valid_categories = ['pricing', 'action', 'info', 'support', 'link', 'email', 'phone']
-    cleaned = []
-    for link in links:
-        label = (link.get('label') or '').strip()
-        url = (link.get('url') or '').strip()
-        category = (link.get('category') or 'link').strip().lower()
-        if label and url:
-            if category not in valid_categories:
-                category = 'link'
-            cleaned.append({"label": label, "url": url, "category": category})
+        # Validate: each link must have label, url, category
+        valid_categories = ['pricing', 'action', 'info', 'support', 'link', 'email', 'phone']
+        cleaned = []
+        for link in links:
+            label = (link.get('label') or '').strip()
+            url = (link.get('url') or '').strip()
+            category = (link.get('category') or 'link').strip().lower()
+            if label and url:
+                if category not in valid_categories:
+                    category = 'link'
+                cleaned.append({"label": label, "url": url, "category": category})
 
-    bot = _get_or_create_platform_bot()
-    bot.managed_links = cleaned
-    db.session.commit()
+        bot = _get_or_create_platform_bot()
+        bot.managed_links = cleaned
+        db.session.commit()
 
-    return jsonify({"success": True, "count": len(cleaned)})
+        return jsonify({"success": True, "count": len(cleaned)})
+    except Exception as e:
+        logging.error(f"[public_bot_save_links] Unhandled error: {e}", exc_info=True)
+        db.session.rollback()
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
+
