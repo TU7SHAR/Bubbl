@@ -4,6 +4,7 @@ from models.models import db, ScrapeJob
 from . import super_admin_bp
 from .decorators import super_admin_required
 import logging
+from utils.enums import ScrapeStatus
 
 
 @super_admin_bp.route('/scrapes')
@@ -15,7 +16,7 @@ def scrapes_page():
         if status_filter == 'all':
             scrapes = ScrapeJob.query.order_by(ScrapeJob.created_at.desc()).all()
         elif status_filter == 'pending':
-            scrapes = ScrapeJob.query.filter_by(status='pending').order_by(ScrapeJob.created_at.desc()).all()
+            scrapes = ScrapeJob.query.filter_by(status=ScrapeStatus.PENDING).order_by(ScrapeJob.created_at.desc()).all()
         else:
             scrapes = ScrapeJob.query.filter_by(status='failed').order_by(ScrapeJob.created_at.desc()).all()
         return render_template('super_admin/scrapes.html', scrapes=scrapes, status_filter=status_filter)

@@ -1,5 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
+from sqlalchemy import CheckConstraint
+
+from utils.enums import (
+    Visibility, BotType, LeadCaptureTiming, Plan, SubscriptionStatus,
+    ScrapeStatus, MessageRole, PaymentStatus, AuthProvider, UserRole,
+)
 
 db = SQLAlchemy()
 
@@ -10,20 +16,25 @@ db = SQLAlchemy()
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    plan = db.Column(db.String(20), default='free')  # free, starter, growth, pro
+    plan = db.Column(db.String(20), default=Plan.FREE)
     messages_used = db.Column(db.Integer, default=0)
-    messages_reset_at = db.Column(db.DateTime, nullable=True)
+    messages_reset_at = db.Column(db.DateTime(timezone=True), nullable=True)
     paddle_subscription_id = db.Column(db.String(255), nullable=True)
     paddle_customer_id = db.Column(db.String(255), nullable=True)
 
     # --- SUBSCRIPTION LIFECYCLE ---
-    subscription_status = db.Column(db.String(20), default='free')   # free, active, canceled
-    subscription_started_at = db.Column(db.DateTime, nullable=True)
-    subscription_ends_at = db.Column(db.DateTime, nullable=True)
+    subscription_status = db.Column(db.String(20), default=SubscriptionStatus.FREE)
+    subscription_started_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    subscription_ends_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     users = db.relationship('User', backref='organization', lazy=True)
+
+    __table_args__ = (
+        CheckConstraint("plan IN ('free', 'starter', 'growth', 'pro')", name='ck_org_plan'),
+        CheckConstraint("subscription_status IN ('free', 'active', 'canceled')", name='ck_org_sub_status'),
+    )
 
 
 # ═══════════════════════════════════════════
@@ -36,15 +47,20 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=True)  # Nullable for Google OAuth users
     otp = db.Column(db.String(6), nullable=True)
-    otp_created_at = db.Column(db.DateTime, nullable=True)
+    otp_created_at = db.Column(db.DateTime(timezone=True), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
-    role = db.Column(db.String(20), nullable=False, default='member')
-    auth_provider = db.Column(db.String(20), default='email')  # 'email' or 'google'
-    is_suspended = db.Column(db.Boolean, default=False)  # Admin can suspend users
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    role = db.Column(db.String(20), nullable=False, default=UserRole.MEMBER)
+    auth_provider = db.Column(db.String(20), default=AuthProvider.EMAIL)
+    is_suspended = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     bots = db.relationship('Bot', backref='owner', lazy=True)
     payments = db.relationship('Payment', backref='payer', lazy=True)
+
+    __table_args__ = (
+        CheckConstraint("role IN ('member', 'admin', 'super_admin')", name='ck_user_role'),
+        CheckConstraint("auth_provider IN ('email', 'google')", name='ck_user_auth_provider'),
+    )
 
     def is_otp_valid(self, submitted_otp, expiry_minutes=10):
         """Check if OTP matches and hasn't expired (default: 10 min TTL)."""
@@ -81,23 +97,23 @@ class Bot(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     bot_name = db.Column(db.String(100), nullable=False)
     store_id = db.Column(db.String(255), unique=False, nullable=True)
-    visibility = db.Column(db.String(10), nullable=False, default='public')
+    visibility = db.Column(db.String(10), nullable=False, default=Visibility.PUBLIC)
     access_key = db.Column(db.String(4), nullable=True)
     allowed_domains = db.Column(db.String(255), nullable=True)
-    bot_type = db.Column(db.String(50), default='general')
+    bot_type = db.Column(db.String(50), default=BotType.GENERAL)
     system_prompt = db.Column(db.Text, nullable=True)
-    lead_capture_timing = db.Column(db.String(20), default='disabled')
+    lead_capture_timing = db.Column(db.String(20), default=LeadCaptureTiming.DISABLED)
     custom_form_fields = db.Column(db.JSON, default=[])
-    managed_links = db.Column(db.JSON, default=[])  # Clickable button links for chat responses
-    is_active = db.Column(db.Boolean, default=True)  # Admin can disable bots
+    managed_links = db.Column(db.JSON, default=[])
+    is_active = db.Column(db.Boolean, default=True)
 
     # --- USAGE METRICS ---
     tokens_used = db.Column(db.Integer, default=0)
     total_latency = db.Column(db.Float, default=0.0)
     interaction_count = db.Column(db.Integer, default=0)
-    message_limit = db.Column(db.Integer, nullable=True)  # Per-bot cap (NULL = use org plan limit)
+    message_limit = db.Column(db.Integer, nullable=True)
 
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # --- RELATIONSHIPS ---
     documents = db.relationship('Document', backref='bot', lazy=True, cascade="all, delete-orphan")
@@ -106,6 +122,15 @@ class Bot(db.Model):
     leads = db.relationship('Lead', backref='bot_ref', lazy=True, cascade="all, delete-orphan")
     chat_messages = db.relationship('ChatMessage', backref='bot_ref', lazy=True, cascade="all, delete-orphan")
 
+    __table_args__ = (
+        CheckConstraint("visibility IN ('public', 'private')", name='ck_bot_visibility'),
+        CheckConstraint("bot_type IN ('general', 'platform')", name='ck_bot_type'),
+        CheckConstraint(
+            "lead_capture_timing IN ('disabled', 'gatekeeper', 'conv_start', 'conv_middle', 'conv_end')",
+            name='ck_bot_lead_timing',
+        ),
+    )
+
 
 # ═══════════════════════════════════════════
 # PAYMENT — Transaction record (linked to User + Org)
@@ -113,8 +138,8 @@ class Bot(db.Model):
 class Payment(db.Model):
     """Records every completed Paddle transaction."""
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # WHO paid
-    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=True)  # Which account
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    org_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=True)
     plan = db.Column(db.String(20), nullable=True)
     amount = db.Column(db.Float, default=0.0)
     currency = db.Column(db.String(10), default='INR')
@@ -123,7 +148,7 @@ class Payment(db.Model):
     paddle_customer_id = db.Column(db.String(255), nullable=True)
     paddle_subscription_id = db.Column(db.String(255), nullable=True)
     product_id = db.Column(db.String(255), nullable=True)
-    status = db.Column(db.String(30), default='completed')
+    status = db.Column(db.String(30), default=PaymentStatus.COMPLETED)
 
     # --- PAYMENT METHOD SNAPSHOT ---
     payment_method = db.Column(db.String(30), nullable=True)
@@ -132,10 +157,14 @@ class Payment(db.Model):
 
     # --- REFUND TRACKING ---
     refund_amount = db.Column(db.Float, default=0.0)
-    refunded_at = db.Column(db.DateTime, nullable=True)
-    tax_amount = db.Column(db.Float, default=0.0)  # Tax collected by Paddle
+    refunded_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    tax_amount = db.Column(db.Float, default=0.0)
 
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        CheckConstraint("status IN ('completed', 'refunded', 'partially_refunded')", name='ck_payment_status'),
+    )
 
 
 # ═══════════════════════════════════════════
@@ -153,16 +182,16 @@ class BotUI(db.Model):
     glass_blur = db.Column(db.Integer, default=25)
 
     # --- EXTENDED CUSTOMIZATION ---
-    greeting_message = db.Column(db.Text, nullable=True)       # Custom welcome message
-    input_placeholder = db.Column(db.String(120), nullable=True)  # Input field placeholder
-    header_title = db.Column(db.String(60), nullable=True)     # Override header text (default: bot name)
-    bubble_radius = db.Column(db.Integer, default=16)          # Message bubble corner radius (px)
-    font_family = db.Column(db.String(40), default='Inter')    # Inter | Outfit | Roboto | System
-    font_size = db.Column(db.Integer, default=14)              # Base font size (px)
-    user_bubble_color = db.Column(db.String(20), nullable=True)  # User msg bg (NULL = use theme_color)
-    bot_bubble_color = db.Column(db.String(20), nullable=True)   # Bot msg bg (NULL = auto by theme)
-    widget_position = db.Column(db.String(20), default='bottom-right')  # bottom-right | bottom-left
-    show_branding = db.Column(db.Boolean, default=True)        # Show "Powered by bubbl.ooo"
+    greeting_message = db.Column(db.Text, nullable=True)
+    input_placeholder = db.Column(db.String(120), nullable=True)
+    header_title = db.Column(db.String(60), nullable=True)
+    bubble_radius = db.Column(db.Integer, default=16)
+    font_family = db.Column(db.String(40), default='Inter')
+    font_size = db.Column(db.Integer, default=14)
+    user_bubble_color = db.Column(db.String(20), nullable=True)
+    bot_bubble_color = db.Column(db.String(20), nullable=True)
+    widget_position = db.Column(db.String(20), default='bottom-right')
+    show_branding = db.Column(db.Boolean, default=True)
 
 
 # ═══════════════════════════════════════════
@@ -172,12 +201,8 @@ class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
-    # Normalized source URL for scraped pages (NULL for manual uploads / text
-    # snippets). Without this there is no way to tell that a page has already
-    # been ingested — the filename carries a random uuid suffix, so it can't be
-    # used as an identity. This is what makes page-level scrape dedup possible.
     source_url = db.Column(db.String(2048), nullable=True, index=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 # ═══════════════════════════════════════════
@@ -187,12 +212,16 @@ class ScrapeJob(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=False)
     url = db.Column(db.String(2048), nullable=False)
-    status = db.Column(db.String(20), nullable=False, default='pending')
+    status = db.Column(db.String(20), nullable=False, default=ScrapeStatus.PENDING)
     limit = db.Column(db.Integer, default=20)
     error_message = db.Column(db.Text, nullable=True)
     logs = db.Column(db.Text, default="")
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    completed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'running', 'completed', 'failed')", name='ck_scrape_status'),
+    )
 
 
 # ═══════════════════════════════════════════
@@ -205,7 +234,7 @@ class Lead(db.Model):
     email = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(20), nullable=True)
     custom_data = db.Column(db.JSON, default={})
-    captured_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    captured_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 # ═══════════════════════════════════════════
@@ -217,27 +246,30 @@ class Feedback(db.Model):
     lead_id = db.Column(db.Integer, db.ForeignKey('lead.id'), nullable=True)
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     bot = db.relationship('Bot', backref=db.backref('feedbacks', lazy=True, cascade="all, delete-orphan"))
 
 
 # ═══════════════════════════════════════════
-# CHAT MESSAGE — Persisted conversation history (NEW)
+# CHAT MESSAGE — Persisted conversation history
 # ═══════════════════════════════════════════
 class ChatMessage(db.Model):
     """Stores every message exchanged in a chat session."""
     id = db.Column(db.Integer, primary_key=True)
-    bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=True)  # Null = public Bubbl bot
-    lead_id = db.Column(db.Integer, db.ForeignKey('lead.id'), nullable=True)  # If lead captured
-    session_id = db.Column(db.String(64), nullable=False, index=True)  # Groups messages into a conversation
-    role = db.Column(db.String(10), nullable=False)  # 'user' or 'bot'
+    bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=True)
+    lead_id = db.Column(db.Integer, db.ForeignKey('lead.id'), nullable=True)
+    session_id = db.Column(db.String(64), nullable=False, index=True)
+    role = db.Column(db.String(10), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    tokens_used = db.Column(db.Integer, default=0)  # Tokens for this specific response
-    ip_address = db.Column(db.String(45), nullable=True)  # Visitor IP (IPv4/IPv6), captured on user messages
-    rating = db.Column(db.SmallInteger, nullable=True)  # 1 = thumbs up, -1 = thumbs down, NULL = not rated
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    tokens_used = db.Column(db.Integer, default=0)
+    ip_address = db.Column(db.String(45), nullable=True)
+    rating = db.Column(db.SmallInteger, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'bot')", name='ck_chatmsg_role'),
+    )
 
 
 # ═══════════════════════════════════════════
@@ -249,7 +281,7 @@ class SharedConversation(db.Model):
     share_token = db.Column(db.String(16), unique=True, nullable=False, index=True)
     session_id = db.Column(db.String(64), nullable=False)
     bot_id = db.Column(db.Integer, db.ForeignKey('bot.id'), nullable=True)
-    bot_name = db.Column(db.String(100), nullable=True)  # Snapshot of bot name at share time
-    messages_snapshot = db.Column(db.JSON, nullable=False)  # [{role, content, created_at}]
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime, nullable=True)  # Optional expiry (30 days default)
+    bot_name = db.Column(db.String(100), nullable=True)
+    messages_snapshot = db.Column(db.JSON, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=True)

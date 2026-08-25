@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from models.models import db, Bot
+from utils.enums import BotType
 
 load_dotenv()
 
@@ -128,7 +129,7 @@ def _get_platform_bot_config():
     Get the platform bot's store_id AND managed links.
     Returns (store_id, links_text) or (None, "") if not configured.
     """
-    platform_bot = Bot.query.filter_by(bot_type='platform').first()
+    platform_bot = Bot.query.filter_by(bot_type=BotType.PLATFORM).first()
     if platform_bot and platform_bot.store_id:
         links_text = _build_links_text(platform_bot.managed_links or [])
         return platform_bot.store_id, links_text

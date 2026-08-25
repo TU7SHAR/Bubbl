@@ -14,6 +14,7 @@ from . import admin_bp
 from tasks.scrape_tasks import async_scrape_task
 from utils.plan_limits import check_bot_limit
 from utils.lead_fields import normalize_custom_fields, rejection_message
+from utils.enums import BotType, ScrapeStatus
 
 
 def invalidate_bot_cache(bot_id):
@@ -164,7 +165,7 @@ def create_pipeline():
         use_spider = request.form.get('use_deep_crawl') == 'on' 
         max_urls = int(request.form.get('max_urls', 20))
 
-        new_job = ScrapeJob(bot_id=new_bot.id, url=url_to_scrape, status='pending', limit=max_urls)
+        new_job = ScrapeJob(bot_id=new_bot.id, url=url_to_scrape, status=ScrapeStatus.PENDING, limit=max_urls)
         db.session.add(new_job)
         db.session.flush() 
 
@@ -223,7 +224,7 @@ def edit_bot(bot_id):
         target_bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
         # Also allow editing the platform bot (belongs to a different org but accessible to all logged-in users)
         if not target_bot:
-            target_bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+            target_bot = Bot.query.filter_by(id=bot_id, bot_type=BotType.PLATFORM).first()
         if not target_bot:
             flash("Bot not found.", "error")
             return redirect(url_for('views_bp.dashboard'))
@@ -293,7 +294,7 @@ def update_bot(bot_id):
 
         bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
         if not bot:
-            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+            bot = Bot.query.filter_by(id=bot_id, bot_type=BotType.PLATFORM).first()
         if not bot:
             flash("Error: Bot not found.", "error")
             return redirect(url_for('views_bp.dashboard'))
@@ -393,7 +394,7 @@ def add_knowledge(bot_id):
 
     bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
     if not bot:
-        bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+        bot = Bot.query.filter_by(id=bot_id, bot_type=BotType.PLATFORM).first()
     if not bot:
         flash("Error: Bot not found.", "error")
         return redirect(url_for('views_bp.dashboard'))
@@ -428,7 +429,7 @@ def delete_doc(doc_id):
     bot = Bot.query.filter_by(id=doc.bot_id, org_id=session['org_id']).first()
     # Also allow deleting docs from the platform bot (different org, but manageable by admins)
     if not bot:
-        bot = Bot.query.filter_by(id=doc.bot_id, bot_type='platform').first()
+        bot = Bot.query.filter_by(id=doc.bot_id, bot_type=BotType.PLATFORM).first()
     if bot:
         try:
             delete_from_gemini(doc.filename, store_id=bot.store_id)
@@ -458,7 +459,7 @@ def get_bot_links(bot_id):
 
         bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
         if not bot:
-            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+            bot = Bot.query.filter_by(id=bot_id, bot_type=BotType.PLATFORM).first()
         if not bot:
             return jsonify({"error": "Bot not found"}), 404
 
@@ -507,7 +508,7 @@ def save_bot_links(bot_id):
 
         bot = Bot.query.filter_by(id=bot_id, org_id=session['org_id']).first()
         if not bot:
-            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+            bot = Bot.query.filter_by(id=bot_id, bot_type=BotType.PLATFORM).first()
         if not bot:
             return jsonify({"error": "Bot not found"}), 404
 

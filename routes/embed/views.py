@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import io
 from sqlalchemy import func
 from flask import send_from_directory
+from utils.enums import BotType
 views_bp = Blueprint('views_bp', __name__)
 
 # =========================================
@@ -278,7 +279,7 @@ def export_leads():
         bot_ids = [bot.id for bot in org_bots]
         # Platform bot leads only visible to super_admin
         if session.get('role') == 'super_admin':
-            platform_bot = Bot.query.filter_by(bot_type='platform').first()
+            platform_bot = Bot.query.filter_by(bot_type=BotType.PLATFORM).first()
             if platform_bot and platform_bot.id not in bot_ids:
                 bot_ids.append(platform_bot.id)
     
@@ -327,7 +328,7 @@ def leads_dashboard():
         bot_ids = [bot.id for bot in org_bots]
         # Platform bot leads only visible to super_admin
         if session.get('role') == 'super_admin':
-            platform_bot = Bot.query.filter_by(bot_type='platform').first()
+            platform_bot = Bot.query.filter_by(bot_type=BotType.PLATFORM).first()
             if platform_bot and platform_bot.id not in bot_ids:
                 bot_ids.append(platform_bot.id)
     
@@ -359,7 +360,7 @@ def conversations_hub():
     
         # Platform bot conversations are only visible to super_admin
         if session.get('role') == 'super_admin':
-            platform_bot = Bot.query.filter_by(bot_type='platform').first()
+            platform_bot = Bot.query.filter_by(bot_type=BotType.PLATFORM).first()
             if platform_bot and platform_bot.id not in [b.id for b in org_bots]:
                 org_bots = list(org_bots) + [platform_bot]
 
@@ -428,7 +429,7 @@ def conversations_list(bot_id):
 
         bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
         if not bot:
-            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+            bot = Bot.query.filter_by(id=bot_id, bot_type=BotType.PLATFORM).first()
         if not bot:
             flash("Bot not found.", "error")
             return redirect(url_for('views_bp.conversations_hub'))
@@ -545,7 +546,7 @@ def export_conversations(bot_id):
 
         bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
         if not bot:
-            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+            bot = Bot.query.filter_by(id=bot_id, bot_type=BotType.PLATFORM).first()
         if not bot:
             flash("Bot not found.", "error")
             return redirect(url_for('views_bp.conversations_hub'))
@@ -594,7 +595,7 @@ def conversation_detail(bot_id, session_id):
         bot = Bot.query.filter_by(id=bot_id, org_id=session.get('org_id')).first()
         if not bot:
             # The platform bot lives outside the caller's org, same as the list page.
-            bot = Bot.query.filter_by(id=bot_id, bot_type='platform').first()
+            bot = Bot.query.filter_by(id=bot_id, bot_type=BotType.PLATFORM).first()
         if not bot:
             flash("Bot not found.", "error")
             return redirect(url_for('views_bp.conversations_hub'))
@@ -688,7 +689,7 @@ def dashboard():
         member_count = User.query.filter_by(org_id=session.get('org_id')).count()
 
         # Include the platform bot (Bubbl's public support bot) so users can interact with it
-        platform_bot = Bot.query.filter_by(bot_type='platform').first()
+        platform_bot = Bot.query.filter_by(bot_type=BotType.PLATFORM).first()
 
         org_bots = []
         for bot in all_org_bots:
@@ -769,7 +770,7 @@ def connect_support():
         if not session.get('user_id'):
             return redirect(url_for('auth.login'))
 
-        platform_bot = Bot.query.filter_by(bot_type='platform').first()
+        platform_bot = Bot.query.filter_by(bot_type=BotType.PLATFORM).first()
         if platform_bot:
             session['active_bot_id'] = platform_bot.id
             session['active_bot_name'] = platform_bot.bot_name

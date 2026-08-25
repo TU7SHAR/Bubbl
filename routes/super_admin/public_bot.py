@@ -8,14 +8,15 @@ from utils.scraper import is_safe_url
 from . import super_admin_bp
 from .decorators import super_admin_required
 import logging
+from utils.enums import BotType, PaymentStatus, ScrapeStatus, Visibility
 
 
 def _get_or_create_platform_bot():
     """
-    Get the platform bot (bot_type='platform'). Creates one if it doesn't exist.
+    Get the platform bot (bot_type=BotType.PLATFORM). Creates one if it doesn't exist.
     This bot holds the scraped content for the public-facing Bubbl assistant.
     """
-    bot = Bot.query.filter_by(bot_type='platform').first()
+    bot = Bot.query.filter_by(bot_type=BotType.PLATFORM).first()
     if bot:
         return bot
 
@@ -54,8 +55,8 @@ def _get_or_create_platform_bot():
 
     bot = Bot(
         bot_name="Bubbl Platform Bot",
-        bot_type='platform',
-        visibility='public',
+        bot_type=BotType.PLATFORM,
+        visibility=Visibility.PUBLIC,
         system_prompt="",
         created_by=first_user.id,    # Real user ID (satisfies FK to user table)
         org_id=platform_org.id,      # Real org ID (satisfies FK to organization table)
@@ -118,7 +119,7 @@ def public_bot_scrape():
         if max_urls > 100:
             max_urls = 100
 
-        new_job = ScrapeJob(bot_id=bot.id, url=url, status='pending', limit=max_urls)
+        new_job = ScrapeJob(bot_id=bot.id, url=url, status=ScrapeStatus.PENDING, limit=max_urls)
         db.session.add(new_job)
         db.session.commit()
 
@@ -272,7 +273,7 @@ def public_bot_extract_links():
     upload_dir = current_app.config.get('UPLOAD_FOLDER', '/root/Bubbl/uploads')
 
     # Determine base domain from the first scrape job URL
-    first_scrape = ScrapeJob.query.filter_by(bot_id=bot.id, status='completed').first()
+    first_scrape = ScrapeJob.query.filter_by(bot_id=bot.id, status=PaymentStatus.COMPLETED).first()
     base_domain = ''
     if first_scrape:
         base_domain = urlparse(first_scrape.url).netloc

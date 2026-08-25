@@ -7,6 +7,7 @@ import os
 import logging
 import requests as http_requests
 from datetime import datetime, timezone, timedelta
+from utils.enums import PaymentStatus, Plan, SubscriptionStatus
 
 payments_bp = Blueprint('payments_bp', __name__, url_prefix='/payments')
 
@@ -156,7 +157,7 @@ def paddle_webhook():
         org = _resolve_org(payload)
         if org and status in ('active', 'trialing'):
             org.plan = plan
-            org.subscription_status = 'active'
+            org.subscription_status = SubscriptionStatus.ACTIVE
             org.paddle_subscription_id = subscription_id
             if customer_id:
                 org.paddle_customer_id = customer_id
@@ -173,8 +174,8 @@ def paddle_webhook():
     elif event_type in ('subscription.canceled', 'subscription.paused'):
         org = _resolve_org(payload)
         if org:
-            org.plan = 'free'
-            org.subscription_status = 'free'
+            org.plan = Plan.FREE
+            org.subscription_status = SubscriptionStatus.FREE
             org.paddle_subscription_id = None
             org.subscription_ends_at = datetime.now(timezone.utc)
             db.session.commit()
@@ -190,7 +191,7 @@ def paddle_webhook():
         org = _resolve_org(payload)
         if org:
             org.plan = plan
-            org.subscription_status = 'active'
+            org.subscription_status = SubscriptionStatus.ACTIVE
             org.paddle_subscription_id = subscription_id
             if customer_id:
                 org.paddle_customer_id = customer_id
@@ -232,7 +233,7 @@ def paddle_webhook():
 
         if org and plan != 'free':
             org.plan = plan
-            org.subscription_status = 'active'
+            org.subscription_status = SubscriptionStatus.ACTIVE
             if customer_id:
                 org.paddle_customer_id = customer_id
             if subscription_id:
@@ -255,7 +256,7 @@ def paddle_webhook():
             card_brand=card_brand,
             card_last4=card_last4,
             tax_amount=tax_amount,
-            status='completed',
+            status=PaymentStatus.COMPLETED,
         )
         db.session.add(payment)
         db.session.commit()
@@ -494,7 +495,7 @@ def manage_plan():
         payment_method_label = 'Not on file'
         if org:
             # Read from latest completed payment (normalized — not stored on org)
-            latest_pm = Payment.query.filter_by(org_id=org.id, status='completed')\
+            latest_pm = Payment.query.filter_by(org_id=org.id, status=PaymentStatus.COMPLETED)\
                 .order_by(Payment.created_at.desc()).first()
             if latest_pm and latest_pm.payment_method:
                 if latest_pm.card_brand and latest_pm.card_last4:
@@ -537,7 +538,7 @@ def _latest_completed_payment(org):
     if not org:
         return None
     return (Payment.query
-            .filter_by(org_id=org.id, status='completed')
+            .filter_by(org_id=org.id, status=PaymentStatus.COMPLETED)
             .order_by(Payment.created_at.desc())
             .first())
 
@@ -990,7 +991,7 @@ def reactivate_plan():
     restore_plan = last_payment.plan if last_payment and last_payment.plan else 'starter'
     
     org.plan = restore_plan
-    org.subscription_status = 'active'
+    org.subscription_status = SubscriptionStatus.ACTIVE
     # Extend access to 30 days from now if no end date, or keep existing if it's in the future
     now = datetime.now(timezone.utc)
     if org.subscription_ends_at:
