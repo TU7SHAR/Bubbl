@@ -658,14 +658,20 @@ def async_discover_task(self, discover_id, url, use_spider, find_max_links, disc
             "error": None,
         })
 
-    except Exception as exc:
+    except (Exception, SoftTimeLimitExceeded) as exc:
+        # SoftTimeLimitExceeded is BaseException in Celery 5.x, not Exception,
+        # so it must be caught explicitly. Without this, a timed-out discovery
+        # leaves Redis at status:"running" forever and the frontend polls in an
+        # infinite loop.
+        is_timeout = isinstance(exc, SoftTimeLimitExceeded)
         save({
-            "status": "error",
-            "urls": [],
-            "total_found": 0,
-            "estimated_total": 0,
-            "scrape_count": 0,
-            "method": "unknown",
-            "error": str(exc)[:300],
+            "status": "done" if is_timeout else "error",
+            "urls": urls_found if is_timeout else [],
+            "total_found": len(urls_found) if is_timeout else 0,
+            "estimated_total": estimated_total if is_timeout else 0,
+            "scrape_count": min(len(urls_found), scrape_limit) if is_timeout else 0,
+            "method": method_used if is_timeout else "unknown",
+            "error": f"Discovery timed out after finding {len(urls_found)} links. You can scrape what was found." if is_timeout else str(exc)[:300],
         })
-        raise
+        if not is_timeout:
+            raise

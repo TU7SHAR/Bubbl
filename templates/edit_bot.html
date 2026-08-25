@@ -1543,16 +1543,28 @@
           const discoverId = startData.discover_id;
           currentScrapeLimit = startData.plan_limit || 5;
 
+          // Poll for progress — safety timeout at 3 minutes to prevent infinite loop
+          var discoverPollStart = Date.now();
+          var DISCOVER_POLL_TIMEOUT = 180000; // 3 minutes max
+
           // Poll for progress every 500ms
           const poll = setInterval(async () => {
               try {
+                  // Safety: stop if polling for > 3 minutes (task likely dead)
+                  if (Date.now() - discoverPollStart > DISCOVER_POLL_TIMEOUT) {
+                      clearInterval(poll);
+                      resetBtn();
+                      showModal("Discovery timed out. Please try with fewer pages or a specific URL.", "error");
+                      return;
+                  }
+
                   const statusRes = await fetch('/admin/api/scrape/discover/status/' + discoverId);
                   const disc = await statusRes.json();
 
-                  if (disc.error) {
+                  if (disc.status === 'error' || (disc.error && disc.status !== 'done')) {
                       clearInterval(poll);
                       resetBtn();
-                      showModal(disc.error, 'error');
+                      showModal(disc.error || 'Discovery failed.', 'error');
                       return;
                   }
 

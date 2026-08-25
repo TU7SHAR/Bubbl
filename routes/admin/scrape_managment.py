@@ -328,7 +328,10 @@ def start_async_discover():
     plan_name = (org.plan if org else 'free') or 'free'
 
     if find_max_links:
-        discovery_limit = plan_discover_limit
+        # Cap discovery at 500 regardless of plan — crawling more than 500 pages
+        # for *preview* purposes has no value and can stall the task (120s limit).
+        # The user picks from the discovered list; actual scraping uses scrape_limit.
+        discovery_limit = min(plan_discover_limit, 500)
     else:
         try:
             user_limit = int(data.get('max_urls') or 20)
